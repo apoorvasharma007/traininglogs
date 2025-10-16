@@ -1,0 +1,27 @@
+{
+  // --- RECOVERY METRICS ---
+  // An object containing key physiological and psychological data points recorded on a particular day. This data is invaluable for finding correlations between lifestyle and performance.
+  "_id": "recovery_nutrition_20240615",  // Unique identifier for this log entry.
+  // The date of the session in ISO 8601 format. This is a universal standard that prevents ambiguity and is easily parsed by any programming language.
+  "date": "2025-10-13",        // Date of the workout session
+  "subjectiveMetrics": {
+    "sleepHours": 7.5,       // Hours of sleep the night before.
+    "energyLevel": 8,        // Subjective energy on a scale of 1-10.
+    "stressLevel": 3,        // Subjective stress on a scale of 1-10.
+    },
+    "objectiveMetrics": {
+    "bodyweightKg": 75.5,   // Bodyweight in kilograms.
+    "hrv": 65                // <-- Heart Rate Variability (if available else null)
+    },
+    "nutrition": {
+      "calories": 1500,      // <-- Calories consumed on that day 
+      "carbsGrams": 200,     // <-- Carbs consumed on that day
+      "fatsGrams": 50,       // <-- Fats consumed on that day
+      "proteinGrams": 80  ,   // <-- Protein consumed on that day
+      "hydrationLiters": 3.0, // <-- Total water intake in liters
+      "supplements": [
+        { "name": "Caffeine", "dosage": "200mg" },
+        { "name": "Creatine Monohydrate", "dosage": "5g" } 
+    ]
+    }
+}

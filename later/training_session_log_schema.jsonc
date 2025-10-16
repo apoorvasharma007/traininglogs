@@ -1,0 +1,136 @@
+{
+  "dataModelVersion": "0.0.1", // Version of the data model for compatibility checks.
+  "dataModelT"
+  // --- TRAINING SESSION METADATA ---
+  // A unique identifier for the workout session. Can be auto-generated or a descriptive string.
+  "_id": "training_session_20251013",
+
+  // Identifier for the user, useful if you ever expand this to track multiple people. Defaults to "1" for me.
+  "userId": "your_user_id",
+
+  // The user's full name for easy identification in multi-user scenarios. Defaults to "Apoorva Sharma".
+  "userName": "Apoorva Sharma",
+  
+  // The start date and time of the session in ISO 8601 format. This is a universal standard that prevents ambiguity and is easily parsed by any programming language.
+  "date": "2025-10-13T09:00:00Z",
+
+  // The current 13-week training phase number.
+  "phase": 2,
+
+  // The week number within the current phase (1-13).
+  "week": 1,
+
+  // A boolean flag to easily filter for deload weeks.
+  "isDeloadWeek": false,
+
+  // The primary focus of the day's training session.
+  "focus": "Push Hypertrophy",
+  
+  // --- EXERCISES PERFORMED ---
+  // An array of objects, where each object represents one exercise performed during the session.
+  "exercises": [
+    {
+      // The order in which the exercise was performed. Crucial for analyzing the impact of fatigue.
+      "Order": 1,
+      "Name": "Incline Dumbbell Press",
+
+      // Primary muscle groups targeted by the exercise. Standardizing these names is key for analysis (e.g., calculating total volume per muscle group). Default to an empty array if not tracked.
+      "targetMuscleGroups": ["Pectoralis Major (Clavicular Head)", "Anterior Deltoid", "Triceps"],
+      
+      // Tempo for the exercise, if applicable. This is a string in the format "eccentric-pause-concentric-pause". Can be null if not tracked.
+      "repTempo": "3-1-1-0",         // <-- 3s eccentric, 1s pause, 1s concentric, 0s pause
+      
+      // --- WORKOUT GOAL (STRUCTURED OBJECT) ---
+      // The planned goal for this exercise, structured for easy machine reading and comparison against actual performance.
+      "currentGoal": {
+        "weightKg": 32.5,
+        "sets": 4,
+        "repRange": {
+          "min": 8,
+          "max": 10
+        },
+        "restMinutes": 2
+      },
+
+      // An array of warm-up sets objects performed before the working sets. This is optional and can be an empty array if no warm-ups were done.
+      "warmupSets": [
+        // Each warm-up set object includes the set number, weight, repCount(null if done "feel" based, in which case a note is automatically added which says "repCount performed by feel." ), and optional notes.
+        { "set": 1, "weightKg": 10, "repCount": null, "notes": "repCount performed by feel." },
+        { "set": 2, "weightKg": 10, "repCount": 15, "notes": "Unilateral to focus on stability." },
+        { "set": 3, "weightKg": 20, "repCount": 8, "notes": null }
+      ],
+
+      // --- WORKING SETS (ACTUAL PERFORMANCE) ---
+      // An array of the main, effort-based sets for the exercise. This is where the core performance data is logged.
+      "workingSets": [
+        {
+          "set": 1,
+          "weightKg": 32.5,
+          // repCount are an object to cleanly distinguish between full repCount and partial repCount when going beyond failure.
+          "repCount": { "full": 10, "partial": 0 },
+          "rpe": 7, // Rating of Perceived Exertion (1-10 scale).
+          "repAssessment": "perfect", // e.g., 'bad', 'good', 'perfect', 'learning'
+          "actualRestMinutes": null, // The actual rest time taken BEFORE this set. Always null for the first set.
+          "notes": null // Optional notes specific to this set.
+        },
+        {
+          "set": 2,
+          "weightKg": 32.5,
+          "repCount": { "full": 9, "partial": 0 },
+          "rpe": 8,
+          "repAssessment": "good",
+          "actualRestMinutes": 3, // Example of a longer-than-planned rest.
+          "notes": "Had to wait for equipment."
+        },
+        {
+          "set": 3,
+          "weightKg": 32.5,
+          "repCount": { "full": 8, "partial": 1 }, // Example: 8 full repCount, 1 partial.
+          "rpe": 10, // Max effort. The `repCount` object clarifies the result.
+          "repAssessment": "good",
+          "actualRestMinutes": 3
+        },
+        {
+          "set": 4,
+          "weightKg": 32.5,
+          "repCount": { "full": 8, "partial": 0 },
+          "rpe": 10,
+          "repAssessment": "good",
+          "actualRestMinutes": 3,
+
+          // --- FAILURE TECHNIQUE ---
+          // failure technique is applicable only for RPE 10 sets.
+          // An optional object included ONLY on sets where an advanced technique was used to push past initial failure.
+          "failureTechnique": {
+            // The type of technique used. This is the key for filtering.
+            "type": "Myo-repCount",
+            // A flexible 'details' object whose structure depends on the 'type'.
+            "details": {
+              // For 'Myo-repCount', we log the repCount in each mini-set.
+              "miniSets": [
+                { "miniSet": 1, "repCount": 3 },
+                { "miniSet": 2, "repCount": 3 },
+                { "miniSet": 3, "repCount": 2 }
+              ]
+              // Example for type:"LLP", details.partialRepCount: 6 }
+              // Example for type:"Static", details.holdDurationSeconds: 30 }
+              // Example for type:"DropSet", details: [ {dropSet:1, weightKg:25, repCount:5}, {dropSet:2, weightKg:20, repCount:4} ]
+            }
+          }
+        }
+      ],
+      // General notes for the entire exercise on this day. Can be null if no notes.
+      "notes": "Felt a great mind-muscle connection today. Right side felt slightly weaker on the last set.",
+      // General notes for the entire exercise on this day. Can be null if no notes.
+      "warmupNotes": "Research about isometrics for this movement to work on tendons",
+      // A list of form cues that can be updated over time.
+      "formCues": [
+        "Keep scapula retracted and depressed.",
+        "Drive elbows inwards on the press."
+      ]
+    }
+    // ... Additional exercise objects would follow here
+  ],
+  // Total duration of the workout session in minutes.
+  "sessionDurationMinutes": 75
+}

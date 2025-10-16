@@ -1,0 +1,134 @@
+########################
+Date: 2025-10-13
+Phase: 2 
+Week: 1 
+Deload: Yes
+Focus: Upper Strength
+Session Duration: null
+
+########################
+Exercise 1: Incline DB Press 45 Degree
+Goal: 30kg x 3 sets x 6-8 reps 
+Rest: 3 min
+
+WarmupSet 1: 2.5 kg x  reps - 
+WarmupSet 2: 10 kg x  reps - 
+WarmupSet 3: 20 kg x reps - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles. 
+
+WorkingSet 1: 30 kg x 6 reps @ RPE 8 - perfect - did slow tempo
+WorkingSet 2: 30 kg x 6 reps @ RPE 8 - good 
+//WorkingSet 3: 30 kg x 8 reps @ RPE 10 - good - Failure: Myo-reps (3 + 3 + 2)
+
+ExerciseNotes : left side falls faster on negative and slightly weak on holding at top
+ExerciseFormCues : brace core, breathe every rep, feet on the ground.
+
+########################
+Exercise 2: Pec Dec Single Arm
+Goal: 73 kg x 3 sets x 10 reps
+Rest: 2 min
+
+WarmupSet 1: 32 kg x 10 reps 
+WarmupSet 2: 66 kg x 4-6 reps - 
+
+WorkingSet 1: 73 kg x 10 reps @ RPE 7 - good
+WorkingSet 2: 15 kg x 13 reps @ RPE 8 - good
+//WorkingSet 3:	15 kg x 11 + 6 partials @ RPE 10 - good - Failure: LLP (6 partials)
+
+ExerciseNotes: Slight right-shoulder fatigue, control on eccentric improving
+ExerciseFormCues: , hold the squeeze for a sec 
+
+########################
+Exercise 3:	Wide Grip Lat Pulldown
+Goal: 55 kg x 3 sets x 10-12 reps
+Rest: 2 min
+
+WarmupSet 1: 5 kg x 15 reps - pyramid warmup
+WarmupSet 2: 10 kg x 10 reps - pyramid warmup, get numbers from jeffs pdf
+
+WorkingSet 1: 55 kg x 10 reps @ RPE 10 - good
+//WorkingSet 2: 15 kg x 11 + 6 partials @ RPE 10 - good - Failure: LLP (6 partials)
+
+ExerciseNotes: null
+ExerciseFormCues: Used straps for killing lats, 
+Go wider no reason for not holding wider to squeeze the lats too cuz mid back i can feel already,
+Pull Elbows DOWN not behind and squeeze shoulder blades together, 
+Noticed strength dropped when form got better lol. 
+
+########################
+Exercise 4.	High Cable Lateral Raise
+Goal: 6.8 kg x 3 sets x 10-12 reps
+Rest: 2 min
+
+WarmupSet 1: 4.5 kg x 6 reps - did very slow tempo to activate side delts
+
+WorkingSet 1: 6.8 kg x 10 reps @ RPE 7 - good
+
+ExerciseNotes: aim for perfect reps
+ExerciseFormCues: copy this from other note // dothis!!!!
+
+########################
+Exercise 5:	Deficit Pendlay Row
+Goal: 60 kg x 2 sets x 6-8 reps
+Rest: 3 min 
+
+WarmupSet 1: 40 kg x 5 reps - pyramid warmups, slow tempo to feel the movement
+WarmupSet 2: 50 kg x 3 reps
+
+WorkingSet 1: 60 kg x 6 reps @ RPE 8 - good
+//WorkingSet 2: 60 kg x 6 + 6 partials @ RPE 10 - good - Failure: LLP (6 partials)
+
+ExerciseNotes: null
+ExerciseFormCues: stand on 20 plus 10 kg plate for deficit ,touch chest, keep straight bar path, controlled negative and let the bar drop to the ground
+
+########################
+Exercise 6:	Overhead Tricep Extension Cable Extension Bar 
+Goal: 20.4 kg x 3 sets x 12-15 reps
+Rest: 2 min
+
+WarmupSet 1: 9.1 kg x 6 reps - katana extension unilateral and feel based
+WorkingSet 1: 20.4 kg x 14 reps @ RPE 9 - perfect
+
+ExerciseNotes: anchor at height 11 roughly in line with my upper traps when bent, i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
+ExerciseFormCues: keep hands wider on the bar and go to max range of motion, pull from squeezing triceps
+
+########################
+Exercise 7:	Bayesian Cable Curl
+Goal: 13.6 kg x 3 sets x 10 reps
+Rest: 2 min
+
+WarmupSet 1: null
+
+WorkingSet 1: 13.6 kg x 12 reps @ RPE 10 - perfect
+WorkingSet 2: 13.6 kg x 12 reps @ RPE 10 - good
+WorkingSet 3: 15 kg x 10 + 1 partials @ RPE 10 - perfect
+
+ExerciseNotes: null
+ExerciseFormCues: Using straps to overcome any grip limitations on the last few reps. Squeezing hard on top. 
+
+########################
+Exercise 8: Sam Sulek Forearm Cable Curl
+
+WorkingSet 1: 9.1 kg x 12-15 reps - full squeeze and hold at the top of the rep
+
+ExerciseFormCues: can do standing, keep elbow position locked and appropriate angle
+
+########################
+Exercise 9: Revere Wrist Cable Curl
+
+WorkingSet 1: 
+WorkingSet 2:
+
+ExerciseFormCues: go light weight and maximum control, move wrist laterally too to cover all links
+
+########################
+Exercise 10: Thumb Up Wrist Cable Curl
+
+WorkingSet 1: 
+WorkingSet 2:
+
+ExerciseFormCues: go light weight and maximum control, move wrist laterally too to cover all links
+
+########################
+Exercise 11: Wrist Pulldown Cable Curl
+
+WorkingSet 1: 9.1 kg x 12-15 reps - figure out weight for this next round

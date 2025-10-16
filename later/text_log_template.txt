@@ -1,0 +1,216 @@
+########################
+Date: 2025-10-13
+Phase: 2
+Week: 1
+Deload: Yes
+Focus: Upper Strength
+Duration: 95 min //tell parser
+
+########################
+EX 1: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null) //tell parser to remove inline notes, also from schema
+W2: W x feel 
+Warmup Notes: // add to schema
+notes string
+
+S1: WxN RPE Y perfect //tell parser to remove inline notes, also from schema
+S2: (3.5 min //tell parser) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null //last set to failure, tell parser and add to RPE 10 set schema
+S3: WxN+1 RPE 10 good failure:null //last set to true failure w partial rep, tell parser and add to RPE 10 set schema
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 1: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 2: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 3: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 4: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 5: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 6: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
+EX 7: Name
+Goal: Wkg x S sets x P-R reps
+Rest: M min
+
+W1: W x feel (meaning reps=null)
+W2: W x feel 
+
+Warmup Notes: 
+notes string
+
+S1: WxN RPE Y perfect 
+S2: (3.5 min) WxN RPE Z good 
+S3: WxN RPE 10 good failure:null 
+S3: WxN+1 RPE 10 good failure:null
+S3: WxN RPE 10 good failure:myo(3,3,2) 
+S3: WxN RPE 10 good failure:llp(6) 
+S3: WxN RPE 10 good failure:static(30 sec)
+
+Exercise Notes:
+notes string
+Cues:
+cue 1.
+cue 2.
+cue 3.
+
+########################
