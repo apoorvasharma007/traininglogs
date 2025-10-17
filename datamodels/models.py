@@ -518,7 +518,7 @@ class WorkingSet:
         number: Set number (int, required)
         weight_kg: Weight in kilograms (float, required)
         rep_count: Rep count with full and partial reps (RepCount, required)
-        rpe: Rating of Perceived Exertion 1-10 (Optional[int]), None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
+    rpe: Rating of Perceived Exertion 1-10 (Optional[float]). May be an integer or a half-step (e.g. 7.0 or 7.5). None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
         rep_quality_assessment: Quality of reps - 'bad', 'good', 'perfect' or 'learning' (Optional[str]), None simply means not recorded
         actual_rest_minutes: Actual rest time before this set (Optional[int]), to cover scenarios where the rest time was longer than planned, None simply means not recorded
         notes: Optional notes for this set (Optional[str])
@@ -527,7 +527,7 @@ class WorkingSet:
     number: int
     weight_kg: float # include resistancy_type = "resistance band", "bodyweight", etc. in future
     rep_count: RepCount
-    rpe: Optional[int] = None ## None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
+    rpe: Optional[float] = None ## None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
     rep_quality_assessment: Optional[RepQualityAssessment] = None # None simply means not recorded
     actual_rest_minutes: Optional[int] = None
     notes: Optional[str] = None
@@ -597,6 +597,7 @@ class WorkingSet:
 
 
 @dataclass
+@dataclass
 class Exercise:
     """
     Represents an exercise performed during a training session.
@@ -627,6 +628,33 @@ class Exercise:
     notes: Optional[str] = None
     warmup_notes: Optional[str] = None
     form_cues: Optional[List[str]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return _clean_none_and_empty({
+            "number": self.number,
+            "name": self.name,
+            "currentGoal": self.current_goal.to_dict() if self.current_goal is not None else None,
+            "warmupSets": [w.to_dict() for w in self.warmup_sets] if self.warmup_sets else None,
+            "workingSets": [w.to_dict() for w in self.working_sets] if self.working_sets else None,
+            "notes": self.notes,
+            "warmupNotes": self.warmup_notes,
+            "formCues": self.form_cues,
+        })
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Exercise':
+        return cls(
+            number=data["number"],
+            name=data["name"],
+            working_sets=[WorkingSet.from_dict(ws) for ws in data.get("workingSets", [])],
+            target_muscle_groups=data.get("targetMuscleGroups"),
+            rep_tempo=data.get("repTempo"),
+            current_goal=Goal.from_dict(data["currentGoal"]) if data.get("currentGoal") is not None else None,
+            warmup_sets=[WarmupSet.from_dict(ws) for ws in data.get("warmupSets", [])] if data.get("warmupSets") else None,
+            notes=data.get("notes"),
+            warmup_notes=data.get("warmupNotes"),
+            form_cues=data.get("formCues")
+        )
 
 
 @dataclass

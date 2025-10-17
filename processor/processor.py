@@ -1,8 +1,24 @@
 # main.py
 import json
+import logging
+import sys
 from pathlib import Path
+
+# When this file is executed directly (e.g. `python3 processor.py` from
+# the `processor/` directory) Python's import system may not find the
+# sibling top-level packages (like `parser` and `datamodels`). Ensure
+# the project root is on sys.path so absolute imports like
+# `from parser.parser import ...` work regardless of the current CWD.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from parser.parser import WorkoutParser
-from parser.ingestor import DataIngestor
+from parser.ingester import DataIngestor
+
+# Configure a basic logger for CLI usage. Callers (tests) can override this
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 # Define constants for input and output directories
 INPUT_DIR = Path("workout_logs_raw")
@@ -64,8 +80,9 @@ def main():
             
             print(f"✅ Success! Output saved to '{output_path}'")
 
-        except Exception as e:
-            print(f"❌ An unexpected error occurred while processing '{file_path.name}': {e}")
+        except Exception:
+            # Log full stack trace and continue with next file
+            logger.exception("❌ An unexpected error occurred while processing '%s'", file_path.name)
 
 if __name__ == "__main__":
     main()

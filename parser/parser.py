@@ -1,7 +1,10 @@
 # app/parser.py
+import logging
 import re
 from collections import defaultdict
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 class WorkoutParser:
     """
@@ -27,43 +30,60 @@ class WorkoutParser:
         if not match:
             return {}
         
-        content = match.group(1).strip()
-        lines = [line.strip() for line in content.split('\n') if line.strip()]
+        # Keep the raw content (do not strip) so we can compute accurate
+        # file-relative line numbers and preserve whitespace inside notes.
+        content = match.group(1)
+        # Line where the content block starts in the original file (1-indexed)
+        base_line = text.count('\n', 0, match.start(1)) + 1
+        lines = content.split('\n')  # preserve empty lines so numbering matches file
 
         session_data: Dict[str, Any] = {"exercises": []}
+        # Keep a map of where top-level fields were parsed (absolute file line numbers)
+        session_data['_line_numbers'] = {}
         current_exercise: Dict[str, Any] = {}
         multiline_key = None
 
-        for line in lines:
+        # Iterate with absolute line numbers to make errors traceable to the input file
+        for rel_idx, raw_line in enumerate(lines):
+            line_index = base_line + rel_idx
+            line = raw_line.strip()
             # Check for main session keywords first
             if re.match(r"Date:", line, re.IGNORECASE):
                 multiline_key = None
                 session_data['date'] = line.split(':', 1)[1].strip()
+                session_data['_line_numbers']['date'] = line_index
                 continue
             if re.match(r"Phase:", line, re.IGNORECASE):
                 multiline_key = None
                 session_data['phase'] = int(line.split(':', 1)[1].strip())
+                session_data['_line_numbers']['phase'] = line_index
                 continue
             if re.match(r"Week:", line, re.IGNORECASE):
                 multiline_key = None
                 session_data['week'] = int(line.split(':', 1)[1].strip())
+                session_data['_line_numbers']['week'] = line_index
                 continue
             if re.match(r"Deload:", line, re.IGNORECASE):
                 multiline_key = None
                 session_data['is_deload_week'] = line.split(':', 1)[1].strip().lower() == 'yes'
+                session_data['_line_numbers']['is_deload_week'] = line_index
                 continue
             if re.match(r"Focus:", line, re.IGNORECASE):
                 multiline_key = None
                 session_data['focus'] = line.split(':', 1)[1].strip()
+                session_data['_line_numbers']['focus'] = line_index
                 continue
-            if re.match(r"Duration:", line, re.IGNORECASE):
+            # Accept both 'Duration:' and 'Session Duration:' (with optional whitespace)
+            if re.match(r"(?:Session\s+)?Duration:", line, re.IGNORECASE):
                 multiline_key = None
                 duration_str = line.split(':', 1)[1].strip()
                 session_data['session_duration_minutes'] = int(re.sub(r'\s*min', '', duration_str, flags=re.IGNORECASE))
+                session_data['_line_numbers']['session_duration_minutes'] = line_index
                 continue
 
             # Check for a new exercise
-            ex_match = re.match(r"(?:EX|Exercise)(\d+):\s*(.+)", line, re.IGNORECASE)
+            # Allow optional whitespace between 'EX'/'Exercise' and the number (e.g., 'Ex 2:' or 'Exercise2:')
+            ex_match = re.match(r"(?:EX|Exercise)\s*(\d+):\s*(.+)", line, re.IGNORECASE)
             if ex_match:
                 multiline_key = None
                 if current_exercise:
@@ -72,7 +92,8 @@ class WorkoutParser:
                     "number": int(ex_match.group(1)),
                     "name": ex_match.group(2).strip(),
                     "warmup_sets": [],
-                    "working_sets": []
+                    "working_sets": [],
+                    "line_number": line_index
                 }
                 continue
 
@@ -131,6 +152,13 @@ class WorkoutParser:
                     "rep_count": int(reps) if reps.isdigit() else None,
                     "notes": note.strip() if note else None
                 }
+                if not current_exercise:
+                    logger.error("Found warmup set but no current exercise has been started. Line %s: %r", line_index, line)
+                    raise ValueError(f"Warmup set encountered before any Exercise header (line {line_index}). Ensure 'ExerciseX:' appears before warmup sets.")
+                # Defensive: ensure warmup_sets exists (some malformed blocks may have other keys but miss these)
+                if "warmup_sets" not in current_exercise:
+                    logger.warning("current_exercise missing 'warmup_sets'; creating empty list. exercise keys: %s (line %s)", list(current_exercise.keys()), line_index)
+                    current_exercise.setdefault("warmup_sets", [])
                 current_exercise["warmup_sets"].append(warmup_set)
                 continue
 
@@ -141,7 +169,13 @@ class WorkoutParser:
                 set_num = int(set_match.group(1))
                 remainder = line.split(":", 1)[1].strip()
                 
-                working_set = self._parse_working_set(set_num, remainder)
+                working_set = self._parse_working_set(set_num, remainder, line_index)
+                if not current_exercise:
+                    logger.error("Found working set but no current exercise has been started. Line %s: %r", line_index, line)
+                    raise ValueError(f"Working set encountered before any Exercise header (line {line_index}). Ensure 'ExerciseX:' appears before working sets.")
+                if "working_sets" not in current_exercise:
+                    logger.warning("current_exercise missing 'working_sets'; creating empty list. exercise keys: %s (line %s)", list(current_exercise.keys()), line_index)
+                    current_exercise.setdefault("working_sets", [])
                 current_exercise["working_sets"].append(working_set)
                 continue
         
@@ -155,23 +189,67 @@ class WorkoutParser:
             
         return session_data
 
-    def _parse_working_set(self, set_num: int, line_part: str) -> Dict[str, Any]:
+    def _parse_working_set(self, set_num: int, line_part: str, line_index: int) -> Dict[str, Any]:
         """Helper to parse the complex working set line."""
-        
-        parts = line_part.split()
+        # Preserve the original raw fragment for logging and context
+        original_fragment = line_part
+
+        # Normalize spacing but do not mutate the original fragment. This
+        # collapses multiple spaces and ensures there's a space around 'x'
+        norm = re.sub(r"\s*x\s*", " x ", line_part, flags=re.IGNORECASE)
+        norm = re.sub(r"\s+", " ", norm).strip()
+
+        parts = norm.split()
         set_data: Dict[str, Any] = {"number": set_num}
-        
-        # 1. Weight x Reps[+Partials]
-        weight_rep_match = re.match(r"([\d.]+)\s*x\s*(\d+)(?:\+(\d+))?", parts[0], re.IGNORECASE)
-        if not weight_rep_match:
-            raise ValueError(f"Could not parse weight/reps for set {set_num}: {parts[0]}")
-        
-        weight, full_reps, partial_reps = weight_rep_match.groups()
-        set_data["weight_kg"] = float(weight)
-        set_data["rep_count"] = {"full": int(full_reps), "partial": int(partial_reps) if partial_reps else 0}
-        
-        # 2. Parse remaining optional parts
-        remaining_parts = " ".join(parts[1:])
+
+        # Strategy A: tokens like [weight, 'x', reps(+partial)] -> common
+        remaining_parts = ""
+        if len(parts) >= 3 and parts[1].lower() == 'x':
+            weight_token = parts[0]
+            reps_token = parts[2]
+            try:
+                weight_val = float(weight_token)
+            except Exception:
+                logger.debug("Weight token not a float: %r (line %s)", weight_token, line_index)
+                weight_val = None
+
+            if weight_val is not None:
+                # parse reps and optional partials
+                if '+' in reps_token:
+                    try:
+                        full_str, part_str = reps_token.split('+', 1)
+                        full_reps = int(full_str)
+                        partial_reps = int(part_str)
+                    except Exception:
+                        logger.exception("Invalid reps token with plus at line %s: %r", line_index, reps_token)
+                        raise ValueError(f"Invalid reps token for set {set_num} at line {line_index}: {reps_token}")
+                else:
+                    try:
+                        full_reps = int(reps_token)
+                        partial_reps = 0
+                    except Exception:
+                        logger.exception("Invalid reps token at line %s: %r", line_index, reps_token)
+                        raise ValueError(f"Invalid reps token for set {set_num} at line {line_index}: {reps_token}")
+
+                set_data["weight_kg"] = weight_val
+                set_data["rep_count"] = {"full": full_reps, "partial": partial_reps}
+                remaining_parts = " ".join(parts[3:])
+            else:
+                # Fall through to strategy B below
+                remaining_parts = " ".join(parts[1:])
+        else:
+            # Strategy B: try a combined regex on the normalized line
+            weight_rep_match = re.match(r"([\d.]+)\s*x\s*(\d+)(?:\+(\d+))?", norm, re.IGNORECASE)
+            if weight_rep_match:
+                weight, full_reps, partial_reps = weight_rep_match.groups()
+                set_data["weight_kg"] = float(weight)
+                set_data["rep_count"] = {"full": int(full_reps), "partial": int(partial_reps) if partial_reps else 0}
+                # remove the matched portion from the normalized line to parse the rest
+                remaining_parts = norm[weight_rep_match.end():].strip()
+            else:
+                # Log full context to help locate the bad input (use original fragment)
+                logger.error("Could not parse weight/reps for set %s at line %s. norm_first_tokens=%r full_line=%r", set_num, line_index, parts[:3], original_fragment)
+                raise ValueError(f"Could not parse weight/reps for set {set_num} at line {line_index}: {original_fragment}")
         
         # RPE
         rpe_match = re.search(r"RPE\s*([\d.]+)", remaining_parts, re.IGNORECASE)

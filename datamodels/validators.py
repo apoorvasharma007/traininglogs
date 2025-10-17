@@ -181,7 +181,24 @@ class TrainingLogValidator:
         Raises:
             TrainingLogValidationError: If RPE is outside valid range
         """
-        TrainingLogValidator.validate_range(rpe, 1, 10, "RPE")
+        # RPE may be an integer (1..10) or a half-step float (e.g. 7.5).
+        if isinstance(rpe, bool):
+            raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step float between 1 and 10, got {type(rpe).__name__}")
+
+        if isinstance(rpe, int):
+            TrainingLogValidator.validate_range(rpe, 1, 10, "RPE")
+            return
+
+        if isinstance(rpe, float):
+            # Accept only .0 or .5 fractional parts
+            if not (1.0 <= rpe <= 10.0):
+                raise TrainingLogValidationError(f"Field 'RPE' must be between 1 and 10, got {rpe}")
+            frac = rpe - int(rpe)
+            if abs(frac - 0.0) < 1e-9 or abs(frac - 0.5) < 1e-9:
+                return
+            raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step (e.g. 7 or 7.5), got {rpe}")
+
+        raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step float between 1 and 10, got {type(rpe).__name__}")
     
     @staticmethod
     def validate_phase(phase: int) -> None:
