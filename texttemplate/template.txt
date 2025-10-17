@@ -12,16 +12,16 @@ Deload: Yes
 Focus: Upper Strength
 Duration: 95 min 
 
-EX1: Name of exercise // alias for EX can be Exercise and the both keywords should be case insensitve, keyword followed by number is the order/sequence/number of the exercise
+EX1: Name of exercise // alias for EX can be Exercise and the both keywords should be case insensitve, keyword followed by number is the number of the exercise
 //optional
 Goal: W kg x S sets x P-R reps // keywords goal, kg, sets, reps should be case insensitve
 //optional
 Rest: M min // keyword rest should be case insensitve
 
 // warmup object is optional
-W1: W x feel // alias for W can be WarmupSet and both keywords should be case insensitve,  keyword followed by number is the order/sequence/number of the exercise
-W1: W x feel // keyword W  is warmup weight in kg and keyword feel should be ignored, all keywords should be case insensitive
-W2: W x N - note // keyword N is number of reps and should be case insensitive, "-" signifies there is a note for this warmup set and should be parsed as a single string even if it spans multiple lines
+W1: W x feel // alias for W can be WarmupSet and both keywords should be case insensitve,  keyword followed by number is the number of the exercise
+W2: W x feel // keyword W  is warmup weight in kg and the word feel should be ignored, all keywords should be case insensitive
+W3: W x N - note // keyword N is number of reps and should be case insensitive, "-" signifies there is a note for this warmup set and should be parsed as a single string even if it spans multiple lines
 
 //optional
 WarmupNotes: // WarmupNotes: is a keyword, should be case insensitive, it will be followed by a new line and the notes string which will be a multi line string
@@ -34,19 +34,19 @@ notesstring
 // N is rep count; this is required always, it might be suceeded by an optional "+" character followed by another number which maps to partial rep count
 // rpe is rpe; this is optional
 // perfect, good, bad , learning are keywords and are optional
-// "-" signifies there is a note for this set and should be parsed as a single string even if it spans multiple lines
+// "-" signifies there is a note for this set and should be parsed as a single string even if it spans multiple lines, and the note is optional in which case there will be no "-" on the line for the set
 // failure is a keyword which maps to failure technique type followed by : followed by details of the failure technique; this is optional
 // all keywords must be dealt in case insensitive manner
 S1: WxN RPE Y perfect - note
 S2: WxN RPE Z good - note
-S2: WxN RPE Z bad - note
-S2: WxN learning  - note
-S1: W x N //this should also be accepted for deload/detrained/unconditioned weeks
-S3: WxN RPE 10 good 
-S3: WxN+1 RPE 10 good 
-S3: WxN RPE 10 good failure:myo(3,3,2+1) 
-S3: WxN RPE 10 good failure:llp(6) 
-S3: WxN RPE 10 good failure:static(30 sec)
+S3: WxN RPE Z bad - note
+S4: WxN learning  - note
+S5: W x N //this should also be accepted for deload/detrained/unconditioned weeks
+S6: WxN RPE 10 good 
+S7: WxN+1 RPE 10 good 
+S8: WxN RPE 10 good failure:myo(3,3,2+1) 
+S9: WxN RPE 10 good failure:llp(6) 
+S10: WxN RPE 10 good failure:static(30 sec)
 
 //optional
 ExerciseNotes: // ExerciseNotes: is a keyword, should be case insensitive, it will be followed by a newline and the notes string which which will be a multiline string
