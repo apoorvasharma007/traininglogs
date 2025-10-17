@@ -1,8 +1,8 @@
 # main.py
 import json
 from pathlib import Path
-from app.parser import WorkoutParser
-from app.ingestor import DataIngestor
+from parser.parser import WorkoutParser
+from parser.ingestor import DataIngestor
 
 # Define constants for input and output directories
 INPUT_DIR = Path("workout_logs_raw")
