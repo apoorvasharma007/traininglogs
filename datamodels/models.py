@@ -627,58 +627,6 @@ class Exercise:
     notes: Optional[str] = None
     warmup_notes: Optional[str] = None
     form_cues: Optional[List[str]] = None
-    
-    def __post_init__(self):
-        """Validate exercise data after initialization."""
-        if self.number <= 0:
-            raise TrainingLogValidationError("Exercise number must be positive")
-        
-        TrainingLogValidator.validate_string_not_empty(self.name, "exercise name")
-        
-        # Allow None for optional list fields; when provided, enforce the type
-        if self.target_muscle_groups is not None and not isinstance(self.target_muscle_groups, list):
-            raise TrainingLogValidationError("Target muscle groups must be a list if provided")
-        if self.rep_tempo is not None and not self.rep_tempo.strip():
-            raise TrainingLogValidationError("Rep tempo cannot be empty if provided")
-        
-        if self.form_cues is not None and not isinstance(self.form_cues, list):
-            raise TrainingLogValidationError("Form cues must be a list if provided")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary representation."""
-        return _clean_none_and_empty({
-            "Order": self.number,
-            "Name": self.name,
-            # Turn optional lists into None when empty so serializer can omit them
-            "targetMuscleGroups": self.target_muscle_groups if self.target_muscle_groups else None,
-            "warmupSets": [warmup.to_dict() for warmup in (self.warmup_sets or [])] if self.warmup_sets else None,
-            "workingSets": [working.to_dict() for working in self.working_sets] if self.working_sets else None,
-            "formCues": self.form_cues if self.form_cues else None,
-            "repTempo": self.rep_tempo,
-            "currentGoal": self.current_goal.to_dict() if self.current_goal is not None else None,
-            "notes": self.notes,
-            "warmupNotes": self.warmup_notes,
-        })
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Exercise':
-        """Create Exercise from dictionary."""
-        current_goal = None
-        if "currentGoal" in data:
-            current_goal = Goal.from_dict(data["currentGoal"])
-        
-        return cls(
-            number=data["Order"],
-            name=data["Name"],
-            target_muscle_groups=data.get("targetMuscleGroups"),
-            rep_tempo=data.get("repTempo"),
-            current_goal=current_goal,
-            warmup_sets=[WarmupSet.from_dict(w) for w in data.get("warmupSets", [])] if "warmupSets" in data else None,
-            working_sets=[WorkingSet.from_dict(w) for w in data.get("workingSets", [])],
-            notes=data.get("notes"),
-            warmup_notes=data.get("warmupNotes"),
-            form_cues=data.get("formCues")
-        )
 
 
 @dataclass
