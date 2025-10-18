@@ -128,7 +128,6 @@ primitive_dict = to_primitive(session_obj)
 # -------------------------------------------------------------------
 # ✅ Optional: remove nulls if you have a local util
 # -------------------------------------------------------------------
-# from utils.cleaners import remove_nulls
 # primitive_dict = remove_nulls(primitive_dict)
 
 # -------------------------------------------------------------------
