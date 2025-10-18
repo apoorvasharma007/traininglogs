@@ -1,5 +1,5 @@
 README — training_logs models
-
+# OUT OF DATE - TBD UPDATES
 This README documents the Python dataclass models used to represent training session logs and their JSON serialization contract.
 
 Overview
