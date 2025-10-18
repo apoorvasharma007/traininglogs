@@ -6,7 +6,13 @@ from datamodels.models import (
     TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
     FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment
 )
-# might need to setup sys.path logic here so that datamodels is importable
+import os, sys
+# -------------------------------------------------------------------
+# ✅ Add root path so imports like `parser.*` and `datamodels.*` work
+# -------------------------------------------------------------------
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
 
 class DeepTrainingParser:
     """

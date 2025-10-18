@@ -33,11 +33,31 @@ def remove_nulls(obj):
         return obj
     
 # -------------------------------------------------------------------
-# ✅ Add root path so imports like `parser.*` and `datamodels.*` work
+# ✅ Add project root (parent of this folder) to sys.path so imports like
+# `parser.*` and `datamodels.*` resolve when running this script directly.
+#
+# Explanation:
+#  - os.path.abspath(__file__) gives the full path to this file (processor.py)
+#  - os.path.dirname(...) once returns the directory that contains this file
+#    (THIS_DIR -> the `processor/` folder).
+#  - os.path.dirname(THIS_DIR) returns the parent directory of `processor/`,
+#    i.e. the project root where top-level packages such as `parser/`
+#    and `datamodels/` live. We need to add that parent to sys.path so Python
+#    can locate those packages when this script is executed directly.
+#
+#  - We insert the PROJECT_ROOT at the front of sys.path so the local
+#    packages in the repo take precedence over any globally installed packages
+#    with the same names during development.
+#
+# Alternative (pathlib):
+#   from pathlib import Path
+#   PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # -------------------------------------------------------------------
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(THIS_DIR)
+if PROJECT_ROOT not in sys.path:
+    # prepend so local packages shadow any globally installed ones during dev
+    sys.path.insert(0, PROJECT_ROOT)
 
 # -------------------------------------------------------------------
 # ✅ Import parsers and models
@@ -51,8 +71,9 @@ from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 # ✅ Load the markdown training log dynamically
 # -------------------------------------------------------------------
 # Define folder paths relative to project root
-RAW_LOGS_DIR = os.path.join(ROOT_DIR, "training_logs_raw_md")
-OUTPUT_DIR = os.path.join(ROOT_DIR, "training_logs_output")
+# Raw logs and output live at project root
+RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "training_logs_raw_md")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "training_logs_output")
 
 # Pick the first markdown file in training_logs_raw_md (or specify one explicitly)
 md_files = [f for f in os.listdir(RAW_LOGS_DIR) if f.endswith(".md")]
