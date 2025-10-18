@@ -4,7 +4,8 @@ from typing import Dict, Any, Optional, List
 from dataclasses import is_dataclass
 from datamodels.models import (
     TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
-    FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment
+    FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment, MyoRep,
+    DropSet, DropSetDetails
 )
 import os, sys
 # -------------------------------------------------------------------
@@ -148,16 +149,37 @@ class DeepTrainingParser:
                     partial = int(pm.group(2)) if pm.group(2) else 0
                 else:
                     full = int(re.findall(r"\d+", p)[0]); partial = 0
-                mini_sets.append({"miniSet": i, "repCount": RepCount(full=full, partial=partial)})
+                # create MyoRep instances (snake_case) so MyoRepDetails normalizes correctly
+                mini_sets.append(MyoRep(number=i, rep_count=RepCount(full=full, partial=partial)))
             return FailureTechnique(technique_type=FailureTechniqueType.MYO_REPS, details=MyoRepDetails(mini_sets=mini_sets))
 
         if k in ("llp",):
             n = int(re.findall(r"\d+", inner)[0])
             return FailureTechnique(technique_type=FailureTechniqueType.LLP, details=LLPDetails(partial_rep_count=n))
 
-        if k in ("static",):
+        # Support the new keyword 'statichold' used in the markdown template.
+        # Keep 'static' and a couple of common variants for backward compatibility.
+        if k in ("static", "statichold", "static_hold", "static-hold"):
             s = int(re.findall(r"\d+", inner)[0])
             return FailureTechnique(technique_type=FailureTechniqueType.STATIC, details=StaticDetails(hold_duration_seconds=s))
+
+        if k in ("dropset", "drop_set", "drop-set"):
+            # parse entries like: 90 x 8, 85 x 5, 75 x 6 + 1
+            parts = [p.strip() for p in re.split(r",\s*", inner) if p.strip()]
+            drop_sets = []
+            for i, p in enumerate(parts, start=1):
+                m = re.match(r"([\d.]+)\s*x\s*(\d+)(?:\s*\+\s*(\d+))?", p)
+                if not m:
+                    # fallback: try to extract numbers
+                    nums = re.findall(r"[\d.]+", p)
+                    if len(nums) >= 2:
+                        weight = float(nums[0]); full = int(nums[1]); partial = int(nums[2]) if len(nums) > 2 else 0
+                    else:
+                        raise ValueError(f"Invalid dropset entry: {p}")
+                else:
+                    weight = float(m.group(1)); full = int(m.group(2)); partial = int(m.group(3)) if m.group(3) else 0
+                drop_sets.append(DropSet(number=i, weight_kg=weight, rep_count=RepCount(full=full, partial=partial)))
+            return FailureTechnique(technique_type=FailureTechniqueType.DROP_SET, details=DropSetDetails(drop_sets=drop_sets))
 
         raise ValueError(f"Unknown failure technique: {kind}")
 

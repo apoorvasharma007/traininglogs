@@ -34,6 +34,7 @@ Felt strong overall and shoulder mobility felt better than last week.
 10. 100 x 4 RPE 8.5 perfect
 11. 100 x 10 RPE 10
 12. 100 x 10 + 1 RPE 10 
+13. 100 x 10 + 1 RPE 10 good failure: dropset(90 x 8, 85 x 5, 75 x 6 + 1) 
 
 ### Notes
 Felt triceps limiting. Need longer rest and better pre-set.

@@ -1,7 +1,7 @@
 {
   "data_model_version": "1.0",
   "data_model_type": "TrainingSession",
-  "session_id": "c7853773-49e7-40f9-bbf3-c39973231631",
+  "session_id": "0ef49862-0d47-44a4-83be-84a255d61965",
   "user_id": "user-unknown",
   "user_name": "Unknown User",
   "date": "2025-10-13",
@@ -108,22 +108,22 @@
             "details": {
               "mini_sets": [
                 {
-                  "miniSet": 1,
-                  "repCount": {
+                  "number": 1,
+                  "rep_count": {
                     "full": 3,
                     "partial": 0
                   }
                 },
                 {
-                  "miniSet": 2,
-                  "repCount": {
+                  "number": 2,
+                  "rep_count": {
                     "full": 3,
                     "partial": 0
                   }
                 },
                 {
-                  "miniSet": 3,
-                  "repCount": {
+                  "number": 3,
+                  "rep_count": {
                     "full": 2,
                     "partial": 1
                   }
@@ -206,6 +206,49 @@
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
+        },
+        {
+          "number": 13,
+          "weight_kg": 100.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": {
+            "technique_type": "DropSet",
+            "details": {
+              "drop_sets": [
+                {
+                  "number": 1,
+                  "weight_kg": 90.0,
+                  "rep_count": {
+                    "full": 8,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 2,
+                  "weight_kg": 85.0,
+                  "rep_count": {
+                    "full": 5,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 3,
+                  "weight_kg": 75.0,
+                  "rep_count": {
+                    "full": 6,
+                    "partial": 1
+                  }
+                }
+              ]
+            }
+          }
         }
       ],
       "target_muscle_groups": [

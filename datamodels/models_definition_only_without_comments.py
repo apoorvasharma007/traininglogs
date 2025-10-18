@@ -52,7 +52,7 @@ class DropSet:
 
 @dataclass
 class DropSetDetails:
-    entries: List[DropSet]
+    drop_sets: List[DropSet]
 
 FailureDetails = Union[MyoRepDetails, LLPDetails, StaticDetails, DropSetDetails]
 
