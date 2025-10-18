@@ -8,6 +8,8 @@
 
 ## Exercise 1
 **Name:** Bench Press  
+**Muscles:** Chest, Triceps
+**Tempo:** 3-1-1-0
 **Goal:** 100 kg x 3 sets x 6-8 reps  
 **Rest:** 3 min  
 
@@ -40,25 +42,3 @@ Felt triceps limiting. Need longer rest and better pre-set.
 - Drive heels  
 - Squeeze bar  
 - Keep lats tight  
-
-## Exercise 2
-**Name:** Overhead Press  
-**Goal:** 60 kg x 3 sets x 8 reps  
-**Rest:** 2 min  
-
-### Warmup
-- 30 x 5  
-- 40 x 3  
-
-### Working Sets
-1. 50 x 8 RPE 8 good  
-2. 55 x 6 RPE 9 good  
-3. 60 x 4 RPE 10 failure: static(15 sec)
-
-### Notes
-Felt strong. Maintain core brace.
-
-### Cues
-- Squeeze glutes  
-- Stack wrist over elbow  
-- Avoid overextension
