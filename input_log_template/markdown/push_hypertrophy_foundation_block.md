@@ -1,18 +1,18 @@
 # Training Log
-- Date: 2025-10-13
+- Date: 2025-10-17
 - Phase: 2
 - Week: 1
 - Deload: Yes
-- Focus: Upper Strength
-- Duration: 95 min 
+- Focus: Push Hypertrophy
+- Duration: 126 min 
 
 ## Exercise 1
-**Name:** Barbell bench press  
-**Goal:** 65 kg x 3 sets x 8-10 reps 
+**Name:** Barbell Bench Press  
+**Goal:** 65 kg x 3 sets x 8-10 reps  
 **Rest:** 5 min 
 
-#### Warmup Notes
-Pyramid
+### Warmup Notes
+Pyramid warmup figure out weights next time
 
 ### Working Sets
 1. 65 x 9 RPE 9 perfect 
@@ -25,8 +25,8 @@ Pyramid
 - Left right side equally engaged 
 
 ## Exercise 2
-**Name:** seated db shoulder press  
-**Goal:** 17.5 kg x 2 sets x 8-10 reps 
+**Name:** Seated DB Shoulder Press  
+**Goal:** 17.5 kg x 2 sets x 8-10 reps  
 **Rest:** 3 min 
 
 ### Warmup
@@ -42,8 +42,8 @@ Pyramid
 - Full rom  
 
 ## Exercise 3
-**Name:** bottom half db flye  
-**Goal:** 10 kg x 2 sets x 10-12 reps 
+**Name:** Bottom Half DB Flye  
+**Goal:** 10 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min 
 
 ### Working Sets
@@ -55,8 +55,8 @@ Pyramid
 - Try to go down pretty low but stay safe  
 
 ## Exercise 4
-**Name:** high cable lateral raise  
-**Goal:** 4.5 kg x 2 sets x 12-15 reps 
+**Name:** High Cable Lateral Raise  
+**Goal:** 4.5 kg x 2 sets x 12-15 reps   
 **Rest:** 2 min 
 
 ### Working Sets
@@ -69,8 +69,8 @@ Pyramid
 - Hold the top for a second  
 
 ## Exercise 5
-**Name:** overhead cable tricep extension bar  
-**Goal:** 20.4 kg x 2 sets x 10-12 reps 
+**Name:** Overhead Cable Tricep Extension Bar  
+**Goal:** 20.4 kg x 2 sets x 10-12 reps   
 **Rest:** 2 min 
 
 ### Working Sets
@@ -85,7 +85,7 @@ i used to be too slanted on these so now stand more upright enough to face front
 - pull from squeezing triceps  
 
 ## Exercise 6
-**Name:** cable tricep kickbacks upright   
+**Name:** Cable Tricep Kickback Upright  
 **Goal:** 6.8 kg x 1 sets x 12-15 reps 
 
 ### Working Sets
@@ -95,7 +95,7 @@ i used to be too slanted on these so now stand more upright enough to face front
 - See jeff’s form  
 
 ## Exercise 7
-**Name:** cable tricep kickbacks bent over  
+**Name:** Cable Tricep Kickback Bent Over  
 **Goal:** 4.5 kg x 1 sets x 12-15 reps 
 
 ### Working Sets
@@ -105,12 +105,12 @@ i used to be too slanted on these so now stand more upright enough to face front
 - See jeff’s form  
 
 ## Exercise 8
-**Name:** hanging leg raise  
+**Name:** Hanging Leg Raise  
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 
 ### Working Sets
-1. 0 x 5  
-2. 0 x 4  
+1. 0 x 5 learning
+2. 0 x 4  learning
 
 ### Notes
 Figure out how to handle that shoulder rotation around lats when taking legs up! Jeff holds his hands pretty wide in hammer grip and bends from core but doesn’t go too high with his legs.

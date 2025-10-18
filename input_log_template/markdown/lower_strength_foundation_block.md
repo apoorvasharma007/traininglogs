@@ -4,11 +4,11 @@
 - Week: 1
 - Deload: Yes
 - Focus: Lower Strength
-- Duration:
+- Duration: 110
 
 ## Exercise 1
-**Name:** Seated Leg Hamstring Curl
-**Goal:** 50kg x 3 sets x 10-12 reps
+**Name:** Seated Leg Hamstring Curl  
+**Goal:** 50kg x 3 sets x 10-12 reps  
 **Rest:** 2 min
 
 ### Warmup
@@ -22,23 +22,23 @@
 This day is about strength so can move the weight up accordingly. Currently have same weight and reps on both strength and hypertrophic leg day.
 
 ## Exercise 2
-**Name:** Smith Machine Squat
-**Goal:** 60 kg x 3 sets x 6-8 reps
+**Name:** Smith Machine Squat  
+**Goal:** 60 kg x 3 sets x 6-8 reps  
 **Rest:** 3-5 min
 
 ### Working Sets
 1. 60 x 8 RPE 9.5 perfect
 
 ## Exercise 3
-**Name:** Barbell Romanian Deadlift
-**Goal:** 90 kg x 3 sets x 6-8 reps
+**Name:** Barbell Romanian Deadlift  
+**Goal:** 90 kg x 3 sets x 6-8 reps  
 **Rest:** 3 min
 
 ### Warmup
 1. 70 x 6
 2. 80 x 3
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid warmup
 
 ### Working Sets
@@ -52,8 +52,8 @@ Might need to reduce goal to 85 kg since rest is only 3 min
 - stay in the bottom 3/4 of the range of motion.
 
 ## Exercise 4
-**Name:** Leg Extension
-**Goal:** 70 kg x 2 sets x 8-10 reps
+**Name:** Leg Extension  
+**Goal:** 70 kg x 2 sets x 8-10 reps  
 **Rest:** 2 min
 
 ### Warmup
@@ -63,7 +63,7 @@ Might need to reduce goal to 85 kg since rest is only 3 min
 4. 29 x feel - unilateral with alternating leg
 5. 63 x 3 - both legs
 
-#### Warmup Notes
+### Warmup Notes
 Learning to do unilateral explosives with alternating leg as an experiment.
 
 ### Working Sets
@@ -73,8 +73,8 @@ Learning to do unilateral explosives with alternating leg as an experiment.
 Since program calls for lesser sets and more intensity in foundation block, edit the goal accordingly.
 
 ## Exercise 5
-**Name:** Standing Calf Raise
-**Goal:** 120kg x 2 sets x 6-8 reps
+**Name:** Standing Calf Raise  
+**Goal:** 120kg x 2 sets x 6-8 reps  
 **Rest:** 2 min
 
 ### Working Sets
@@ -87,8 +87,8 @@ might need to go a bit lighter
 - put safety clips
 
 ## Exercise 6
-**Name:** Cable Crunch
-**Goal:** 22.7kg x 2 sets x 8-10 reps
+**Name:** Cable Crunch  
+**Goal:** 22.7kg x 2 sets x 8-10 reps  
 **Rest:** 2 min
 
 ### Working Sets
@@ -104,7 +104,7 @@ Goals are optimistic since i just tested with one set on each movement
 - Keep mind muscle connection with abs
 
 ## Exercise 7
-**Name:** Tibialis Raise Single Leg
+**Name:** Tibialis Raise Single Leg  
 **Goal:** 8 kg x 2 sets x 1-15 reps
 **Rest:** 0 min
 

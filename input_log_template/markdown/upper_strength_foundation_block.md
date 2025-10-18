@@ -7,8 +7,8 @@
 - Duration: 149 min
 
 ## Exercise 1
-**Name:** Incline DB Press 45 Degree
-**Goal:** 30kg x 3 sets x 6-8 reps
+**Name:** Incline DB Press 45 Degree  
+**Goal:** 30kg x 3 sets x 6-8 reps  
 **Rest:** 3 min
 
 ### Warmup
@@ -29,15 +29,15 @@ left side falls faster on negative and slightly weak on holding at top
 - feet on the ground.
 
 ## Exercise 2
-**Name:** Pec Dec Single Arm
-**Goal:** 73 kg x 2 sets x 8-10 reps
+**Name:** Pec Dec Single Arm  
+**Goal:** 73 kg x 2 sets x 8-10 reps  
 **Rest:** 2 min
 
 ### Warmup
 1. 32 kg x 10 - one light warmup
 2. 66 kg x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs
 
-#### Warmup Notes
+### Warmup Notes
 pyramid warmup
 
 ### Working Sets
@@ -52,31 +52,26 @@ Slight right-shoulder fatigue, control on eccentric improving
 - hold the squeeze for a sec
 
 ## Exercise 3
-**Name:** Wide Grip Lat Pulldown
-**Goal:** 55 kg x 3 sets x 8-10 reps
+**Name:** Wide Grip Pullup  
+**Goal:** 0 kg x 3 sets x 8-10 reps.  
 **Rest:** 2 min
 
 ### Warmup
-1. 5 x 15
-2. 10 x 10
-
-#### Warmup Notes
-pyramid warmup, get numbers from jeff’s pdf
+1. 0 x 2
 
 ### Working Sets
-1. 55 x 10 RPE 10 good
+1. 0 x 10 RPE 10 good
 
-### Notes
-Noticed strength dropped when form got better lol.
 
 ### Cues
 - Used straps for killing lats
-- Go wider no reason for not holding wider to squeeze the lats too cuz mid back i can feel already
-- Pull Elbows DOWN not behind and squeeze shoulder blades together
+- 1.5x shoulder width overhand grip
+- 2 to 3 sec negative
+- feel lats pull apart on way down
 
 ## Exercise 4
-**Name:** High Cable Lateral Raise
-**Goal:** 6.8 kg x 2 sets x 8-10 reps
+**Name:** High Cable Lateral Raise  
+**Goal:** 6.8 kg x 2 sets x 8-10 reps  
 **Rest:** 2 min
 
 ### Warmup
@@ -93,15 +88,15 @@ noticed left side is usually 0.5-1.5 rpe behind right
 - take more rest between hands to match reps
 
 ## Exercise 5
-**Name:** Deficit Pendlay Row
-**Goal:** 60 kg x 2 sets x 6-8 reps
+**Name:** Deficit Pendlay Row  
+**Goal:** 60 kg x 2 sets x 6-8 reps  
 **Rest:** 3 min
 
 ### Warmup
 1. 40 x 5
 2. 50 x 3
 
-#### Warmup Notes
+### Warmup Notes
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
@@ -113,8 +108,8 @@ pyramid warmups with slow tempo to feel the movement
 - controlled negative and let the bar drop to the ground
 
 ## Exercise 6
-**Name:** Overhead Tricep Extension Cable Extension Bar
-**Goal:** 20.4 kg x 2 sets x 8-10 reps
+**Name:** Overhead Cable Tricep Extension Bar  
+**Goal:** 20.4 kg x 2 sets x 8-10 reps  
 **Rest:** 2 min
 
 ### Warmup
@@ -132,8 +127,8 @@ i used to be too slanted on these so now stand more upright enough to face front
 - pull from squeezing triceps
 
 ## Exercise 7
-**Name:** Bayesian Cable Curl
-**Goal:** 13.6 kg x 3 sets x 10 reps
+**Name:** Bayesian Cable Curl  
+**Goal:** 13.6 kg x 3 sets x 10 reps  
 **Rest:** 2 min
 
 ### Working Sets
@@ -146,8 +141,8 @@ i used to be too slanted on these so now stand more upright enough to face front
 - Squeezing hard on top.
 
 ## Exercise 8
-**Name:** Wrist Flexion Cable Curl Single Hand
-**Goal:** 9.1 kg x 2 sets x 12-15 reps
+**Name:** Wrist Flexion Cable Curl Single Hand  
+**Goal:** 9.1 kg x 2 sets x 12-15 reps  
 **Rest:** 0 min
 
 ### Working Sets
@@ -162,8 +157,8 @@ Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the
 - keep elbow position locked and appropriate angle
 
 ## Exercise 9
-**Name:** Wrist Extension Cable Curl Single Hand
-**Goal:** 2.5 kg x 2 sets x 8-10 reps
+**Name:** Wrist Extension Cable Curl Single Hand  
+**Goal:** 2.5 kg x 2 sets x 8-10 reps  
 **Rest:** 0 min
 
 ### Working Sets
@@ -176,8 +171,8 @@ Sagittal Plane wrist extension i.e. bending the wrist to move the back of the ha
 - go light weight and maximum control
 
 ## Exercise 10
-**Name:** Wrist Abduction Cable Curl Single Hand
-**Goal:** 0 kg x 2 sets x 1-20 reps
+**Name:** Wrist Abduction Cable Curl Single Hand  
+**Goal:** 0 kg x 2 sets x 1-20 reps  
 **Rest:** 0 min
 
 ### Working Sets
@@ -192,7 +187,7 @@ Coronal (Frontal) Plane wrist abduction or radial deviation i.e. moving the hand
 - machine pinned parallel to forearm
 
 ## Exercise 11
-**Name:** Wrist Adduction Cable Curl Single Hand
+**Name:** Wrist Adduction Cable Curl Single Hand  
 **Goal:** 0 kg x 2 sets x 1-20 reps
 
 ### Working Sets

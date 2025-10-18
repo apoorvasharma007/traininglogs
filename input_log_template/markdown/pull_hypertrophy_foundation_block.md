@@ -4,14 +4,14 @@
 - Week: 1
 - Deload: Yes
 - Focus: Pull Hypertrophy
-- Duration: 95 min 
+- Duration: 120 min 
 
 ## Exercise 1
-**Name:** Neutral Grip Lat Pulldown  
-**Goal:** 50kg x 2 sets x 8-10 reps 
+**Name:** Neutral Grip Lat Pulldown  
+**Goal:** 50kg x 2 sets x 8-10 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -27,11 +27,11 @@ Might use 50 as a goal with pyramid warmup 
 - Focus on squeezing lats only 
 
 ## Exercise 2
-**Name:** Chest Supported machine row  
-**Goal:** 57 kg x 3 sets x 8-10 reps 
+**Name:** Chest Supported Machine Row  
+**Goal:** 57 kg x 3 sets x 8-10 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -48,11 +48,11 @@ Can use 57 as a goal with pyramid warmup 
 - Keep feet on ground. 
 
 ## Exercise 3
-**Name:** neutral grip seated cable row  
-**Goal:** 55 kg x 2 sets x 10-12 reps 
+**Name:** Neutral Grip Seated Cable Row  
+**Goal:** 55 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -65,11 +65,11 @@ Pyramid 
 - Sit upright 
 
 ## Exercise 4
-**Name:** 1 arm 45 degree rear delt cable fly  
-**Goal:** 6.8 kg x 2 sets x 10-12 reps 
+**Name:** 1 Arm 45 Degree Cable Rear Fly  
+**Goal:** 6.8 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -82,11 +82,11 @@ Pyramid 
 - Goal 6.8x15 perfect reps  
 
 ## Exercise 5
-**Name:** Cable Paused Shrug In  
-**Goal:** 22.7 kg x 2 sets x 10-12 reps 
+**Name:** Cable Paused Shrug In  
+**Goal:** 22.7 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -104,11 +104,11 @@ Can go heavy as long as form is perfect cuz sets are only 2
 - Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze. 
 
 ## Exercise 6
-**Name:** EZ Bar Cable Curl  
-**Goal:** 22.7 kg x 2 sets x 10-12 reps 
+**Name:** EZ Bar Cable Curl  
+**Goal:** 22.7 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min 
 
-#### Warmup Notes
+### Warmup Notes
 Pyramid 
 
 ### Working Sets
@@ -121,8 +121,8 @@ Pyramid 
 - Controlled negatives  
 
 ## Exercise 7
-**Name:** EZ Bar Preacher Curl  
-**Goal:** 15 kg x 1 sets x 12-15 reps 
+**Name:** EZ Bar Preacher Curl  
+**Goal:** 15 kg x 1 sets x 12-15 reps  
 **Rest:** 2 min 
 
 ### Working Sets
