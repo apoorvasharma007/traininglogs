@@ -15,6 +15,7 @@
   "date": "2025-10-13T09:00:00Z",
 
   // The current 13-week training phase number.
+  // WE MIGHT NEED A BETTER VAR TO IDENTIFY THE PROGRAM NAME AND PHASE/CYCLE of the total duration of the program
   "phase": 2,
 
   // The week number within the current phase (1-13).

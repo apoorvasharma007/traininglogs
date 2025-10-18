@@ -671,7 +671,7 @@ class TrainingSession:
         session_id: Unique identifier for the session (str, required)
         user_id: Identifier for the user (str, required)
         user_name: User's full name (str, required)
-        date: Start date and time in ISO 8601 format (str, required)
+        date: Date of training session in YYYY-MM-DD format (str, required)
         phase: Current 13-week training phase number (int, required)
         week: Week number within current phase 1-13 (int, required)
         is_deload_week: Boolean flag for deload weeks (bool, required)
@@ -701,7 +701,7 @@ class TrainingSession:
             TrainingLogValidator.validate_string_not_empty(value, field_name)
         
         # Validate date format
-        TrainingLogValidator.validate_iso8601_date(self.date)
+        TrainingLogValidator.validate_date_string(self.date)
         
         # Validate phase and week
         TrainingLogValidator.validate_phase(self.phase)

@@ -119,22 +119,40 @@ class TrainingLogValidator:
             )
     
     @staticmethod
-    def validate_iso8601_date(date_string: str) -> None:
+    def validate_date_string(date_string: str) -> None:
         """
-        Validate that a string is in ISO 8601 format.
-        
+        Validate that a value is a string formatted as YYYY-MM-DD (date only).
+
+        This project uses a date-only string (no time or timezone). The method
+        name is preserved for compatibility with existing callers, but the
+        validator enforces the YYYY-MM-DD format and verifies the date is
+        calendar-valid (e.g. rejects 2025-02-30).
+
         Args:
-            date_string: Date string to validate
-            
+            date_string: Date value to validate
+
         Raises:
-            TrainingLogValidationError: If date string is not in ISO 8601 format
+            TrainingLogValidationError: If not a string or not a valid YYYY-MM-DD
         """
         import re
-        iso8601_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z)$'
-        if not re.match(iso8601_pattern, date_string):
+        import datetime
+
+        if not isinstance(date_string, str):
             raise TrainingLogValidationError(
-                f"Date must be in ISO 8601 format, got: {date_string}"
+                f"Date must be a string formatted as YYYY-MM-DD, got {type(date_string).__name__}"
             )
+
+        pattern = r'^\d{4}-\d{2}-\d{2}$'
+        if not re.match(pattern, date_string):
+            raise TrainingLogValidationError(
+                f"Date must be formatted as YYYY-MM-DD (e.g. 2025-10-18), got: {date_string}"
+            )
+
+        # Verify it's a real calendar date (catches invalid months/days, leap years)
+        try:
+            datetime.datetime.strptime(date_string, "%Y-%m-%d")
+        except ValueError:
+            raise TrainingLogValidationError(f"Date string is not a valid calendar date: {date_string}")
     
     @staticmethod
     def validate_rep_quality(quality: str) -> None:
