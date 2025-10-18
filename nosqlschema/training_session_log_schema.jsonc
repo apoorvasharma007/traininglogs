@@ -1,9 +1,9 @@
 {
   "dataModelVersion": "0.0.1", // Version of the data model for compatibility checks.
-  "dataModelT"
+  "dataModelType": "training_session_log", // Type of data model for clarity.
   // --- TRAINING SESSION METADATA ---
   // A unique identifier for the workout session. Can be auto-generated or a descriptive string.
-  "_id": "training_session_20251013",
+  "_id": "training_session_2025_10_13",
 
   // Identifier for the user, useful if you ever expand this to track multiple people. Defaults to "1" for me.
   "userId": "your_user_id",

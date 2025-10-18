@@ -2,6 +2,7 @@ Template
 Keyword aliases also needed here for robustness
 parser should strip all whitespaces first
 only parse text between "BEGIN:" and "END" blocks, which will always be uppercase
+
 BEGIN:
 
 
@@ -49,7 +50,7 @@ S9: WxN RPE 10 good failure:llp(6)
 S10: WxN RPE 10 good failure:static(30 sec)
 
 //optional
-ExerciseNotes: // ExerciseNotes: is a keyword, should be case insensitive, it will be followed by a newline and the notes string which which will be a multiline string
+Notes: // ExerciseNotes: is a keyword, should be case insensitive, it will be followed by a newline and the notes string which which will be a multiline string
 //optional
 Cues: // cues: is a keyword, should be case insensitive, it will be followed by newline and each line will represent a single line cues, one cue per line and each line should be mapped to a SEPARATE string i.e. each line is one string followed by a newline and another string
 cue 1.
