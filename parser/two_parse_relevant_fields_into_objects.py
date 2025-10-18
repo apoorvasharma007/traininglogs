@@ -103,10 +103,10 @@ class DeepTrainingParser:
         rest = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else 0
         return Goal(weight_kg=float(weight), sets=int(sets), rep_range=RepRange(min=int(rmin), max=int(rmax)), rest_minutes=rest)
 
-    def _parse_warmup_set_line(self, line: str) -> WarmupSet:
+    def _parse_warmup_set_line(self, line: str) -> Optional[WarmupSet]:
         m = re.match(r"^\s*(\d+)\.\s*([\d.]+)\s*x\s*([\w+-]+)?\s*-?\s*(.*)$", line)
         if not m:
-            return WarmupSet(number=0, weight_kg=0.0)
+            return None
         num, weight, reps, note = m.groups()
         reps_val = None
         if reps and reps.lower() not in ("feel", "na", ""):

@@ -7,6 +7,9 @@ from pprint import pprint
 
 from dataclasses import is_dataclass, asdict
 
+# -------------------------------------------------------------------
+# ✅ Utility: Remove nulls from output JSON doc
+# -------------------------------------------------------------------
 def remove_nulls(obj):
     """
     Recursively remove all keys with None values from nested dicts, lists, or dataclasses.
@@ -31,7 +34,24 @@ def remove_nulls(obj):
 
     else:
         return obj
-    
+
+# -------------------------------------------------------------------
+# ✅ Utility: Convert nested dataclasses/enums into primitives for JSON
+# -------------------------------------------------------------------
+def to_primitive(o):
+    from enum import Enum
+    from dataclasses import is_dataclass
+
+    if isinstance(o, Enum):
+        return o.value
+    if is_dataclass(o):
+        return {k: to_primitive(getattr(o, k)) for k in o.__dataclass_fields__}
+    if isinstance(o, list):
+        return [to_primitive(i) for i in o]
+    if isinstance(o, dict):
+        return {k: to_primitive(v) for k, v in o.items()}
+    return o
+
 # -------------------------------------------------------------------
 # ✅ Add project root (parent of this folder) to sys.path so imports like
 # `parser.*` and `datamodels.*` resolve when running this script directly.
@@ -64,7 +84,6 @@ if PROJECT_ROOT not in sys.path:
 # -------------------------------------------------------------------
 from parser.one_extract_relevant_fields import TrainingMarkdownParser
 from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
-# from datamodels.models import TrainingSession   # Uncomment if needed for type hints
 
 
 # -------------------------------------------------------------------
@@ -75,84 +94,43 @@ from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output_training_logs_json")
 
-# Pick the first markdown file in training_logs_raw_md (or specify one explicitly)
+
+def process_md_file(md_path: str):
+    """Read a markdown file, parse it into the dataclass objects and write JSON output.
+
+    This is intentionally simple and mirrors the original linear flow but
+    packaged as a function so we can call it for every file in the folder.
+    """
+    with open(md_path, "r", encoding="utf-8") as f:
+        md_text = f.read()
+
+    print(f">>> Loaded training log: {md_path}\n")
+
+    # Step 1: Extract relevant blocks (intermediate dict)
+    base_parser = TrainingMarkdownParser(md_text)
+    intermediate = base_parser.parse()
+
+    # Step 2: Deep parse into dataclass objects
+    deep_parser = DeepTrainingParser(intermediate)
+    session_obj = deep_parser.build_training_session()
+
+    # Convert to primitives and write JSON
+    primitive_dict = to_primitive(session_obj)
+    json_out = json.dumps(primitive_dict, indent=2)
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_path = os.path.join(OUTPUT_DIR, f"{primitive_dict['session_id']}.json")
+    with open(output_path, "w", encoding="utf-8") as of:
+        of.write(json_out)
+
+    print(f"\n>>> JSON written to: {output_path}\n")
+
+
+# Pick all markdown files in RAW_LOGS_DIR and process each
 md_files = [f for f in os.listdir(RAW_LOGS_DIR) if f.endswith(".md")]
 if not md_files:
     raise FileNotFoundError(f"No markdown training logs found in: {RAW_LOGS_DIR}")
 
-md_path = os.path.join(RAW_LOGS_DIR, md_files[0])
-
-with open(md_path, "r", encoding="utf-8") as f:
-    md_text = f.read()
-
-print(f">>> Loaded training log: {md_path}\n")
-
-
-# -------------------------------------------------------------------
-# ✅ Step 1: Extract relevant blocks (intermediate dict)
-# -------------------------------------------------------------------
-base_parser = TrainingMarkdownParser(md_text)
-intermediate = base_parser.parse()
-
-print(">>> Intermediate dict (from markdown):")
-pprint(intermediate, width=160)
-
-
-# -------------------------------------------------------------------
-# ✅ Step 2: Deep parse into dataclass objects
-# -------------------------------------------------------------------
-deep_parser = DeepTrainingParser(intermediate)
-session_obj = deep_parser.build_training_session()
-
-
-# -------------------------------------------------------------------
-# ✅ Utility: Convert nested dataclasses/enums into primitives for JSON
-# -------------------------------------------------------------------
-def to_primitive(o):
-    from enum import Enum
-    from dataclasses import is_dataclass
-
-    if isinstance(o, Enum):
-        return o.value
-    if is_dataclass(o):
-        return {k: to_primitive(getattr(o, k)) for k in o.__dataclass_fields__}
-    if isinstance(o, list):
-        return [to_primitive(i) for i in o]
-    if isinstance(o, dict):
-        return {k: to_primitive(v) for k, v in o.items()}
-    return o
-
-
-primitive_dict = to_primitive(session_obj)
-
-# -------------------------------------------------------------------
-# ✅ Optional: remove nulls if you have a local util
-# -------------------------------------------------------------------
-# primitive_dict = remove_nulls(primitive_dict)
-
-# -------------------------------------------------------------------
-# ✅ Print Python dict
-# -------------------------------------------------------------------
-print("\n>>> Final Python dict (dataclass -> primitives):")
-pprint(primitive_dict, width=160)
-
-
-# -------------------------------------------------------------------
-# ✅ Convert to JSON string
-# -------------------------------------------------------------------
-json_out = json.dumps(primitive_dict, indent=2)
-
-print("\n>>> JSON output preview:")
-print(json_out[:2000])  # preview first 2000 chars
-
-
-# -------------------------------------------------------------------
-# ✅ Write output file to /training_logs_output/{session_id}.json
-# -------------------------------------------------------------------
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-output_path = os.path.join(OUTPUT_DIR, f"{primitive_dict['session_id']}.json")
-
-with open(output_path, "w", encoding="utf-8") as of:
-    of.write(json_out)
-
-print(f"\n>>> JSON written to: {output_path}")
+for md_file in md_files:
+    md_path = os.path.join(RAW_LOGS_DIR, md_file)
+    process_md_file(md_path)

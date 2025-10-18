@@ -15,65 +15,26 @@
   "exercises": [
     {
       "number": 1,
-      "name": "Bench Press",
+      "name": "Incline DB Press 45 Degree",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 90.0,
+          "weight_kg": 30.0,
           "rep_count": {
-            "full": 8,
+            "full": 6,
             "partial": 0
           },
           "rpe": 8.0,
           "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
-          "notes": "focus on bar path",
+          "notes": "did slow tempo",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 95.0,
+          "weight_kg": 0.0,
           "rep_count": {
-            "full": 6,
-            "partial": 0
-          },
-          "rpe": 9.5,
-          "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "maintain elbow tuck",
-          "failure_technique": null
-        },
-        {
-          "number": 3,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 5,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "drifted bar path",
-          "failure_technique": null
-        },
-        {
-          "number": 4,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 5,
-            "partial": 0
-          },
-          "rpe": null,
-          "rep_quality_assessment": "learning",
-          "actual_rest_minutes": null,
-          "notes": "experimenting with grip width",
-          "failure_technique": null
-        },
-        {
-          "number": 5,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 4,
+            "full": 0,
             "partial": 0
           },
           "rpe": null,
@@ -81,186 +42,12 @@
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
-        },
-        {
-          "number": 6,
-          "weight_kg": 80.0,
-          "rep_count": {
-            "full": 8,
-            "partial": 0
-          },
-          "rpe": 7.5,
-          "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 7,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 5,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": {
-            "technique_type": "MyoReps",
-            "details": {
-              "mini_sets": [
-                {
-                  "number": 1,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 2,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 3,
-                  "rep_count": {
-                    "full": 2,
-                    "partial": 1
-                  }
-                }
-              ]
-            }
-          }
-        },
-        {
-          "number": 8,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 5,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": {
-            "technique_type": "LLP",
-            "details": {
-              "partial_rep_count": 6
-            }
-          }
-        },
-        {
-          "number": 9,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 5,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": {
-            "technique_type": "StaticHold",
-            "details": {
-              "hold_duration_seconds": 30
-            }
-          }
-        },
-        {
-          "number": 10,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 4,
-            "partial": 0
-          },
-          "rpe": 8.5,
-          "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 11,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 10,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 12,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 10,
-            "partial": 1
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 13,
-          "weight_kg": 100.0,
-          "rep_count": {
-            "full": 10,
-            "partial": 1
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": {
-            "technique_type": "DropSet",
-            "details": {
-              "drop_sets": [
-                {
-                  "number": 1,
-                  "weight_kg": 90.0,
-                  "rep_count": {
-                    "full": 8,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 2,
-                  "weight_kg": 85.0,
-                  "rep_count": {
-                    "full": 5,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 3,
-                  "weight_kg": 75.0,
-                  "rep_count": {
-                    "full": 6,
-                    "partial": 1
-                  }
-                }
-              ]
-            }
-          }
         }
       ],
-      "target_muscle_groups": [
-        "Chest",
-        "Triceps"
-      ],
-      "rep_tempo": "3-1-1-0",
+      "target_muscle_groups": null,
+      "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 100.0,
+        "weight_kg": 30.0,
         "sets": 3,
         "rep_range": {
           "min": 6,
@@ -271,31 +58,475 @@
       "warmup_sets": [
         {
           "number": 1,
-          "weight_kg": 60.0,
+          "weight_kg": 2.5,
           "rep_count": null,
+          "notes": "around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based"
+        },
+        {
+          "number": 2,
+          "weight_kg": 10.0,
+          "rep_count": null,
+          "notes": "unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based"
+        },
+        {
+          "number": 3,
+          "weight_kg": 20.0,
+          "rep_count": null,
+          "notes": "unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles."
+        }
+      ],
+      "notes": "left side falls faster on negative and slightly weak on holding at top",
+      "warmup_notes": null,
+      "form_cues": [
+        "brace core",
+        "breathe every rep.",
+        "feet on the ground."
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Pec Dec Single Arm",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 73.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 7.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 73.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        null,
+        null
+      ],
+      "notes": "Slight right-shoulder fatigue, control on eccentric improving",
+      "warmup_notes": "pyramid warmup",
+      "form_cues": [
+        "the longer the path my arms take the better the squeeze",
+        "hold the squeeze for a sec"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Wide Grip Pullup",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 0.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": 2,
+          "notes": null
+        }
+      ],
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "Used straps for killing lats",
+        "1.5x shoulder width overhand grip",
+        "2 to 3 sec negative",
+        "feel lats pull apart on way down"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "High Cable Lateral Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 6.8,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 7.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 6.8,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 4.5,
+          "rep_count": 6,
+          "notes": "did very slow tempo to activate side delts"
+        }
+      ],
+      "notes": "noticed left side is usually 0.5-1.5 rpe behind right",
+      "warmup_notes": null,
+      "form_cues": [
+        "squeeze side delts to move weight",
+        "take more rest between hands to match reps"
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Deficit Pendlay Row",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 0,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 60.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 40.0,
+          "rep_count": 5,
           "notes": null
         },
         {
           "number": 2,
-          "weight_kg": 70.0,
-          "rep_count": 5,
-          "notes": "felt heavy"
+          "weight_kg": 50.0,
+          "rep_count": 3,
+          "notes": null
+        }
+      ],
+      "notes": null,
+      "warmup_notes": "pyramid warmups with slow tempo to feel the movement",
+      "form_cues": [
+        "stand on 20 plus 10 kg plate for deficit",
+        "touch chest every rep and keep straight bar path",
+        "controlled negative and let the bar drop to the ground"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Overhead Cable Tricep Extension Bar",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 14,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 20.4,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 9.1,
+          "rep_count": null,
+          "notes": "katana extension unilateral and feel based"
+        }
+      ],
+      "notes": "i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now. Might need to go heavier safely.",
+      "warmup_notes": null,
+      "form_cues": [
+        "anchor at height 7",
+        "go to max range of motion",
+        "pull from squeezing triceps"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Bayesian Cable Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
         },
         {
           "number": 3,
-          "weight_kg": 80.0,
-          "rep_count": 3,
-          "notes": "short rest"
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
         }
       ],
-      "notes": "Felt triceps limiting. Need longer rest and better pre-set.",
-      "warmup_notes": "Felt strong overall and shoulder mobility felt better than last week.",
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": null,
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
       "form_cues": [
-        "Drive heels",
-        "Squeeze bar",
-        "Keep lats tight"
+        "Using straps to overcome any grip limitations on the last few reps.",
+        "Squeezing hard on top."
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Wrist Flexion Cable Curl Single Hand",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 9.1,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "full squeeze and hold at the top of the rep",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 9.1,
+        "sets": 2,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 0
+      },
+      "warmup_sets": null,
+      "notes": "Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.",
+      "warmup_notes": null,
+      "form_cues": [
+        "do Sam Sulek style",
+        "can do standing",
+        "keep elbow position locked and appropriate angle"
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Wrist Extension Cable Curl Single Hand",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 2.5,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 2.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 0
+      },
+      "warmup_sets": null,
+      "notes": "Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm.",
+      "warmup_notes": null,
+      "form_cues": [
+        "go light weight and maximum control"
+      ]
+    },
+    {
+      "number": 10,
+      "name": "Wrist Abduction Cable Curl Single Hand",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 2.5,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 0.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 1,
+          "max": 20
+        },
+        "rest_minutes": 0
+      },
+      "warmup_sets": null,
+      "notes": "Coronal (Frontal) Plane wrist abduction or radial deviation i.e. moving the hand toward the thumb-side of the forearm (away from the midline). Do appropriate volume don\u2019t fatigue wrists.",
+      "warmup_notes": null,
+      "form_cues": [
+        "keep forearm horizontal",
+        "palms facing up",
+        "machine pinned parallel to forearm"
+      ]
+    },
+    {
+      "number": 11,
+      "name": "Wrist Adduction Cable Curl Single Hand",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 0,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 0.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 1,
+          "max": 20
+        },
+        "rest_minutes": 0
+      },
+      "warmup_sets": null,
+      "notes": "Coronal (Frontal) Plane wrist adduction or ulnar deviation i.e. moving the hand toward the little-finger-side of the forearm (toward the midline). Do appropriate volume don\u2019t fatigue wrists.",
+      "warmup_notes": null,
+      "form_cues": [
+        "keep forearm horizontal",
+        "palms facing up",
+        "machine pinned parallel to forearm"
       ]
     }
   ],
-  "session_duration_minutes": 95
+  "session_duration_minutes": 149
 }

@@ -137,6 +137,7 @@ class Goal:
         rep_range: Rep range with min and max values (RepRange, required)
         rest_minutes: Rest time between sets in minutes (int, required)
     """
+    # weight_kg can be zero for bodyweight exercises
     weight_kg: float # add resistancy_type = "resistance band", "bodyweight", etc. in future
     sets: int
     rep_range: RepRange
@@ -144,8 +145,8 @@ class Goal:
     
     def __post_init__(self):
         """Validate workout goal data after initialization."""
-        if self.weight_kg <= 0:
-            raise TrainingLogValidationError("Weight must be positive")
+        if self.weight_kg < 0: 
+            raise TrainingLogValidationError("Weight must be positive or zero for bodyweight")
         if self.sets <= 0:
             raise TrainingLogValidationError("Number of sets must be positive")
         if self.rest_minutes < 0:
@@ -341,7 +342,7 @@ class DropSet:
     def __post_init__(self):
         if not isinstance(self.number, int) or self.number <= 0:
             raise TrainingLogValidationError("DropSet.number must be a positive integer")
-        if not isinstance(self.weight_kg, (int, float)) or self.weight_kg <= 0:
+        if not isinstance(self.weight_kg, (int, float)) or self.weight_kg < 0:
             raise TrainingLogValidationError("DropSet.weight_kg must be a positive number")
         if not isinstance(self.rep_count, RepCount):
             raise TrainingLogValidationError("DropSet.rep_count must be a RepCount")
@@ -504,8 +505,8 @@ class WarmupSet:
         """Validate warm-up set data after initialization."""
         if self.number <= 0:
             raise TrainingLogValidationError("Set number must be positive")
-        if self.weight_kg <= 0:
-            raise TrainingLogValidationError("Weight must be positive")
+        if self.weight_kg < 0:
+            raise TrainingLogValidationError("Weight must be positive or zero for bodyweight")
         if self.rep_count is not None and self.rep_count < 0:
             raise TrainingLogValidationError("Rep count cannot be negative")
     
@@ -560,8 +561,8 @@ class WorkingSet:
         """Validate working set data after initialization."""
         if self.number <= 0:
             raise TrainingLogValidationError("Set number must be positive")
-        if self.weight_kg <= 0:
-            raise TrainingLogValidationError("Weight must be positive")
+        if self.weight_kg < 0:
+            raise TrainingLogValidationError("Weight must be positive or zero for bodyweight")
         # rpe and rep_quality_assessment are required in schema context, but may be None when not set yet
         if self.rpe is not None:
             TrainingLogValidator.validate_rpe(self.rpe)
