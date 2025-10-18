@@ -3,7 +3,35 @@ import os
 import sys
 import json
 from pprint import pprint
+# utils/cleaners.py
 
+from dataclasses import is_dataclass, asdict
+
+def remove_nulls(obj):
+    """
+    Recursively remove all keys with None values from nested dicts, lists, or dataclasses.
+    Returns a cleaned copy of the structure.
+    """
+    # Convert dataclasses to dicts first
+    if is_dataclass(obj):
+        obj = asdict(obj)
+
+    if isinstance(obj, dict):
+        cleaned = {}
+        for k, v in obj.items():
+            v_clean = remove_nulls(v)
+            # keep only non-null, non-empty values
+            if v_clean is not None and v_clean != {} and v_clean != []:
+                cleaned[k] = v_clean
+        return cleaned
+
+    elif isinstance(obj, list):
+        cleaned_list = [remove_nulls(i) for i in obj if i is not None]
+        return [i for i in cleaned_list if i != {} and i != []]
+
+    else:
+        return obj
+    
 # -------------------------------------------------------------------
 # ✅ Add root path so imports like `parser.*` and `datamodels.*` work
 # -------------------------------------------------------------------
