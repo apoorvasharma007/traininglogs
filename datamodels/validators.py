@@ -16,7 +16,7 @@ class TrainingLogValidator:
     Provides methods to validate individual components and complete
     training session data according to the schema requirements.
     """
-    
+    # might need at some point in future
     @staticmethod
     def validate_required_field(data: Dict[str, Any], field_name: str, field_type: type) -> None:
         """
@@ -38,7 +38,7 @@ class TrainingLogValidator:
                 f"Field '{field_name}' must be of type {field_type.__name__}, "
                 f"got {type(data[field_name]).__name__}"
             )
-    
+    # might need at some point in future
     @staticmethod
     def validate_optional_field(data: Dict[str, Any], field_name: str, field_type: type) -> None:
         """
@@ -153,41 +153,7 @@ class TrainingLogValidator:
             datetime.datetime.strptime(date_string, "%Y-%m-%d")
         except ValueError:
             raise TrainingLogValidationError(f"Date string is not a valid calendar date: {date_string}")
-    
-    @staticmethod
-    def validate_rep_quality(quality: str) -> None:
-        """
-        Validate that rep quality is one of the allowed values.
-        
-        Args:
-            quality: Rep quality string to validate
-            
-        Raises:
-            TrainingLogValidationError: If quality is not valid
-        """
-        allowed_qualities = ['bad', 'good', 'perfect']
-        if quality not in allowed_qualities:
-            raise TrainingLogValidationError(
-                f"Rep quality must be one of {allowed_qualities}, got: {quality}"
-            )
 
-    @staticmethod
-    def validate_rep_quality_assessment(quality: str) -> None:
-        """
-        Validate rep quality assessment including learning state.
-
-        Args:
-            quality: Rep quality assessment string to validate (already normalized to lowercase by caller where applicable)
-
-        Raises:
-            TrainingLogValidationError: If assessment is not valid
-        """
-        allowed_assessments = ['bad', 'good', 'perfect', 'learning']
-        if quality not in allowed_assessments:
-            raise TrainingLogValidationError(
-                f"Rep quality must be one of {allowed_assessments}, got: {quality}"
-            )
-    
     @staticmethod
     def validate_rpe(rpe: int) -> None:
         """
@@ -217,29 +183,5 @@ class TrainingLogValidator:
             raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step (e.g. 7 or 7.5), got {rpe}")
 
         raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step float between 1 and 10, got {type(rpe).__name__}")
+
     
-    @staticmethod
-    def validate_phase(phase: int) -> None:
-        """
-        Validate that phase is a positive integer.
-        
-        Args:
-            phase: Phase number to validate
-            
-        Raises:
-            TrainingLogValidationError: If phase is not valid
-        """
-        TrainingLogValidator.validate_positive_integer(phase, "phase")
-    
-    @staticmethod
-    def validate_week(week: int) -> None:
-        """
-        Validate that week is within the valid range (1-13).
-        
-        Args:
-            week: Week number to validate
-            
-        Raises:
-            TrainingLogValidationError: If week is outside valid range
-        """
-        TrainingLogValidator.validate_range(week, 1, 13, "week")

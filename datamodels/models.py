@@ -698,12 +698,15 @@ class TrainingSession:
         user_id: Identifier for the user (str, required)
         user_name: User's full name (str, required)
         date: Date of training session in YYYY-MM-DD format (str, required)
+        program: Name of the training program (str, required)
+        program_length_weeks: Total length of the program in weeks (int, required)
         phase: Current 13-week training phase number (int, required)
-        week: Week number within current phase 1-13 (int, required)
+        week: Week number within current phase ex 1-12 if program_length_weeks is 12 (int, required)
         is_deload_week: Boolean flag for deload weeks (bool, required)
         focus: Primary focus of the training session (str, required)
         exercises: List of exercises performed (List[Exercise], required)
         session_duration_minutes: Total duration in minutes (int, required)
+        program_author: Name of the author of the training program (str, required)
     """
     data_model_version: str
     data_model_type: str
@@ -711,6 +714,9 @@ class TrainingSession:
     user_id: str
     user_name: str
     date: str
+    program: str
+    program_author: str
+    program_length_weeks: int
     phase: int
     week: int
     is_deload_week: bool
@@ -721,18 +727,22 @@ class TrainingSession:
     def __post_init__(self):
         """Validate training session data after initialization."""
         # Validate required string fields
-        for field_name in ["data_model_version", "data_model_type", "session_id", 
-                          "user_id", "user_name", "date", "focus"]:
+        for field_name in ["data_model_version", "data_model_type", "session_id", "user_id", "user_name", "program",
+                            "program_author", "focus"]:
             value = getattr(self, field_name)
             TrainingLogValidator.validate_string_not_empty(value, field_name)
         
         # Validate date format
         TrainingLogValidator.validate_date_string(self.date)
         
-        # Validate phase and week
-        TrainingLogValidator.validate_phase(self.phase)
-        TrainingLogValidator.validate_week(self.week)
-        
+        # Validate program
+        TrainingLogValidator.validate_string_not_empty(self.program, "program")
+        # Validate program length weeks
+        TrainingLogValidator.validate_positive_integer(self.program_length_weeks, "program_length_weeks")
+        # Validate phase
+        TrainingLogValidator.validate_positive_integer(self.phase, "phase")
+        # Validate week within phase (1..program_length_weeks)
+        TrainingLogValidator.validate_range(self.week, 1, self.program_length_weeks, "week")
         # Validate session duration
         TrainingLogValidator.validate_positive_integer(self.session_duration_minutes, "session_duration_minutes")
         
@@ -762,7 +772,9 @@ class TrainingSession:
             "is_deload_week": self.is_deload_week,
             "focus": self.focus,
             "exercises": [exercise.to_dict() for exercise in self.exercises],
-            "session_duration_minutes": self.session_duration_minutes
+            "session_duration_minutes": self.session_duration_minutes,
+            "program": self.program,
+            "program_length_weeks": self.program_length_weeks,
         }
     
     @classmethod
@@ -781,7 +793,9 @@ class TrainingSession:
             is_deload_week=data.get("is_deload_week", data.get("isDeloadWeek")),
             focus=data.get("focus"),
             exercises=[Exercise.from_dict(ex) for ex in data.get("exercises", data.get("exercises", []))],
-            session_duration_minutes=data.get("session_duration_minutes", data.get("sessionDurationMinutes"))
+            session_duration_minutes=data.get("session_duration_minutes", data.get("sessionDurationMinutes")),
+            program=data.get("program"),
+            program_length_weeks=data.get("program_length_weeks", data.get("programLengthWeeks")),
         )
     
     def to_json(self) -> str:

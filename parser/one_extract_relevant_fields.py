@@ -85,9 +85,39 @@ class TrainingMarkdownParser:
         return self.parsed_data
 
     def _parse_metadata_line(self, line: str):
+        """
+        Parse a metadata line of the form "- Key: value" and return a (key, value) pair.
+
+        Parameters
+        ----------
+        line : str
+            A single metadata line expected to start with a two-character prefix (e.g. "- ")
+            followed by "Key: value". Only the first ":" is treated as the separator.
+
+        Returns
+        -------
+        tuple[str, str]
+            A tuple (key, value) where:
+            - key: the key substring lowercased (key.lower()).
+                    NOTE: surrounding whitespace in the key is intentionally preserved —
+                    this function does NOT call strip() on the key so any spaces in the
+                    original key name remain.
+            - value: the value substring with leading/trailing whitespace removed (value.strip()).
+
+        Notes / Implementation details
+        # The implementation removes the first two characters (line[2:]) to drop the "- " prefix.
+        # It then splits on the first ":" (split(":", 1)) so values containing ":" are allowed.
+        # key.lower() lowercases the key, but does not trim whitespace — this preserves user-intended spaces.
+        # value.strip() trims whitespace around the value to produce a clean value string.
+        # If the input line (after removing the prefix) does not contain ":", split(...) will raise ValueError.
+        #
+        # Example:
+        #   line = "- User Name:  Alice Smith  "
+        #   returns ("user name", "Alice Smith")
+        """
         # "- Key: value"
-        key, value = [p.strip() for p in line[2:].split(":", 1)]
-        return key.lower(), value
+        key, value = line[2:].split(":", 1)
+        return key.lower(), value.strip()
 
     def _parse_key_value_line(self, line: str):
         # "**Name:** Bench Press"

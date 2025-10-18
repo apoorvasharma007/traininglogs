@@ -29,19 +29,46 @@ class DeepTrainingParser:
         for i, ex in enumerate(self.parsed.get("exercises", []), start=1):
             exercises.append(self._parse_exercise(ex, i))
 
+        deload_raw = meta.get("deload")
+        if deload_raw is None or str(deload_raw).strip() == "":
+            is_deload_week = "false"
+        else:
+            is_deload_week = str(deload_raw).strip().lower() in ("yes", "true", "1")
+        ## THIS IS WHERE WE ARE SETTING UP THE DEFAULTS FOR TRAINING OBJECT FOR NOW..
+        ## TODO: WE WIL MOVE THIS INFO OUT TO ITS OWN MODULE LATER, A MODULE FOR DEFAULT VALUES.
+        # build a deterministic session id from date + focus + user_id (fallback to uuid if not enough info)
+        user_id_val = str(meta.get("user_id", "7"))
+        date_val = meta.get("date", "")
+        focus_val = meta.get("focus", "")
+
+        def _clean(s: Optional[str]) -> str:
+            if not s:
+                return ""
+                # keep only alphanumerics, dash and underscore; collapse spaces to dash; lowercase
+            return re.sub(r"[^A-Za-z0-9_-]+", "-", str(s).strip()).strip("-").lower()
+
+        combined_parts = [p for p in (_clean(date_val), _clean(focus_val), user_id_val) if p]
+        if combined_parts:
+            session_id = "_".join(combined_parts)
+        else:
+            session_id = str(uuid.uuid4())
+
         return TrainingSession(
-            data_model_version="1.0",
+            data_model_version="0.0.1",
             data_model_type="TrainingSession",
-            session_id=str(uuid.uuid4()),
-            user_id="user-unknown",
-            user_name="Unknown User",
-            date=meta.get("date", ""),
-            phase=int(meta.get("phase", 0)) if meta.get("phase") else 0,
-            week=int(meta.get("week", 0)) if meta.get("week") else 0,
-            is_deload_week=str(meta.get("deload", "")).lower() in ["yes", "true", "1"],
-            focus=meta.get("focus", ""),
+            session_id=session_id,
+            user_id=user_id_val,
+            user_name=meta.get("name", "Apoorva Sharma"),
+            date=meta.get("date"),
+            program=meta.get("program", "BODYBUILDING TRANSFORMATION SYSTEM"),
+            program_author=meta.get("author", "Jeff Nippard"),
+            program_length_weeks=int(meta.get("program length weeks", 12)),
+            phase=int(meta.get("phase")),
+            week=int(meta.get("week")),
+            is_deload_week=is_deload_week,
+            focus=meta.get("focus"),
             exercises=exercises,
-            session_duration_minutes=int(re.findall(r"\d+", meta.get("duration", "0"))[0]) if meta.get("duration") else 0
+            session_duration_minutes=int(re.findall(r"\d+", meta.get("duration"))[0])
         )
 
     def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Exercise:

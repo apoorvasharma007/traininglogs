@@ -148,10 +148,10 @@ print(json_out[:2000])  # preview first 2000 chars
 
 
 # -------------------------------------------------------------------
-# ✅ Write output file to /training_logs_output/session_output.json
+# ✅ Write output file to /training_logs_output/{session_id}.json
 # -------------------------------------------------------------------
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-output_path = os.path.join(OUTPUT_DIR, "session_output.json")
+output_path = os.path.join(OUTPUT_DIR, f"{primitive_dict['session_id']}.json")
 
 with open(output_path, "w", encoding="utf-8") as of:
     of.write(json_out)
