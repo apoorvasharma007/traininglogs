@@ -8,9 +8,9 @@
 
 ## Exercise 1
 **Name:** Bench Press  
-**Muscles:** Chest, Triceps
-**Tempo:** 3-1-1-0
-**Goal:** 100 kg x 3 sets x 6-8 reps  
+**Muscles:** Chest, Triceps  
+**Tempo:** 3-1-1-0  
+**Goal:** 100 kg x 3 sets x 6-8 reps   
 **Rest:** 3 min  
 
 ### Warmup
@@ -18,7 +18,7 @@
 2. 70 x 5 - felt heavy  
 3. 80 x 3 - short rest  
 
-#### Warmup Notes
+### Warmup Notes
 Felt strong overall and shoulder mobility felt better than last week.
 
 ### Working Sets

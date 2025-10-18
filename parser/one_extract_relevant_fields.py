@@ -41,10 +41,7 @@ class TrainingMarkdownParser:
             if line.startswith("### "):
                 current_section = line[4:].strip().lower().replace(" ", "_")
                 continue
-            if line.startswith("#### "):
-                current_section = line[5:].strip().lower().replace(" ", "_")
-                continue
-
+            
             # Bolded key-value pairs in header
             if line.startswith("**") and current_section == "exercise_header":
                 k, v = self._parse_key_value_line(line)
