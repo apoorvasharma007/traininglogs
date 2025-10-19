@@ -8,15 +8,17 @@
 
 ## Exercise 1
 **Name:** Bench Press  
+**Muscles:** Chest, Triceps  
+**Tempo:** 3-1-1-0  
 **Goal:** 100 kg x 3 sets x 6-8 reps  
-**Rest:** 3 min  
+**Rest:** 3 min , it can be zero to denote no rest, or None meaning not tracking cuz learning or feel based
 
 ### Warmup
 1. 60 x feel  
 2. 70 x 5 - felt heavy  
 3. 80 x 3 - short rest  
 
-#### Warmup Notes
+### Warmup Notes
 Felt strong overall and shoulder mobility felt better than last week.
 
 ### Working Sets
@@ -32,6 +34,7 @@ Felt strong overall and shoulder mobility felt better than last week.
 10. 100 x 4 RPE 8.5 perfect
 11. 100 x 10 RPE 10
 12. 100 x 10 + 1 RPE 10 
+13. 100 x 10 + 1 RPE 10 good failure: dropset(90 x 8, 85 x 5, 75 x 6 + 1) 
 
 ### Notes
 Felt triceps limiting. Need longer rest and better pre-set.
@@ -40,25 +43,3 @@ Felt triceps limiting. Need longer rest and better pre-set.
 - Drive heels  
 - Squeeze bar  
 - Keep lats tight  
-
-## Exercise 2
-**Name:** Overhead Press  
-**Goal:** 60 kg x 3 sets x 8 reps  
-**Rest:** 2 min  
-
-### Warmup
-- 30 x 5  
-- 40 x 3  
-
-### Working Sets
-1. 50 x 8 RPE 8 good  
-2. 55 x 6 RPE 9 good  
-3. 60 x 4 RPE 10 failure: static(15 sec)
-
-### Notes
-Felt strong. Maintain core brace.
-
-### Cues
-- Squeeze glutes  
-- Stack wrist over elbow  
-- Avoid overextension

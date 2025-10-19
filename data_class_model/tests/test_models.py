@@ -6,7 +6,7 @@ import pytest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from datamodels.models import (
+from data_class_model.models import (
     TrainingSession,
     Exercise,
     Goal,

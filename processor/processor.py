@@ -1,88 +1,147 @@
 # main.py
-import json
-import logging
+import os
 import sys
-from pathlib import Path
+import json
+from pprint import pprint
+# utils/cleaners.py
 
-# When this file is executed directly (e.g. `python3 processor.py` from
-# the `processor/` directory) Python's import system may not find the
-# sibling top-level packages (like `parser` and `datamodels`). Ensure
-# the project root is on sys.path so absolute imports like
-# `from parser.parser import ...` work regardless of the current CWD.
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from dataclasses import is_dataclass, asdict
 
-from parser.parser import WorkoutParser
-from parser.ingester import DataIngestor
-
-# Configure a basic logger for CLI usage. Callers (tests) can override this
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logger = logging.getLogger(__name__)
-
-# Define constants for input and output directories
-INPUT_DIR = Path("workout_logs_raw")
-OUTPUT_DIR = Path("workout_log_json")
-
-def main():
+# -------------------------------------------------------------------
+# ✅ Utility: Remove nulls from output JSON doc
+# -------------------------------------------------------------------
+def remove_nulls(obj):
     """
-    Main function to run the workout log processing pipeline.
-    It reads all .txt files from an input directory, processes them,
-    and saves them with dynamic names to an output directory.
+    Recursively remove all keys with None values from nested dicts, lists, or dataclasses.
+    Returns a cleaned copy of the structure.
     """
-    # 1. Ensure directories exist
-    if not INPUT_DIR.is_dir():
-        print(f"❌ Error: Input directory not found at '{INPUT_DIR}'")
-        print("Please create it and add your workout .txt files.")
-        return
+    # Convert dataclasses to dicts first
+    if is_dataclass(obj):
+        obj = asdict(obj)
 
-    # Create the output directory if it doesn't exist
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    if isinstance(obj, dict):
+        cleaned = {}
+        for k, v in obj.items():
+            v_clean = remove_nulls(v)
+            # keep only non-null, non-empty values
+            if v_clean is not None and v_clean != {} and v_clean != []:
+                cleaned[k] = v_clean
+        return cleaned
 
-    # 2. Find all workout log files to process
-    workout_files = list(INPUT_DIR.glob("*.txt"))
-    if not workout_files:
-        print(f"🤷 No workout files (.txt) found in '{INPUT_DIR}'.")
-        return
+    elif isinstance(obj, list):
+        cleaned_list = [remove_nulls(i) for i in obj if i is not None]
+        return [i for i in cleaned_list if i != {} and i != []]
 
-    print(f"Found {len(workout_files)} log file(s) to process...")
+    else:
+        return obj
 
-    # Initialize the parser and ingestor once
-    parser = WorkoutParser()
-    ingestor = DataIngestor()
+# -------------------------------------------------------------------
+# ✅ Utility: Convert nested dataclasses/enums into primitives for JSON
+# -------------------------------------------------------------------
+def to_primitive(o):
+    from enum import Enum
+    from dataclasses import is_dataclass
 
-    # 3. Process each file
-    for file_path in workout_files:
-        print(f"\n--- Processing '{file_path.name}' ---")
-        try:
-            raw_text = file_path.read_text(encoding='utf-8')
+    if isinstance(o, Enum):
+        return o.value
+    if is_dataclass(o):
+        return {k: to_primitive(getattr(o, k)) for k in o.__dataclass_fields__}
+    if isinstance(o, list):
+        return [to_primitive(i) for i in o]
+    if isinstance(o, dict):
+        return {k: to_primitive(v) for k, v in o.items()}
+    return o
 
-            # Parse the raw text into a dictionary
-            parsed_data = parser.parse(raw_text)
-            if not parsed_data:
-                print(f"⚠️ Skipping '{file_path.name}': Could not find BEGIN/END blocks.")
-                continue
+# -------------------------------------------------------------------
+# ✅ Add project root (parent of this folder) to sys.path so imports like
+# `parser.*` and `datamodels.*` resolve when running this script directly.
+#
+# Explanation:
+#  - os.path.abspath(__file__) gives the full path to this file (processor.py)
+#  - os.path.dirname(...) once returns the directory that contains this file
+#    (THIS_DIR -> the `processor/` folder).
+#  - os.path.dirname(THIS_DIR) returns the parent directory of `processor/`,
+#    i.e. the project root where top-level packages such as `parser/`
+#    and `datamodels/` live. We need to add that parent to sys.path so Python
+#    can locate those packages when this script is executed directly.
+#
+#  - We insert the PROJECT_ROOT at the front of sys.path so the local
+#    packages in the repo take precedence over any globally installed packages
+#    with the same names during development.
+#
+# Alternative (pathlib):
+#   from pathlib import Path
+#   PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# -------------------------------------------------------------------
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(THIS_DIR)
+if PROJECT_ROOT not in sys.path:
+    # prepend so local packages shadow any globally installed ones during dev
+    sys.path.insert(0, PROJECT_ROOT)
 
-            # Ingest the dictionary into dataclass objects
-            training_session = ingestor.ingest(parsed_data)
+# -------------------------------------------------------------------
+# ✅ Import parsers and models
+# -------------------------------------------------------------------
+from parser.one_extract_relevant_fields import TrainingMarkdownParser
+from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 
-            # Generate the dynamic output filename
-            # Replace spaces in 'focus' with hyphens for a cleaner filename
-            focus_sanitized = training_session.focus.replace(" ", "-").lower()
-            output_filename = f"{focus_sanitized}_{training_session.date}.json"
-            output_path = OUTPUT_DIR / output_filename
 
-            # Convert the final dataclass object to a JSON-compatible dictionary
-            final_dict = training_session.to_dict()
+# -------------------------------------------------------------------
+# ✅ Load the markdown training log dynamically
+# -------------------------------------------------------------------
+# Define folder paths relative to project root
+# Raw logs and output live at project root
+RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output_training_logs_json")
 
-            # Write the final JSON to the output file
-            output_path.write_text(json.dumps(final_dict, indent=2), encoding='utf-8')
-            
-            print(f"✅ Success! Output saved to '{output_path}'")
 
-        except Exception:
-            # Log full stack trace and continue with next file
-            logger.exception("❌ An unexpected error occurred while processing '%s'", file_path.name)
+def process_md_file(md_path: str):
+    """Read a markdown file, parse it into the dataclass objects and write JSON output.
 
-if __name__ == "__main__":
-    main()
+    This is intentionally simple and mirrors the original linear flow but
+    packaged as a function so we can call it for every file in the folder.
+    """
+    with open(md_path, "r", encoding="utf-8") as f:
+        md_text = f.read()
+
+    print(f">>> Loaded training log: {md_path}\n")
+
+    # Step 1: Extract relevant blocks (intermediate dict)
+    base_parser = TrainingMarkdownParser(md_text)
+    intermediate = base_parser.parse()
+
+    # Step 2: Deep parse into dataclass objects
+    deep_parser = DeepTrainingParser(intermediate)
+    session_obj = deep_parser.build_training_session()
+
+    # Convert to primitives and write JSON
+    primitive_dict = to_primitive(session_obj)
+    json_out = json.dumps(primitive_dict, indent=2)
+
+    # TODO: make this a separate method with unit tests
+    # Build exact nested output path as requested:
+    # OUTPUT_DIR / {program} / "phase {phase}" / "week {week}" / {session_id}.json
+    program = primitive_dict.get("program") or "unknown_program"
+    phase = primitive_dict.get("phase") or "1"
+    week = primitive_dict.get("week") or "unknown"
+
+    program_dir = os.path.join(OUTPUT_DIR, program)
+    phase_dir = os.path.join(program_dir, f"phase {phase}")
+    week_dir = os.path.join(phase_dir, f"week {week}")
+
+    os.makedirs(week_dir, exist_ok=True)
+    output_path = os.path.join(week_dir, f"{primitive_dict['session_id']}.json")
+    with open(output_path, "w", encoding="utf-8") as of:
+        of.write(json_out)
+
+    print(f"\n>>> JSON written to: {output_path}\n")
+
+
+# Pick all markdown files in RAW_LOGS_DIR and process each
+md_files = [f for f in os.listdir(RAW_LOGS_DIR) if f.endswith(".md")]
+if not md_files:
+    raise FileNotFoundError(f"No markdown training logs found in: {RAW_LOGS_DIR}")
+
+for md_file in md_files:
+    md_path = os.path.join(RAW_LOGS_DIR, md_file)
+    process_md_file(md_path)

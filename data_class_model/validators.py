@@ -16,7 +16,7 @@ class TrainingLogValidator:
     Provides methods to validate individual components and complete
     training session data according to the schema requirements.
     """
-    
+    # might need at some point in future
     @staticmethod
     def validate_required_field(data: Dict[str, Any], field_name: str, field_type: type) -> None:
         """
@@ -38,7 +38,7 @@ class TrainingLogValidator:
                 f"Field '{field_name}' must be of type {field_type.__name__}, "
                 f"got {type(data[field_name]).__name__}"
             )
-    
+    # might need at some point in future
     @staticmethod
     def validate_optional_field(data: Dict[str, Any], field_name: str, field_type: type) -> None:
         """
@@ -119,57 +119,41 @@ class TrainingLogValidator:
             )
     
     @staticmethod
-    def validate_iso8601_date(date_string: str) -> None:
+    def validate_date_string(date_string: str) -> None:
         """
-        Validate that a string is in ISO 8601 format.
-        
+        Validate that a value is a string formatted as YYYY-MM-DD (date only).
+
+        This project uses a date-only string (no time or timezone). The method
+        name is preserved for compatibility with existing callers, but the
+        validator enforces the YYYY-MM-DD format and verifies the date is
+        calendar-valid (e.g. rejects 2025-02-30).
+
         Args:
-            date_string: Date string to validate
-            
+            date_string: Date value to validate
+
         Raises:
-            TrainingLogValidationError: If date string is not in ISO 8601 format
+            TrainingLogValidationError: If not a string or not a valid YYYY-MM-DD
         """
         import re
-        iso8601_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z)$'
-        if not re.match(iso8601_pattern, date_string):
+        import datetime
+
+        if not isinstance(date_string, str):
             raise TrainingLogValidationError(
-                f"Date must be in ISO 8601 format, got: {date_string}"
-            )
-    
-    @staticmethod
-    def validate_rep_quality(quality: str) -> None:
-        """
-        Validate that rep quality is one of the allowed values.
-        
-        Args:
-            quality: Rep quality string to validate
-            
-        Raises:
-            TrainingLogValidationError: If quality is not valid
-        """
-        allowed_qualities = ['bad', 'good', 'perfect']
-        if quality not in allowed_qualities:
-            raise TrainingLogValidationError(
-                f"Rep quality must be one of {allowed_qualities}, got: {quality}"
+                f"Date must be a string formatted as YYYY-MM-DD, got {type(date_string).__name__}"
             )
 
-    @staticmethod
-    def validate_rep_quality_assessment(quality: str) -> None:
-        """
-        Validate rep quality assessment including learning state.
-
-        Args:
-            quality: Rep quality assessment string to validate (already normalized to lowercase by caller where applicable)
-
-        Raises:
-            TrainingLogValidationError: If assessment is not valid
-        """
-        allowed_assessments = ['bad', 'good', 'perfect', 'learning']
-        if quality not in allowed_assessments:
+        pattern = r'^\d{4}-\d{2}-\d{2}$'
+        if not re.match(pattern, date_string):
             raise TrainingLogValidationError(
-                f"Rep quality must be one of {allowed_assessments}, got: {quality}"
+                f"Date must be formatted as YYYY-MM-DD (e.g. 2025-10-18), got: {date_string}"
             )
-    
+
+        # Verify it's a real calendar date (catches invalid months/days, leap years)
+        try:
+            datetime.datetime.strptime(date_string, "%Y-%m-%d")
+        except ValueError:
+            raise TrainingLogValidationError(f"Date string is not a valid calendar date: {date_string}")
+
     @staticmethod
     def validate_rpe(rpe: int) -> None:
         """
@@ -199,29 +183,5 @@ class TrainingLogValidator:
             raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step (e.g. 7 or 7.5), got {rpe}")
 
         raise TrainingLogValidationError(f"Field 'RPE' must be an integer or half-step float between 1 and 10, got {type(rpe).__name__}")
+
     
-    @staticmethod
-    def validate_phase(phase: int) -> None:
-        """
-        Validate that phase is a positive integer.
-        
-        Args:
-            phase: Phase number to validate
-            
-        Raises:
-            TrainingLogValidationError: If phase is not valid
-        """
-        TrainingLogValidator.validate_positive_integer(phase, "phase")
-    
-    @staticmethod
-    def validate_week(week: int) -> None:
-        """
-        Validate that week is within the valid range (1-13).
-        
-        Args:
-            week: Week number to validate
-            
-        Raises:
-            TrainingLogValidationError: If week is outside valid range
-        """
-        TrainingLogValidator.validate_range(week, 1, 13, "week")

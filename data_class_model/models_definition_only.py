@@ -123,9 +123,9 @@ class DropSetDetails:
     Details for DropSet technique.
     
     Attributes:
-        entries: List of dicts each with keys 'number' (int), 'weightKg' (float), 'repCount' (RepCount) # repCount can have partial reps here
+        drop_sets: List of dicts each with keys 'number' (int), 'weightKg' (float), 'repCount' (RepCount) # repCount can have partial reps here
     """
-    entries: List[DropSet]
+    drop_sets: List[DropSet]
 
 
 FailureDetails = Union[MyoRepDetails, LLPDetails, StaticDetails, DropSetDetails]

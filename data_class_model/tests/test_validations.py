@@ -5,7 +5,7 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from datamodels.models import FailureTechnique, FailureTechniqueType, MyoRepDetails, RepCount, TrainingSession, Exercise
+from data_class_model.models import FailureTechnique, FailureTechniqueType, MyoRepDetails, RepCount, TrainingSession, Exercise
 
 
 def test_failure_technique_aliases():

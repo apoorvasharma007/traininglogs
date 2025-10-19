@@ -1,0 +1,337 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2025-10-15_lower-strength_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2025-10-15",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 2,
+  "week": 1,
+  "is_deload_week": true,
+  "focus": "Lower Strength",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Seated Leg Hamstring Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 50.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 50.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 18.0,
+          "rep_count": null,
+          "notes": "unilateral"
+        },
+        {
+          "number": 2,
+          "weight_kg": 43.0,
+          "rep_count": null,
+          "notes": "both legs"
+        }
+      ],
+      "notes": "This day is about strength so can move the weight up accordingly. Currently have same weight and reps on both strength and hypertrophic leg day.",
+      "warmup_notes": null,
+      "form_cues": []
+    },
+    {
+      "number": 2,
+      "name": "Smith Machine Squat",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 60.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 60.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": []
+    },
+    {
+      "number": 3,
+      "name": "Barbell Romanian Deadlift",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 90.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 90.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 70.0,
+          "rep_count": 6,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 80.0,
+          "rep_count": 3,
+          "notes": null
+        }
+      ],
+      "notes": "Might need to reduce goal to 85 kg since rest is only 3 min",
+      "warmup_notes": "Pyramid warmup",
+      "form_cues": [
+        "keep tension on the hamstrings.",
+        "stay in the bottom 3/4 of the range of motion."
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Leg Extension",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 70.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 70.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 14.0,
+          "rep_count": null,
+          "notes": "unilateral with alternating leg"
+        },
+        {
+          "number": 2,
+          "weight_kg": 18.0,
+          "rep_count": null,
+          "notes": "unilateral with alternating leg"
+        },
+        {
+          "number": 3,
+          "weight_kg": 23.0,
+          "rep_count": null,
+          "notes": "unilateral with alternating leg"
+        },
+        {
+          "number": 4,
+          "weight_kg": 29.0,
+          "rep_count": null,
+          "notes": "unilateral with alternating leg"
+        },
+        {
+          "number": 5,
+          "weight_kg": 63.0,
+          "rep_count": 3,
+          "notes": "both legs"
+        }
+      ],
+      "notes": "Since program calls for lesser sets and more intensity in foundation block, edit the goal accordingly.",
+      "warmup_notes": "Learning to do unilateral explosives with alternating leg as an experiment.",
+      "form_cues": []
+    },
+    {
+      "number": 5,
+      "name": "Standing Calf Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 120.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 120.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "might need to go a bit lighter",
+      "warmup_notes": null,
+      "form_cues": [
+        "put safety clips"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Cable Crunch",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 22.7,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 24.9,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 22.7,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Goals are optimistic since i just tested with one set on each movement",
+      "warmup_notes": null,
+      "form_cues": [
+        "Sit ass back on heels",
+        "See jeff\u2019s form for full range of motion",
+        "Keep mind muscle connection with abs"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Tibialis Raise Single Leg",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 8.0,
+          "rep_count": {
+            "full": 5,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 8.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 1,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "don\u2019t put too much stress on joints, allow them to recover",
+      "warmup_notes": null,
+      "form_cues": [
+        "go around the world"
+      ]
+    }
+  ],
+  "session_duration_minutes": 110
+}
