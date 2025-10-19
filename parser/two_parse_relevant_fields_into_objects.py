@@ -15,6 +15,9 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
+# TODO: add more validations and error hadling wherever we are returning None currently and all the TODOs mentioned in the code below
+# TODO: we can use ValueError or custom exceptions to handle errors in parsing and validation
+
 class DeepTrainingParser:
     """
     Convert intermediate dict (from TrainingMarkdownParser) into dataclass instances.
@@ -34,8 +37,10 @@ class DeepTrainingParser:
             is_deload_week = "false"
         else:
             is_deload_week = str(deload_raw).strip().lower() in ("yes", "true", "1")
+        
         ## THIS IS WHERE WE ARE SETTING UP THE DEFAULTS FOR TRAINING OBJECT FOR NOW..
         ## TODO: WE WIL MOVE THIS INFO OUT TO ITS OWN MODULE LATER, A MODULE FOR DEFAULT VALUES.
+        
         # build a deterministic session id from date + focus + user_id (fallback to uuid if not enough info)
         user_id_val = str(meta.get("user_id", "7"))
         date_val = meta.get("date", "")
@@ -97,19 +102,22 @@ class DeepTrainingParser:
         if not goal_str:
             return None
         m = re.search(r"([\d.]+)\s*kg\s*x\s*(\d+)\s*sets?\s*x\s*(\d+)-(\d+)\s*reps?", goal_str, re.IGNORECASE)
+        # TODO: this returning None will cause an error later; add validation
         if not m:
             return None
         weight, sets, rmin, rmax = m.groups()
-        rest = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else 0
+        rest = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else None
+        # TODO: this will thrown an error if weight_kg , sets, rmin, rmax are None from regex; add validation
         return Goal(weight_kg=float(weight), sets=int(sets), rep_range=RepRange(min=int(rmin), max=int(rmax)), rest_minutes=rest)
 
     def _parse_warmup_set_line(self, line: str) -> Optional[WarmupSet]:
         m = re.match(r"^\s*(\d+)\.\s*([\d.]+)\s*x\s*([\w+-]+)?\s*-?\s*(.*)$", line)
         if not m:
+            # TODO: we should handle and log this error here itself in the parser cuz returning None will cause an error later; add validation
             return None
         num, weight, reps, note = m.groups()
         reps_val = None
-        if reps and reps.lower() not in ("feel", "na", ""):
+        if reps and reps.lower() not in ("feel", ""):
             nm = re.match(r"(\d+)", reps)
             reps_val = int(nm.group(1)) if nm else None
         return WarmupSet(number=int(num), weight_kg=float(weight), rep_count=reps_val, notes=note.strip() if note else None)
@@ -117,7 +125,8 @@ class DeepTrainingParser:
     def _parse_working_set_line(self, line: str) -> WorkingSet:
         m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
         if not m_num:
-            return WorkingSet(number=0, weight_kg=0.0, rep_count=RepCount(full=0))
+            # TODO: we should handle and log this error here itself in the parser cuz returning None will cause an error later; add validation
+            return None
         set_num = int(m_num.group(1))
         rest_of = m_num.group(2).strip()
 

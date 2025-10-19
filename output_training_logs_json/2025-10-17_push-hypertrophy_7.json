@@ -294,7 +294,7 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -330,7 +330,7 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -379,7 +379,7 @@
           "min": 10,
           "max": 20
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "Figure out how to handle that shoulder rotation around lats when taking legs up! Jeff holds his hands pretty wide in hammer grip and bends from core but doesn\u2019t go too high with his legs.",

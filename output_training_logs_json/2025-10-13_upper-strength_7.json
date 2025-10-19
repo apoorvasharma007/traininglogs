@@ -516,7 +516,7 @@
           "min": 1,
           "max": 20
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "Coronal (Frontal) Plane wrist adduction or ulnar deviation i.e. moving the hand toward the little-finger-side of the forearm (toward the midline). Do appropriate volume don\u2019t fatigue wrists.",

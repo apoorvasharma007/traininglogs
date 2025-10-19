@@ -121,7 +121,7 @@ class RepRange:
         """Create RepRange from dictionary."""
         return cls(min=data["min"], max=data["max"])
 
-
+MAX_REST_INTERVAL_MINUTES = 15
 @dataclass
 class Goal:
     """
@@ -135,13 +135,13 @@ class Goal:
         weight_kg: Target weight in kilograms (float, required)
         sets: Number of sets to perform (int, required)
         rep_range: Rep range with min and max values (RepRange, required)
-        rest_minutes: Rest time between sets in minutes (int, required)
+        rest_minutes: Rest time between sets in minutes (Optional[int])
     """
     # weight_kg can be zero for bodyweight exercises
     weight_kg: float # add resistancy_type = "resistance band", "bodyweight", etc. in future
     sets: int
     rep_range: RepRange
-    rest_minutes: int
+    rest_minutes: Optional[int] = None # rest_minutes can be None if not specified, for example in learning a new movement or exercise
     
     def __post_init__(self):
         """Validate workout goal data after initialization."""
@@ -149,8 +149,9 @@ class Goal:
             raise TrainingLogValidationError("Weight must be positive or zero for bodyweight")
         if self.sets <= 0:
             raise TrainingLogValidationError("Number of sets must be positive")
-        if self.rest_minutes < 0:
-            raise TrainingLogValidationError("Rest minutes cannot be negative")
+        if self.rest_minutes  and self.rest_minutes < 0 and self.rest_minutes > MAX_REST_INTERVAL_MINUTES:
+            # TODO: add more logic to raise specific validation error messages for > MAX_REST_INTERVAL_MINUTES
+            raise TrainingLogValidationError("Invalid rest minutes value")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation using snake_case keys."""
@@ -542,7 +543,7 @@ class WorkingSet:
         number: Set number (int, required)
         weight_kg: Weight in kilograms (float, required)
         rep_count: Rep count with full and partial reps (RepCount, required)
-    rpe: Rating of Perceived Exertion 1-10 (Optional[float]). May be an integer or a half-step (e.g. 7.0 or 7.5). None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
+        rpe: Rating of Perceived Exertion 1-10 (Optional[float]). May be an integer or a half-step (e.g. 7.0 or 7.5). None can be used to indicate that the RPE is not yet set, or we are learning, or deload week etc.
         rep_quality_assessment: Quality of reps - 'bad', 'good', 'perfect' or 'learning' (Optional[str]), None simply means not recorded
         actual_rest_minutes: Actual rest time before this set (Optional[int]), to cover scenarios where the rest time was longer than planned, None simply means not recorded
         notes: Optional notes for this set (Optional[str])
@@ -573,8 +574,8 @@ class WorkingSet:
             elif not isinstance(self.rep_quality_assessment, RepQualityAssessment):
                 raise TrainingLogValidationError("rep_quality_assessment must be a RepQualityAssessment or string")
         
-        if self.actual_rest_minutes is not None and self.actual_rest_minutes < 0:
-            raise TrainingLogValidationError("Rest minutes cannot be negative")
+        if self.actual_rest_minutes is not None and self.actual_rest_minutes < 0 and self.actual_rest_minutes > MAX_REST_INTERVAL_MINUTES:
+            raise TrainingLogValidationError("Invalid actual rest minutes value")
         
         # Failure technique should only be present for RPE 10 sets
         if self.failure_technique is not None:
@@ -635,7 +636,7 @@ class Exercise:
     Attributes:
         number: Order of exercise in the session in which exercise was performed (int, required)
         name: Name of the exercise (str, required)
-        working_sets: List of working sets (List[WorkingSet], required)
+        working_sets: List of working sets (Optional[List[WorkingSet]])
         target_muscle_groups: List of muscle groups targeted (Optional[List[str]])
         rep_tempo: Tempo string in format "eccentric-pause-concentric-pause" (Optional[str])
         current_goal: Planned goal for this exercise (Optional[Goal])
@@ -646,7 +647,7 @@ class Exercise:
     """
     number: int
     name: str
-    working_sets: List[WorkingSet] = field(default_factory=list)
+    working_sets: List[WorkingSet] = None # to show that a new movement was included in the session, being learned, but no working sets were performed yet
     target_muscle_groups: Optional[List[str]] = None
     rep_tempo: Optional[str] = None
     current_goal: Optional[Goal] = None

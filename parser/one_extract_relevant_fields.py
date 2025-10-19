@@ -36,7 +36,9 @@ class TrainingMarkdownParser:
                 current_ex = {"warmup_sets": [], "working_sets": [], "cues": []}
                 current_section = "exercise_header"
                 continue
-
+            
+            # TODO: add a detailed comment here to explain the logic of section parsing
+            # TODO: move it to a separate function if needed
             # Section headers (### and ####)
             if line.startswith("### "):
                 current_section = line[4:].strip().lower().replace(" ", "_")
