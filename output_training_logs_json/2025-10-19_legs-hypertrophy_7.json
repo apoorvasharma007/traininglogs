@@ -16,11 +16,38 @@
     {
       "number": 1,
       "name": "Leg Press",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 250.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 250.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "learning",
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 280.0,
+        "weight_kg": 250.0,
         "sets": 3,
         "rep_range": {
           "min": 8,
@@ -29,7 +56,7 @@
         "rest_minutes": 3
       },
       "warmup_sets": null,
-      "notes": "250 added to press for 15 reps in week 12",
+      "notes": "250 added to press for 15 reps in week 12. Im adding weight too fast for my knees to tolerate. 250 for 8 with absolutely perfect form is hard enough with very little knee pain or wobbling.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Seat height at 2.",
@@ -53,7 +80,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "43 for 13 plus reps for 4 sets in week 12",
+      "notes": "43 for 13 plus reps for 4 sets in week 12.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that\u2019s okay!"
@@ -62,7 +89,47 @@
     {
       "number": 3,
       "name": "DB Bulgarian Split Squat",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt pretty easy",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt easy",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 17.5,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "felt good",
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -78,13 +145,56 @@
       "notes": null,
       "warmup_notes": "Pyramid",
       "form_cues": [
-        "can take 3 min rest"
+        "can take 3 min rest",
+        "Keep hind foot\u2019s toes part on the bar for stabilty",
+        "Take knee over toe and go full depth",
+        "Controlled negative with explosive positive"
       ]
     },
     {
       "number": 4,
       "name": "Leg Extension",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 50.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "felt easyish",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 50.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "damn easy",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 57.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "felt good",
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -97,7 +207,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": null,
+      "notes": "I can perhaps handle 63kg for 8 reps easily. Other exercises will be affected accordingly.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "2-3 seconds negative to feel quads tear apart."
@@ -106,7 +216,34 @@
     {
       "number": 5,
       "name": "Cable Hip Adduction",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 15.9,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt good",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt easy after getting warmed up",
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -119,7 +256,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "13.6 for 13 to 17 reps for 3 sets in week 12, adjust goal accordingly",
+      "notes": "13.6 for 13 to 17 reps for 3 sets in week 12, adjust goal accordingly. Need proper warmup to be able to execute at higher intensity.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Brace your standing leg\u2019s hip like in shoulder press to really lock in adductors.",
@@ -132,7 +269,21 @@
     {
       "number": 6,
       "name": "Cable Hip Abduction",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 9.1,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "bad",
+          "actual_rest_minutes": null,
+          "notes": "need to stay at 6.8 and perfect technique",
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -145,9 +296,10 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "adjust goal as you progress with the current phase",
+      "notes": "Perfect technique at 6.8 kg",
       "warmup_notes": "Pyramid",
       "form_cues": [
+        "Feel in outer thighs and glutes",
         "Think about kicking up, then you\u2019d keep the hip stable.",
         "Perfect form with controlled negative and explosive push.",
         "see Jeff\u2019s form in video"
@@ -156,11 +308,51 @@
     {
       "number": 7,
       "name": "Standing Calf Raise",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 100.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 100.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 105.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 105.0,
+        "weight_kg": 100.0,
         "sets": 2,
         "rep_range": {
           "min": 10,
@@ -172,10 +364,9 @@
       "notes": "adjust goal by testing as you progress into week 5",
       "warmup_notes": null,
       "form_cues": [
-        "I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit.",
-        "1-2 sec pause at the bottom."
+        "I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit."
       ]
     }
   ],
-  "session_duration_minutes": 120
+  "session_duration_minutes": 141
 }
