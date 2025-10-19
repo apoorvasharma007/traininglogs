@@ -11,7 +11,7 @@
 **Muscles:** Chest, Triceps  
 **Tempo:** 3-1-1-0  
 **Goal:** 100 kg x 3 sets x 6-8 reps  
-**Rest:** 3 min  
+**Rest:** 3 min , it can be zero to denote no rest, or None meaning not tracking cuz learning or feel based
 
 ### Warmup
 1. 60 x feel  

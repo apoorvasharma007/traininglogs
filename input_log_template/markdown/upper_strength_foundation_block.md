@@ -173,7 +173,7 @@ Sagittal Plane wrist extension i.e. bending the wrist to move the back of the ha
 ## Exercise 10
 **Name:** Wrist Abduction Cable Curl Single Hand  
 **Goal:** 0 kg x 2 sets x 1-20 reps  
-**Rest:** 0 min
+**Rest:** 0 min 
 
 ### Working Sets
 1. 2.5 x 8 learning

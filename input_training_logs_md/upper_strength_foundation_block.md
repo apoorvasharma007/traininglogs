@@ -143,7 +143,7 @@ i used to be too slanted on these so now stand more upright enough to face front
 ## Exercise 8
 **Name:** Wrist Flexion Cable Curl Single Hand  
 **Goal:** 9.1 kg x 2 sets x 12-15 reps  
-**Rest:** 0 min
+
 
 ### Working Sets
 1. 9.1 x 12 RPE 9 good - full squeeze and hold at the top of the rep
@@ -159,7 +159,7 @@ Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the
 ## Exercise 9
 **Name:** Wrist Extension Cable Curl Single Hand  
 **Goal:** 2.5 kg x 2 sets x 8-10 reps  
-**Rest:** 0 min
+
 
 ### Working Sets
 1. 2.5 x 8 RPE 10 learning
@@ -173,7 +173,7 @@ Sagittal Plane wrist extension i.e. bending the wrist to move the back of the ha
 ## Exercise 10
 **Name:** Wrist Abduction Cable Curl Single Hand  
 **Goal:** 0 kg x 2 sets x 1-20 reps  
-**Rest:** 0 min
+
 
 ### Working Sets
 1. 2.5 x 8 learning

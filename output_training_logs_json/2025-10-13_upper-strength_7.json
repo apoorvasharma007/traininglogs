@@ -404,7 +404,7 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.",
@@ -442,7 +442,7 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm.",
@@ -478,7 +478,7 @@
           "min": 1,
           "max": 20
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "Coronal (Frontal) Plane wrist abduction or radial deviation i.e. moving the hand toward the thumb-side of the forearm (away from the midline). Do appropriate volume don\u2019t fatigue wrists.",

@@ -323,7 +323,7 @@
           "min": 1,
           "max": 15
         },
-        "rest_minutes": 0
+        "rest_minutes": null
       },
       "warmup_sets": null,
       "notes": "don\u2019t put too much stress on joints, allow them to recover",

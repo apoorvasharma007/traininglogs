@@ -106,7 +106,7 @@ Goals are optimistic since i just tested with one set on each movement
 ## Exercise 7
 **Name:** Tibialis Raise Single Leg  
 **Goal:** 8 kg x 2 sets x 1-15 reps
-**Rest:** 0 min
+
 
 ### Working Sets
 1. 8x5 learning
