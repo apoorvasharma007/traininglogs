@@ -93,7 +93,7 @@ class DeepTrainingParser:
             rep_tempo=tempo,
             current_goal=goal,
             warmup_sets=warmup_sets if warmup_sets else None,
-            notes=ex.get("notes"),
+            notes=ex.get("notes"), # TODO: get method saves me here but i should explicitly handle missing keys by returning None
             warmup_notes=ex.get("warmup_notes"),
             form_cues=ex.get("cues")
         )

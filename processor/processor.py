@@ -118,8 +118,19 @@ def process_md_file(md_path: str):
     primitive_dict = to_primitive(session_obj)
     json_out = json.dumps(primitive_dict, indent=2)
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    output_path = os.path.join(OUTPUT_DIR, f"{primitive_dict['session_id']}.json")
+    # TODO: make this a separate method with unit tests
+    # Build exact nested output path as requested:
+    # OUTPUT_DIR / {program} / "phase {phase}" / "week {week}" / {session_id}.json
+    program = primitive_dict.get("program") or "unknown_program"
+    phase = primitive_dict.get("phase") or "1"
+    week = primitive_dict.get("week") or "unknown"
+
+    program_dir = os.path.join(OUTPUT_DIR, program)
+    phase_dir = os.path.join(program_dir, f"phase {phase}")
+    week_dir = os.path.join(phase_dir, f"week {week}")
+
+    os.makedirs(week_dir, exist_ok=True)
+    output_path = os.path.join(week_dir, f"{primitive_dict['session_id']}.json")
     with open(output_path, "w", encoding="utf-8") as of:
         of.write(json_out)
 
