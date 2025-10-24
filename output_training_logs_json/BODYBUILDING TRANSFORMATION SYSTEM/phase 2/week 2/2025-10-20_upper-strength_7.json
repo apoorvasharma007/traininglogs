@@ -32,26 +32,26 @@
         },
         {
           "number": 2,
-          "weight_kg": 0.0,
+          "weight_kg": 30.0,
           "rep_count": {
-            "full": 0,
+            "full": 7,
             "partial": 0
           },
-          "rpe": null,
-          "rep_quality_assessment": null,
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
-          "weight_kg": 0.0,
+          "weight_kg": 30.0,
           "rep_count": {
-            "full": 0,
+            "full": 10,
             "partial": 0
           },
-          "rpe": null,
-          "rep_quality_assessment": null,
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -146,8 +146,18 @@
         "rest_minutes": 2
       },
       "warmup_sets": [
-        null,
-        null
+        {
+          "number": 1,
+          "weight_kg": 32.0,
+          "rep_count": 10,
+          "notes": "one light warmup"
+        },
+        {
+          "number": 2,
+          "weight_kg": 66.0,
+          "rep_count": 4,
+          "notes": "one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs"
+        }
       ],
       "notes": "Possible Slight right-shoulder fatigue, control on eccentric improving.",
       "warmup_notes": "pyramid warmup",
