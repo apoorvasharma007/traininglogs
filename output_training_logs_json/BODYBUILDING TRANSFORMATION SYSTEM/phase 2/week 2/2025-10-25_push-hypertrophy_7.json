@@ -1,0 +1,437 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2025-10-25_push-hypertrophy_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2025-10-25",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 2,
+  "week": 2,
+  "is_deload_week": false,
+  "focus": "Push Hypertrophy",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Barbell Bench Press",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 65.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 65.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 65.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 65.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 5
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 40.0,
+          "rep_count": 4,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 50.0,
+          "rep_count": 4,
+          "notes": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 60.0,
+          "rep_count": 3,
+          "notes": null
+        }
+      ],
+      "notes": "Third set 12th rep was crazy, all me but with Devarshi as spotter.",
+      "warmup_notes": "Pyramid warmup figure",
+      "form_cues": [
+        "Legs engaged",
+        "Core braced and back settled",
+        "Breathe per rep",
+        "Left right side equally engaged"
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Seated DB Shoulder Press",
+      "working_sets": [],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 17.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": null,
+          "notes": "around the world arms extended time under tension is good enough resistance"
+        },
+        {
+          "number": 2,
+          "weight_kg": 2.5,
+          "rep_count": null,
+          "notes": "around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based"
+        },
+        {
+          "number": 3,
+          "weight_kg": 7.5,
+          "rep_count": null,
+          "notes": "unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based"
+        }
+      ],
+      "notes": null,
+      "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk 1. 17.5 x 13 RPE 8.5 perfect 2. 17.5 x 12 RPE 10 perfect",
+      "form_cues": [
+        "Seat upright",
+        "Full rom"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Bottom Half DB Flye",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 10.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 10.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 10.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "Take a wider path when coming up",
+        "Try to go down pretty low but stay safe",
+        "Constant tension on pecs"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "High Cable Lateral Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 4.8,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 4.5,
+          "rep_count": {
+            "full": 16,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": {
+            "technique_type": "MyoReps",
+            "details": {
+              "mini_sets": [
+                {
+                  "number": 1,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 2,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 3,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 4.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Right is stronger",
+      "warmup_notes": null,
+      "form_cues": [
+        "Annihilate the delt with controlled tempo",
+        "Initiate with squeezing delts",
+        "Hold the top for a second"
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Overhead Cable Tricep Extension Bar",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "good",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 20.4,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now",
+      "warmup_notes": null,
+      "form_cues": [
+        "anchor at height 7",
+        "go to max range of motion",
+        "pull from squeezing triceps , focus on arm path don\u2019t push from forearms"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Cable Tricep Kickback Upright",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 6.8,
+          "rep_count": {
+            "full": 15,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 4.5,
+          "rep_count": {
+            "full": 15,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 4.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "key is to keep elbow behind body and feel that sharp tension on full extension at bottom position",
+        "See jeff\u2019s form",
+        "Take shoulder support"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Hanging Leg Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 7,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 0.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 20
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "wider arms were the trick, now just focus on folding from core and I got perfect from and control on tempo",
+      "warmup_notes": null,
+      "form_cues": [
+        "just go until you hit the listed RPE with controlled form."
+      ]
+    }
+  ],
+  "session_duration_minutes": 108
+}
