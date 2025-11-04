@@ -1,26 +1,27 @@
 # Training Log
-- Date: 2025-10-23
+- Date: 2025-11-01
 - Phase: 2
-- Week: 2
+- Week: 3
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration:  83 min 
+- Duration: 89  min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
-**Goal:** 50 kg x 2 sets x 8-10 reps
+**Goal:** 50kg x 2 sets x 8-10 reps
 **Rest:** 2 min 
 
 ### Warmup 
 1. 40 x 8
-2. 45 x 4
+2. 55 x 4
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 50 x 14  RPE 8  - 50 felt lightish
-2. 50 x 14 RPE 10 - 40 felt good can go heavier 
+1. 55 x 12 RPE 9 good
+2. 50 x 11 + 2 RPE 10 good 
+
 ### Notes
-Can go above 50
+Will need to adjust goal
 ### Cues
 - Arms front  
 - Focus on squeezing lats only 
@@ -35,9 +36,9 @@ Can go above 50
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 57 x 10 RPE 8 perfect   
-2. 57 x 10 RPE 10 good 
-3. 57 x 10  RPE 10 good
+1. 57 x 11 RPE 10 good   
+2. 57 x 10 RPE 10 good - last 2 reps were sorta mid
+3. 57 x 9+1  RPE 10 good
 
 ### Notes
 Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo. 
@@ -57,8 +58,8 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 10 RPE 8 perfect 
-2. 55 x 10 RPE 10 good failure:llp(4)
+1. 55 x 10 RPE 10 good 
+2. 55 x 10+2 RPE 10 good failure:llp(5)
 
 ### Cues
 - Squeeze shoulder blades together  
@@ -73,14 +74,15 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 6.8 x 12 RPE 9 good
-2. 6.8 x 16 RPE 10 good
+1. 6.8 x 15 RPE 10 good
+2. 6.8 x 12 RPE 10 perfect - keeping shoulder locked behind gives much better squeeze in rear delt
 
 ### Cues
 - Squeeze 1-2 sec on top.  
 - Elbows straight and go all the way up  
 - Goal 6.8x15 perfect reps  
 - Hold with thumb under finger grip 
+- Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
 **Goal:** 22.7 kg x 2 sets x 10-12 reps
@@ -89,7 +91,7 @@ Pyramid 
 Pyramid 
 ### Working Sets
 1. 22.7 x 12 good  
-2. 22.7 x 12 RPE 10 good - was hard  
+2. 27.2 x 10 RPE 10 good - i like this weight otherwise grip fails faster than traps 
 ### Notes
 Can go heavy as long as form is perfect cuz sets are only 2
 ### Cues
@@ -107,7 +109,7 @@ Can go heavy as long as form is perfect cuz sets are only 2
 Pyramid 
 ### Working Sets
 1. 22.7 x 12 RPE 9.5 good  
-2. 22.7 x 10+1 RPE 10 good 
+2. 22.7 x 10+1 RPE 10 perfect 
 
 ### Cues
 - Lift from lowest position 
@@ -119,7 +121,7 @@ Pyramid 
 **Goal:** 15 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 15 x 15 RPE 10 perfect - 2 to 3 second negative
+1. 20 x 12 RPE 10 perfect - 2 to 3 second negative
 ### Notes
 adjust goal as you progress with the current phase
 ### Cues

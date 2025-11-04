@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-10-26
+- Date: 2025-11-02 
 - Phase: 2  
-- Week: 2 
+- Week: 3
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 140  min   
+- Duration: 125 min   
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 250 kg x 3 sets x 8-10 reps  
@@ -12,9 +12,9 @@
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1.  250 x 13 RPE 8 learning - rested hands on kneed
-2. 250 x  11 good - only used palms on bottom position 
-3. 250 x 13 RPE 10 perfect - only used palms lightly on bottom to touch not to exert any force at all
+1.  250 x 13 RPE 8 learning - rested hands on knee
+2. 250 x  14 good - no palms used hold machine
+3. 250 x 12 RPE 10 perfect - no palms ysed held machine
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
@@ -35,8 +35,8 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 50 x 9 RPE 8.5 good
-2. 50 x 12 RPE 10 good failure:llp(8)
+1. 50 x 14 + 1 RPE 9.5 good
+2. 50 x 14 RPE 10 good failure:llp(8)
 
 ### Notes 
 
@@ -54,10 +54,10 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 17.5 x 12 RPE 8 - felt in lower back on last reps
-2. 17.5 x 10 RPE 8 perfect 
+1. 20 x 15 RPE 6 - felt in lower back on last reps
+2. 30 x 10 RPE 8 perfect - lot of potential to try 30 plus with good technique 
 ### Notes
-Can go heavier
+Can go heavier than 30 too but try with perfect technique 
 ### Cues  
 - can take 3 min rest  
 - Keep hind foot’s toes part on the bar for stabilty
@@ -71,8 +71,8 @@ Can go heavier
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 70 x 10 RPE 9 perfect 
-2. 70 x 9 + 1 RPE 10 perfect 
+1. 70 x 10+1 RPE 10perfect 
+2. 70 x 13  RPE 10 perfect 
 ### Notes
 I can perhaps handle 63kg for 8 reps easily. Other exercises will be affected accordingly. 
 ### Cues  
@@ -104,8 +104,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 6.8 x 12 RPE 9 good
-2. 6.8 x 12 RPE 10 bad
+1. 6.8 x 15 +2 RPE 9 good
+2. 9.1 x  11 + 1 RPE 10 good - cant take leg too high but felt more in outer glutes 
 ### Notes    
 Perfect technique at 6.8 kg  
 ### Cues  
@@ -122,8 +122,8 @@ Perfect technique at 6.8 kg  
 1. 80 x 10 - fast explosive tempo
 2. 100 x feel
 ### Working Sets 
-1. 100 x 12 RPE 9.5
-2. 100 x 10 RPE 8
+1. 120 x 10+1 RPE 9.5
+2. 120 x 10 RPE 10 failure:statichold(30)
 ### Notes 
 adjust goal by testing as you progress
 ### Cues  

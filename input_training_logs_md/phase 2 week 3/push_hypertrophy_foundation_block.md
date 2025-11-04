@@ -1,26 +1,26 @@
 # Training Log
-- Date: 2025-10-25
+- Date: 2025-11-01
 - Phase: 2
-- Week: 2
+- Week: 3
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration:  108 min 
+- Duration: 115  min 
 ## Exercise 1
 **Name:** Barbell Bench Press
-**Goal:** 65 kg x 3 sets x 8-10 reps
+**Goal:** 70 kg x 3 sets x 8-10 reps
 **Rest:** 5 min 
 
 ### Warmup
-1. 40 x 4
-2. 50 x 4
-3. 60 x 3
+1. 60 x 4
+2. 65 x 4
+3. 70 x 3
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 65 x 11 RPE 9 good 
-2. 65 x 11 RPE 9.5 good 
-3. 65 x 12 RPE 10 good
+1. 70 x 9 RPE 9.5 good 
+2. 70 x 8 RPE 8.5 good 
+3. 70 x 9 RPE 10 good
 
 ### Notes
 Third set 12th rep was crazy, all me but with Devarshi as spotter. 
@@ -39,8 +39,8 @@ Third set 12th rep was crazy, all me but with Devarshi as spotter.
 3. 7.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based 
 ### Warmup Notes
 Don’t use heavy weights preserve strength for working sets and avoid injury risk 
-1. 17.5 x 13 RPE 8.5 perfect 
-2. 17.5 x 12 RPE 10 perfect 
+1. 17.5 x 13 RPE 9.5 perfect 
+2. 20 x 11+1 RPE 10 perfect 
 ### Cues
 - Seat upright 
 - Full rom  
@@ -49,8 +49,8 @@ Don’t use heavy weights preserve strength for working sets and avoid injury ri
 **Goal:** 10 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 10 x 11 RPE 9 perfect 
-2. 10 x 11 +1 RPE 10 perfect 
+1. 10 x 13 RPE 9 good 
+2. 10 x 16 + 1 RPE 10 perfect 
   
 ### Cues
 - Take a wider path when coming up  
@@ -62,11 +62,12 @@ Don’t use heavy weights preserve strength for working sets and avoid injury ri
 **Goal:** 4.5 kg x 2 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 4.8 x 13 RPE 9 perfect - right was less tired 
-2. 4.5 x 16 RPE 10 perfect failure:myo(3,3,3+1)
+1. 4.5 x 17 RPE 9 perfect - i wasnt pushing hard enough 
+2. 4.5 x 12 RPE 10 perfect
+3. 4.5 x 8+1 RPE 10 failure:myo(3,3,3) - right side did 12 reps 
 
 ### Notes
-Right is stronger 
+Right is stronger. Did extra set cuz forgot myo reps on set 2 but can do 3 sets regular for side delts. 
 ### Cues
 - Annihilate the delt with controlled tempo  
 - Initiate with squeezing delts  
@@ -77,8 +78,8 @@ Right is stronger
 **Goal:** 20.4 kg x 2 sets x 10-12 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 20.4 x 10 
-2. 20.4 x 12 RPE 10 - good
+1. 20.4 x 12 RPE 10 good 
+2. 20.4 x 14 RPE 10 perfect - got more warmed up after set 1 and felt better executing
   
 ### Notes
 i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
@@ -90,8 +91,8 @@ i used to be too slanted on these so now stand more upright enough to face front
 **Name:** Cable Tricep Kickback Upright
 **Goal:** 4.5 kg x 2 sets x 12-15 reps 
 ### Working Sets
-1. 6.8 x 15 RPE 10
-2. 4.5 x 15 RPE 10
+1. 6.8 x 18 RPE 9.5
+2. 9.1 x 7 RPE 10 - right did 10 reps 
 ### Cues
 - key is to keep elbow behind body and feel that sharp tension on full extension at bottom position 
 - See jeff’s form  
@@ -102,7 +103,7 @@ i used to be too slanted on these so now stand more upright enough to face front
 ### Working Sets
 1. 0 x 8 learning
 2. 0 x 7  good
-3. 0 x 8 perfect 
+3. 0 x 8 bad 
 ### Notes
 wider arms were the trick, now just focus on folding from core and I got perfect from and control on tempo
 ### Cues
