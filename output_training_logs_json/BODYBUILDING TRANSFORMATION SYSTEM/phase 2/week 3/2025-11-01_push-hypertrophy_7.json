@@ -100,7 +100,34 @@
     {
       "number": 2,
       "name": "Seated DB Shoulder Press",
-      "working_sets": [],
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 17.5,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 20.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -133,7 +160,7 @@
         }
       ],
       "notes": null,
-      "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk 1. 17.5 x 13 RPE 9.5 perfect 2. 20 x 11+1 RPE 10 perfect",
+      "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk",
       "form_cues": [
         "Seat upright",
         "Full rom"

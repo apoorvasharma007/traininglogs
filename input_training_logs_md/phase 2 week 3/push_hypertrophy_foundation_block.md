@@ -39,6 +39,7 @@ Third set 12th rep was crazy, all me but with Devarshi as spotter.
 3. 7.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based 
 ### Warmup Notes
 Don’t use heavy weights preserve strength for working sets and avoid injury risk 
+### Working Sets
 1. 17.5 x 13 RPE 9.5 perfect 
 2. 20 x 11+1 RPE 10 perfect 
 ### Cues
