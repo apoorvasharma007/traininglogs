@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-11-02 
+- Date: 2025-11-09
 - Phase: 2  
-- Week: 3
+- Week: 4
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 125 min   
+- Duration: 158  min   
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 250 kg x 3 sets x 8-10 reps  
@@ -12,9 +12,9 @@
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1.  250 x 13 RPE 8 learning - rested hands on knee
-2. 250 x  14 good - no palms used hold machine
-3. 250 x 12 RPE 10 perfect - no palms ysed held machine
+1.  250 x 18 RPE 9 good - no palms used held machines seat 
+2. 250 x  14 RPE 9 good - no palms used held machine
+3. 250 x 14 RPE 9 perfect - no palms used held machine
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
@@ -35,7 +35,7 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 50 x 14 + 1 RPE 9.5 good
+1. 50 x 16 RPE 9.5 perfect
 2. 50 x 14 RPE 10 good failure:llp(8)
 
 ### Notes 
@@ -54,8 +54,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 20 x 15 RPE 6 - felt in lower back on last reps
-2. 30 x 10 RPE 8 perfect - lot of potential to try 30 plus with good technique 
+1. 27.5 x 14 RPE 7 
+2. 32.5 x 14 RPE 9.5 perfect - lot of potential to try 30 plus with good technique 
 ### Notes
 Can go heavier than 30 too but try with perfect technique 
 ### Cues  
@@ -71,10 +71,10 @@ Can go heavier than 30 too but try with perfect technique
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 70 x 10+1 RPE 10perfect 
-2. 70 x 13  RPE 10 perfect 
+1. 70 x 13 +1  RPE 10 perfect 
+2. 70 x 11+1  RPE 10 perfect 
 ### Notes
-I can perhaps handle 63kg for 8 reps easily. Other exercises will be affected accordingly. 
+
 ### Cues  
 - 2-3 seconds negative to feel quads tear apart.    
 
@@ -85,10 +85,10 @@ I can perhaps handle 63kg for 8 reps easily. Other exercises will be affected ac
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15.9 x 12 RPE 9.5- felt good
-2. 15.9 x 10 RPE 10 bad - need more control on tempo
+1. 15.9 x 11 RPE 9.5 good
+2. 15.9 x 11 RPE 10 good - decent control on the tempo
 ### Notes 
-13.6 for 12 or 15.9 for 9 to 10 perfect reps
+13.6 for 12 or 15.9 for 9 to 10 perfect reps is a good goal
 ### Cues  
 - Brace your standing leg’s hip like in shoulder press to really lock in adductors.   
 - Height set to 6, see Jeff’s form(controlled release hard pull).   
@@ -104,10 +104,10 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 6.8 x 15 +2 RPE 9 good
-2. 9.1 x  11 + 1 RPE 10 good - cant take leg too high but felt more in outer glutes 
+1. 9.1 x 15  RPE 10 good
+2. 9.1 x  11 + 1 RPE 9.5 good 
 ### Notes    
-Perfect technique at 6.8 kg  
+
 ### Cues  
 - Feel in outer thighs and glutes
 - Think about kicking up, then you’d keep the hip stable.   
@@ -122,8 +122,8 @@ Perfect technique at 6.8 kg  
 1. 80 x 10 - fast explosive tempo
 2. 100 x feel
 ### Working Sets 
-1. 120 x 10+1 RPE 9.5
-2. 120 x 10 RPE 10 failure:statichold(30)
+1. 130 x 10 RPE 9.5 good
+2. 130 x 10 RPE 10 bad failure:statichold(30)
 ### Notes 
 adjust goal by testing as you progress
 ### Cues  

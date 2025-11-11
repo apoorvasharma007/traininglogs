@@ -1,14 +1,14 @@
 # Training Log
-- Date: 2025-11-01
+- Date: 2025-11-07
 - Phase: 2
-- Week: 3
+- Week: 4
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 89  min 
+- Duration: 100  min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
-**Goal:** 50kg x 2 sets x 8-10 reps
+**Goal:** 55kg x 2 sets x 8-10 reps
 **Rest:** 2 min 
 
 ### Warmup 
@@ -17,11 +17,11 @@
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 12 RPE 9 good
-2. 50 x 11 + 2 RPE 10 good 
+1. 55 x 11 RPE 8 perfect
+2. 55 x 10+ 1 RPE 10 perfect 
 
 ### Notes
-Will need to adjust goal
+Squeezed from lats
 ### Cues
 - Arms front  
 - Focus on squeezing lats only 
@@ -36,9 +36,9 @@ Will need to adjust goal
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 57 x 11 RPE 10 good   
-2. 57 x 10 RPE 10 good - last 2 reps were sorta mid
-3. 57 x 9+1  RPE 10 good
+1. 57 x 11 RPE 9 perfect   
+2. 57 x 10 RPE 10 good - last 2 reps were not full rom
+3. 57 x 9+3 RPE 10 perfect
 
 ### Notes
 Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo. 
@@ -58,9 +58,11 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 10 RPE 10 good 
-2. 55 x 10+2 RPE 10 good failure:llp(5)
+1. 55 x 11 RPE 8 perfect 
+2. 55 x 11 RPE 10 good failure:llp(4)
 
+### Notes
+RPE 8 means could have done one rep for sure and then maybe more. 9 means could have done one more half rep for sure maybe full of i gave it all. 
 ### Cues
 - Squeeze shoulder blades together  
 - Elbows down and back  
@@ -68,14 +70,14 @@ Pyramid 
 
 ## Exercise 4
 **Name:** 1 Arm 45 Degree Cable Rear Fly
-**Goal:** 6.8 kg x 2 sets x 10-12 reps
+**Goal:** 6.8 kg x 2 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 6.8 x 15 RPE 10 good
-2. 6.8 x 12 RPE 10 perfect - keeping shoulder locked behind gives much better squeeze in rear delt
+1. 6.8 x 15 RPE 10 perfect
+2. 6.8 x 12 RPE 9 perfect - keeping shoulder locked behind gives much better squeeze in rear delt
 
 ### Cues
 - Squeeze 1-2 sec on top.  
@@ -85,12 +87,12 @@ Pyramid 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
-**Goal:** 22.7 kg x 2 sets x 10-12 reps
+**Goal:** 27.2 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 22.7 x 12 good  
+1. 27.2 x 10 RPE 10 good  
 2. 27.2 x 10 RPE 10 good - i like this weight otherwise grip fails faster than traps 
 ### Notes
 Can go heavy as long as form is perfect cuz sets are only 2
@@ -108,7 +110,7 @@ Can go heavy as long as form is perfect cuz sets are only 2
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 22.7 x 12 RPE 9.5 good  
+1. 22.7 x 11 RPE 9 perfect  
 2. 22.7 x 10+1 RPE 10 perfect 
 
 ### Cues
@@ -121,9 +123,9 @@ Pyramid 
 **Goal:** 15 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 20 x 12 RPE 10 perfect - 2 to 3 second negative
+1. 20 x 11+1 RPE 10 perfect - 2 to 3 second negative
 ### Notes
-adjust goal as you progress with the current phase
+Nailed the form of the gods
 ### Cues
 - Constant tension on bicep  
 - Controlled negatives  
