@@ -91,7 +91,7 @@ from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 # -------------------------------------------------------------------
 # Define folder paths relative to project root
 # Raw logs and output live at project root
-RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md/phase 2 week 3")
+RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md/phase 2 week 4")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output_training_logs_json")
 
 

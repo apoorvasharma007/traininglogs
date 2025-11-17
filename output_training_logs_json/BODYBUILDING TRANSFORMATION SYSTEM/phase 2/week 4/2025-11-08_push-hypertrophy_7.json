@@ -1,15 +1,15 @@
 {
   "data_model_version": "0.0.1",
   "data_model_type": "TrainingSession",
-  "session_id": "2025-11-01_push-hypertrophy_7",
+  "session_id": "2025-11-08_push-hypertrophy_7",
   "user_id": "7",
   "user_name": "Apoorva Sharma",
-  "date": "2025-11-01",
+  "date": "2025-11-08",
   "program": "BODYBUILDING TRANSFORMATION SYSTEM",
   "program_author": "Jeff Nippard",
   "program_length_weeks": 12,
   "phase": 2,
-  "week": 3,
+  "week": 4,
   "is_deload_week": false,
   "focus": "Push Hypertrophy",
   "exercises": [
@@ -21,7 +21,7 @@
           "number": 1,
           "weight_kg": 70.0,
           "rep_count": {
-            "full": 9,
+            "full": 10,
             "partial": 0
           },
           "rpe": 9.5,
@@ -34,10 +34,10 @@
           "number": 2,
           "weight_kg": 70.0,
           "rep_count": {
-            "full": 8,
+            "full": 9,
             "partial": 0
           },
-          "rpe": 8.5,
+          "rpe": 10.0,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
           "notes": null,
@@ -47,13 +47,13 @@
           "number": 3,
           "weight_kg": 70.0,
           "rep_count": {
-            "full": 9,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "last 2 reps were sloppy",
           "failure_technique": null
         }
       ],
@@ -77,18 +77,12 @@
         },
         {
           "number": 2,
-          "weight_kg": 65.0,
-          "rep_count": 4,
-          "notes": null
-        },
-        {
-          "number": 3,
           "weight_kg": 70.0,
           "rep_count": 3,
           "notes": null
         }
       ],
-      "notes": "Third set 12th rep was crazy, all me but with Devarshi as spotter.",
+      "notes": null,
       "warmup_notes": "Pyramid warmup figure",
       "form_cues": [
         "Legs engaged",
@@ -103,9 +97,9 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 17.5,
+          "weight_kg": 20.0,
           "rep_count": {
-            "full": 13,
+            "full": 11,
             "partial": 0
           },
           "rpe": 9.5,
@@ -118,8 +112,8 @@
           "number": 2,
           "weight_kg": 20.0,
           "rep_count": {
-            "full": 11,
-            "partial": 1
+            "full": 10,
+            "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "perfect",
@@ -154,7 +148,7 @@
         },
         {
           "number": 3,
-          "weight_kg": 7.5,
+          "weight_kg": 12.5,
           "rep_count": null,
           "notes": "unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based"
         }
@@ -174,11 +168,11 @@
           "number": 1,
           "weight_kg": 10.0,
           "rep_count": {
-            "full": 13,
+            "full": 14,
             "partial": 0
           },
-          "rpe": 9.0,
-          "rep_quality_assessment": "good",
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -187,7 +181,7 @@
           "number": 2,
           "weight_kg": 10.0,
           "rep_count": {
-            "full": 16,
+            "full": 12,
             "partial": 1
           },
           "rpe": 10.0,
@@ -225,10 +219,10 @@
           "number": 1,
           "weight_kg": 4.5,
           "rep_count": {
-            "full": 17,
-            "partial": 0
+            "full": 15,
+            "partial": 1
           },
-          "rpe": 9.0,
+          "rpe": 10.0,
           "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
@@ -239,19 +233,6 @@
           "weight_kg": 4.5,
           "rep_count": {
             "full": 12,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 3,
-          "weight_kg": 4.5,
-          "rep_count": {
-            "full": 8,
             "partial": 1
           },
           "rpe": 10.0,
@@ -279,13 +260,26 @@
                 {
                   "number": 3,
                   "rep_count": {
-                    "full": 3,
-                    "partial": 0
+                    "full": 2,
+                    "partial": 1
                   }
                 }
               ]
             }
           }
+        },
+        {
+          "number": 3,
+          "weight_kg": 4.5,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "slow reps to kill remaining juice in side delts",
+          "failure_technique": null
         }
       ],
       "target_muscle_groups": null,
@@ -300,7 +294,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "Right is stronger. Did extra set cuz forgot myo reps on set 2 but can do 3 sets regular for side delts.",
+      "notes": "Right is stronger.",
       "warmup_notes": null,
       "form_cues": [
         "Annihilate the delt with controlled tempo",
@@ -314,28 +308,28 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 20.4,
+          "weight_kg": 29.5,
           "rep_count": {
-            "full": 12,
+            "full": 9,
             "partial": 0
           },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
+          "rpe": 9.0,
+          "rep_quality_assessment": "bad",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 20.4,
+          "weight_kg": 24.9,
           "rep_count": {
-            "full": 14,
+            "full": 12,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
-          "notes": "got more warmed up after set 1 and felt better executing",
+          "notes": null,
           "failure_technique": null
         }
       ],
@@ -367,33 +361,33 @@
           "number": 1,
           "weight_kg": 6.8,
           "rep_count": {
-            "full": 18,
+            "full": 14,
             "partial": 0
           },
-          "rpe": 9.5,
-          "rep_quality_assessment": null,
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "right did one more rep",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 9.1,
+          "weight_kg": 6.8,
           "rep_count": {
-            "full": 7,
+            "full": 12,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": "right did 10 reps",
+          "notes": "right did one more rep",
           "failure_technique": null
         }
       ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 4.5,
+        "weight_kg": 9.1,
         "sets": 2,
         "rep_range": {
           "min": 12,
@@ -418,20 +412,7 @@
           "number": 1,
           "weight_kg": 0.0,
           "rep_count": {
-            "full": 8,
-            "partial": 0
-          },
-          "rpe": null,
-          "rep_quality_assessment": "learning",
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
-          "number": 2,
-          "weight_kg": 0.0,
-          "rep_count": {
-            "full": 7,
+            "full": 10,
             "partial": 0
           },
           "rpe": null,
@@ -441,14 +422,14 @@
           "failure_technique": null
         },
         {
-          "number": 3,
+          "number": 2,
           "weight_kg": 0.0,
           "rep_count": {
-            "full": 8,
+            "full": 9,
             "partial": 0
           },
-          "rpe": null,
-          "rep_quality_assessment": "bad",
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -471,7 +452,153 @@
       "form_cues": [
         "just go until you hit the listed RPE with controlled form."
       ]
+    },
+    {
+      "number": 8,
+      "name": "Wrist Flexion DB Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 12.5,
+        "sets": 3,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm."
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Wrist Extension DB Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 10.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": "too heavy",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 10.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 7.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "go light weight and maximum control",
+        "Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm."
+      ]
+    },
+    {
+      "number": 10,
+      "name": "Forearm Preacher Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 15.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 15.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": []
     }
   ],
-  "session_duration_minutes": 115
+  "session_duration_minutes": 133
 }
