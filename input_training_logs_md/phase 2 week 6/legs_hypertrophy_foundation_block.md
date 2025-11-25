@@ -1,22 +1,20 @@
 # Training Log
-- Date: 2025-11-16
+- Date: 2025-11-23
 - Phase: 2  
-- Week: 5
-- Deload: No  
+- Week: 6
+- Deload: Yes  
 - Focus: Legs Hypertrophy  
-- Duration: 155 min   
-
+- Duration:  138 min   
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 250 kg x 3 sets x 8-10 reps  
 **Rest:** 3 min   
-
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 250 x 18 RPE 9 perfect - no palms used held machines seat 
-2. 250 x  15 RPE 9.5 perfect - no palms used held machine
-3. 250 x 17 RPE 9.5 perfect - no palms used held machine
+1. 250 x 10 
+2. 260 x  10 
+3. 190 x 10 - tried to go deep 
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
@@ -36,19 +34,18 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 2. 43 x feel 
 ### Warmup Notes  
 Pyramid   
-
 ### Working Sets 
-1. 57 x 11 RPE 10 perfect
-2. 57 x 10 RPE 10 good failure:llp(10)
+1. 57 x 10 bad
+2. 57 x 10 good - sat at seat 4 pts , 5 visible
 
 ### Notes 
-
+Was sitting too far ahead i guess
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
 
 ## Exercise 3  
-**Name:** DB Bulgarian Split Squat  
-**Goal:** 32.5 kg x 2 sets x 8-10 reps  
+**Name:** Walking Lunge
+**Goal:** 15 kg x 2 sets x 8-10 reps  
 **Rest:** 2 min   
 
 ### Notes
@@ -56,10 +53,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 30 x 8 RPE 7  good - used stepper for deficit
-2. 30 x 11 RPE 8.5 perfect - used stepper for deficit
 ### Notes
-Can go heavier than 30 too but try with perfect technique 
+Careful with knee fatigue. We need to fix them before we killshot here. 
 ### Cues  
 - can take 3 min rest  
 - Keep hind foot’s toes part on the bar for stabilty
@@ -68,13 +63,13 @@ Can go heavier than 30 too but try with perfect technique
 
 ## Exercise 4 
 **Name:** Leg Extension  
-**Goal:** 70 kg x 2 sets x 10-12 reps  
+**Goal:** 77 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 70 x 12  RPE 9.5 perfect 
-2. 70 x 10+1  RPE 10 perfect 
+1. 70 x 10  
+2. 70 x 10  
 ### Notes
 
 ### Cues  
@@ -87,8 +82,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15.9 x 13 RPE 10 good - decent control on the tempo
-2. 15.9 x 10+1 RPE 10 good 
+1. 15.9 x 12 
+2. 15.9 x 10
 ### Notes 
 13.6 for 12 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -98,18 +93,17 @@ Pyramid   
 - Take more rest between legs, use a stand to rest pulling leg on when unclipping.   
 - I start to feel lower back and rest of glutes in it so be careful when loading.   
 - Control tempo on negative
-
 ## Exercise 6
 **Name:** Cable Hip Abduction  
-**Goal:** 6.8 kg x 2 sets x 10-12 reps  
+**Goal:** 9.1 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 ### Warm Up
 1. 6.8 x 8 - felt good felt in outer thighs and glutes
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 9.1 x 12  RPE 8 good
-2. 9.1 x  11 + 1 RPE 10 good 
+1. 9.1 x 12
+2. 9.1 x 10
 ### Notes    
 
 ### Cues  
@@ -120,14 +114,14 @@ Pyramid   
 
 ## Exercise 7 
 **Name:** Standing Calf Raise  
-**Goal:** 100 kg x 2 sets x 10-12 reps  
+**Goal:** 130 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 ### Warm Up
 1. 80 x 10 - fast explosive tempo
 2. 100 x feel
 ### Working Sets 
-1. 130 x 10 RPE 9.5 perfect
-2. 130 x 10 RPE 10 bad failure:statichold(30)
+1. 130 x 10 
+2. 130 x 10 
 ### Notes 
 adjust goal by testing as you progress
 ### Cues  

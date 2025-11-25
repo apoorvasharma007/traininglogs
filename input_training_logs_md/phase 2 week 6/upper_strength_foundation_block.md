@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-11-11
+- Date: 2025-11-19
 - Phase: 2
-- Week: 5
-- Deload: No
+- Week: 6
+- Deload: Yes
 - Focus: Upper Strength
-- Duration: 161 min
+- Duration: 124 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree
@@ -20,21 +20,20 @@
 ### Warmup Notes
 10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 ### Working Sets
-1. 30 x 14 RPE 9.5 perfect 
-2. 30  x 10 RPE 9 perfect 
-3. 30  x 11 RPE 10 perfect 
+1. 30 x 12 perfect 
+2. 32.5 x 6 good 
 
 ### Notes
-left side usually falls faster on negative and slightly weak on holding at top but today it was all good
+32.5 x 6 felt doable, left hand got stuck while setting up halfway lol. Held up like the superman. Be careful dont get injured.
 ### Cues
 - brace core
 - breathe every rep
 - feet on the ground
-- Lift db from left as well as right when picking up for setup
+- Lift DB from left as well as right when picking up for setup
 
 ## Exercise 2
 **Name:** Pec Dec Single Arm
-**Goal:** 73 kg x 2 sets x 8-10 reps
+**Goal:** 100 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 32  x 10 - one light warmup, do heavier next time
@@ -42,11 +41,11 @@ left side usually falls faster on negative and slightly weak on holding at top b
 ### Warmup Notes
 pyramid warmup
 ### Working Sets 
-1. 73 x 18 RPE 8 good
-2. 86 x 13 RPE 10  good
+1. 100 x 10 
+2. 100 x 10 
 
 ### Notes
-Possible Slight right-shoulder fatigue, control on eccentric improving. 
+100 for 10 with explosive push and good controlled negatives is doable
 ### Cues
 - the longer the path my arms take the better the squeeze
 - No need to take arm all the way back here, go as far as chest is engaged particularly oj last set to go to failure, these reps are necessary to take chest to failure without putting stress on rotator cuff
@@ -54,16 +53,14 @@ Possible Slight right-shoulder fatigue, control on eccentric improving.
 - can do one set with low cable position, one set with medium-height cable position, and one height with a high cable position. If you only have one or two sets, choose the one or two cable positions you prefer.
 
 ## Exercise 3
-**Name:** Wide Grip Pullup
-**Goal:** 0 kg x 3 sets x 8-10 reps.
+**Name:** Wide Grip Lat Pulldown
+**Goal:** 55 kg x 3 sets x 10-12 reps.
 **Rest:** 2 min
 ### Warmup
-1. 0 x 2
-### Working Sets
-1. 0 x 10 RPE 9 good 
-2. 0 x 10 RPE 9.5 good
-3. 0 x 9+1 RPE 10 perfect
 
+### Working Sets
+### Notes
+55x12 perfect is the goal
 ### Cues
 - Used straps for killing lats
 - 1.5x shoulder width overhand grip
@@ -72,13 +69,11 @@ Possible Slight right-shoulder fatigue, control on eccentric improving.
 
 ## Exercise 4
 **Name:** High Cable Lateral Raise
-**Goal:** 6.8 kg x 2 sets x 8-10 reps
+**Goal:** 6.8 kg x 2 sets x 12-15 reps
 **Rest:** 2 min
 ### Warmup
-1. 4.5 x 6 - did very slow tempo to activate side delts
+1. 4.5 x feel -  very slow tempo to activate side delts
 ### Working Sets
-1. 6.8 x 11 RPE 9.5 perfect
-2. 6.8 x 10+4 RPE 10 perfect 
 
 ### Notes
 noticed left side is usually 0.5-1.5 rpe behind right
@@ -87,28 +82,24 @@ noticed left side is usually 0.5-1.5 rpe behind right
 - take more rest between hands to match reps
 
 ## Exercise 5
-**Name:** Deficit Pendlay Row
+**Name:** Smith Machine Row
 **Goal:** 60 kg x 2 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
-1. 40 x 5
-2. 50 x 5 
+1. 50 x feel
 ### Warmup Notes
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 70 x  RPE 7 bad
-2. 70 x 8 RPE 10 good failure:llp(6) - get rid of wrist straps they are pulling my arm on the bottom which hurts
+1. 60 x 6
+2. 60 x 6 
 ### Notes
- controlled the bar on negative, let it drop. Also did explosive pulls. Felt good. Next tine try snatch grip to go wider maybe that gets more back
+60x6 can be a good goal but need to get that shoulder squeeze. Or reduce weight to 55 and try 8 perfect reps. 
 ### Cues
-- stand on 20 plus 10 kg plate for deficit
-- touch chest, not stomach every rep and keep straight bar path
-- controlled negative and let the bar drop to the ground
 
 ## Exercise 6
 **Name:** Overhead Cable Tricep Extension Bar
-**Goal:** 20.4 kg x 2 sets x 8-10 reps
+**Goal:** 29.5 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 20.4 x feel 

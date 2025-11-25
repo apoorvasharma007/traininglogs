@@ -1,24 +1,20 @@
 # Training Log
-- Date: 2025-11-14
+- Date: 2025-11-21
 - Phase: 2
-- Week: 5
-- Deload: No
+- Week: 6
+- Deload: Yes
 - Focus: Pull Hypertrophy
-- Duration:  102 min 
+- Duration:  126 min 
 
 ## Exercise 1
-**Name:** Neutral Grip Lat Pulldown
+**Name:** Lean Back Lat Pulldown
 **Goal:** 55kg x 2 sets x 8-10 reps
 **Rest:** 2 min 
 
 ### Warmup 
-1. 50 x feel
-2. 55 x 3
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 10 RPE 8 perfect - slow tempo good control focused on squeezing from lats
-2. 55 x 10+ 1 RPE 10 perfect 
 
 ### Notes
 Squeezed from lats
@@ -36,33 +32,31 @@ Squeezed from lats
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 57 x 11 RPE 10 perfect   
-2. 57 x 10 RPE 9 perfect
-3. 57 x 11 RPE 10 perfect
+1. 57 x 11
+2. 57 x 10 
+3. 57 x 10 
 
 ### Notes
-Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo. 
+
 ### Cues
 - Get chest support all the way out.  
 - Also arms are too flared see Jeff’s form, tuck in a bit and go further back that acute angle is missing in my arms at the top.  
 - Pause at the top and squeeze.  
 - Keep feet on ground. 
+- Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo. 
 
 ## Exercise 3
-**Name:** Neutral Grip Seated Cable Row
-**Goal:** 55 kg x 2 sets x 10-12 reps
+**Name:** Dual Handle Elbows Out Cable Row
+**Goal:** 50 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x 4
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 12 RPE 8.5 perfect 
-2. 55 x 12 RPE 10 perfect failure:llp(4)
+1. 50 x 10 RPE 
 
 ### Notes
-RPE 8 means could have done one rep for sure and then maybe more. 9 means could have done one more half rep for sure maybe full if gave it all. 
 ### Cues
 - Squeeze shoulder blades together  
 - Elbows down and back  
@@ -70,22 +64,21 @@ RPE 8 means could have done one rep for sure and then maybe more. 9 means could 
 
 ## Exercise 4
 **Name:** 1 Arm 45 Degree Cable Rear Fly
-**Goal:** 6.8 kg x 2 sets x 12-15 reps
+**Goal:** 9.1 kg x 2 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 6.8 x 15 RPE 10 perfect
-2. 6.8 x 15+1 RPE 10 perfect 
+1. 9.1 x 10
+2. 9.1 x 10 
 
 ### Cues
 - Squeeze 1-2 sec on top.  
 - Elbows straight and go all the way up  
-- Goal 6.8x15 perfect reps  
+- Goal 6.8 x 15 perfect reps for hypertrophy
 - Hold with thumb under finger grip 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
-
 ## Exercise 5
 **Name:** Cable Paused Shrug In
 **Goal:** 27.2 kg x 2 sets x 10-12 reps
@@ -93,26 +86,25 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.2 x 10 RPE 8 good  - did unilateral
-2. 29.5 x 8 RPE 10 good - did unilateral
+1. 27.2 x 10 
+2. 29.5 x 10 
 ### Notes
-i like this weight otherwise grip fails faster than traps 
 ### Cues
 - Shrug up and in.  
 - 2 sec pause at top and bottom.  
 - don’t try to lean too much, around 30 degree lean from standing straight.  
 - Go for 12 reps every set.  
 - Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze. 
+- stand on stepper to get much better control on bottom and top
 
 ## Exercise 6
-**Name:** EZ Bar Cable Curl
-**Goal:** 22.7 kg x 2 sets x 10-12 reps
+**Name:** Cable Rope Hammer Curl
+**Goal:** 29.5 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 22.7 x 11 RPE 10 perfect  
-2. 22.7 x 9+1 RPE 10 perfect 
+1. 29.6 x 10 
 
 ### Cues
 - Lift from lowest position 
@@ -120,13 +112,13 @@ Pyramid 
 - Controlled negatives  
 
 ## Exercise 7
-**Name:** EZ Bar Preacher Curl
-**Goal:** 20 kg x 1 sets x 12-15 reps
+**Name:** DB Concentration Curl
+**Goal:** 10 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 20 x 11+1 RPE 10 perfect - 2 to 3 second negative
+1. 10 x 12
 ### Notes
-Nailed the form of the gods
+Nail the form of the gods for 12 and then 15 reps 
 ### Cues
 - Constant tension on bicep  
 - Controlled negatives  
