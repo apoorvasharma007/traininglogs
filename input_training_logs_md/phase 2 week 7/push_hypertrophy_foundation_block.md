@@ -1,24 +1,26 @@
 # Training Log
-- Date: 2025-11-22
+- Date: 2025-11-29
 - Phase: 2
-- Week: 6
-- Deload: Yes
+- Week: 7
+- Deload: No
 - Focus: Push Hypertrophy
-- Duration: 107 min 
+- Duration: 150 min 
 ## Exercise 1
 **Name:** Barbell Bench Press
 **Goal:** 75 kg x 3 sets x 8-10 reps
 **Rest:** 5 min 
 
 ### Warmup
-1. 60 x feel
-2. 70 x feel
+1. 40 x feel
+2. 60 x feel
+3. 70 x feel
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 4 RPE 10 good
-2. 75 x 7 RPE 10 good - use more leg drive
+1. 75 x 8 RPE 10 good - last rep was struggle
+2. 75 x 8 RPE 10 good - last rep was a fight
+3. 75 x 9 RPE 10 good - shoaib was standing 
 
 ### Notes
 
@@ -38,8 +40,9 @@ Pyramid warmup figure
 ### Warmup Notes
 Don’t use heavy weights preserve strength for working sets and avoid injury risk 
 ### Working Sets
-1. 20 x 10 perfect 
-2. 22.5 x 10 RPE 10 perfect 
+1. 20 x 10 RPE 8 perfect 
+2. 20 x 10 RPE 9.5  perfect 
+3. 20 x 10+1 RPE 10 perfect
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up. 
 ### Cues
@@ -47,11 +50,12 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 - Full rom  
 ## Exercise 3
 **Name:** Bottom Half Seated Cable Flye
-**Goal:** 13.6 kg x 2 sets x 10-12 reps
+**Goal:** 13.6 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 13.6 x 12 
-2. 13.6 
+1. 13.6 x  11 RPE 9.5 good
+2. 13.6 x 10 RPE 9.5 good
+3. 13.6 x 11 RPE 10 good
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over. 
 ### Cues
@@ -61,14 +65,14 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 
 ## Exercise 4
 **Name:** High Cable Lateral Raise
-**Goal:** 4.5 kg x 2 sets x 12-15 reps 
+**Goal:** 6.8 kg x 2 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 4.5 x 15 RPE 10 perfect
-2. 4.5 x 15 RPE 10 perfect failure:myo(3,2+1,2+1) 
+1. 4.5 x 17 RPE 8 perfect - got a good burn
+2. 6.8 x 12 RPE 10 bad failure:myo(3,2+1,2+1) - struggled with right wrist which is still recovering
 
 ### Notes
-Right is stronger. 
+Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5 
 ### Cues
 - Annihilate the delt with controlled tempo  
 - Initiate with squeezing delts  
@@ -76,38 +80,37 @@ Right is stronger.
   
 ## Exercise 5
 **Name:** EZ Bar Skull Crusher
-**Goal:** 25 kg x 2 sets x 10-12 reps 
+**Goal:** 25 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 25 x 15 RPE 10 good
-2. 25 x 12 RPE 10 good
+1. 25 x 15 RPE 8 good
+2. 25 x 15 RPE 8.5 good
+3. 25 x 15 RPE 10 perfect
   
 ### Notes
-i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
+
 ### Cues
-- anchor at height 7  
-- go to max range of motion  
-- pull from squeezing triceps , focus on arm path don’t push from forearms
+- try to paise for a second at the bottom
+- Try to control the negative that really gets my tricep
 ## Exercise 6
 **Name:** Tricep Pressdown Bar
-**Goal:** 22.7 kg x 2 sets x 12-15 reps 
+**Goal:** 20.4 kg x 2 sets x 15-20 reps 
 ### Working Sets
-1. 9.1 x 7 RPE 9 good - right did one more rep
-2. 6.8 x 11 RPE 10 perfect - right did one more rep
+1. 22.7 x 13 RPE 8 good
+2. 20.4 x 16 RPE 10 failure:myo(3,3)
+### Notes
+Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight
 ### Cues
-- key is to keep elbow behind body and feel that sharp tension on full extension at bottom position 
-- See jeff’s form  
-- Take shoulder support
+- squeeze tricep to move weight
 ## Exercise 7
 **Name:** Ab Wheel Rollout
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 4 
-2. 0 x 4 
-3. 0 x 4 
+1. 0 x 8
+2. 0 x 7 RPE 10 learning 
 
 ### Notes
-wider arms were the trick, now just focus on folding from core and I got perfect from and control on tempo
+Keep working on range of motion
 ### Cues
 - just go until you hit the listed RPE with controlled form.
 
@@ -115,10 +118,10 @@ wider arms were the trick, now just focus on folding from core and I got perfect
 **Name:** Wrist Flexion DB Curl
 **Goal:** 12.5 kg x 3 sets x 12-15 reps
 ### Working Sets
-1. 15 x 8 learning
-2. 15 x 8 learning
+1. 12.5 x 15 RPE 9 good
+2. 12.5 x 15 RPE 9 good 
 ### Notes
-
+Did less range of motion for right wrist to avoid pain
 ### Cues
 - Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.
 
@@ -126,10 +129,10 @@ wider arms were the trick, now just focus on folding from core and I got perfect
 **Name:** Wrist Extension DB Curl
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 ### Working Sets
-1. 10 x 6 learning - too heavy
-2. 10 x 6 learning
+1. 7.5 x 15 RPE 10 good 
+2. 7.5 x 12 RPE 10 good 
 ### Notes
-
+Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
 ### Cues
 - go light weight and maximum control
 - Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm.
@@ -138,8 +141,8 @@ wider arms were the trick, now just focus on folding from core and I got perfect
 **Name:** Forearm Preacher Curl
 **Goal:** 15kg x 2 sets x 8-10 reps
 ### Working Sets
-1. 15 x 10 learning
-2. 15 x 10 RPE 10 learning
+1. 15 x 5 learning
+2. 15 x 5 RPE 10 learning
 ### Notes
 
 ### Cues

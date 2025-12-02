@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-11-21
+- Date: 2025-11-28
 - Phase: 2
-- Week: 6
-- Deload: Yes
+- Week: 7
+- Deload: No
 - Focus: Pull Hypertrophy
-- Duration:  126 min 
+- Duration: 144 min 
 
 ## Exercise 1
 **Name:** Lean Back Lat Pulldown
@@ -12,29 +12,33 @@
 **Rest:** 2 min 
 
 ### Warmup 
+1. 55 x 6
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-
+1. 55 x 12 RPE 7 perfect
+2. 55 x 12 RPE 9 perfect
+3. 55 x 10 + 1 RPE 10 perfect
 ### Notes
 Squeezed from lats
 ### Cues
-- Arms front  
-- Focus on squeezing lats only 
+- lean back 15-30 degrees
+- Engage more mid back
+- touch chest every rep
 
 ## Exercise 2
 **Name:** Chest Supported Machine Row
-**Goal:** 57 kg x 3 sets x 8-10 reps
+**Goal:** 57 kg x 3 sets x 10-12 reps
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x 4
+1. 43 x 5
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 57 x 11
-2. 57 x 10 
-3. 57 x 10 
+1. 57 x 11 RPE 8
+2. 57 x 11 RPE 9
+3. 57 x 12 + 1 RPE 10
 
 ### Notes
 
@@ -54,12 +58,14 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 50 x 10 RPE 
+1. 50 x 10 RPE 10 - right wrist was hurt from before so causing problems
+2. 50 x 10 RPE 10 failure:llp(4)
 
 ### Notes
+Try your best to not lean back
 ### Cues
 - Squeeze shoulder blades together  
-- Elbows down and back  
+- bring wrists to chest
 - Sit upright 
 
 ## Exercise 4
@@ -70,9 +76,11 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 9.1 x 10
-2. 9.1 x 10 
-
+1. 6.8 x 13 RPE 9 - right did 2 more reps
+2. 6.8 x 13 RPE 9.5 good
+3. 6.8 x 14 RPE 10 good failure:llp(3,3,3,3,2+1) - right did 1 more rep
+### Notes
+Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 
 ### Cues
 - Squeeze 1-2 sec on top.  
 - Elbows straight and go all the way up  
@@ -81,13 +89,13 @@ Pyramid 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
-**Goal:** 27.2 kg x 2 sets x 10-12 reps
+**Goal:** 27.2 kg x 2 sets x 12-15 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.2 x 10 
-2. 29.5 x 10 
+1. 27.2 x 12 - right wrist is hurting since overtraining 
+2. 22.7 x 14 RPE 9.5 - reduced weight to protect wrist
 ### Notes
 ### Cues
 - Shrug up and in.  
@@ -99,12 +107,14 @@ Pyramid 
 
 ## Exercise 6
 **Name:** Cable Rope Hammer Curl
-**Goal:** 29.5 kg x 2 sets x 10-12 reps
+**Goal:** 29.5 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 29.6 x 10 
+1. 27.2 x 15 RPE 9
+2. 29.5 x 12 RPE 9
+3. 29.5 x 13 RPE 10
 
 ### Cues
 - Lift from lowest position 
@@ -116,7 +126,8 @@ Pyramid 
 **Goal:** 10 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 10 x 12
+1. 10 x 11 + 1 RPE 10
+2. 10 x 10 RPE 10 failure:myo(3,2+1)
 ### Notes
 Nail the form of the gods for 12 and then 15 reps 
 ### Cues
