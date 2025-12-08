@@ -78,7 +78,7 @@ Pyramid 
 ### Working Sets
 1. 6.8 x 13 RPE 9 - right did 2 more reps
 2. 6.8 x 13 RPE 9.5 good
-3. 6.8 x 14 RPE 10 good failure:llp(3,3,3,3,2+1) - right did 1 more rep
+3. 6.8 x 14 RPE 10 good failure:myo(3,3,3,3,2+1) - right did 1 more rep
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 
 ### Cues

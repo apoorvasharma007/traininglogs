@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-11-25
+- Date: 2025-12-02
 - Phase: 2
-- Week: 7
+- Week: 8
 - Deload: No
 - Focus: Upper Strength
-- Duration: 150 min
+- Duration: 138 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree
@@ -20,9 +20,9 @@
 ### Warmup Notes
 10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 ### Working Sets
-1. 32.5 x 10  RPE 9.5 good
-2. 32.5 x 8 RPE 9 good - left shoulder twitched on rep 4 for a brief sec 
-3. 32.5 x 9 + 1 RPE 10 
+1. 32.5 x 8 RPE 9 good
+2. 32.5 x 8 RPE 9.5 good 
+3. 32.5 x 8 RPE 9.5 good 
 
 ### Notes
 32.5 x 6 felt doable, left hand got stuck while setting up halfway lol. Held up like the superman. Be careful dont get injured.
@@ -42,12 +42,13 @@
 ### Warmup Notes
 pyramid warmup
 ### Working Sets 
-1. 100 x 10 RPE 8 good
-2. 100 x 10 RPE 10 perfect - left was more tired start from left next time
-3. 100 x 9+1 RPE 10 - explosive push and slow negative is the aim. Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive
+1. 100 x 10 RPE 8 good - explosive push and controlled negative 
+2. 100 x 10 RPE 10 good - feels good in the chest
+3. 100 x 12 + 1 RPE 10 - explosive push and slow negatives. 
 
 ### Notes
-100 for 10 with explosive push and good controlled negatives is doable. 
+100 for 10 with explosive push and controlled negatives is feeling good.  
+Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive
 ### Cues
 - the longer the path my arms take the better the squeeze
 - No need to take arm all the way back here, go as far as chest is engaged particularly oj last set to go to failure, these reps are necessary to take chest to failure without putting stress on rotator cuff
@@ -61,11 +62,11 @@ pyramid warmup
 ### Warmup
 
 ### Working Sets
-1. 55 x 11 RPE 9
-2. 55 x 10 RPE 9
-3. 55 x 11 + 1 RPE 10 - only slight lean and elbows down pulling shoulder blades together 
+1. 55 x 11 RPE 8
+2. 55 x 11 RPE 8
+3. 55 x 10 + 1 RPE 10
 ### Notes
-55x12 perfect is the goal
+55x12 perfect is the goal. Felt mostly in lats. Need to focus on shoulder blades squeezing. 
 ### Cues
 - use straps for killing lats
 - drive elbows down squeeze shoulder blades together to feel Lats and mid back
@@ -73,19 +74,20 @@ pyramid warmup
 
 ## Exercise 4
 **Name:** High Cable Lateral Raise
-**Goal:** 6.8 kg x 2 sets x 12-15 reps
+**Goal:** 6.8 kg x 2 sets x 10-12 reps
 **Rest:** 2 min
 ### Warmup
 1. 4.5 x feel -  very slow tempo to activate side delts
 ### Working Sets
-1. 6.8 x 12 RPE 9 perfect - felt really good in lats and upper traps
-2. 6.8 x 11 + 1 RPE 10 perfect
+1. 6.8 x 13 RPE 8.5 good 
+2. 6.8 x 11 RPE 10 perfect
 
 ### Notes
-noticed left side is usually 0.5-1.5 rpe behind right
+noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. The pause at the top is a must. 
 ### Cues
 - squeeze side delts to move weight
 - take more rest between hands to match reps
+- Try to pause at the top for a sec
 
 ## Exercise 5
 **Name:** Smith Machine Row
@@ -97,13 +99,14 @@ noticed left side is usually 0.5-1.5 rpe behind right
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 60 x 11 - explosive pulls but couldn’t come to chest every rep
-2. 60 x 9 - better form but need to hold wider touch chest not abs
-3. 60 x 10 - holding wider helped but need to work on form im getting too vertical
+1. 50 x 11 
+2. 50 x 12
+3. 55 x 10 - taking it easy cuz right wrist hurting 
 ### Notes
-60x6 can be a good goal but need to get that shoulder squeeze. Or reduce weight to 55 and try 8 perfect reps. Forgot to do LLPs
+60x6 can be a good goal but need to get that shoulder squeeze. Or reduce weight to 55 and try 8 perfect reps. Didn’t to do LLPs. 
 ### Cues
-
+- explosive pulls , come to chest every rep
+- try to hold wider touch chest not abs
 ##  Exercise 6
 **Name:** Overhead Cable Tricep Extension Bar
 **Goal:** 29.5 kg x 2 sets x 10-12 reps
@@ -111,9 +114,8 @@ pyramid warmups with slow tempo to feel the movement
 ### Warmup
 
 ### Working Sets
-1. 27.2 x 14 RPE 9 good
-2. 29.5 x 11 RPE 9 good
-3. 29.5 x 12 RPE 10 good
+1. 29.5 x 13 RPE 9 good - careful with healing wrist so didnt do my best range of motion
+2. 29.5 x 14 RPE 9.5 good - better range of motion but still holding back
 
 ### Notes
 i used to be too slanted on these so now standing more upright enough to face front comfortably, lower the weight and work on technique now.  need to go heavier safely.
@@ -127,9 +129,8 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Goal:** 13.6 kg x 3 sets x 10 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 13.6 x 13 RPE 10 good 
-2. 13.6 x 10  RPE 10  perfect
-3. 13.6 x 10 RPE 10 perfect
+1. 12.5 x 13 - used DB cuz right wrist couldn’t handle cables tension 
+2. 12.5 x 13 - used DB cuz right wrist couldn’t handle cables tension 
 ### Cues
 - Using straps to overcome any grip limitations on the last few reps.
 - Squeezing hard on top.
@@ -139,10 +140,9 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Goal:**  15 kg x 3 sets x 10-12 reps
 ### Working Sets
 1. 15 x 5 
-2. 12.5 x 12 RPE 10
-3. 12.5 x 12 RPE 10
+2. 12.5 x 12 RPE 10 
 ### Notes
-
+Did only pain free range of motion for right wrist
 ### Cues
 - Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.
 
@@ -154,7 +154,7 @@ i used to be too slanted on these so now standing more upright enough to face fr
 2. 7.5 x 12 
 3. 7.5 x 10 
 ### Notes
-
+Did only pain free range of motion for right wrist
 ### Cues
 - go light weight and maximum control
 - Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm.
@@ -163,8 +163,8 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Name:** Forearm Preacher Curl
 **Goal:** 12.5 kg x 3 sets x 10-15 reps
 ### Working Sets
-1. 15 x 9 RPE 10 learning
-2. 12.5 x 9 RPE 10 perfect - left died two reps early
+1. 12.5 x 8 RPE 10 learning
+2. 12.5 x 6 RPE 10 perfect - left died one rep early
 ### Notes
 Did real slow descent and full arm extension
 ### Cues

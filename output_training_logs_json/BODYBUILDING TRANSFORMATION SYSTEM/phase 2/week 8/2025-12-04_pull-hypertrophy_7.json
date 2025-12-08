@@ -1,15 +1,15 @@
 {
   "data_model_version": "0.0.1",
   "data_model_type": "TrainingSession",
-  "session_id": "2025-11-28_pull-hypertrophy_7",
+  "session_id": "2025-12-04_pull-hypertrophy_7",
   "user_id": "7",
   "user_name": "Apoorva Sharma",
-  "date": "2025-11-28",
+  "date": "2025-12-04",
   "program": "BODYBUILDING TRANSFORMATION SYSTEM",
   "program_author": "Jeff Nippard",
   "program_length_weeks": 12,
   "phase": 2,
-  "week": 7,
+  "week": 8,
   "is_deload_week": false,
   "focus": "Pull Hypertrophy",
   "exercises": [
@@ -24,17 +24,17 @@
             "full": 12,
             "partial": 0
           },
-          "rpe": 7.0,
-          "rep_quality_assessment": "perfect",
+          "rpe": 8.5,
+          "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "right wrist not at 100 percent yet",
           "failure_technique": null
         },
         {
           "number": 2,
           "weight_kg": 55.0,
           "rep_count": {
-            "full": 12,
+            "full": 13,
             "partial": 0
           },
           "rpe": 9.0,
@@ -47,8 +47,8 @@
           "number": 3,
           "weight_kg": 55.0,
           "rep_count": {
-            "full": 10,
-            "partial": 1
+            "full": 12,
+            "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "perfect",
@@ -61,10 +61,10 @@
       "rep_tempo": null,
       "current_goal": {
         "weight_kg": 55.0,
-        "sets": 2,
+        "sets": 3,
         "rep_range": {
-          "min": 8,
-          "max": 10
+          "min": 10,
+          "max": 12
         },
         "rest_minutes": 2
       },
@@ -76,12 +76,13 @@
           "notes": null
         }
       ],
-      "notes": "Squeezed from lats",
+      "notes": null,
       "warmup_notes": "Pyramid",
       "form_cues": [
         "lean back 15-30 degrees",
         "Engage more mid back",
-        "touch chest every rep"
+        "touch chest every rep",
+        "squeeze from lats"
       ]
     },
     {
@@ -92,11 +93,11 @@
           "number": 1,
           "weight_kg": 57.0,
           "rep_count": {
-            "full": 11,
+            "full": 12,
             "partial": 0
           },
-          "rpe": 8.0,
-          "rep_quality_assessment": null,
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -105,11 +106,11 @@
           "number": 2,
           "weight_kg": 57.0,
           "rep_count": {
-            "full": 11,
+            "full": 12,
             "partial": 0
           },
-          "rpe": 9.0,
-          "rep_quality_assessment": null,
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -118,11 +119,11 @@
           "number": 3,
           "weight_kg": 57.0,
           "rep_count": {
-            "full": 12,
+            "full": 11,
             "partial": 1
           },
           "rpe": 10.0,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": null
@@ -152,7 +153,7 @@
       "form_cues": [
         "Get chest support all the way out.",
         "Also arms are too flared see Jeff\u2019s form, tuck in a bit and go further back that acute angle is missing in my arms at the top.",
-        "Pause at the top and squeeze.",
+        "Pause at the top and squeeze shoulder blades",
         "Keep feet on ground.",
         "Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo."
       ]
@@ -165,26 +166,26 @@
           "number": 1,
           "weight_kg": 50.0,
           "rep_count": {
-            "full": 10,
+            "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "rpe": 8.0,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": "right wrist was hurt from before so causing problems",
+          "notes": "right wrist still not at 100 percent",
           "failure_technique": null
         },
         {
           "number": 2,
           "weight_kg": 50.0,
           "rep_count": {
-            "full": 10,
+            "full": 11,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "felt fatigue pain in right wrist after this set",
           "failure_technique": {
             "technique_type": "LLP",
             "details": {
@@ -199,8 +200,8 @@
         "weight_kg": 50.0,
         "sets": 2,
         "rep_range": {
-          "min": 10,
-          "max": 12
+          "min": 12,
+          "max": 15
         },
         "rest_minutes": 2
       },
@@ -221,79 +222,43 @@
           "number": 1,
           "weight_kg": 6.8,
           "rep_count": {
-            "full": 13,
-            "partial": 0
+            "full": 11,
+            "partial": 2
           },
-          "rpe": 9.0,
-          "rep_quality_assessment": null,
+          "rpe": 10.0,
+          "rep_quality_assessment": "bad",
           "actual_rest_minutes": null,
-          "notes": "right did 2 more reps",
+          "notes": "right wrist pain still there",
           "failure_technique": null
         },
         {
           "number": 2,
           "weight_kg": 6.8,
           "rep_count": {
-            "full": 13,
-            "partial": 0
+            "full": 10,
+            "partial": 3
           },
-          "rpe": 9.5,
-          "rep_quality_assessment": "good",
+          "rpe": 10.0,
+          "rep_quality_assessment": "bad",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "right wrist pain still there",
           "failure_technique": null
         },
         {
           "number": 3,
           "weight_kg": 6.8,
           "rep_count": {
-            "full": 14,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": "right did 1 more rep",
+          "notes": "right wrist pain still there",
           "failure_technique": {
-            "technique_type": "MyoReps",
+            "technique_type": "LLP",
             "details": {
-              "mini_sets": [
-                {
-                  "number": 1,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 2,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 3,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 4,
-                  "rep_count": {
-                    "full": 3,
-                    "partial": 0
-                  }
-                },
-                {
-                  "number": 5,
-                  "rep_count": {
-                    "full": 2,
-                    "partial": 1
-                  }
-                }
-              ]
+              "partial_rep_count": 4
             }
           }
         }
@@ -310,7 +275,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique.",
+      "notes": "Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. Was supposed to do myo(3,3,3,3,2+1). I did lateral raise by mistake here.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Squeeze 1-2 sec on top.",
@@ -328,7 +293,7 @@
           "number": 1,
           "weight_kg": 27.2,
           "rep_count": {
-            "full": 12,
+            "full": 15,
             "partial": 0
           },
           "rpe": null,
@@ -339,7 +304,7 @@
         },
         {
           "number": 2,
-          "weight_kg": 22.7,
+          "weight_kg": 27.2,
           "rep_count": {
             "full": 14,
             "partial": 0
@@ -347,7 +312,20 @@
           "rpe": 9.5,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": "reduced weight to protect wrist",
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 27.2,
+          "rep_count": {
+            "full": 15,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
           "failure_technique": null
         }
       ],
@@ -371,7 +349,8 @@
         "don\u2019t try to lean too much, around 30 degree lean from standing straight.",
         "Go for 12 reps every set.",
         "Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze.",
-        "stand on stepper to get much better control on bottom and top"
+        "stand on stepper to get much better control on bottom and top",
+        "Lean slightly forward i think that helps me feel more traps"
       ]
     },
     {
@@ -380,7 +359,7 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 27.2,
+          "weight_kg": 29.5,
           "rep_count": {
             "full": 15,
             "partial": 0
@@ -395,7 +374,7 @@
           "number": 2,
           "weight_kg": 29.5,
           "rep_count": {
-            "full": 12,
+            "full": 16,
             "partial": 0
           },
           "rpe": 9.0,
@@ -408,7 +387,7 @@
           "number": 3,
           "weight_kg": 29.5,
           "rep_count": {
-            "full": 13,
+            "full": 17,
             "partial": 0
           },
           "rpe": 10.0,
@@ -430,7 +409,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": null,
+      "notes": "Didn't control eccentric today to protect wrists. Did explosive concentric.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Lift from lowest position",
@@ -493,10 +472,10 @@
       "rep_tempo": null,
       "current_goal": {
         "weight_kg": 10.0,
-        "sets": 1,
+        "sets": 2,
         "rep_range": {
-          "min": 12,
-          "max": 15
+          "min": 15,
+          "max": 20
         },
         "rest_minutes": 2
       },
@@ -511,5 +490,5 @@
       ]
     }
   ],
-  "session_duration_minutes": 144
+  "session_duration_minutes": 125
 }

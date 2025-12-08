@@ -1,23 +1,28 @@
 # Training Log
-- Date: 2025-11-30
+- Date: 2025-12-07
 - Phase: 2  
-- Week: 7
+- Week: 8
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 150 min
+- Duration: 168 min
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 250 kg x 3 sets x 10-12 reps  
 **Rest:** 3 min   
+
+### Warmup
+1. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
+2. 150 x feel - full possible depth
+3. 200 x feel - full possible depth
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 250 x 15 RPE 8
-2. 250 x  13 RPE 9
-3. 250 x 21 RPE 10 - With Asif’s presence, last rep was a struggle 
+1. 250 x 14 RPE 8.5
+2. 250 x 14 RPE 9
+3. 250 x 15 RPE 10 - every rep stopped for a brief second to take a deep breath and brace my core. I was able to push with better technique this way. 
 
 ### Notes 
-Work on form and use hands very lightly to protect knees until you have knee sleeves
+Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. 
 ### Cues  
 - Seat height at 2.   
 - Controlled negative and explosive positive  
@@ -35,9 +40,9 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 50 x 13 good
-2. 50 x 12 good 
-3. 50 x 13 RPE 10 good failure:llp(7)
+1. 50 x 14 RPE 8.5 perfect 
+2. 50 x 14 RPE 8.5 perfect
+3. 50 x 14 RPE 10 good failure:llp(7)
 ### Notes 
 Seat at 4, 5 visible. Goal 50x15
 ### Cues  
@@ -53,15 +58,16 @@ Seat at 4, 5 visible. Goal 50x15
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15 x 11 RPE 9 - feeling very tired
-2. 15 x  12 RPE 8 good - felt less tired. Keep pushing. 
+1. 15 x 12 RPE 8 good 
+2. 17.5 x 12 RPE 8.5 good - felt less tired. Keep pushing
+3. 17.5 x 12 RPE 9 good
 ### Notes
 Careful with knee fatigue. We need to fix them before we killshot here. 
 ### Cues  
 - can take 3 min rest  
-- Keep hind foot’s toes part on the bar for stabilty
-- Take knee over toe and go full depth
 - Controlled negative with explosive positive
+- Take your body over the knee as you walk
+- Try to push only from front leg
 
 ## Exercise 4 
 **Name:** Leg Extension  
@@ -70,8 +76,8 @@ Careful with knee fatigue. We need to fix them before we killshot here.
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 77 x 12  RPE 9 good
-2. 77 x 9 + 1 RPE 10 good  
+1. 77 x 12  RPE 9.5 perfect
+2. 77 x 12  RPE 10 perfect - last rep was a fight 
 ### Notes
 70 for 15 is a good hyper trophy goal
 ### Cues  
@@ -84,8 +90,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15.9 x 13 RPE 9
-2. 15.9 x 12 RPE 10
+1. 15.9 x 13 RPE 9 good
+2. 15.9 x 13 RPE 10 good - took proper rest between legs
 ### Notes 
 13.6 for 12 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -97,15 +103,15 @@ Pyramid   
 - Control tempo on negative
 ## Exercise 6
 **Name:** Cable Hip Abduction  
-**Goal:** 9.1 kg x 2 sets x 10-12 reps  
+**Goal:** 9.1 kg x 2 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warm Up
 
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 9.1 x 13 - felt good felt in outer thighs and glutes
-2. 9.1 x 14+ 1 RPE 10
+1. 9.1 x 12 RPE 7 perfect - felt like warmup, do 15 reps next time 
+2. 9.1 x 12 RPE 10 - full rom cross legs
 ### Notes    
 
 ### Cues  
@@ -113,18 +119,31 @@ Pyramid   
 - Think about kicking up, then you’d keep the hip stable.   
 - Perfect form with controlled negative and explosive push.   
 - see Jeff’s form in video  
+- Go full range of motion by letting legs cross
 
 ## Exercise 7 
 **Name:** Standing Calf Raise  
-**Goal:** 130 kg x 2 sets x 10-12 reps  
+**Goal:** 130 kg x 2 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warm Up
 1. 120 x feel - fast explosive tempo
 ### Working Sets 
-1. 120 x 12 RPE 9.5 perfect 
-2. 120 x 12 RPE 10 perfect failure:statichold(30)
+1. 120 x 12 RPE 10 good 
+2. 120 x 12+ 1 RPE 10 perfect - forgot static hold
 ### Notes 
 120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. 
 ### Cues  
 - I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit.  
 - 1-2 sec pause at the bottom.
+
+## Exercise 8
+**Name:** Tibialis Raise Single Leg
+**Goal:** 8 kg x 2 sets x 1-15 reps
+### Working Sets
+1. 8 x 12 good 
+2. 8 x 12 RPE 10 good  
+### Notes
+Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 
+### Cues
+- go around the world
+- Keep knee bent know, i have done enough with straight knee and my left knee is still hurting 
