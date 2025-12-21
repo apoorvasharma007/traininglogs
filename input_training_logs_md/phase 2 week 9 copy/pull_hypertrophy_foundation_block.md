@@ -1,0 +1,143 @@
+# Training Log
+- Date: 2025-12-12
+- Phase: 2
+- Week: 9
+- Deload: No
+- Focus: Pull Hypertrophy
+- Duration: 122 min 
+
+## Exercise 1
+**Name:** Lean Back Lat Pulldown
+**Goal:** 55kg x 3 sets x 10-12 reps
+**Rest:** 2 min 
+
+### Warmup 
+1. 55 x 6
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 55 x 12 RPE 8 good - right wrist almost at 100 percent  
+2. 55 x 12 RPE 9 good - grip failed but felt it in the lats on last rep
+3. 55 x 13 RPE 10 good
+
+### Notes
+
+### Cues
+- lean back 15-30 degrees
+- Engage more mid back
+- touch chest every rep
+- squeeze from lats
+
+## Exercise 2
+**Name:** Chest Supported Machine Row
+**Goal:** 57 kg x 3 sets x 10-12 reps
+**Rest:** 2 min 
+
+### Warmup
+1. 50 x feel
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 57 x 12 RPE 9 good
+2. 57 x 12 RPE 9.5 good
+3. 57 x 12 + 1 RPE 10 good 
+
+### Notes
+
+### Cues
+- Get chest support all the way out.  
+- Also arms are too flared see Jeff’s form, tuck in a bit and go further back that acute angle is missing in my arms at the top.  
+- Pause at the top and squeeze shoulder blades
+- Keep feet on ground. 
+- Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo. 
+
+## Exercise 3
+**Name:** Dual Handle Elbows Out Cable Row
+**Goal:** 50 kg x 3 sets x 12-15 reps
+**Rest:** 2 min 
+
+### Warmup
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 50 x 13 RPE 8 - right wrist almost 100 percent
+2. 50 x 14 RPE 8.5 
+3. 50 x 14 RPE 10 failure:llp(4)
+### Notes
+Try your best to not lean back
+### Cues
+- Squeeze shoulder blades together  
+- bring wrists to chest
+- Sit upright 
+
+## Exercise 4
+**Name:** 1 Arm 45 Degree Cable Rear Fly
+**Goal:** 9.1 kg x 3 sets x 12-15 reps
+**Rest:** 2 min 
+
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 9.1 x 14 RPE 10 good 
+2. 9.1 x 10 RPE 9.5 good
+3. 9.1 x 15 RPE 10 good - could have done more than 15 on this set, didnt do failure myo reps
+### Notes
+Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal. 
+### Cues
+- Squeeze 1-2 sec on top.  
+- Elbows straight and go all the way up  
+- Goal 6.8 x 15 perfect reps for hypertrophy
+- Hold with thumb under finger grip 
+- Keep shoulder down and back with chest pushed out to get that burn in rear delt
+## Exercise 5
+**Name:** Cable Paused Shrug In
+**Goal:** 27.2 kg x 3 sets x 12-15 reps
+**Rest:** 2 min 
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 27.2 x 14 RPE 9.5 good- right wrist is not hurting at all on this today
+2. 27.2 x 14 RPE 9.5 good - explosive pull and controlled eccentric
+3. 27.2 x 16 RPE 10 good
+### Notes
+### Cues
+- Shrug up and in.  
+- 2 sec pause at top and bottom.  
+- don’t try to lean too much, around 30 degree lean from standing straight.  
+- Go for 12 reps every set.  
+- Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze. 
+- stand on stepper to get much better control on bottom and top 
+- Lean slightly forward i think that helps me feel more traps
+- fast concentric slow eccentric 
+
+## Exercise 6
+**Name:** Cable Rope Hammer Curl
+**Goal:** 29.5 kg x 3 sets x 12-15 reps
+**Rest:** 2 min 
+### Warmup Notes
+Pyramid 
+### Working Sets
+1. 31.8 x 17 RPE 9 - didn’t control eccentric 
+2. 31.8 x 15 RPE 9 - didn’t control eccentric, form fluctuations on last few reps due to healing right wrist
+3. 31.8 x 13 RPE 10 -  controlled eccentric, didn’t hurt wrist at all!
+### Notes
+Didn't control eccentric today to protect wrists. Did explosive concentric.  
+### Cues
+- Lift from lowest position 
+- Constant tension on bicep  
+- Controlled negatives  
+
+## Exercise 7
+**Name:** DB Concentration Curl
+**Goal:** 10 kg x 2 sets x 15-20 reps
+**Rest:** 2 min 
+### Working Sets
+1. 10 x 12  RPE 9.5 perfect 
+2. 10 x 12 RPE 10 perfect failure:myo(3,2+1)
+### Notes
+Nail the form of the gods for 12 and then 15 reps 
+### Cues
+- Constant tension on bicep  
+- Controlled negatives  
+- Mind muscle connection with biceps  
+- Don’t come so far up that its not on the bicep anymore
