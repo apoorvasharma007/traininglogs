@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-12-04
+- Date: 2025-12-12
 - Phase: 2
-- Week: 8
+- Week: 9
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 125  min 
+- Duration: 122 min 
 
 ## Exercise 1
 **Name:** Lean Back Lat Pulldown
@@ -16,9 +16,9 @@
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 12 RPE 8.5 good - right wrist not at 100 percent yet 
-2. 55 x 13 RPE 9 perfect
-3. 55 x 12 RPE 10 perfect
+1. 55 x 12 RPE 8 good - right wrist almost at 100 percent  
+2. 55 x 12 RPE 9 good - grip failed but felt it in the lats on last rep
+3. 55 x 13 RPE 10 good
 
 ### Notes
 
@@ -34,13 +34,13 @@ Pyramid 
 **Rest:** 2 min 
 
 ### Warmup
-1. 43 x 5
+1. 50 x feel
 ### Warmup Notes
 Pyramid 
 ### Working Sets
 1. 57 x 12 RPE 9 good
-2. 57 x 12 RPE 9.5 perfect
-3. 57 x 11 + 1 RPE 10 perfect 
+2. 57 x 12 RPE 9.5 good
+3. 57 x 12 + 1 RPE 10 good 
 
 ### Notes
 
@@ -53,16 +53,16 @@ Pyramid 
 
 ## Exercise 3
 **Name:** Dual Handle Elbows Out Cable Row
-**Goal:** 50 kg x 2 sets x 12-15 reps
+**Goal:** 50 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 50 x 12 RPE 8 - right wrist still not at 100 percent
-2. 50 x 11 RPE 10 failure:llp(4) - felt fatigue pain in right wrist after this set 
-
+1. 50 x 13 RPE 8 - right wrist almost 100 percent
+2. 50 x 14 RPE 8.5 
+3. 50 x 14 RPE 10 failure:llp(4)
 ### Notes
 Try your best to not lean back
 ### Cues
@@ -72,17 +72,17 @@ Try your best to not lean back
 
 ## Exercise 4
 **Name:** 1 Arm 45 Degree Cable Rear Fly
-**Goal:** 9.1 kg x 2 sets x 12-15 reps
+**Goal:** 9.1 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 6.8 x 11+2 RPE 10 bad - right wrist pain still there
-2. 6.8 x 10+3 RPE 10 bad - right wrist pain still there
-3. 6.8 x 10  RPE 10 good failure:llp(4) - right wrist pain still there
+1. 9.1 x 14 RPE 10 good 
+2. 9.1 x 10 RPE 9.5 good
+3. 9.1 x 15 RPE 10 good - could have done more than 15 on this set, didnt do failure myo reps
 ### Notes
-Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. Was supposed to do myo(3,3,3,3,2+1). I did lateral raise by mistake here. 
+Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal. 
 ### Cues
 - Squeeze 1-2 sec on top.  
 - Elbows straight and go all the way up  
@@ -91,14 +91,14 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
-**Goal:** 27.2 kg x 2 sets x 12-15 reps
+**Goal:** 27.2 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.2 x 15 - right wrist is hurting since overtraining 
-2. 27.2 x 14 RPE 9.5
-3. 27.2 x 15 RPE 10
+1. 27.2 x 14 RPE 9.5 good- right wrist is not hurting at all on this today
+2. 27.2 x 14 RPE 9.5 good - explosive pull and controlled eccentric
+3. 27.2 x 16 RPE 10 good
 ### Notes
 ### Cues
 - Shrug up and in.  
@@ -108,6 +108,7 @@ Pyramid 
 - Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze. 
 - stand on stepper to get much better control on bottom and top 
 - Lean slightly forward i think that helps me feel more traps
+- fast concentric slow eccentric 
 
 ## Exercise 6
 **Name:** Cable Rope Hammer Curl
@@ -116,9 +117,9 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 29.5 x 15 RPE 9
-2. 29.5 x 16 RPE 9
-3. 29.5 x 17 RPE 10
+1. 31.8 x 17 RPE 9 - didn’t control eccentric 
+2. 31.8 x 15 RPE 9 - didn’t control eccentric, form fluctuations on last few reps due to healing right wrist
+3. 31.8 x 13 RPE 10 -  controlled eccentric, didn’t hurt wrist at all!
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.  
 ### Cues
@@ -131,8 +132,8 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Goal:** 10 kg x 2 sets x 15-20 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 10 x 11 + 1 RPE 10
-2. 10 x 10 RPE 10 failure:myo(3,2+1)
+1. 10 x 12  RPE 9.5 perfect 
+2. 10 x 12 RPE 10 perfect failure:myo(3,2+1)
 ### Notes
 Nail the form of the gods for 12 and then 15 reps 
 ### Cues

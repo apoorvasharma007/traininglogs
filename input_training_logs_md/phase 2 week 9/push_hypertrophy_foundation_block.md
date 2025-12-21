@@ -1,7 +1,7 @@
 # Training Log
-- Date: 2025-12-05
+- Date: 2025-12-13
 - Phase: 2
-- Week: 8
+- Week: 9
 - Deload: No
 - Focus: Push Hypertrophy
 - Duration: 136 min 
@@ -18,9 +18,9 @@
 Pyramid warmup figure
 
 ### Working Sets
-1. 75 x 8 RPE 10 good - last rep was perfect struggle
-2. 75 x 8 RPE 9.5 good - last rep was a fight
-3. 75 x 8 RPE 10 good - failed last 9th rep 
+1. 75 x 8 RPE 9.5 good - last rep was perfect struggle
+2. 75 x 8 RPE 10 good - last rep was a fight
+3. 75 x 7 RPE 10 good - failed last 8th rep 
 
 ### Notes
 
@@ -40,9 +40,9 @@ Pyramid warmup figure
 ### Warmup Notes
 Don’t use heavy weights preserve strength for working sets and avoid injury risk 
 ### Working Sets
-1. 20 x 11 RPE 8.5 perfect 
-2. 20 x 10 RPE 10  perfect 
-3. 20 x 10RPE 10 perfect
+1. 20 x 10 RPE 9 good 
+2. 20 x 9 + 1 RPE 10  good 
+3. 20 x 7 + 2  RPE 10 good - feeling tired today 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up. 
 ### Cues
@@ -53,8 +53,9 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Goal:** 13.6 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 13.6 x 11 RPE 10 good
+1. 13.6 x 12 RPE 10 good
 2. 13.6 x 12 RPE 10 perfect
+3. 13.6 x 12 RPE 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over. 
 ### Cues
@@ -64,11 +65,13 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 
 ## Exercise 4
 **Name:** High Cable Lateral Raise
-**Goal:** 6.8 kg x 2 sets x 12-15 reps 
+**Goal:** 6.8 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 6.8 x 11 RPE 8 perfect - got a good burn but right wrist hurt since its not fully recovered
-2. 4.5 x 15 RPE 10 perfect failure:myo(3,2+1) - right wrist not fully well it hurt a little after the set
+1. 6.8 x 13 RPE 10 good 
+2. 9.1 x 10 RPE 9.5 good
+3. 6.8 x 15 RPE 10 failure:myo(3,3,3) - could have done more than 15 on this set
+
 ### Notes
 Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5 
 ### Cues
@@ -81,9 +84,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 25 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 25 x 15 RPE 8 good
-2. 25 x 15 RPE 8.5 good
-3. 25 x 15 RPE 10 perfect
+1. 25 x 13 RPE 10 perfect 
+2. 25 x 13 RPE 10 perfect
+3. 25 x 13 +1 RPE 10 perfect
   
 ### Notes
 
@@ -94,8 +97,8 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Name:** Tricep Pressdown Bar
 **Goal:** 20.4 kg x 2 sets x 15-20 reps 
 ### Working Sets
-1. 20.4 x 22 RPE 9 good
-2. 22.7 x 13 RPE 10
+1. 20.4 x 12+1 RPE 10 perfect - form improvement dropped reps but felt great in triceps
+2. 20.4 x 12+1 RPE 10 perfect
 ### Notes
 Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgot to do myo reps. 
 ### Cues
@@ -104,8 +107,9 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgo
 **Name:** Ab Wheel Rollout
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 6
-2. 0 x 6 RPE 10 learning 
+1. 0 x 10 RPE 9.5 learning - good range 
+2. 0 x 7 RPE 10 learning - good range
+3. 0 x 7 RPE 10 good - good range
 
 ### Notes
 Keep working on range of motion. 
@@ -115,10 +119,10 @@ Keep working on range of motion.
 
 ## Exercise 8
 **Name:** Wrist Flexion DB Curl
-**Goal:** 12.5 kg x 3 sets x 12-15 reps
+**Goal:** 12.5 kg x 2 sets x 12-15 reps
 ### Working Sets
-1. 12.5 x 12 RPE 9 good
-2. 12.5 x 12 RPE 9 good 
+1. 12.5 x 12 RPE 9 good - left did more reps , right wrist hurt very little
+2. 12.5 x 12 RPE 9 good - left did more reps , right wrist hurt very little
 ### Notes
 Did less range of motion for right wrist to avoid pain
 ### Cues
@@ -128,8 +132,8 @@ Did less range of motion for right wrist to avoid pain
 **Name:** Wrist Extension DB Curl
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 ### Working Sets
-1. 7.5 x 12 RPE 10 good 
-2. 7.5 x 12 RPE 10 good 
+1. 7.5 x 12 RPE 10 good - left did more reps , right wrist hurt slightly 
+2. 7.5 x 12 RPE 10 good - left did more reps , right wrist hurt slightly 
 ### Notes
 Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
 ### Cues
