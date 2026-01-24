@@ -1,7 +1,7 @@
 # Training Log
 - Date: 2026-01-18
 - Phase: 2  
-- Week: 11
+- Week: 12
 - Deload: No  
 - Focus: Legs Hypertrophy  
 - Duration: 180 min

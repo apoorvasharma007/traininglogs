@@ -1,12 +1,11 @@
-
 # Training Log
 
-- Date: 2026-01-17
+- Date: 2026-01-10
 - Phase: 2
-- Week: 12
+- Week: 11
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 177 min 
+- Duration: 151 min 
 
 ## Exercise 1
 
@@ -16,16 +15,17 @@
 
 ### Warmup
 1. 60 x feel
-2. 70 x feel
+2. 60 x feel
+3. 70 x feel
 
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 75 x 11 RPE 9.5 perfect
-2. 75 x 11 RPE 10 perfect
-3. 75 x 9 RPE 10 perfect
-4. 75 x 9 RPE 10 good - last rep was a fight
+1. 75 x 10 RPE 9.5 perfect
+2. 75 x 10 RPE 10 good
+3. 75 x 9 RPE 10 good
+4. 75 x 6 RPE 10 good - last rep was a fight
 
 ### Notes
 Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
@@ -90,9 +90,9 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 6.8 x 13 + 2 RPE 10 good
-2. 6.8 x 11 + 4 RPE 10 good
-3. 6.8 x 10 + 2  RPE 10 failure:myo (3,2+1) good
+1. 6.8 x 13 RPE 10 good
+2. 6.8 x 13 RPE 10 good - last one two reps were bit partials
+3. 6.8 x 12 RPE 10 good - didnt do myo reps
 
   
 ### Notes
@@ -111,8 +111,8 @@ Right is stronger. Try to get good 15 reps at 6.8 or get 20 reps at 4.5
 
 ### Working Sets
 1. 25 x 13 RPE 10 good
-2. 25 x 11 RPE 10 perfect 
-3. 25 x 8 RPE 10 good
+2. 25 x 10 RPE 10 good
+3. 25 x 9 RPE 10 good
 
 ### Notes
 
@@ -127,8 +127,8 @@ Right is stronger. Try to get good 15 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 6+4 RPE 10 perfect 
-2. 20.4 x 8+4 RPE 10 perfect
+1. 20.4 x 8+4 RPE 10 perfect 
+2. 20.4 x 6+4 RPE 10 perfect
 3. 20.4 x 6+6 RPE 10 perfect
 
 ### Notes
@@ -144,8 +144,8 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgo
 
 ### Working Sets
 1. 0 x 10 - good range really 
-2. 0 x 6 + 4 RPE 10 
-3. 0 x 5 + 3 RPE 10 
+2. 0 x 6 RPE 10 - good range
+3. 0 x 6 RPE 10 
 
 ### Notes
 Keep working on range of motion.
@@ -163,7 +163,6 @@ Keep working on range of motion.
 ### Working Sets
 1. 12.5 x 20 RPE 9 good
 2. 12.5 x 15 RPE 10 good - right wrist hurts less on set two with more range of motion now 
-3. 15 x 6 - light weight high reps gives a better pump
 
 ### Notes
 Did less range of motion for right wrist to avoid pain
@@ -181,7 +180,6 @@ Did less range of motion for right wrist to avoid pain
 ### Working Sets
 1. 7.5 x 15 RPE 10 good
 2. 7.5 x 15 RPE 10 good
-3. 10 x 6 - not a great pump with this
 
 ### Notes
 Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
@@ -197,8 +195,7 @@ Did less range of motion with right wrist. But the pain feels less after exercis
 
 ### Working Sets
 1. 12.5 x 12 RPE 9.5 good
-2. 15 x 6 RPE 10 good
-3. 15 x 6 RPE 10 good 
+2. 15 x 8 RPE 10 good
 ### Notes
 
 

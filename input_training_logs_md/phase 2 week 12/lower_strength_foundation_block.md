@@ -19,7 +19,7 @@
 ### Working Sets
 1. 57 x 15 RPE 8.5 perfect - first rep onwards good form, rest seems to have fixed weakness 
 2. 57 x 13 RPE 9 perfect 
-3. 57 x 12 RPE 13 good failure:llp(10) - the catch was height at 2 around the hip anchor, setting it to 1 made first rep partial to setup
+3. 57 x 13 RPE 10 good failure:llp(10) - the catch was height at 2 around the hip anchor, setting it to 1 made first rep partial to setup
   
 ### Notes
 At 57 i have to use my hands and the rest of me more to get reps in but 50 is quite easy to isolate hamstrings. Keep pushing at 57 until they start to get easier. first rep is sometimes the bottleneck, it was partial but then we get in the groove. Set seat at 4 points (5 visible) , hips at 2 (3 visible) and calves at 3 

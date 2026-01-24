@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-01-16
+- Date: 2026-01-09
 - Phase: 2
 - Week: 12
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 117 min 
+- Duration: 120 min 
 
 ## Exercise 1
 
@@ -20,9 +20,9 @@
 Pyramid 
 
 ### Working Sets
-1. 55 x 13 RPE 8.5 good 
-2. 55 x 13 RPE 8.5 perfect - felt nice in lats
-3. 55 x 12 + 1 RPE 10 perfect 
+1. 55 x 16 RPE 8 good - didnt feel hard
+2. 55 x 12 + 3 RPE 10 good - felt nice in lats
+3. 55 x 12 RPE 10 good - should have tried one more
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -48,8 +48,8 @@ Pyramid 
 ### Working Sets
 1. 57 x 12 RPE 9 good
 2. 57 x 12 RPE 10 good
-3. 57 x 12 RPE 10 perfect
-4. 57 x 12 RPE 10 perfect - last few reps were partial
+3. 57 x 12 RPE 10 good
+4. 57 x 12 RPE 10 good - last few reps were a fight 
 
 ### Notes
 
@@ -73,9 +73,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 50 x 15 RPE 9 good 
-2. 50 x 13 RPE 10 good 
-3. 50 x 10 RPE 10 failure:llp(5) good - last fee reps felt weak and partial
+1. 50 x 12 RPE 9 good 
+2. 50 x 15 RPE 10 good 
+3. 50 x 14 RPE 10 failure:llp(5) good
 
 ### Notes
 Try your best to not lean back
@@ -95,9 +95,9 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 9.1 x 12 RPE 9 good
-2. 9.1 x 10  RPE 10 perfect 
-3. 9.1 x 10  RPE 10 - didnt do myo reps
+1. 6.8 x 15 RPE 9 good
+2. 9.1 x 10 + 1 RPE 10 perfect 
+3. 9.1 x 9 +1 RPE 10 failure:myo(4,2) good - right did one more rep
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -119,9 +119,9 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 Pyramid 
 
 ### Working Sets
-1. 27.2 x 12 RPE 9.5 good 
+1. 27.2 x 14 RPE 9.5 good 
 2. 27.2 x 12 RPE 9.5 good - paused at top and bottom
-3. 27.2 x 12 RPE 10 good
+3. 27.2 x 15 RPE 10 good
 
 ### Notes
 
