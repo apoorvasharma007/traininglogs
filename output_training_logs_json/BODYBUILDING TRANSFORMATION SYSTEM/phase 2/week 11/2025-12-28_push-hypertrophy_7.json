@@ -1,0 +1,686 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2025-12-28_push-hypertrophy_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2025-12-28",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 2,
+  "week": 11,
+  "is_deload_week": false,
+  "focus": "Push Hypertrophy",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Barbell Bench Press",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 75.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 75.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 75.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 4,
+          "weight_kg": 75.0,
+          "rep_count": {
+            "full": 7,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "last rep was a fight",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 75.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 5
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 60.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 60.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 70.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?",
+      "warmup_notes": "Pyramid warmup figure",
+      "form_cues": [
+        "Legs engaged",
+        "Core braced and back settled",
+        "Breathe per rep",
+        "Left right side equally engaged"
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Seated DB Shoulder Press",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 20.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 20.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 20.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": null,
+          "notes": "around the world arms extended time under tension is good enough resistance"
+        },
+        {
+          "number": 2,
+          "weight_kg": 2.5,
+          "rep_count": null,
+          "notes": "around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based"
+        },
+        {
+          "number": 3,
+          "weight_kg": 17.5,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.",
+      "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x\u00a0 feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.",
+      "form_cues": [
+        "Seat upright",
+        "Full rom"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Bottom Half Seated Cable Flye",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 13.6,
+        "sets": 3,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.",
+      "warmup_notes": null,
+      "form_cues": [
+        "Take a wider path when coming up",
+        "Try to go down pretty low but stay safe",
+        "Constant tension on pecs"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "High Cable Lateral Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 9.1,
+          "rep_count": {
+            "full": 9,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 6.8,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "last one two reps were bit partials",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 6.8,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": {
+            "technique_type": "MyoReps",
+            "details": {
+              "mini_sets": [
+                {
+                  "number": 1,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 2,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 3,
+                  "rep_count": {
+                    "full": 2,
+                    "partial": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 6.8,
+        "sets": 3,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5",
+      "warmup_notes": null,
+      "form_cues": [
+        "Annihilate the delt with controlled tempo",
+        "Initiate with squeezing delts",
+        "Hold the top for a second"
+      ]
+    },
+    {
+      "number": 5,
+      "name": "EZ Bar Skull Crusher",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 25.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": [
+        "try to paise for a second at the bottom",
+        "Try to control the negative that really gets my tricep"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Tricep Pressdown Bar",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 6,
+            "partial": 4
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 8,
+            "partial": 5
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 20.4,
+          "rep_count": {
+            "full": 9,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 20.4,
+        "sets": 3,
+        "rep_range": {
+          "min": 15,
+          "max": 20
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgot to do myo reps.",
+      "warmup_notes": null,
+      "form_cues": [
+        "squeeze tricep to move weight"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Ab Wheel Rollout",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "good range really",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 7,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "learning",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 0.0,
+          "rep_count": {
+            "full": 6,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 0.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 20
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Keep working on range of motion.",
+      "warmup_notes": null,
+      "form_cues": [
+        "just go until you hit the listed RPE with controlled form.",
+        "Start standing up and go as far as possible."
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Wrist Flexion DB Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 12.5,
+          "rep_count": {
+            "full": 16,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 12.5,
+          "rep_count": {
+            "full": 16,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "right wrist hurts less on set two with more range of motion now",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 12.5,
+        "sets": 3,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Did less range of motion for right wrist to avoid pain",
+      "warmup_notes": null,
+      "form_cues": [
+        "Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm."
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Wrist Extension DB Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 7.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 7.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 7.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow",
+      "warmup_notes": null,
+      "form_cues": [
+        "go light weight and maximum control",
+        "Sagittal Plane wrist extension i.e. bending the wrist to move the back of the hand toward the forearm."
+      ]
+    },
+    {
+      "number": 10,
+      "name": "Forearm Preacher Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 12.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 12.5,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 15.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": []
+    }
+  ],
+  "session_duration_minutes": 160
+}
