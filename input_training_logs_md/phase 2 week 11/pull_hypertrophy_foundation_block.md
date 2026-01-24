@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-12-12
+- Date: 2025-12-19
 - Phase: 2
-- Week: 9
+- Week: 10
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 122 min 
+- Duration: 114 min 
 
 ## Exercise 1
 **Name:** Lean Back Lat Pulldown
@@ -16,12 +16,12 @@
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 55 x 12 RPE 8 good - right wrist almost at 100 percent  
-2. 55 x 12 RPE 9 good - grip failed but felt it in the lats on last rep
-3. 55 x 13 RPE 10 good
+1. 55 x 14 RPE 9 good - maybe time to increase weight 
+2. 55 x 13 RPE 9 good - good form
+3. 55 x 12 RPE 9.5 good - should have tried one more
 
 ### Notes
-
+Get perfect 12 reps and then we move up in weight
 ### Cues
 - lean back 15-30 degrees
 - Engage more mid back
@@ -38,12 +38,12 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 57 x 12 RPE 9 good
-2. 57 x 12 RPE 9.5 good
-3. 57 x 12 + 1 RPE 10 good 
+1. 57 x 12 RPE 9.5 good
+2. 57 x 12 RPE 10 good
+3. 57 x 12 RPE 10 good 
 
 ### Notes
-
+Felt weaker on this today for some reason 
 ### Cues
 - Get chest support all the way out.  
 - Also arms are too flared see Jeff’s form, tuck in a bit and go further back that acute angle is missing in my arms at the top.  
@@ -60,9 +60,9 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 50 x 13 RPE 8 - right wrist almost 100 percent
-2. 50 x 14 RPE 8.5 
-3. 50 x 14 RPE 10 failure:llp(4)
+1. 50 x 12 RPE 9 bad - feeling weaker on this than last time
+2. 50 x 13 RPE 9 good - better form this set
+3. 50 x 14 RPE 10 failure:llp(4) - not the best reps
 ### Notes
 Try your best to not lean back
 ### Cues
@@ -78,9 +78,9 @@ Try your best to not lean back
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 9.1 x 14 RPE 10 good 
-2. 9.1 x 10 RPE 9.5 good
-3. 9.1 x 15 RPE 10 good - could have done more than 15 on this set, didnt do failure myo reps
+1. 6.8 x 12 RPE 10 perfect - left was one rep shy 
+2. 6.8 x 12 RPE 9.5 perfect - left did partial reps for 2
+3. 6.8 x 12 RPE 10 bad - didnt take enough rest to so this set, didnt do failure cuz lots of reps were partial
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal. 
 ### Cues
@@ -91,14 +91,14 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
-**Goal:** 27.2 kg x 3 sets x 12-15 reps
+**Goal:** 27.2 kg x 2 sets x 12-15 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.2 x 14 RPE 9.5 good- right wrist is not hurting at all on this today
-2. 27.2 x 14 RPE 9.5 good - explosive pull and controlled eccentric
-3. 27.2 x 16 RPE 10 good
+1. 27.2 x  15 RPE 9.5 good - explosive pull and controlled eccentric
+2. 27.2 x 10 RPE 9.5 perfect - paused at top and bottom
+3. 24.9 x 11 RPE 10 perfect 
 ### Notes
 ### Cues
 - Shrug up and in.  
@@ -117,9 +117,9 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 31.8 x 17 RPE 9 - didn’t control eccentric 
-2. 31.8 x 15 RPE 9 - didn’t control eccentric, form fluctuations on last few reps due to healing right wrist
-3. 31.8 x 13 RPE 10 -  controlled eccentric, didn’t hurt wrist at all!
+1. 31.8 x 13 RPE 10 - controlled eccentric 
+2. 31.8 x 13 RPE 10 - controlled eccentric
+3. 31.8 x 10 + 1 RPE 10 - controlled eccentric
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.  
 ### Cues
@@ -133,7 +133,7 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Rest:** 2 min 
 ### Working Sets
 1. 10 x 12  RPE 9.5 perfect 
-2. 10 x 12 RPE 10 perfect failure:myo(3,2+1)
+2. 10 x 12 RPE 10 perfect failure:myo(2+1,2+1,2+1)
 ### Notes
 Nail the form of the gods for 12 and then 15 reps 
 ### Cues

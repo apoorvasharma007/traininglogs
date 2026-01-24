@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-12-13
+- Date: 2025-12-20
 - Phase: 2
-- Week: 9
+- Week: 10
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 136 min 
+- Duration: 153 min 
 ## Exercise 1
 **Name:** Barbell Bench Press
 **Goal:** 75 kg x 3 sets x 8-10 reps
@@ -18,12 +18,12 @@
 Pyramid warmup figure
 
 ### Working Sets
-1. 75 x 8 RPE 9.5 good - last rep was perfect struggle
-2. 75 x 8 RPE 10 good - last rep was a fight
-3. 75 x 7 RPE 10 good - failed last 8th rep 
+1. 75 x 8 RPE 9.5 good
+2. 75 x 8 RPE 10 good 
+3. 75 x 7 RPE 10 good - last rep was a fight 
 
 ### Notes
-
+Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
 ### Cues
 - Legs engaged  
 - Core braced and back settled  
@@ -36,13 +36,13 @@ Pyramid warmup figure
 ### Warmup
 1. 0 x feel - around the world arms extended time under tension is good enough resistance
 2. 2.5  x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based  
-3. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based 
+3. 17.5 x  feel 
 ### Warmup Notes
-Don’t use heavy weights preserve strength for working sets and avoid injury risk 
+Don’t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 
 ### Working Sets
-1. 20 x 10 RPE 9 good 
-2. 20 x 9 + 1 RPE 10  good 
-3. 20 x 7 + 2  RPE 10 good - feeling tired today 
+1. 20 x 12 RPE 9 perfect 
+2. 20 x 12 RPE 10  perfect 
+3. 20 x 12 + 1  RPE 10 good 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up. 
 ### Cues
@@ -54,8 +54,8 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 ### Working Sets
 1. 13.6 x 12 RPE 10 good
-2. 13.6 x 12 RPE 10 perfect
-3. 13.6 x 12 RPE 
+2. 13.6 x 12 RPE 10 good
+3. 13.6 x 12 RPE 10 good
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over. 
 ### Cues
@@ -68,9 +68,9 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 **Goal:** 6.8 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 6.8 x 13 RPE 10 good 
-2. 9.1 x 10 RPE 9.5 good
-3. 6.8 x 15 RPE 10 failure:myo(3,3,3) - could have done more than 15 on this set
+1. 6.8 x 14 RPE 10 good 
+2. 6.8 x 12 RPE 10 good - last few reps were partials
+3. 6.8 x 12 RPE 10 good - last few reps were partials
 
 ### Notes
 Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5 
@@ -84,9 +84,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 25 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 25 x 13 RPE 10 perfect 
-2. 25 x 13 RPE 10 perfect
-3. 25 x 13 +1 RPE 10 perfect
+1. 25 x 15 RPE 9 good
+2. 25 x 12 RPE 10 good
+3. 25 x 15 RPE 10 perfect
   
 ### Notes
 
@@ -97,8 +97,8 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Name:** Tricep Pressdown Bar
 **Goal:** 20.4 kg x 2 sets x 15-20 reps 
 ### Working Sets
-1. 20.4 x 12+1 RPE 10 perfect - form improvement dropped reps but felt great in triceps
-2. 20.4 x 12+1 RPE 10 perfect
+1. 20.4 x 16 RPE 10 good - overall lack of energy today
+2. 20.4 x 15 RPE 10
 ### Notes
 Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgot to do myo reps. 
 ### Cues
@@ -107,9 +107,9 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgo
 **Name:** Ab Wheel Rollout
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 10 RPE 9.5 learning - good range 
-2. 0 x 7 RPE 10 learning - good range
-3. 0 x 7 RPE 10 good - good range
+1. 0 x 6 
+2. 0 x 6 RPE 10 learning 
+3. 0 x 6 
 
 ### Notes
 Keep working on range of motion. 
@@ -119,10 +119,10 @@ Keep working on range of motion.
 
 ## Exercise 8
 **Name:** Wrist Flexion DB Curl
-**Goal:** 12.5 kg x 2 sets x 12-15 reps
+**Goal:** 12.5 kg x 3 sets x 12-15 reps
 ### Working Sets
-1. 12.5 x 12 RPE 9 good - left did more reps , right wrist hurt very little
-2. 12.5 x 12 RPE 9 good - left did more reps , right wrist hurt very little
+1. 12.5 x 12 RPE 9 good
+2. 12.5 x 12 RPE 9 good 
 ### Notes
 Did less range of motion for right wrist to avoid pain
 ### Cues
@@ -132,8 +132,8 @@ Did less range of motion for right wrist to avoid pain
 **Name:** Wrist Extension DB Curl
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 ### Working Sets
-1. 7.5 x 12 RPE 10 good - left did more reps , right wrist hurt slightly 
-2. 7.5 x 12 RPE 10 good - left did more reps , right wrist hurt slightly 
+1. 7.5 x 12 RPE 10 good 
+2. 7.5 x 12 RPE 10 good 
 ### Notes
 Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
 ### Cues

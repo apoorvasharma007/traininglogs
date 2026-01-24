@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2025-12-14
+- Date: 2025-12-21
 - Phase: 2  
-- Week: 9
+- Week: 10
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 167 min
+- Duration: 210 min
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 250 kg x 3 sets x 10-12 reps  
@@ -17,9 +17,9 @@
 ### Warmup Notes  
 Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
-1. 250 x 15 RPE 8.5
-2. 250 x 15 RPE 8.5
-3. 250 x 17 RPE 10 - great set
+1. 250 x 16 RPE 9 good
+2. 250 x 15 RPE 8.5 good
+3. 250 x 16 RPE 10 good
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
@@ -40,9 +40,9 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 50 x 16 RPE 8.5 perfect 
-2. 50 x 17 RPE 8.5 perfect
-3. 50 x 14 RPE 10 good failure:llp(8) - llp should be only from squeezing legs not using arm strength as much
+1. 50 x 18 RPE 8.5 perfect 
+2. 57 x 13 RPE 8.5 perfect
+3. 57 x 14 RPE 10 good failure:llp(7) - llp was mostly from squeezing legs not using arm strength as much
 
 ### Notes 
 Seat at 4, 5 visible. Goal 50x15
@@ -56,12 +56,12 @@ Seat at 4, 5 visible. Goal 50x15
 
 ### Notes
 1. 17.5 x feel
-2. 17.5 x feel 
+2. 17.5 x feel
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 17.5 x 12 RPE 8 good 
-2. 17.5 x 12 RPE 9 good - felt less tired. Keep pushing
+1. 20 x 12 RPE 9 good 
+2. 20 x 12 RPE 10 good - knees feeling lot better today
 ### Notes
 Careful with knee fatigue. We need to fix them before we killshot here.
 ### Cues  
@@ -76,15 +76,13 @@ Careful with knee fatigue. We need to fix them before we killshot here.
 **Rest:** 2 min   
 
 ### Warmup Sets
-1. 18 x feel - unilateral 
-2. 23 x feel - unilateral 
-3. 77 x 3
+1. 23 x feel - unilateral 
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
 1. 77 x 12  RPE 9.5 perfect
-2. 77 x 11  RPE 10 good 
-3. 77 x 9+1 RPE 10 good
+2. 77 x 12  RPE 10 good 
+3. 77 x 12 RPE 10 good - saw death
 ### Notes
 70 for 15 is a good hyper trophy goal
 ### Cues  
@@ -92,14 +90,14 @@ Pyramid   
 
 ## Exercise 5  
 **Name:** Cable Hip Adduction  
-**Goal:** 15.9 kg x 3 sets x 12-15 reps  
+**Goal:** 15.9 kg x 2 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15.9 x 12 RPE 9.5 
-2. 15.9 x 12 RPE 10  - took rest between by pausing after 6 reps
-3. 15.9 x 12 RPE 10 - took rest between by pausing after 6 reps
+1. 15.9 x 13 RPE 9.5 
+2. 15.9 x 13 RPE 10  - took rest between legs
+3. 15.9 x 14 RPE 10 - took rest between legs
 ### Notes 
 13.6 for 15 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -119,8 +117,8 @@ Pyramid   
 Pyramid   
 ### Working Sets 
 1. 9.1 x 13 RPE 8
-2. 9.1 x 12 RPE 9 - full rom cross legs
-3. 9.1 x 12 RPE 10 
+2. 9.1 x 12 RPE 9 - forgot full rom cross legs
+3. 9.1 x 13 RPE 10 
 ### Notes    
 Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
 
