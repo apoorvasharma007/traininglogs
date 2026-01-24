@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-12-27
+- Date: 2026-01-16
 - Phase: 2
-- Week: 11
+- Week: 12
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration:  116 min 
+- Duration: 117 min 
 
 ## Exercise 1
 
@@ -20,9 +20,9 @@
 Pyramid 
 
 ### Working Sets
-1. 55 x 15 RPE 9 good - didnt feel too hard
-2. 55 x 13 RPE 9 good - felt nice in lats
-3. 55 x 13 + 1 RPE 10 good - should have tried one more
+1. 55 x 16 RPE 8 good - didnt feel hard
+2. 55 x 12 + 3 RPE 10 good - felt nice in lats
+3. 55 x 12 RPE 10 good - should have tried one more
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -74,8 +74,8 @@ Pyramid 
 
 ### Working Sets
 1. 50 x 12 RPE 9 good 
-2. 50 x 14 RPE 10 good 
-3. 50 x 14 RPE 10 failure:llp(4) good
+2. 50 x 15 RPE 10 good 
+3. 50 x 14 RPE 10 failure:llp(5) good
 
 ### Notes
 Try your best to not lean back
@@ -95,9 +95,9 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 6.8 x 13 RPE 10 good
-2. 6.8 x 12 RPE 9.5 perfect - left did one less rep
-3. 6.8 x 12 RPE 10 failure:myo(3,3,2+1) good
+1. 6.8 x 15 RPE 9 good
+2. 9.1 x 10 + 1 RPE 10 perfect 
+3. 9.1 x 9 +1 RPE 10 failure:myo(4,2) good - right did one more rep
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -119,9 +119,9 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 Pyramid 
 
 ### Working Sets
-1. 27.2 x 12 RPE 9.5 good 
+1. 27.2 x 14 RPE 9.5 good 
 2. 27.2 x 12 RPE 9.5 good - paused at top and bottom
-3. 27.2 x 12 RPE 10 perfect - grip failed otherwise few reps more 
+3. 27.2 x 15 RPE 10 good
 
 ### Notes
 

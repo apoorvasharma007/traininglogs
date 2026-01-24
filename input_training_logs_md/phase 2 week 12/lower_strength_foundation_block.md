@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-12-25
+- Date: 2026-01-15
 - Phase: 2
-- Week: 11
+- Week: 12
 - Deload: No
 - Focus: Lower Strength
-- Duration:  160 min
+- Duration: 139 min
 
 ## Exercise 1
 
@@ -17,12 +17,12 @@
 2. 50 x feel
 
 ### Working Sets
-1. 57 x 12 RPE 9 perfect - first rep was partial and didnt count it 
-2. 57 x 13 RPE 10 good - first rep is the bottleneck, it was partial but then we get in the groove
-3. 57 x RPE 13 perfect failure:llp(8) - really good reps, im impressed by todays form
+1. 57 x 15 RPE 8.5 perfect - first rep onwards good form, rest seems to have fixed weakness 
+2. 57 x 13 RPE 9 perfect 
+3. 57 x 12 RPE 13 good failure:llp(10) - the catch was height at 2 around the hip anchor, setting it to 1 made first rep partial to setup
   
 ### Notes
-At 57 i have to use my hands and the rest of me more to get reps in but 50 is quite easy to isolate hamstrings. Keep pushing at 57 until they start to get easier. first rep is sometimes the bottleneck, it was partial but then we get in the groove. 
+At 57 i have to use my hands and the rest of me more to get reps in but 50 is quite easy to isolate hamstrings. Keep pushing at 57 until they start to get easier. first rep is sometimes the bottleneck, it was partial but then we get in the groove. Set seat at 4 points (5 visible) , hips at 2 (3 visible) and calves at 3 
 
 ### Cues
 * Bring the seat forward to see point 5 so set at 4
@@ -41,12 +41,12 @@ Need proper warmup to actually get going. Progressive sets feel better on this.
 
   
 ### Working Sets
-1. 20 x 12 RPE 8.5 good - tried my best to cut hind leg and to some success
-2. 20 x 10 RPE 9 good - except last few reps all were pretty perfect with mostly standing leg drive
-3. 20 x 12 RPE 9 good - except last few reps all were pretty perfect with mostly standing leg drive. Feeling good in legs and very slightly in lower back. 
+1. 20 x 13 RPE 8.5 good - didn’t try my best to cut hind leg 
+2. 20 x 12 RPE 9 good - 
+3. 20 x 12 RPE 9 good - Feeling good in legs and very slightly in lower back. 
 
 ### Notes
-Didnt feel lower back after last set. I think 17.5 might be a good weight to aim for 10 reps.
+Didnt feel lower back after last set. I think 17.5 might be a good weight to aim for 10 reps. Cut off hind leg as much as possible. Make this feel like pistol squats. 
 
 ### Cues
 - Emphasize front foot
@@ -55,7 +55,7 @@ Didnt feel lower back after last set. I think 17.5 might be a good weight to aim
 ## Exercise 3
 
 **Name:** Hyperextension
-**Goal:** 15 kg x 3 sets x 8-10 reps
+**Goal:** 15 kg x 4 sets x 8-10 reps
 **Rest:** 3 min
 
 ### Warmup
@@ -65,7 +65,7 @@ Didnt feel lower back after last set. I think 17.5 might be a good weight to aim
 Pyramid warmup
 
 ### Working Sets
-1. 15 x 12 RPE 9 good - didnt feel lower back today
+1. 15 x 12 RPE 9 good - felt my entire back today, very weak on this now
 2. 15 x 12 RPE 9 good
 3. 15 x 12 RPE 9.5 perfect
 4. 15 x 12 RPE 9.5 perfect - engage core to protect lower back fatigue
@@ -93,9 +93,9 @@ Can go heavier with good form, but increase weight slowly to avoid injury. imp t
 Do unilateral explosives with alternating leg as an experiment. These hurt the knee which is overworked, currently left knees front side bottom point. Still need to find out what that is. Did less unilateral sets today since they were stressing the left knee.
 
 ### Working Sets
-1. 77 x 12 RPE 8.5 perfect
-2. 77 x 12 + 1 RPE 10 perfect
-3. 77 x 12 RPE 10 good - last few reps were perhaps not all the way up
+1. 77 x 12 RPE 9.5 good - feeling tired due to smoking
+2. 77 x 11 + 1 RPE 10 good
+3. 77 x 12 RPE 10 good 
   
 ### Notes
   
@@ -107,14 +107,14 @@ Do unilateral explosives with alternating leg as an experiment. These hurt the k
 ## Exercise 5
 
 **Name:** Leg Press Calf Raise
-**Goal:** 250 kg x 2 sets x 8-10 reps
+**Goal:** 250 kg x 4 sets x 8-10 reps
 **Rest:** 2 min
 
 ### Warmup
 1. 200 x feel
 
 ### Working Sets
-1. 250 x 12 RPE 9.5 good 
+1. 250 x 11 RPE 9.5 bad 
 2. 250 x 12 RPE 10 good
 3. 250 x 12 RPE 10 good failure:statichold(30)
 

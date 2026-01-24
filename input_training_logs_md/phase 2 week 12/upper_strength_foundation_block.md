@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-12-23
+- Date: 2026-01-03
 - Phase: 2
-- Week: 11
+- Week: 12
 - Deload: No
 - Focus: Upper Strength
-- Duration:  174 min
+- Duration:  180 min
 
 ## Exercise 1
 
@@ -18,15 +18,16 @@
 2. 0 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based
 3. 2.5 x feel - all shoulder range of motion
 4. 12.5 x feel - unilateral punches full range lift and twist lat also should use 17.5
-5. 25 x 4
+5. 20 x feel
+6. 30 x feel
 
 ### Warmup Notes
 10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 
 ### Working Sets
-1. 32.5 x 8 RPE 9 
-2. 32.5 x 9 RPE 9 perfect
-3. 32.5 x 8 RPE 9 good
+1. 32.5 x 10 RPE 10 perfect - last rep ass was off the bench 
+2. 32.5 x 9 RPE 10 perfect
+3. 32.5 x 8 RPE 10 good 
 4. 32.5 x 9 RPE 10 perfect - last rep was a struggle at the very end
 
 ### Notes
@@ -55,7 +56,7 @@ pyramid warmup
 ### Working Sets
 1. 100 x 11 RPE 9 good - explosive push and controlled negative
 2. 100 x 11 RPE 10 good - left gets tired one rep quicker
-3. 100 x 10+1 RPE 10 - left side reps were not good I didn’t set the handle to the last slot
+3. 100 x 10+1 RPE 10 - left side one less rep
 
 ### Notes
 100 for 10 with explosive push and controlled negatives is feeling good.
@@ -78,8 +79,8 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
   
 
 ### Working Sets
-1. 55 x 12 RPE 9 good - without straps
-2. 55 x 12 RPE 9 perfect - without straps
+1. 55 x 12 RPE 8 good - without straps
+2. 55 x 12 RPE 9 perfect - without straps felt good pain in lats
 3. 55 x 12 RPE 9.5 good - felt great pain in the lats, should have done one more partial rep I gave up in my mind
 
 ### Notes
@@ -102,9 +103,9 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 ### Warmup Notes
  4.5 x feel - very slow tempo to activate side delts If needed
 ### Working Sets
-1. 6.8 x 15 RPE 10 good 
-2. 6.8 x 15 RPE 10 perfect
-3. 6.8 x 15 RPE 10 perfect
+1. 6.8 x 12 RPE 10 good 
+2. 6.8 x 12 RPE 10 perfect
+3. 6.8 x 12 RPE 10 perfect
 
 ### Notes
 noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. The pause at the top is a must.
@@ -128,9 +129,9 @@ noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. T
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 60 x 9 RPE 9.5 perfect
-2. 60 x 9 RPE 9.5 perfect - last rep was partial
-3. 60 x 10 RPE 10 perfect failure:llp(3)
+1. 60 x 10 RPE 9.5 perfect
+2. 60 x 10 RPE 9.5 perfect - last rep was partial
+3. 60 x 10 RPE 10 perfect failure:llp(4)
 
 ### Notes
 60x6 can be a good goal but need to get that shoulder squeeze. Or reduce weight to 55 and try 8 perfect reps.
@@ -149,9 +150,9 @@ pyramid warmups with slow tempo to feel the movement
 
 
 ### Working Sets
-1. 29.5 x 14 RPE 9.5 good - very little strain on right wrist
-2. 29.5 x 13 RPE 9.5 perfect - felt better this set
-3. 29.5 x 14 RPE 10 perfect - no wrist pain in right wrist
+1. 30.8 x 9 RPE 10 good - almost no strain on right wrist 
+2. 30.8 x 12 RPE 9.5 perfect - felt better this set
+3. 30.8 x 11 RPE 10 perfect - no wrist pain in right wrist
 
 ### Notes
 i used to be too slanted on these so now standing more upright enough to face front comfortably, lower the weight and work on technique now. need to go heavier safely. Looking up or keeping neck straight makes it even harder somehow? 
@@ -169,9 +170,9 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Rest:** 2 min
 
 ### Working Sets
-1. 13.6 x 11 - very little right wrist pain
-2. 13.6 x 11 RPE 10 good - lesser pain in right wrist
-3. 13.6 x 11 +1  RPE 10 good- no pain this set
+1. 13.6 x 12 good - no pain in right wrist
+2. 13.6 x 11 RPE 10 good 
+3. 13.6 x 11 +1  RPE 10 good
 
 ### Cues
 - Using straps to overcome any grip limitations on the last few reps.

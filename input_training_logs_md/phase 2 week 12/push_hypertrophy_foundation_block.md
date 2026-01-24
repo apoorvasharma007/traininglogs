@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2025-12-28
+- Date: 2026-01-10
 - Phase: 2
 - Week: 11
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 160 min 
+- Duration: 150 min 
 
 ## Exercise 1
 
@@ -22,10 +22,10 @@
 Pyramid warmup figure
 
 ### Working Sets
-1. 75 x 8 RPE 9.5 perfect
-2. 75 x 8 RPE 10 good
-3. 75 x 8 RPE 10 good
-4. 75 x 7 RPE 10 good - last rep was a fight
+1. 75 x 10 RPE 9.5 perfect
+2. 75 x 10 RPE 10 good
+3. 75 x 9 RPE 10 good
+4. 75 x 6 RPE 10 good - last rep was a fight
 
 ### Notes
 Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
@@ -51,9 +51,9 @@ Whatever reason strength has dropped by few reps on this, is the high volume ove
 Don’t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.
 
 ### Working Sets
-1. 20 x 12 RPE 9 perfect 
-2. 20 x 12 RPE 10 perfect
-3. 20 x 10 + 1 RPE 10 perfect
+1. 20 x 10 RPE 10 perfect 
+2. 20 x 8 RPE 10 perfect
+3. 20 x 9 + 1 RPE 10 perfect
 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.
@@ -69,9 +69,9 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 
 ### Working Sets
-1. 13.6 x 13 RPE 10 good
-2. 13.6 x 13 RPE 10 good
-3. 13.6 x 12 RPE 10 good
+1. 13.6 x 12 RPE 10 good
+2. 13.6 x 11 RPE 10 good
+3. 13.6 x 10 RPE 10 good
 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
@@ -90,13 +90,13 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 9.1 x 9 RPE 10 good
+1. 6.8 x 13 RPE 10 good
 2. 6.8 x 13 RPE 10 good - last one two reps were bit partials
-3. 6.8 x 12 RPE 10 failure:myo(3,3,2+1) good 
+3. 6.8 x 12 RPE 10 good - didnt do myo reps
 
   
 ### Notes
-Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
+Right is stronger. Try to get good 15 reps at 6.8 or get 20 reps at 4.5
 
 ### Cues
 - Annihilate the delt with controlled tempo  
@@ -110,9 +110,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Rest:** 2 min 
 
 ### Working Sets
-1. 25 x 12 RPE 9 good
-2. 25 x 12 RPE 10 good
-3. 25 x 10 RPE 10 good
+1. 25 x 13 RPE 10 good
+2. 25 x 10 RPE 10 good
+3. 25 x 9 RPE 10 good
 
 ### Notes
 
@@ -127,9 +127,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 6+4 RPE 10 perfect -didnt take enough rest
-2. 20.4 x 8+5 RPE 10 perfect
-3. 20.4 x 9+1 RPE 10 perfect
+1. 20.4 x 8+4 RPE 10 perfect 
+2. 20.4 x 6+4 RPE 10 perfect
+3. 20.4 x 6+6 RPE 10 perfect
 
 ### Notes
 Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgot to do myo reps.
@@ -144,7 +144,7 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgo
 
 ### Working Sets
 1. 0 x 10 - good range really 
-2. 0 x 7 RPE 10 learning
+2. 0 x 6 RPE 10 - good range
 3. 0 x 6 RPE 10 
 
 ### Notes
@@ -161,8 +161,8 @@ Keep working on range of motion.
 **Goal:** 12.5 kg x 3 sets x 12-15 reps
 
 ### Working Sets
-1. 12.5 x 16 RPE 9 good
-2. 12.5 x 16 RPE 10 good - right wrist hurts less on set two with more range of motion now 
+1. 12.5 x 20 RPE 9 good
+2. 12.5 x 15 RPE 10 good - right wrist hurts less on set two with more range of motion now 
 
 ### Notes
 Did less range of motion for right wrist to avoid pain
@@ -178,8 +178,8 @@ Did less range of motion for right wrist to avoid pain
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 
 ### Working Sets
-1. 7.5 x 12 RPE 10 good
-2. 7.5 x 12 RPE 10 good
+1. 7.5 x 15 RPE 10 good
+2. 7.5 x 15 RPE 10 good
 
 ### Notes
 Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
@@ -195,7 +195,7 @@ Did less range of motion with right wrist. But the pain feels less after exercis
 
 ### Working Sets
 1. 12.5 x 12 RPE 9.5 good
-2. 12.5 x 10 RPE 10 good
+2. 15 x 8 RPE 10 good
 ### Notes
 
 

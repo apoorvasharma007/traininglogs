@@ -1,5 +1,5 @@
 # Training Log
-- Date: 2026-01-03
+- Date: 2026-01-18
 - Phase: 2  
 - Week: 11
 - Deload: No  
@@ -32,7 +32,7 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 
 ## Exercise 2  
 **Name:** Seated Leg Curl   
-**Goal:** 50 kg x 3 sets x 12-15 reps  
+**Goal:** 50 kg x 4 sets x 12-15 reps  
 **Rest:** 2 min   
 
 ### Warmup
