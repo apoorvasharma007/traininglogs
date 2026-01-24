@@ -1,25 +1,26 @@
 # Training Log
-- Date: 2025-12-21
+- Date: 2026-01-03
 - Phase: 2  
-- Week: 10
+- Week: 11
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 210 min
+- Duration: 180 min
 ## Exercise 1  
 **Name:** Leg Press  
-**Goal:** 250 kg x 3 sets x 10-12 reps  
+**Goal:** 250 kg x 4 sets x 10-12 reps  
 **Rest:** 3 min   
 
 ### Warmup
-1. 150 x feel - full possible depth
-2. 200 x feel - full possible depth
+1. 180 x feel - full possible depth
+2. 230 x feel - full possible depth
 3. 250 x feel
 ### Warmup Notes  
 Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
-1. 250 x 16 RPE 9 good
-2. 250 x 15 RPE 8.5 good
-3. 250 x 16 RPE 10 good
+1. 250 x 20 RPE 9 good
+2. 250 x 15 RPE 9.5 good
+3. 250 x 15 RPE 10 good
+4. 250 x 15 RPE 10 good
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
@@ -40,12 +41,12 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 50 x 18 RPE 8.5 perfect 
-2. 57 x 13 RPE 8.5 perfect
-3. 57 x 14 RPE 10 good failure:llp(7) - llp was mostly from squeezing legs not using arm strength as much
+1. 57 x 12 RPE 8.5 perfect 
+2. 57 x 12 RPE 8.5 perfect
+3. 57 x 12 + 1 RPE 10 good - no llp feeling tired
 
 ### Notes 
-Seat at 4, 5 visible. Goal 50x15
+Seat at 4, 5 visible. Goal 50x15. failure:llp(7) - llp was mostly from squeezing legs not using arm strength as much
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
 
@@ -61,7 +62,7 @@ Seat at 4, 5 visible. Goal 50x15
 Pyramid   
 ### Working Sets 
 1. 20 x 12 RPE 9 good 
-2. 20 x 12 RPE 10 good - knees feeling lot better today
+2. 20 x 12 RPE 10 perfect - no knee pain
 ### Notes
 Careful with knee fatigue. We need to fix them before we killshot here.
 ### Cues  
@@ -80,11 +81,11 @@ Careful with knee fatigue. We need to fix them before we killshot here.
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 77 x 12  RPE 9.5 perfect
-2. 77 x 12  RPE 10 good 
-3. 77 x 12 RPE 10 good - saw death
+1. 77 x 10  RPE 9.5 perfect - feeling tired
+2. 77 x 8 + 1  RPE 10 good - feeling tired
+3. 77 x 9 + 1 RPE 10 good - feeling tired
 ### Notes
-70 for 15 is a good hyper trophy goal
+70 for 15 is a good hyper trophy goal 
 ### Cues  
 - 2-3 seconds negative to feel quads tear apart.    
 
@@ -95,9 +96,9 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 15.9 x 13 RPE 9.5 
-2. 15.9 x 13 RPE 10  - took rest between legs
-3. 15.9 x 14 RPE 10 - took rest between legs
+1. 15.9 x 15 RPE 9.5 
+2. 15.9 x 15 RPE 10  - took rest between legs
+3. 15.9 x 15 RPE 10 - took rest between legs
 ### Notes 
 13.6 for 15 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -116,9 +117,9 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 9.1 x 13 RPE 8
-2. 9.1 x 12 RPE 9 - forgot full rom cross legs
-3. 9.1 x 13 RPE 10 
+1. 9.1 x 15 RPE 8
+2. 9.1 x 15 RPE 9 - forgot full rom cross legs
+3. 9.1 x 15 RPE 10 
 ### Notes    
 Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
 
