@@ -1,15 +1,15 @@
 {
   "data_model_version": "0.0.1",
   "data_model_type": "TrainingSession",
-  "session_id": "2026-01-03_legs-hypertrophy_7",
+  "session_id": "2026-01-18_legs-hypertrophy_7",
   "user_id": "7",
   "user_name": "Apoorva Sharma",
-  "date": "2026-01-03",
+  "date": "2026-01-18",
   "program": "BODYBUILDING TRANSFORMATION SYSTEM",
   "program_author": "Jeff Nippard",
   "program_length_weeks": 12,
   "phase": 2,
-  "week": 11,
+  "week": 12,
   "is_deload_week": false,
   "focus": "Legs Hypertrophy",
   "exercises": [
@@ -158,7 +158,7 @@
       "rep_tempo": null,
       "current_goal": {
         "weight_kg": 50.0,
-        "sets": 3,
+        "sets": 4,
         "rep_range": {
           "min": 12,
           "max": 15
