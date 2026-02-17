@@ -1,7 +1,7 @@
 # Training Log
-- Date: 2026-01-31
+- Date: 2026-02-14
 - Phase: 3
-- Week: 1
+- Week: 3
 - Deload: No
 - Focus: Push Hypertrophy
 - Duration:   min 
@@ -11,15 +11,16 @@
 **Rest:** 5 min 
 
 ### Warmup
-1. 60 x feel
-2. 70 x feel
+1. 40 x feel
+2. 60 x feel
+3. 70 x feel
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 75 x 10 RPE 9.5 perfect 
+1. 80 x 8 RPE 9.5 perfect 
 2. 80 x 8 RPE 10 perfect 
-
+3. 80 x 6 + 1 RPE 10 good
 
 ### Notes
 
@@ -42,8 +43,8 @@ Don’t use heavy weights preserve strength for working sets and avoid injury ri
 
 
 ### Working Sets
-1. 25 x 6 RPE 10 perfect 
-2. 25 x 6 +1 RPE 10 perfect 
+1. 22.5 x 8 RPE 10 perfect 
+2. 22.5 x 6 +1 RPE 10 perfect 
 ### Notes
 Practise with 22.8 for 10 or 25 for 8
 ### Cues
@@ -57,8 +58,8 @@ Practise with 22.8 for 10 or 25 for 8
 ### Warmup Notes
 Go lighter and grease the shoulder groove in deepest ranges 
 ### Working Sets
-1. 10 x 12 RPE 10 perfect 
-2. 12.5 x 12 RPE 10 perfect 
+1. 12.5 x 12 RPE 10 perfect 
+2. 12.5 x 9 RPE 10 perfect 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm
 ### Cues
@@ -71,10 +72,8 @@ Only squeeze from chest, no pushing from wrist or forearm
 **Goal:** 9.1 kg x 2 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 9.1 x 10 RPE 10 
-2. 9.1 x 12 RPE 10 perfect 
-3. 9.1 x 10 RPE 10
-
+1. 9.1 x 12 RPE 10 - used angle grips to Stabilise wrist
+2. 11.3 x 10 RPE 10 bad failure:myo(3,3,3) - stay at 9.1
 ### Notes
 Right is stronger. 
 ### Cues
@@ -87,8 +86,8 @@ Right is stronger.
 **Goal:** 31.8 kg x 2 sets x 10-12 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 31.8 x 12 RPE 10 good
-2. 31.8 x 10 RPE 10 good
+1. 22.7 x 12 RPE 10 good
+2. 29.5 x 10 RPE 10 good - 5 reps unjoined wrists
   
 ### Notes
 i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
@@ -100,23 +99,23 @@ i used to be too slanted on these so now stand more upright enough to face front
 **Name:** Cable Tricep Kickback Upright
 **Goal:** 6.8 kg x 2 sets x 12-15 reps 
 ### Working Sets
-1. 9.1 x 8 + 2 RPE 10 good
-2. 9.1 x 6 + 4 RPE 10 good
+1. 9.1 x 10 RPE 10 good - upright
+2. 6.8 x 10 RPE 10 good - bending
 
 ### Cues
 - key is to keep elbow behind body and feel that sharp tension on full extension at bottom position 
 - See jeff’s form  
 - Take shoulder support
 ## Exercise 7
-**Name:** Hanging Leg Raise
+**Name:** Roman Chair Leg Raise
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 10 good
-2. 0 x 10  RPE 10 good - a little swing but really good reps
+1. 0 x 12 good
+2. 5 x 12  RPE 10 good - last 4 reps were swinging deliberately felt great
 
 
 ### Notes
-wider arms were the trick, now just focus on folding from core and I got perfect from and control on tempo
+Used ankle straps
 ### Cues
 - just go until you hit the listed RPE with controlled form.
 
@@ -126,9 +125,9 @@ wider arms were the trick, now just focus on folding from core and I got perfect
 ### Working Sets
 1. 12.5 x 12 
 2. 12.5 x 12 
-3. 12.5 x 7 perfect - slow down to do pain free and stop when pain emerges
-### Notes
 
+### Notes
+ - slow down to do pain free and stop when pain emerges
 ### Cues
 - Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.
 
@@ -136,9 +135,8 @@ wider arms were the trick, now just focus on folding from core and I got perfect
 **Name:** Wrist Extension DB Curl
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 ### Working Sets
-1. 7.5 x 12 RPE 10 good - felt heavy
-2. 7.5 x 11 RPE 10 good 
-3. 7.5 x 10 RPE 10 good - try to move only from wrist
+1. 7.5 x 12 RPE 10 good
+2. 7.5 x 12 RPE 10 good 
 ### Notes
 
 ### Cues

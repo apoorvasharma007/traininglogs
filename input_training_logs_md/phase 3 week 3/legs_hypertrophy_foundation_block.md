@@ -1,7 +1,7 @@
 # Training Log
-- Date: 2026-02-01
+- Date: 2026-02-15
 - Phase: 3  
-- Week: 1
+- Week: 3
 - Deload: No  
 - Focus: Legs Hypertrophy  
 - Duration:  min   
@@ -12,9 +12,9 @@
 ### Warmup Notes  
 Pyramid. 200 kgs power kicks. 
 ### Working Sets 
-1. 270 x 10 RPE 9 perfect - sitting back holding handles made me feel weaker
-2. 270 x 10 RPE 9 perfect - holding machine makes me stronger 
-3. 270 x 12 RPE 9.5 perfect - sitting back holding handles lightly trying to put max force from legs 
+1. 270 x 11 RPE 11 good - sitting back holding handles made me feel weaker
+2. 290 x 12 RPE 10 perfect - holding machine makes me stronger 
+3. 290 x 13 RPE 10 perfect 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
 ### Cues  
@@ -30,19 +30,19 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 
 ### Warmup
 1. 23 x feel - unilateral
-2. 29 x feel - unilateral partials, range had improved 
+2. 29 x feel - unilateral partials, range has improved 
 3. 57 x feel
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 57 x 13 RPE 9.5 perfect
-2. 57 x 14 RPE 10 perfect - start the set with subtle kickbacks to initiate first rep
-
+1. 57 x 13 RPE 10 perfect
+2. 57 x 8+8 RPE 10 good 
 ### Notes 
 57 for 15 with perfect form is a good goal
 
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
+- start the set with subtle kickbacks to initiate first rep
 
 ## Exercise 3  
 **Name:** DB Bulgarian Split Squat  
@@ -54,8 +54,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 30 x 12 RPE 8  good - used stepper for deficit
-2. 32.5 x 10 RPE 8.5 perfect - used stepper for deficit
+1. 32.5 x 8 RPE 8  good - used stepper for deficit
+2. 32.5 x 8 RPE 8.5 perfect - used stepper for deficit
 ### Notes
 Can go heavier than 30 too but try with perfect technique 
 ### Cues  
@@ -74,11 +74,11 @@ Can go heavier than 30 too but try with perfect technique
 2. 43 x feel - unilateral
 3. 50 x feel - unilateral but this weight hurt my knees and was hard
 ### Warmup Notes  
-Pyramid   
+Pyramid warmup using unilateral, partials and isometrics
 ### Working Sets 
-1. 104 x 12  RPE 9.5 - didnt control descent at all and kicked up  
-2. 104 x 7 RPE 10 perfect 
-3. 104 x 7 RPE 10 perfect
+1. 104 x 8  RPE 9.5
+2. 104 x 8 RPE 10 perfect - controlled descent
+
 ### Notes
 
 ### Cues  
@@ -92,8 +92,7 @@ Pyramid   
 Pyramid   
 ### Working Sets 
 1. 15.9 x 15 RPE 10 good - decent control on the tempo
-2. 18.1 x 10+1 RPE 10 bad - no control on negative, but felt good in inner thighs
-3. 18.1 x 10 RPE 10 bad - no control on negative, almost impossible to control it
+2. 15.9 x 15 RPE 10 good
 ### Notes 
 15.9 for 15 or 18.1 for 10 perfect reps is a good goal
 ### Cues  
@@ -108,12 +107,11 @@ Pyramid   
 **Goal:** 11.3 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 ### Warm Up
-1. 6.8 x 8 - felt good felt in outer thighs and glutes
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
 1. 11.3 x 10  RPE 10 good
-2. 11.3 x  9 RPE 10 good 
+2. 11.3 x 10 RPE 10 good 
 ### Notes    
 
 ### Cues  
@@ -123,17 +121,17 @@ Pyramid   
 - see Jeff’s form in video  
 
 ## Exercise 7 
-**Name:** Standing Calf Raise  
-**Goal:** 130 kg x 2 sets x 10-12 reps  
+**Name:** Leg Press Calf Press  
+**Goal:** 250 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 ### Warmup
 
-1. 120 x feel
+1. 190 x feel
 ### Warmup Notes
 Pyramid warmups.  80 x 10 fast explosive tempo
 ### Working Sets 
-1. 130 x 10 RPE 9.5 good - didnt pause at bottom
-2. 130 x 8+1 RPE 10 perfect - paused and slow descent
+1. 250 x 12 RPE 10 good 
+2. 250 x 12 RPE 10 perfect failure:statichold(30)
 ### Notes 
 adjust goal by testing as you progress
 ### Cues  
@@ -145,9 +143,9 @@ adjust goal by testing as you progress
 **Name:** Tibialis Raise Single Leg
 **Goal:** 12 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 12 x 10 
-2. 12 x 6 RPE 10  good - didn’t go around
-3. 12 x 6 RPE 10 good - didn’t go around
+1. 8 x 17
+2. 8 x 15 RPE 10  good - didn’t go around
+
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 
 ### Cues

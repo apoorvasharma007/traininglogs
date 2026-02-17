@@ -1,8 +1,8 @@
 # Training Log
 
-- Date: 2026-01-28
+- Date: 2026-02-10
 - Phase: 3
-- Week: 2
+- Week: 3
 - Deload: No
 - Focus: Upper Strength
 - Duration:  min
@@ -13,16 +13,15 @@
 **Rest:** 3 min
 ### Warmup
 1. 2.5 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based
-2. 30 x feel
-3. 32.5 x feel
+2. 15 x 6 - unilateral punches full range lift and twist lat also
+3. 30 x feel
+
 ### Warmup Notes
-10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.
-15 x 6 - unilateral punches full range lift and twist lat also. 
-20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
+10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 ### Working Sets
-1. 35 x  8 RPE 9.5 perfect 
-2. 35  x 7 RPE 10 perfect 
-3. 30  x 5 RPE 10 perfect 
+1. 35 x  8 RPE 10 perfect 
+2. 35  x 7 RPE 9 perfect 
+3. 30  x  6 + 1 RPE 10 perfect 
 
 ### Notes
 left side usually falls faster on negative and slightly weak on holding at top but today it was all good
@@ -37,13 +36,13 @@ left side usually falls faster on negative and slightly weak on holding at top b
 **Goal:** 100+ kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
-
+1. 32  x 10 - one light warmup, do heavier next time
+2. 66 x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs
 ### Warmup Notes
-pyramid warmup. 32  x 10 - one light warmup, do heavier next time. 66 x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs. 
+pyramid warmup, was doing
 ### Working Sets 
-1. 100 x 10 RPE 10 good 
+1. 100 x 10 RPE 9 good 
 2. 100 x 10 RPE 10 good 
-
 
 ### Notes
 Possible Slight right-shoulder fatigue, control on eccentric improving. Was doing 100 for 10-12 with good form not perfect.
@@ -61,8 +60,9 @@ Possible Slight right-shoulder fatigue, control on eccentric improving. Was doin
 ### Warmup
 1. 0 x 2
 ### Working Sets
-1. 0 x 10 + 1 RPE 10 good 
-2. 0 x 9 RPE 10 good
+1. 0 x 9 RPE 9.5 good 
+2. 0 x 8 RPE 9.5 good
+3. 0 x 6 + 1 RPE 10 - take chest to bar every rep
 
 ### Cues
 - Used straps for killing lats
@@ -77,8 +77,8 @@ Possible Slight right-shoulder fatigue, control on eccentric improving. Was doin
 ### Warmup
 1. 4.5 x 6 - did very slow tempo to activate side delts
 ### Working Sets
-1. 9.1 x 8 RPE 10 bad - left was two reps shy
-2. 9.1 x 5 RPE 10 good - do perfect reps go as far as possible
+1. 9.1 x 10 RPE 10 good - left was two reps shy
+2. 9.1 x 10 RPE 10 good - v grip for better stability and isolating delts
 
 ### Notes
 noticed left side is usually 0.5-1.5 rpe behind right
@@ -91,13 +91,14 @@ noticed left side is usually 0.5-1.5 rpe behind right
 **Goal:** 70 kg x 2 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
-1. 60 x 4
+1. 40 x 5
+2. 50 x 5 
 ### Warmup Notes
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 70 x  8 RPE 7 good
-2. 70 x 8 RPE 10 good failure:llp(4)
+1. 80 x  6 + 2 RPE 10 good
+2. 80 x 6 RPE 10 good 
 ### Notes
  controlled the bar on negative, let it drop. Also did explosive pulls. Felt good. Next tine try snatch grip to go wider maybe that gets more back
 ### Cues
@@ -112,8 +113,8 @@ pyramid warmups with slow tempo to feel the movement
 ### Warmup
 1. 20.4 x feel 
 ### Working Sets
-1. 31.8 x 12 RPE 9 good
-2. 31.8 x 12 RPE 10 good - did bending forward form
+1. 27.2 x 8 RPE 10 good - used hand held grip cables
+2. 27.2 x 10 RPE 10 good
 
 ### Notes
 i used to be too slanted on these so now standing more upright enough to face front comfortably, lower the weight and work on technique now.  need to go heavier safely.
@@ -127,8 +128,8 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Goal:** 13.6 kg x 3 sets x 10 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 13.6 x 10 RPE 10 good 
-2. 13.6 x 10  RPE 10  perfect
+1. 12.5 x 12 RPE 10 good 
+2. 15 x 10 RPE 10  perfect
 ### Cues
 - Using straps to overcome any grip limitations on the last few reps.
 - Squeezing hard on top.

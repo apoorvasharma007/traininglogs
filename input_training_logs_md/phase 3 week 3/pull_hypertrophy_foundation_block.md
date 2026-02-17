@@ -1,7 +1,7 @@
 # Training Log
-- Date: 2026-01-30
+- Date: 2026-02-13
 - Phase: 3
-- Week: 1
+- Week: 3
 - Deload: No
 - Focus: Pull Hypertrophy
 - Duration:   min 
@@ -12,16 +12,16 @@
 **Rest:** 2 min 
 
 ### Warmup 
-1. 55 x feel
-2. 60 x feel
+1. 66 x feel
+2. 86 x feel - too heavy
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 60 x 8 RPE 8 
-2. 65 x 6 RPE 9.5 
+1. 73 x 10 RPE 9.5
+2. 73 x 8+2 RPE 10
 
 ### Notes
-Get 8 perfect reps at 60
+Get 8 perfect reps at 79
 ### Cues
 - Arms front  
 - Focus on squeezing lats only 
@@ -32,12 +32,13 @@ Get 8 perfect reps at 60
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x 4
+1. 57 x 4
 ### Warmup Notes
 Pyramid 
 ### Working Sets
 1. 63 x 9 RPE 10 good   
-2. 63 x 8 RPE 10 perfect
+2. 63 x 8 RPE 10 good - use yoga block on chest  for more range
+3. 63 x 8+1 RPE 10 good
 
 
 ### Notes
@@ -49,20 +50,20 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 - Keep feet on ground. 
 
 ## Exercise 3
-**Name:** Neutral Grip Seated Cable Row
+**Name:** Neutral Grip Seated Cable Row Wide Grip
 **Goal:** 60 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x 4
+1. 40 x feel
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 60 x 10 RPE 9.5 perfect 
-2. 60 x 12 RPE 10 perfect
+1. 47.6 x 10 RPE 9.5 perfect - used wide grip handle
+2. 47.6 x 12 RPE 10 perfect - keep back straight don’t push back, engage core for this
 
 ### Notes
-
+Open your lats more
 ### Cues
 - Squeeze shoulder blades together  
 - Elbows down and back  
@@ -76,8 +77,8 @@ Pyramid 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 9.1 x 10 RPE 10 perfect
-2. 9.1 x 10 RPE 10 perfect 
+1. 9.1 x 12 RPE 10 good
+2. 9.1 x 12 RPE 10 good 
 
 ### Cues
 - Squeeze 1-2 sec on top.  
@@ -87,13 +88,13 @@ Pyramid 
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 ## Exercise 5
 **Name:** Cable Paused Shrug In
-**Goal:** 29.5 kg x 2 sets x 10-12 reps
+**Goal:** 34 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.2 x 10 RPE 8 good  
-2. 29.5 x 10 RPE 10 good 
+1. 29.5 x 12 RPE 8.5 good  
+2. 34 x 12 RPE 10 good 
 ### Notes
 i like this weight otherwise grip fails faster than traps 
 ### Cues
@@ -110,8 +111,8 @@ i like this weight otherwise grip fails faster than traps
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 22.7 x 10 RPE 8 good  
-2. 22.7 x 13 RPE 10 perfect - stand close to the machine and upright 
+1. 22.7 x 12 RPE 8 good  
+2. 24.9 x 9 RPE 10 perfect - stand close to the machine and upright 
 
 ### Notes
 Aim for 12 perfect reps at 22.7
