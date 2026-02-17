@@ -25,7 +25,6 @@ class HybridDataSource(DataSource):
         """
         self.db = db_repo
         self.json_dir = Path(json_dir)
-        self._exercises_cache = {}
 
     def get_last_exercise(self, exercise_name: str) -> Optional[Dict[str, Any]]:
         """
@@ -33,15 +32,14 @@ class HybridDataSource(DataSource):
         
         Queries database first (faster), falls back to JSON files.
         """
-        # Try database first (faster)
-        sessions = self.db.get_all_sessions()
-        for session in reversed(sessions):  # Most recent first
-            for exercise in session.get("exercises", []):
-                if exercise.get("name", "").lower() == exercise_name.lower():
-                    return self._normalize_exercise(exercise, session.get("date"))
-
-        # Fall back to JSON files if not found
-        return self._get_last_exercise_from_json(exercise_name)
+        name = exercise_name.strip().lower()
+        if not name:
+            return None
+        for session in self._iter_sessions():
+            for exercise in self._iter_exercises(session):
+                if exercise.get("name", "").lower() == name:
+                    return exercise
+        return None
 
     def get_exercise_history(
         self, 
@@ -50,27 +48,16 @@ class HybridDataSource(DataSource):
     ) -> List[Dict[str, Any]]:
         """Get recent occurrences of an exercise."""
         history = []
-
-        # Get from database
-        sessions = self.db.get_all_sessions()
-        for session in reversed(sessions):
-            for exercise in session.get("exercises", []):
-                if exercise.get("name", "").lower() == exercise_name.lower():
-                    history.append(
-                        self._normalize_exercise(exercise, session.get("date"))
-                    )
+        name = exercise_name.strip().lower()
+        if not name or limit <= 0:
+            return history
+        for session in self._iter_sessions():
+            for exercise in self._iter_exercises(session):
+                if exercise.get("name", "").lower() == name:
+                    history.append(exercise)
                     if len(history) >= limit:
                         return history
-
-        # Supplement from JSON if needed
-        if len(history) < limit:
-            json_history = self._get_exercise_history_from_json(
-                exercise_name, 
-                limit - len(history)
-            )
-            history.extend(json_history)
-
-        return history[:limit]
+        return history
 
     def get_sessions(
         self,
@@ -81,23 +68,14 @@ class HybridDataSource(DataSource):
     ) -> List[Dict[str, Any]]:
         """Query sessions with optional filters."""
         sessions = []
-
-        # Get from database
-        all_sessions = self.db.get_all_sessions()
-        for session in reversed(all_sessions):
+        if limit <= 0:
+            return sessions
+        for session in self._iter_sessions():
             if self._matches_filters(session, phase, week, focus):
                 sessions.append(session)
                 if len(sessions) >= limit:
-                    return sessions
-
-        # Supplement from JSON if needed
-        if len(sessions) < limit:
-            json_sessions = self._get_sessions_from_json(
-                phase, week, focus, limit - len(sessions)
-            )
-            sessions.extend(json_sessions)
-
-        return sessions[:limit]
+                    break
+        return sessions
 
     def save_session(self, session_data: Dict[str, Any]) -> bool:
         """Save session to database and JSON."""
@@ -114,14 +92,10 @@ class HybridDataSource(DataSource):
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve specific session."""
-        # Try database first
-        all_sessions = self.db.get_all_sessions()
-        for session in all_sessions:
+        for session in self._iter_sessions():
             if session.get("id") == session_id:
                 return session
-
-        # Try JSON files
-        return self._get_session_from_json(session_id)
+        return None
 
     def search_exercises(
         self,
@@ -130,37 +104,117 @@ class HybridDataSource(DataSource):
     ) -> List[str]:
         """Search for exercises by name pattern."""
         exercises_found = set()
-
-        # Search database
-        sessions = self.db.get_all_sessions()
-        for session in sessions:
-            for exercise in session.get("exercises", []):
+        if limit <= 0:
+            return []
+        p = pattern.strip().lower()
+        if not p:
+            return []
+        for session in self._iter_sessions():
+            for exercise in self._iter_exercises(session):
                 name = exercise.get("name", "")
-                if pattern.lower() in name.lower():
+                if p in name.lower():
                     exercises_found.add(name)
                     if len(exercises_found) >= limit:
                         return sorted(list(exercises_found))
-
-        # Search JSON files
-        json_exercises = self._search_exercises_in_json(pattern, limit)
-        exercises_found.update(json_exercises)
-
-        return sorted(list(exercises_found))[:limit]
+        return sorted(list(exercises_found))
 
     # Helper methods
 
-    def _normalize_exercise(
-        self, 
-        exercise: Dict[str, Any], 
-        session_date: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Normalize exercise data from different sources."""
+    def _normalize_exercise(self, exercise: Dict[str, Any], session_date: Optional[str]) -> Dict[str, Any]:
+        """Normalize exercise shape from different storage formats."""
+        warmup_sets = exercise.get("warmup_sets", exercise.get("warmupSets", []))
+        working_sets = exercise.get("working_sets", exercise.get("workingSets", []))
         return {
-            "name": exercise.get("name"),
-            "warmup_sets": exercise.get("warmup_sets", []),
-            "working_sets": exercise.get("working_sets", []),
+            "name": exercise.get("name", exercise.get("Name")),
+            "warmup_sets": [self._normalize_set(s) for s in warmup_sets],
+            "working_sets": [self._normalize_set(s) for s in working_sets],
             "session_date": session_date
         }
+
+    def _normalize_set(self, set_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize set shape from schema and runtime forms."""
+        rep_count = set_data.get("repCount")
+        if isinstance(rep_count, dict):
+            reps = rep_count.get("full", 0) + rep_count.get("partial", 0)
+        elif isinstance(rep_count, int):
+            reps = rep_count
+        else:
+            reps = set_data.get("reps")
+
+        normalized = {
+            "weight": set_data.get("weight", set_data.get("weightKg")),
+            "reps": reps
+        }
+        if set_data.get("rpe") is not None:
+            normalized["rpe"] = set_data.get("rpe")
+        return normalized
+
+    def _normalize_session(self, session: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize session shape from db/json records."""
+        phase = session.get("phase")
+        if isinstance(phase, int):
+            phase = f"phase {phase}"
+        return {
+            "id": session.get("id", session.get("_id")),
+            "date": session.get("date"),
+            "phase": phase,
+            "week": session.get("week"),
+            "focus": session.get("focus"),
+            "is_deload": session.get("is_deload", session.get("isDeloadWeek", False)),
+            "exercises": [
+                self._normalize_exercise(exercise, session.get("date"))
+                for exercise in session.get("exercises", [])
+            ],
+            "created_at": session.get("created_at")
+        }
+
+    def _parse_timestamp(self, value: Optional[str]) -> datetime:
+        """Parse timestamp consistently for deterministic sorting."""
+        if not value:
+            return datetime.min
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return datetime.min
+
+    def _iter_sessions(self) -> List[Dict[str, Any]]:
+        """
+        Return canonical, deduplicated sessions sorted newest-first.
+
+        DB sessions take precedence over JSON sessions for the same id.
+        """
+        db_sessions = [
+            self._normalize_session(s)
+            for s in self.db.get_all_sessions()
+        ]
+        json_sessions = [
+            self._normalize_session(s)
+            for s in self._get_sessions_from_json()
+        ]
+
+        merged = {}
+        ordered = []
+        for session in db_sessions + json_sessions:
+            session_id = session.get("id")
+            dedupe_key = session_id or f"json:{session.get('date')}:{len(ordered)}"
+            if dedupe_key in merged:
+                continue
+            merged[dedupe_key] = session
+            ordered.append(session)
+
+        ordered.sort(
+            key=lambda s: (
+                self._parse_timestamp(s.get("date")),
+                self._parse_timestamp(s.get("created_at")),
+                s.get("id") or ""
+            ),
+            reverse=True
+        )
+        return ordered
+
+    def _iter_exercises(self, session: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Yield canonical exercises from a normalized session."""
+        return session.get("exercises", [])
 
     def _matches_filters(
         self,
@@ -172,69 +226,14 @@ class HybridDataSource(DataSource):
         """Check if session matches filters."""
         if phase and session.get("phase") != phase:
             return False
-        if week and session.get("week") != week:
+        if week is not None and session.get("week") != week:
             return False
         if focus and session.get("focus") != focus:
             return False
         return True
 
-    def _get_last_exercise_from_json(
-        self, 
-        exercise_name: str
-    ) -> Optional[Dict[str, Any]]:
-        """Query JSON files for exercise."""
-        if not self.json_dir.exists():
-            return None
-
-        for json_file in sorted(self.json_dir.glob("*.json"), reverse=True):
-            try:
-                with open(json_file) as f:
-                    data = json.load(f)
-                for exercise in data.get("exercises", []):
-                    if exercise.get("Name", "").lower() == exercise_name.lower():
-                        return self._normalize_exercise(
-                            exercise, 
-                            data.get("date")
-                        )
-            except json.JSONDecodeError:
-                continue
-
-        return None
-
-    def _get_exercise_history_from_json(
-        self,
-        exercise_name: str,
-        limit: int
-    ) -> List[Dict[str, Any]]:
-        """Get exercise history from JSON files."""
-        history = []
-        if not self.json_dir.exists():
-            return history
-
-        for json_file in sorted(self.json_dir.glob("*.json"), reverse=True):
-            try:
-                with open(json_file) as f:
-                    data = json.load(f)
-                for exercise in data.get("exercises", []):
-                    if exercise.get("Name", "").lower() == exercise_name.lower():
-                        history.append(
-                            self._normalize_exercise(exercise, data.get("date"))
-                        )
-                        if len(history) >= limit:
-                            return history
-            except json.JSONDecodeError:
-                continue
-
-        return history
-
-    def _get_sessions_from_json(
-        self,
-        phase: Optional[str],
-        week: Optional[int],
-        focus: Optional[str],
-        limit: int
-    ) -> List[Dict[str, Any]]:
-        """Get sessions from JSON files."""
+    def _get_sessions_from_json(self) -> List[Dict[str, Any]]:
+        """Read all sessions from JSON directory."""
         sessions = []
         if not self.json_dir.exists():
             return sessions
@@ -243,52 +242,8 @@ class HybridDataSource(DataSource):
             try:
                 with open(json_file) as f:
                     data = json.load(f)
-                if self._matches_filters(data, phase, week, focus):
-                    sessions.append(data)
-                    if len(sessions) >= limit:
-                        return sessions
+                sessions.append(data)
             except json.JSONDecodeError:
                 continue
 
         return sessions
-
-    def _get_session_from_json(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific session from JSON files."""
-        if not self.json_dir.exists():
-            return None
-
-        for json_file in self.json_dir.glob("*.json"):
-            try:
-                with open(json_file) as f:
-                    data = json.load(f)
-                if data.get("_id") == session_id or data.get("id") == session_id:
-                    return data
-            except json.JSONDecodeError:
-                continue
-
-        return None
-
-    def _search_exercises_in_json(
-        self,
-        pattern: str,
-        limit: int
-    ) -> set:
-        """Search exercises in JSON files."""
-        exercises = set()
-        if not self.json_dir.exists():
-            return exercises
-
-        for json_file in self.json_dir.glob("*.json"):
-            try:
-                with open(json_file) as f:
-                    data = json.load(f)
-                for exercise in data.get("exercises", []):
-                    name = exercise.get("Name", "")
-                    if pattern.lower() in name.lower():
-                        exercises.add(name)
-                        if len(exercises) >= limit:
-                            return exercises
-            except json.JSONDecodeError:
-                continue
-
-        return exercises

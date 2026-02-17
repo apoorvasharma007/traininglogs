@@ -7,7 +7,7 @@ Knows about exercises, not about UI or persistence details.
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from repository.data_source import DataSource
 
 
@@ -88,7 +88,10 @@ class HistoryService:
         history = self.get_exercise_progression(exercise_name, limit=100)
         if not history:
             return None
-        return max(h.get_max_weight() for h in history if h.get_max_weight())
+        weights = [h.get_max_weight() for h in history if h.get_max_weight() is not None]
+        if not weights:
+            return None
+        return max(weights)
 
     def get_typical_weight_range(
         self,

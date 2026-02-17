@@ -60,11 +60,13 @@ class ProgressionService:
 
         # Scenario 1: New exercise
         if not last:
+            lower = max(0.0, round(current_weight - 2.5, 1))
+            upper = round(current_weight + 2.5, 1)
             return ProgressionSuggestion(
                 suggested_weight=current_weight,
                 reasoning="New exercise - start here and build",
                 confidence=0.8,
-                alternatives=[current_weight - 2.5, current_weight + 2.5]
+                alternatives=[lower, upper]
             )
 
         last_weight = last.get_max_weight() or 0

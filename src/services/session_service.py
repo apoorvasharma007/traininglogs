@@ -49,7 +49,6 @@ class SessionService:
     def __init__(self):
         """Initialize session service."""
         self.validators = Validators()
-        self._current_session: Optional[Session] = None
 
     def create_session(self, metadata: SessionMetadata) -> Session:
         """
@@ -69,12 +68,16 @@ class SessionService:
 
         session = Session(
             id=str(uuid4()),
-            metadata=metadata,
+            metadata=SessionMetadata(
+                phase=metadata.phase,
+                week=metadata.week,
+                focus=metadata.focus,
+                is_deload=metadata.is_deload,
+                date=metadata.date or datetime.now().isoformat()
+            ),
             exercises=[],
             created_at=datetime.now().isoformat()
         )
-
-        self._current_session = session
         return session
 
     def add_exercise(
