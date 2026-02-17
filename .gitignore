@@ -1,8 +1,30 @@
+# Python
 .venv/
 .pytest_cache/
 __pycache__/
 *.pyc
-src/__pycache__/
-src/tests/__pycache__/
+*.pyo
+*.egg-info/
+build/
+dist/
 
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+.env.local

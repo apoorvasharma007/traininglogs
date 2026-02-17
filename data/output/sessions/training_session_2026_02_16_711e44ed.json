@@ -1,0 +1,72 @@
+{
+  "dataModelVersion": "0.0.1",
+  "dataModelType": "training_session_log",
+  "_id": "711e44ed-a3bd-4a50-99f4-d7fb4931ef37",
+  "userId": "apoorva",
+  "userName": "Apoorva Sharma",
+  "date": "2026-02-16T23:36:28.636959",
+  "phase": 2,
+  "week": 5,
+  "isDeloadWeek": false,
+  "focus": "upper-strength",
+  "exercises": [
+    {
+      "Order": 1,
+      "Name": "Barbell Bench Press",
+      "targetMuscleGroups": [],
+      "repTempo": null,
+      "currentGoal": {},
+      "warmupSets": [
+        {
+          "set": 1,
+          "weightKg": 20,
+          "repCount": 5,
+          "notes": null
+        }
+      ],
+      "workingSets": [
+        {
+          "set": 1,
+          "weightKg": 80,
+          "repCount": {
+            "full": 5,
+            "partial": 0
+          },
+          "rpe": 8,
+          "repAssessment": "perfect",
+          "actualRestMinutes": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "Order": 2,
+      "Name": "Incline Dumbbell Press",
+      "targetMuscleGroups": [],
+      "repTempo": null,
+      "currentGoal": {},
+      "warmupSets": [
+        {
+          "set": 1,
+          "weightKg": 10,
+          "repCount": 8,
+          "notes": null
+        }
+      ],
+      "workingSets": [
+        {
+          "set": 1,
+          "weightKg": 30,
+          "repCount": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 7,
+          "repAssessment": "perfect",
+          "actualRestMinutes": null,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}

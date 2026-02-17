@@ -1,0 +1,43 @@
+{
+  "dataModelVersion": "0.0.1",
+  "dataModelType": "training_session_log",
+  "_id": "3fcb25c2-5ca4-4c42-9530-f957959f633d",
+  "userId": "apoorva",
+  "userName": "Apoorva Sharma",
+  "date": "2026-02-16T23:34:50.722615",
+  "phase": 2,
+  "week": 5,
+  "isDeloadWeek": false,
+  "focus": "upper-strength",
+  "exercises": [
+    {
+      "Order": 1,
+      "Name": "Barbell Bench Press",
+      "targetMuscleGroups": [],
+      "repTempo": null,
+      "currentGoal": {},
+      "warmupSets": [
+        {
+          "set": 1,
+          "weightKg": 20,
+          "repCount": 5,
+          "notes": null
+        }
+      ],
+      "workingSets": [
+        {
+          "set": 1,
+          "weightKg": 80,
+          "repCount": {
+            "full": 5,
+            "partial": 0
+          },
+          "rpe": 8,
+          "repAssessment": "perfect",
+          "actualRestMinutes": null,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}
