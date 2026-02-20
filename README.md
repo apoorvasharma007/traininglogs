@@ -67,11 +67,23 @@ Creates `traininglogs.db` with schema.
 python scripts/init_db.py --db-path /path/to/custom.db
 ```
 
-### 2. Run CLI (Coming in Phase 2)
+### 2. Run CLI
 
 ```bash
-python -m cli.main
+python3 -m src.cli.main
 ```
+
+The app runs in one conversational workflow:
+- conversational session setup (`"phase 2 week 7 upper-strength no deload"`)
+- free-text input (`"let's do incline dumbbell press"`, `"did 80 for 5 at 8"`)
+- structured commands (`ex`, `w`, `s`, `done`, `finish`, `undo`, `status`)
+- confirmation and correction loop when interpretation is uncertain
+
+### 3. iPhone Gym Logging Setup
+
+See:
+- [docs/PHONE_GYM_SETUP.md](docs/PHONE_GYM_SETUP.md)
+- [docs/MOBILE_CLI_ARCHITECTURE.md](docs/MOBILE_CLI_ARCHITECTURE.md)
 
 ---
 
@@ -309,4 +321,3 @@ See [AGENT_PROTOCOL.md](AGENT_PROTOCOL.md) for full protocol.
 ## License
 
 Personal project. Closed use.
-

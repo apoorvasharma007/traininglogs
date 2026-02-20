@@ -6,6 +6,18 @@ Helper functions for user input and display.
 
 from typing import Optional, List
 
+from .mobile_commands import COMMAND_HELP
+
+
+def _parse_yes_no(choice: str) -> Optional[bool]:
+    """Normalize common yes/no replies."""
+    lowered = (choice or "").strip().lower()
+    if lowered in {"y", "yes"}:
+        return True
+    if lowered in {"n", "no"}:
+        return False
+    return None
+
 
 def prompt_session_metadata() -> dict:
     """
@@ -79,8 +91,12 @@ def confirm_save() -> bool:
     Returns:
         True if user confirms save
     """
-    choice = input("\n✓ Save session? (y/n): ").strip().lower()
-    return choice == 'y'
+    while True:
+        choice = input("\n✓ Save session? (y/n): ")
+        parsed = _parse_yes_no(choice)
+        if parsed is not None:
+            return parsed
+        print("Please enter y/yes or n/no.")
 
 
 def show_session_summary(session: dict):
@@ -116,6 +132,21 @@ def show_success(message: str):
 def show_info(message: str):
     """Display info message."""
     print(f"\nℹ️  {message}")
+
+
+def show_mobile_help():
+    """Display mobile command grammar."""
+    print(COMMAND_HELP)
+
+
+def prompt_mobile_command() -> str:
+    """
+    Prompt one command line for mobile mode.
+
+    Returns:
+        Raw user input line
+    """
+    return input("\ncmd> ").strip()
 
 
 # NEW FUNCTIONS FOR REFACTORED AGENT-BASED CLI
@@ -229,6 +260,9 @@ def confirm_action(action_text: str) -> bool:
     Returns:
         True if confirmed
     """
-    choice = input(f"\n{action_text} (y/n): ").strip().lower()
-    return choice == 'y'
-
+    while True:
+        choice = input(f"\n{action_text} (y/n): ")
+        parsed = _parse_yes_no(choice)
+        if parsed is not None:
+            return parsed
+        print("Please enter y/yes or n/no.")

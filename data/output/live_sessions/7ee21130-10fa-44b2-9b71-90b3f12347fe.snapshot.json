@@ -1,0 +1,28 @@
+{
+  "updated_at": "2026-02-21T00:37:40.823005",
+  "status": "saved",
+  "session": {
+    "id": "7ee21130-10fa-44b2-9b71-90b3f12347fe",
+    "date": "2026-02-21T00:37:40.810042",
+    "phase": "phase 2",
+    "week": 1,
+    "focus": "upper-strength",
+    "is_deload": false,
+    "exercises": [
+      {
+        "name": "Bench Press",
+        "warmup_sets": [],
+        "working_sets": [
+          {
+            "weight": 72.5,
+            "reps": 5,
+            "rpe": 8.0
+          }
+        ],
+        "notes": null
+      }
+    ],
+    "created_at": "2026-02-21T00:37:40.810354"
+  },
+  "current_exercise": null
+}

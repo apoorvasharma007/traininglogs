@@ -1,0 +1,36 @@
+{
+  "dataModelVersion": "0.0.1",
+  "dataModelType": "training_session_log",
+  "_id": "7ee21130-10fa-44b2-9b71-90b3f12347fe",
+  "userId": "apoorva",
+  "userName": "Apoorva Sharma",
+  "date": "2026-02-21T00:37:40.810042",
+  "phase": 2,
+  "week": 1,
+  "isDeloadWeek": false,
+  "focus": "upper-strength",
+  "exercises": [
+    {
+      "Order": 1,
+      "Name": "Bench Press",
+      "targetMuscleGroups": [],
+      "repTempo": null,
+      "currentGoal": {},
+      "warmupSets": [],
+      "workingSets": [
+        {
+          "set": 1,
+          "weightKg": 72.5,
+          "repCount": {
+            "full": 5,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "repAssessment": "perfect",
+          "actualRestMinutes": null,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}

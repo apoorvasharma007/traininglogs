@@ -1,5 +1,5 @@
 """CLI layer for traininglogs."""
 
-from cli import prompts
+from . import prompts
 
 __all__ = ["prompts"]

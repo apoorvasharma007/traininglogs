@@ -1,9 +1,9 @@
 """Business logic services layer."""
 
-from services.history_service import HistoryService, ExerciseOccurrence
-from services.progression_service import ProgressionService, ProgressionSuggestion
-from services.exercise_service import ExerciseService, Exercise
-from services.session_service import SessionService, Session, SessionMetadata
+from .history_service import HistoryService, ExerciseOccurrence
+from .progression_service import ProgressionService, ProgressionSuggestion
+from .exercise_service import ExerciseService, Exercise
+from .session_service import SessionService, Session, SessionMetadata
 
 __all__ = [
     "HistoryService",

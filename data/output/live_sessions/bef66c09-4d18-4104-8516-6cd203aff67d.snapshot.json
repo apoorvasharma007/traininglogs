@@ -1,0 +1,15 @@
+{
+  "updated_at": "2026-02-21T00:40:39.248189",
+  "status": "cancelled",
+  "session": {
+    "id": "bef66c09-4d18-4104-8516-6cd203aff67d",
+    "date": "2026-02-21T00:40:39.245502",
+    "phase": "phase 2",
+    "week": 1,
+    "focus": "upper-strength",
+    "is_deload": false,
+    "exercises": [],
+    "created_at": "2026-02-21T00:40:39.246219"
+  },
+  "current_exercise": null
+}
