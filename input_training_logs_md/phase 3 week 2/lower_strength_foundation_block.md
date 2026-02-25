@@ -4,7 +4,7 @@
 - Week: 2
 - Deload: No
 - Focus: Lower Strength
-- Duration:    min  
+- Duration: 122 min  
 ## Exercise 1
 **Name:** Seated Leg Hamstring Curl
 **Goal:** 63 kg x 3 sets x 8-10 reps

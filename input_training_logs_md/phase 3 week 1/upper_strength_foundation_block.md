@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-01-28
+- Date: 2026-01-20
 - Phase: 3
 - Week: 1
 - Deload: No
 - Focus: Upper Strength
-- Duration:  min
+- Duration: 137 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree
@@ -32,7 +32,7 @@ left side usually falls faster on negative and slightly weak on holding at top b
 
 ## Exercise 2
 **Name:** Pec Dec Single Arm
-**Goal:** 100+ kg x 2 sets x 8-10 reps
+**Goal:** 100 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 32  x 10 - one light warmup, do heavier next time

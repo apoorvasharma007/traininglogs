@@ -1,10 +1,11 @@
 # Training Log
-- Date: 2026-02-01
+- Date: 2026-01-25
 - Phase: 3  
 - Week: 1
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration:  min   
+- Duration: 144 min 
+  
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 280 kg x 3 sets x 8-10 reps  

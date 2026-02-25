@@ -1,10 +1,11 @@
 # Training Log
-- Date: 2026-01-31
+- Date: 2026-01-24
 - Phase: 3
 - Week: 1
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration:   min 
+- Duration: 182 min 
+
 ## Exercise 1
 **Name:** Barbell Bench Press
 **Goal:** 80 kg x 3 sets x 8-10 reps
