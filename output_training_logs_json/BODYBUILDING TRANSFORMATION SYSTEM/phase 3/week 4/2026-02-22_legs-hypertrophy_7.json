@@ -1,0 +1,465 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2026-02-22_legs-hypertrophy_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2026-02-22",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 3,
+  "week": 4,
+  "is_deload_week": false,
+  "focus": "Legs Hypertrophy",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Leg Press",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 250.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "trying to learn to get full depth if possible by reducing load",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 280.0,
+          "rep_count": {
+            "full": 9,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "trying to improve depth",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 290.0,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "trying to do good depth",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 280.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": null,
+      "notes": "Work on form and use hands very lightly to protect knees until you have knee sleeves",
+      "warmup_notes": "Pyramid. 200 kgs power kicks.",
+      "form_cues": [
+        "Seat height at 2.",
+        "Controlled negative and explosive positive",
+        "First set often feels heavy so do proper pyramid warmup. Any knee wobbling is not good, i think that means the quad is strong but the knee is not, for now hold on to them for safety but work on knee stability very lightly, dont stress them too much",
+        "Do without shoes for better grip"
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Seated Leg Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 9,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 9,
+            "partial": 8
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 57.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 29.0,
+          "rep_count": null,
+          "notes": "unilateral, can do full range at this weight"
+        },
+        {
+          "number": 2,
+          "weight_kg": 57.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "57 for 15 with perfect form is a good goal",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that\u2019s okay!",
+        "start the set with subtle kickbacks to initiate first rep"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "DB Bulgarian Split Squat",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 32.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "used stepper for deficit",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 32.5,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 8.5,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "used stepper for deficit",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 32.5,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "1. 20 x feel Can go heavier than 30 too but try with perfect technique",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "can take 3 min rest",
+        "Keep hind foot\u2019s toes part on the bar for stabilty",
+        "Take knee over toe and go full depth",
+        "Controlled negative with explosive positive"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Leg Extension",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 104.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 104.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "controlled descent",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 104.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": "Pyramid\u00a0warmup using unilateral, partials and isometric. 36 x feel - unilateral.  43 x feel - unilateral.  50 x feel - unilateral but this weight hurt my knees and was hard",
+      "form_cues": [
+        "2-3 seconds negative to feel quads tear apart."
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Cable Hip Adduction",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 18.1,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "decent control on the tempo",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 18.1,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 18.1,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "15.9 for 15 or 18.1 for 10 perfect reps is a good goal",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Brace your standing leg\u2019s hip like in shoulder press to really lock in adductors.",
+        "Height set to 6, see Jeff\u2019s form(controlled release hard pull).",
+        "Rotate pulling leg slightly inward and i felt more adductors.",
+        "Take more rest between legs, use a stand to rest pulling leg on when unclipping.",
+        "I start to feel lower back and rest of glutes in it so be careful when loading.",
+        "Control tempo on negative"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Cable Hip Abduction",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 11.3,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 11.3,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 11.3,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Feel in outer thighs and glutes",
+        "Think about kicking up, then you\u2019d keep the hip stable.",
+        "Perfect form with controlled negative and explosive push.",
+        "see Jeff\u2019s form in video"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Standing Calf Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "did standing on plates and felt good or same mostly as standing on platform",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 130.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 110.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 120.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "adjust goal by testing as you progress",
+      "warmup_notes": null,
+      "form_cues": [
+        "I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit."
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Tibialis Raise Single Leg",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 12.0,
+          "rep_count": {
+            "full": 20,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "rested heel on stepper is crazy isolation for tibs",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 12.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 12.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric.",
+      "warmup_notes": null,
+      "form_cues": [
+        "go around the world",
+        "Keep knee bent know, i have done enough with straight knee and my left knee is still hurting"
+      ]
+    }
+  ],
+  "session_duration_minutes": 142
+}
