@@ -5,7 +5,7 @@
 - Week: 2
 - Deload: No
 - Focus: Upper Strength
-- Duration:  min
+- Duration: 120 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree

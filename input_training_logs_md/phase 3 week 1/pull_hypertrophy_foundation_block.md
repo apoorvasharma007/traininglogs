@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2026-01-30
+- Date: 2026-01-23
 - Phase: 3
 - Week: 1
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration:   min 
+- Duration: 136 min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
