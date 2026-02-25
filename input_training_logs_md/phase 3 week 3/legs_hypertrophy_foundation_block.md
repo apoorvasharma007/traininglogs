@@ -5,6 +5,7 @@
 - Deload: No  
 - Focus: Legs Hypertrophy  
 - Duration:  min   
+
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 280 kg x 3 sets x 8-10 reps  
