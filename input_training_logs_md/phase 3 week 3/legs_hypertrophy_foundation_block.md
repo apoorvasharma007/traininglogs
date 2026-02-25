@@ -4,7 +4,7 @@
 - Week: 3
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration:  min   
+- Duration: 163 min   
 
 ## Exercise 1  
 **Name:** Leg Press  
@@ -13,7 +13,7 @@
 ### Warmup Notes  
 Pyramid. 200 kgs power kicks. 
 ### Working Sets 
-1. 270 x 11 RPE 11 good - sitting back holding handles made me feel weaker
+1. 270 x 10+1 RPE 10 good - sitting back holding handles made me feel weaker
 2. 290 x 12 RPE 10 perfect - holding machine makes me stronger 
 3. 290 x 13 RPE 10 perfect 
 ### Notes 

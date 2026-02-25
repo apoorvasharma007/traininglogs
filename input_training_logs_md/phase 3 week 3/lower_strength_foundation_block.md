@@ -1,10 +1,12 @@
 # Training Log
+
 - Date: 2026-02-11
 - Phase: 3
 - Week: 3
 - Deload: No
 - Focus: Lower Strength
-- Duration:    min  
+- Duration: 138 min  
+
 ## Exercise 1
 **Name:** Seated Leg Hamstring Curl
 **Goal:** 63 kg x 3 sets x 10-12 reps
@@ -19,6 +21,7 @@
 
 ### Notes
 Strength increasing on hamstring curls but at 57 wasn’t able to do perfect 10 reps range of motion wise, was struggling after 6-7 reps to get to the bottom. But today set one was really good! We are improving again! We are good with 57 for 10 i hope lets get 57 for 15 and 63 for 8 to 10. Tried pushing away the machine for a change but struggled due to change in form. 
+
 ## Exercise 2
 **Name:** Smith Machine Squat
 **Goal:** 70 kg x 3 sets x 6-8 reps
@@ -34,6 +37,7 @@ Strength increasing on hamstring curls but at 57 wasn’t able to do perfect 10 
 
 ### Notes
 Next week is deload and then ramp block but i can go heavier here in phase 3. Knees feeling better today. Think they will recover at a slow pace. Rpe 8.5 means im sure i had another rep at least, could have had 2 more i dont know
+
 ## Exercise 3
 **Name:** Barbell Romanian Deadlift
 **Goal:** 100 kg x 3 sets x 6-8 reps

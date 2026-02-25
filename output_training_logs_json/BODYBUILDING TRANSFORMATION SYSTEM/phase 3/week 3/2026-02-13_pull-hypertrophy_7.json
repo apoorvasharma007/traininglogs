@@ -1,0 +1,407 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2026-02-13_pull-hypertrophy_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2026-02-13",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 3,
+  "week": 3,
+  "is_deload_week": false,
+  "focus": "Pull Hypertrophy",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Neutral Grip Lat Pulldown",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 73.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 73.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 2
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 60.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 66.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 86.0,
+          "rep_count": null,
+          "notes": "too heavy"
+        }
+      ],
+      "notes": "Get 8 perfect reps at 79",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Arms front",
+        "Focus on squeezing lats only"
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Chest Supported Machine Row",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 9,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "use yoga block on chest  for more range",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 63.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 57.0,
+          "rep_count": 4,
+          "notes": null
+        }
+      ],
+      "notes": "Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo.",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Get chest support all the way out.",
+        "Also arms are too flared see Jeff\u2019s form, tuck in a bit and go further back that acute angle is missing in my arms at the top.",
+        "Pause at the top and squeeze.",
+        "Keep feet on ground."
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Neutral Grip Seated Cable Row Wide Grip",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 47.6,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 47.6,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "keep back straight don\u2019t push back, engage core for this",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 60.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 40.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "Open your lats more",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Squeeze shoulder blades together",
+        "Elbows down and back",
+        "Sit upright"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "1 Arm 45 Degree Cable Rear Fly",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 9.1,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 9.1,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 9.1,
+        "sets": 2,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Squeeze 1-2 sec on top.",
+        "Elbows straight and go all the way up",
+        "Goal 6.8x15 perfect reps",
+        "Hold with thumb under finger grip",
+        "Keep shoulder down and back with chest pushed out to get that burn in rear delt"
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Cable Paused Shrug In",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 29.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 8.5,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 34.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 34.0,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "i like this weight otherwise grip fails faster than traps",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Shrug up and in.",
+        "2 sec pause at top and bottom.",
+        "don\u2019t try to lean too much, around 30 degree lean from standing straight.",
+        "Go for 12 reps every set.",
+        "Use the straps for grip properly looping twice and flare elbow ever so slightly to cut out forearm and wrist, helped for a better squeeze."
+      ]
+    },
+    {
+      "number": 6,
+      "name": "EZ Bar Cable Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 22.7,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 8.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 24.9,
+          "rep_count": {
+            "full": 9,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 22.7,
+        "sets": 2,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Aim for 12 perfect reps at 22.7",
+      "warmup_notes": "Pyramid",
+      "form_cues": [
+        "Lift from lowest position",
+        "Constant tension on bicep",
+        "Controlled negatives"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "EZ Bar Preacher Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 1
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "2 to 3 second negative",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 20.0,
+        "sets": 1,
+        "rep_range": {
+          "min": 12,
+          "max": 15
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Nailed the form of the gods",
+      "warmup_notes": null,
+      "form_cues": [
+        "Constant tension on bicep",
+        "Controlled negatives",
+        "Mind muscle connection with biceps",
+        "Don\u2019t come so far up that its not on the bicep anymore"
+      ]
+    }
+  ],
+  "session_duration_minutes": 141
+}

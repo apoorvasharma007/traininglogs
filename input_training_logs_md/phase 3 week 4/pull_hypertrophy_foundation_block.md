@@ -4,7 +4,7 @@
 - Week: 4
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration:   min 
+- Duration: 120 min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
