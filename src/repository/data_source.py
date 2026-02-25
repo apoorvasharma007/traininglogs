@@ -1,114 +1,38 @@
-"""
-Abstract data source interface.
-
-Services query through this interface - they don't care if data comes
-from database, JSON files, or hybrid sources. This enables:
-- Easy switching between data sources
-- Testing with mock data
-- Phase 6.3 (data import) just adds to same source
-"""
+"""Abstract data source interface used by domain services."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
-from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 class DataSource(ABC):
-    """Abstract interface for training data access."""
+    """Minimal contract for history/session queries."""
 
     @abstractmethod
     def get_last_exercise(self, exercise_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Get the most recent occurrence of an exercise.
-        
-        Args:
-            exercise_name: Name of exercise to query
-            
-        Returns:
-            Exercise data dict or None if not found
-        """
-        pass
+        """Return most recent matching exercise payload."""
 
     @abstractmethod
-    def get_exercise_history(
-        self, 
-        exercise_name: str, 
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """
-        Get recent occurrences of an exercise.
-        
-        Args:
-            exercise_name: Name of exercise
-            limit: Maximum number of records to return
-            
-        Returns:
-            List of exercise records, most recent first
-        """
-        pass
+    def get_exercise_history(self, exercise_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Return recent matching exercise payloads, newest-first."""
 
     @abstractmethod
     def get_sessions(
-        self, 
+        self,
         phase: Optional[str] = None,
         week: Optional[int] = None,
         focus: Optional[str] = None,
-        limit: int = 10
+        limit: int = 10,
     ) -> List[Dict[str, Any]]:
-        """
-        Query sessions with optional filters.
-        
-        Args:
-            phase: Filter by phase (e.g., "phase 2")
-            week: Filter by week number
-            focus: Filter by workout focus (e.g., "upper-strength")
-            limit: Maximum results
-            
-        Returns:
-            List of session records
-        """
-        pass
+        """Return session payloads with optional filters."""
 
     @abstractmethod
     def save_session(self, session_data: Dict[str, Any]) -> bool:
-        """
-        Save a completed session.
-        
-        Args:
-            session_data: Complete session dictionary
-            
-        Returns:
-            True if successful
-        """
-        pass
+        """Persist one completed session payload."""
 
     @abstractmethod
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieve a specific session.
-        
-        Args:
-            session_id: Session UUID
-            
-        Returns:
-            Session data or None
-        """
-        pass
+        """Return one session payload by id."""
 
     @abstractmethod
-    def search_exercises(
-        self, 
-        pattern: str, 
-        limit: int = 5
-    ) -> List[str]:
-        """
-        Search for exercises by name pattern.
-        
-        Args:
-            pattern: Exercise name pattern
-            limit: Max results
-            
-        Returns:
-            List of matching exercise names
-        """
-        pass
+    def search_exercises(self, pattern: str, limit: int = 5) -> List[str]:
+        """Return matching exercise names."""

@@ -17,6 +17,7 @@ class ParsedAction:
     source: str = "command"  # command | heuristic | memory | llm
     preview: Optional[str] = None
     confidence: float = 1.0
+    requires_confirmation: bool = False
 
 
 class InputParsingService:
@@ -27,8 +28,15 @@ class InputParsingService:
         "status",
         "ex",
         "w",
+        "w_batch",
         "s",
         "note",
+        "goal",
+        "rest",
+        "tempo",
+        "muscles",
+        "cue",
+        "warmup_note",
         "undo",
         "done",
         "finish",
@@ -36,10 +44,11 @@ class InputParsingService:
         "restart",
     }
 
-    def __init__(self, learning_store_path: str, conversational_ai_service=None):
-        # Keep parameter for backward-compatible wiring; local phrase memory removed.
-        self.learning_store_path = learning_store_path
+    def __init__(self, conversational_ai_service=None):
         self.ai = conversational_ai_service
+
+    def is_ai_enabled(self) -> bool:
+        return bool(self.ai and self.ai.is_enabled())
 
     def parse_workout_input(self, raw: str, draft_active: bool) -> Optional[ParsedAction]:
         """Parse one workout-loop input line."""
@@ -51,13 +60,29 @@ class InputParsingService:
         command = normalize_command(command)
 
         if command in self.KNOWN_WORKOUT_COMMANDS:
-            return ParsedAction(action=command, argument=argument, source="command")
+            return ParsedAction(
+                action=command,
+                argument=argument,
+                source="command",
+                requires_confirmation=False,
+            )
 
-        if not self.ai or not self.ai.is_enabled():
+        if not self.is_ai_enabled():
             return None
 
         llm_interpreted = self.ai.interpret_workout_input(raw, draft_active=draft_active)
         if not llm_interpreted:
+            lowered = (raw or "").strip().lower()
+            if lowered in {
+                "hi",
+                "hello",
+                "hey",
+                "yo",
+                "whats up",
+                "what's up",
+                "how are you",
+            }:
+                return ParsedAction(action="help", source="command")
             return None
 
         return ParsedAction(
@@ -66,6 +91,7 @@ class InputParsingService:
             source=llm_interpreted.get("source", "llm"),
             preview=llm_interpreted.get("preview"),
             confidence=llm_interpreted.get("confidence", 0.75),
+            requires_confirmation=True,
         )
 
     def parse_metadata_update(
@@ -74,7 +100,7 @@ class InputParsingService:
         current_metadata: Dict[str, Any],
     ) -> Optional[ParsedAction]:
         """Parse metadata update input."""
-        if not self.ai or not self.ai.is_enabled():
+        if not self.is_ai_enabled():
             return None
 
         llm_interpreted = self.ai.interpret_metadata_input(raw, current_metadata)
@@ -150,6 +176,7 @@ class InputParsingService:
                     source="heuristic",
                     preview=f"Start exercise: {exercise_name}",
                     confidence=0.95,
+                    requires_confirmation=True,
                 )
 
         return None

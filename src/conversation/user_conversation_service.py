@@ -159,9 +159,12 @@ class UserConversationService:
                 continue
 
             self.show_info(f"I understood: {preview}")
+            self.show_metadata_status(candidate)
             if not self.confirm_action("Apply this metadata update?"):
                 self.show_info("No problem. Rephrase the metadata update.")
                 continue
 
             metadata = candidate
             self.show_metadata_status(metadata)
+            if self.confirm_action("Start session with this metadata now?"):
+                return metadata

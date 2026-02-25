@@ -159,7 +159,8 @@ class WorkoutAgent:
         exercise_name: str,
         warmup_sets: List[Dict[str, Any]],
         working_sets: List[Dict[str, Any]],
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        extra_fields: Optional[Dict[str, Any]] = None,
     ) -> Tuple[bool, Optional[LoggingError]]:
         """
         Log an exercise in a session with smart validation.
@@ -185,7 +186,13 @@ class WorkoutAgent:
                 name=exercise_name,
                 warmup_sets=warmup_sets,
                 working_sets=working_sets,
-                notes=notes
+                notes=notes,
+                goal=(extra_fields or {}).get("goal"),
+                rest_minutes=(extra_fields or {}).get("rest_minutes"),
+                tempo=(extra_fields or {}).get("tempo"),
+                muscles=(extra_fields or {}).get("muscles"),
+                warmup_notes=(extra_fields or {}).get("warmup_notes"),
+                cues=(extra_fields or {}).get("cues"),
             )
         except ValidationError as e:
             return False, self._create_recovery_error(exercise_name, str(e))

@@ -3,3 +3,6 @@
 {"timestamp": "2026-02-21T00:37:34.490743", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "set_added", "payload": {"exercise_name": "Bench Press", "set_type": "working", "set_data": {"weight": 70.0, "reps": 5}, "set_index": 1}}
 {"timestamp": "2026-02-21T00:37:34.491689", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "exercise_committed", "payload": {"exercise_name": "Bench Press", "warmup_count": 0, "working_count": 1}}
 {"timestamp": "2026-02-21T00:37:34.492606", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "session_closed", "payload": {"status": "not_saved", "exercise_count": 1}}
+{"timestamp": "2026-02-21T02:33:49.207898", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "session_resumed", "payload": {"exercise_count": 1, "has_draft": false}}
+{"timestamp": "2026-02-21T02:36:27.904242", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "exercise_started", "payload": {"exercise_name": "hello"}}
+{"timestamp": "2026-02-21T02:37:21.718622", "session_id": "0feaf27b-5b62-4a43-94b1-0e754e5c0abd", "event_type": "exercise_started", "payload": {"exercise_name": "aexercise"}}

@@ -14,18 +14,31 @@ from core.validators import Validators, ValidationError
 class Exercise:
     """Exercise with all sets and metadata."""
     name: str
+    goal: Optional[Dict[str, Any]]
+    rest_minutes: Optional[int]
+    tempo: Optional[str]
+    muscles: Optional[List[str]]
+    warmup_notes: Optional[str]
+    cues: Optional[List[str]]
     warmup_sets: List[Dict[str, Any]]
     working_sets: List[Dict[str, Any]]
     notes: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage."""
-        return {
+        payload = {
             "name": self.name,
+            "goal": self.goal,
+            "rest_minutes": self.rest_minutes,
+            "tempo": self.tempo,
+            "muscles": self.muscles,
+            "warmup_notes": self.warmup_notes,
+            "cues": self.cues,
             "warmup_sets": self.warmup_sets,
             "working_sets": self.working_sets,
             "notes": self.notes
         }
+        return {k: v for k, v in payload.items() if v not in (None, [])}
 
 
 class ExerciseService:
@@ -40,7 +53,13 @@ class ExerciseService:
         name: str,
         warmup_sets: Optional[List[Dict[str, Any]]] = None,
         working_sets: Optional[List[Dict[str, Any]]] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        goal: Optional[Dict[str, Any]] = None,
+        rest_minutes: Optional[int] = None,
+        tempo: Optional[str] = None,
+        muscles: Optional[List[str]] = None,
+        warmup_notes: Optional[str] = None,
+        cues: Optional[List[str]] = None,
     ) -> Exercise:
         """
         Build an exercise from components.
@@ -59,6 +78,12 @@ class ExerciseService:
         """
         exercise = Exercise(
             name=name,
+            goal=goal,
+            rest_minutes=rest_minutes,
+            tempo=tempo,
+            muscles=muscles,
+            warmup_notes=warmup_notes,
+            cues=cues or [],
             warmup_sets=warmup_sets or [],
             working_sets=working_sets or [],
             notes=notes
@@ -91,6 +116,14 @@ class ExerciseService:
         # Sets validation
         if not exercise.working_sets:
             errors.append("At least one working set required")
+
+        if exercise.rest_minutes is not None:
+            try:
+                rest = int(exercise.rest_minutes)
+                if rest < 0:
+                    errors.append("Rest minutes must be >= 0")
+            except (TypeError, ValueError):
+                errors.append("Rest minutes must be an integer")
 
         # Per-set validation
         for idx, set_data in enumerate(exercise.working_sets, 1):
@@ -184,6 +217,15 @@ class ExerciseService:
 
         weight = set_data.get("weight")
         reps = set_data.get("reps")
+        rep_mode = str(set_data.get("rep_mode", "")).strip().lower()
+
+        # Warmup sets may be logged as "feel reps" with no numeric rep target.
+        if is_warmup and rep_mode == "feel":
+            if weight is None or weight < 0:
+                errors.append(f"{set_label}: Weight required and must be >= 0")
+            if errors:
+                raise ValidationError("; ".join(errors))
+            return True
 
         if weight is None or weight < 0:
             errors.append(f"{set_label}: Weight required and must be >= 0")
@@ -209,8 +251,12 @@ class ExerciseService:
         weight = set_data.get("weight", 0)
         reps = set_data.get("reps", 0)
         rpe = set_data.get("rpe")
+        rep_mode = str(set_data.get("rep_mode", "")).strip().lower()
 
-        s = f"{weight}kg × {reps}"
+        if rep_mode == "feel":
+            s = f"{weight}kg × feel"
+        else:
+            s = f"{weight}kg × {reps}"
         if rpe:
             s += f" @ RPE {rpe}"
 

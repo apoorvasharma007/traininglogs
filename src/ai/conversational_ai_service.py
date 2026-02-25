@@ -15,8 +15,15 @@ class ConversationalAIService:
         "status",
         "ex",
         "w",
+        "w_batch",
         "s",
         "note",
+        "goal",
+        "rest",
+        "tempo",
+        "muscles",
+        "cue",
+        "warmup_note",
         "undo",
         "done",
         "finish",
@@ -56,12 +63,21 @@ class ConversationalAIService:
             "You are a strict intent parser for a workout logging CLI.\n"
             "Return ONLY valid JSON (no markdown) with keys: "
             "action, payload, preview, confidence.\n"
-            "Allowed actions: help,status,ex,w,s,note,undo,done,finish,cancel,restart.\n"
+            "Allowed actions: help,status,ex,w,w_batch,s,note,goal,rest,tempo,muscles,cue,warmup_note,undo,done,finish,cancel,restart.\n"
             "Rules:\n"
             "- Never infer finish/cancel/restart unless explicit intent words are present.\n"
             "- For exercise text, action=ex and payload.exercise_name string.\n"
             "- For set input, action=w or action=s and payload.set_data with numeric weight,reps and optional rpe.\n"
+            "- For statements about multiple warmup sets, use action=w_batch.\n"
+            "- action=w_batch payload: count(int >=1), set_data with weight and optional reps, optional feel_reps(bool).\n"
             "- Use action=note when user is clearly adding notes.\n"
+            "- Use action=goal when user sets target weight/sets/rep range/rest for current exercise.\n"
+            "- For action=goal payload.goal may include: weight(float), sets(int), rep_min(int), rep_max(int), rest_minutes(int).\n"
+            "- Use action=rest with payload.rest_minutes integer.\n"
+            "- Use action=tempo with payload.tempo string.\n"
+            "- Use action=muscles with payload.muscles list of strings.\n"
+            "- Use action=cue with payload.cue string.\n"
+            "- Use action=warmup_note with payload.warmup_note string.\n"
             "- Keep preview concise.\n"
             "- confidence must be 0..1.\n"
         )
@@ -77,7 +93,10 @@ class ConversationalAIService:
         parsed = self._parse_json_response(response_text)
         if not parsed:
             return None
-        return self._validate_workout_parse(parsed)
+        validated = self._validate_workout_parse(parsed)
+        if not validated:
+            return None
+        return self._postprocess_workout_parse(validated, raw=raw, draft_active=draft_active)
 
     def parse_metadata_update(
         self,
@@ -88,12 +107,11 @@ class ConversationalAIService:
         if not self.is_enabled():
             return None
 
-        focuses = ", ".join(sorted(self.ALLOWED_FOCUSES))
         system_prompt = (
             "You parse workout session metadata updates.\n"
             "Return ONLY JSON with keys: updates, preview, confidence.\n"
             "updates may include: phase, week, focus, is_deload.\n"
-            f"focus must be one of: {focuses}.\n"
+            "focus should preserve user specificity (examples: upper-strength, hamstring mobility, dance).\n"
             "phase format must be 'phase N' (N >= 1).\n"
             "week must be integer >= 1.\n"
             "is_deload must be boolean.\n"
@@ -212,6 +230,33 @@ class ConversationalAIService:
                 except (TypeError, ValueError):
                     pass
             payload = {"set_data": normalized_set}
+        elif action == "w_batch":
+            set_data = payload.get("set_data")
+            if not isinstance(set_data, dict):
+                return None
+            try:
+                count = int(payload.get("count"))
+            except (TypeError, ValueError):
+                return None
+            if count < 1 or count > 20:
+                return None
+            try:
+                weight = float(set_data.get("weight"))
+            except (TypeError, ValueError):
+                return None
+            reps = set_data.get("reps")
+            normalized_set = {"weight": weight}
+            feel_reps = bool(payload.get("feel_reps", False))
+            if reps is not None:
+                try:
+                    normalized_set["reps"] = int(reps)
+                except (TypeError, ValueError):
+                    return None
+            payload = {
+                "count": count,
+                "set_data": normalized_set,
+                "feel_reps": feel_reps,
+            }
 
         elif action == "note":
             note = str(payload.get("note", "")).strip()
@@ -219,12 +264,83 @@ class ConversationalAIService:
                 return None
             payload = {"note": note}
 
+        elif action == "goal":
+            goal = payload.get("goal")
+            if not isinstance(goal, dict):
+                return None
+            normalized_goal: Dict[str, Any] = {}
+            if goal.get("weight") is not None:
+                try:
+                    normalized_goal["weight"] = float(goal.get("weight"))
+                except (TypeError, ValueError):
+                    pass
+            if goal.get("sets") is not None:
+                try:
+                    normalized_goal["sets"] = int(goal.get("sets"))
+                except (TypeError, ValueError):
+                    pass
+            if goal.get("rep_min") is not None:
+                try:
+                    normalized_goal["rep_min"] = int(goal.get("rep_min"))
+                except (TypeError, ValueError):
+                    pass
+            if goal.get("rep_max") is not None:
+                try:
+                    normalized_goal["rep_max"] = int(goal.get("rep_max"))
+                except (TypeError, ValueError):
+                    pass
+            if goal.get("rest_minutes") is not None:
+                try:
+                    normalized_goal["rest_minutes"] = int(goal.get("rest_minutes"))
+                except (TypeError, ValueError):
+                    pass
+            if not normalized_goal:
+                return None
+            payload = {"goal": normalized_goal}
+
+        elif action == "rest":
+            try:
+                rest_minutes = int(payload.get("rest_minutes"))
+            except (TypeError, ValueError):
+                return None
+            payload = {"rest_minutes": rest_minutes}
+
+        elif action == "tempo":
+            tempo = str(payload.get("tempo", "")).strip()
+            if not tempo:
+                return None
+            payload = {"tempo": tempo}
+
+        elif action == "muscles":
+            muscles = payload.get("muscles")
+            if isinstance(muscles, str):
+                normalized = [m.strip() for m in muscles.split(",") if m.strip()]
+            elif isinstance(muscles, list):
+                normalized = [str(m).strip() for m in muscles if str(m).strip()]
+            else:
+                normalized = []
+            if not normalized:
+                return None
+            payload = {"muscles": normalized}
+
+        elif action == "cue":
+            cue = str(payload.get("cue", "")).strip()
+            if not cue:
+                return None
+            payload = {"cue": cue}
+
+        elif action == "warmup_note":
+            warmup_note = str(payload.get("warmup_note", "")).strip()
+            if not warmup_note:
+                return None
+            payload = {"warmup_note": warmup_note}
+
         else:
             payload = {}
 
         preview = self._normalize_preview(
             data.get("preview"),
-            fallback=f"Apply action: {action}",
+            fallback=self._default_preview(action, payload),
         )
 
         confidence_raw = data.get("confidence", 0.75)
@@ -241,6 +357,31 @@ class ConversationalAIService:
             "confidence": confidence,
             "source": "llm",
         }
+
+    @staticmethod
+    def _default_preview(action: str, payload: Dict[str, Any]) -> str:
+        """Generate deterministic fallback previews by action."""
+        if action == "ex":
+            return f"Start exercise: {payload.get('exercise_name', '')}".strip()
+        if action == "w":
+            s = payload.get("set_data", {})
+            return f"Add warmup set: {s.get('weight')}kg x {s.get('reps')}"
+        if action == "s":
+            s = payload.get("set_data", {})
+            return f"Add working set: {s.get('weight')}kg x {s.get('reps')}"
+        if action == "w_batch":
+            count = payload.get("count")
+            s = payload.get("set_data", {})
+            if payload.get("feel_reps"):
+                return f"Add {count} warmup sets at {s.get('weight')}kg with feel reps."
+            return f"Add {count} warmup sets at {s.get('weight')}kg."
+        if action == "goal":
+            return "Update exercise goal."
+        if action in {"rest", "tempo", "muscles", "cue", "warmup_note", "note"}:
+            return f"Update exercise {action.replace('_', ' ')}."
+        if action in {"help", "status", "undo", "done", "finish", "cancel", "restart"}:
+            return f"Apply action: {action}"
+        return f"Apply action: {action}"
 
     def _validate_metadata_parse(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         updates = data.get("updates")
@@ -338,5 +479,38 @@ class ConversationalAIService:
         if text in self.ALLOWED_FOCUSES:
             return text
 
+        # Keep meaningful specificity for custom focus labels.
         compact = re.sub(r"[^a-z0-9-]+", "-", text).strip("-")
         return compact or None
+
+    @staticmethod
+    def _postprocess_workout_parse(
+        parsed: Dict[str, Any],
+        *,
+        raw: str,
+        draft_active: bool,
+    ) -> Dict[str, Any]:
+        """
+        Correct common low-signal misclassifications from small local LLMs.
+
+        Example: free-text exercise declarations incorrectly returned as help/status.
+        """
+        action = parsed.get("action")
+        text = (raw or "").strip()
+        lowered = text.lower()
+
+        explicit_help_words = {"help", "/help", "?", "status", "/status"}
+        if action in {"help", "status"} and lowered not in explicit_help_words:
+            if any(
+                token in lowered
+                for token in {"do ", "exercise", "start", "log ", "next "}
+            ) or (not draft_active and len(text) >= 3 and not re.search(r"\d", lowered)):
+                return {
+                    "action": "ex",
+                    "payload": {"exercise_name": text},
+                    "preview": f"Start exercise: {text}",
+                    "confidence": min(1.0, max(0.7, float(parsed.get("confidence", 0.8)))),
+                    "source": parsed.get("source", "llm"),
+                }
+
+        return parsed

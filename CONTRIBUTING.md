@@ -1,81 +1,53 @@
-# Contributing to traininglogs
+# Contributing
 
-Thank you for your interest in contributing to traininglogs!
+## Principles
+- Keep behavior deterministic where data mutates.
+- Keep modules small, focused, and SOLID-aligned.
+- Respect protected datamodel files.
 
-## Quick Start
+## Protected Files
+- `src/data_class_model/models.py` must not be changed without explicit approval.
 
-1. **Read the architecture:** [docs/architecture.md](docs/architecture.md)
-2. **Check the roadmap:** [TASKLIST.md](TASKLIST.md)
-3. **Review code standards:** [docs/development/CODEBASE_RULES.md](docs/development/CODEBASE_RULES.md)
-4. **Start working:** Use agent-assisted development workflow (see `.agency/PROTOCOL.md`)
+## Development Flow
+1. Implement scoped change.
+2. Run focused test suite.
+3. Smoke-run CLI.
+4. Update docs if behavior/architecture changed.
 
-## Development Workflow
-
-### For Human Contributors
-
-1. Review [TASKLIST.md](TASKLIST.md) for open tasks
-2. Branch from `main`: `git checkout -b feature/task-name`
-3. Follow [docs/development/CODEBASE_RULES.md](docs/development/CODEBASE_RULES.md)
-4. Test your changes: `python scripts/init_db.py`
-5. Run safety checks: `python .agent/scripts/verify_changes.py`
-6. Submit pull request with clear description
-
-### For Agent-Assisted Development
-
-1. Review [.agent/PROTOCOL.md](.agent/PROTOCOL.md) for your role
-2. Read the task specification in [.agent/workflows/](.agent/workflows/)
-3. Follow module responsibilities in [docs/development/CODEBASE_RULES.md](docs/development/CODEBASE_RULES.md)
-4. Test locally before submission
-5. Run `python .agent/scripts/verify_changes.py` to verify safety
-
-## Code Standards
-
-- **No business logic in CLI** — Use `core/` for logic
-- **All validation in one place** — Add to `core/validators.py`
-- **Database access via repository** — No direct SQL outside `persistence/`
-- **No circular imports** — See dependency rules in docs/development/CODEBASE_RULES.md
-- **Max 500 lines per file** — Split large files
-- **Type hints on public methods** — Lightweight, not strict
-- **Docstrings on all public functions** — Include examples where helpful
-
-## Testing
-
-Current approach: Manual CLI testing.
+## Setup
 
 ```bash
-# Initialize database
-python scripts/init_db.py
-
-# Run application
-python -m cli.main
-
-# Test imports (no circular deps)
-python -c "import cli.main; print('OK')"
-
-# Safety verification
-python .agent/scripts/verify_changes.py
+cd /Users/apoorvasharma/Projects/traininglogs
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+python3 scripts/init_db.py
 ```
 
-## Reporting Issues
+## Run + Test
 
-1. Check [TASKLIST.md](TASKLIST.md) — your issue may already be tracked
-2. Describe the problem clearly
-3. Include:
-   - What you expected
-   - What happened
-   - Steps to reproduce
-   - Python version and OS
+```bash
+# run app
+python3 -m src.cli.main
 
-## Community
+# focused tests
+pytest -q tests/test_agent_controller_service.py tests/test_conversational_ai_service.py tests/test_workflow_services.py tests/test_mobile_cli_components.py
 
-- **Architecture questions:** See [docs/](docs/) folder
-- **Agent governance:** See [.agent/](.agent/) folder
-- **Development standards:** See [docs/development/](docs/development/)
+# full tests
+pytest -q
+```
 
-## License
+## LLM Mode (Ollama)
 
-This project is closed-source. Do not share code externally.
+```bash
+export TRAININGLOGS_LLM_ENABLED=true
+export TRAININGLOGS_LLM_PROVIDER=ollama
+export TRAININGLOGS_OLLAMA_MODEL=qwen2.5:3b-instruct
+export TRAININGLOGS_OLLAMA_URL=http://localhost:11434
+python3 -m src.cli.main
+```
 
----
-
-**Happy coding!** 🚀
+## Documentation Rules
+- Root `README.md` is the single project overview source.
+- Component-level docs live in `src/*/README.md`.
+- Planning/progress docs live in `docs/`.

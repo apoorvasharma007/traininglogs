@@ -79,3 +79,44 @@ class ValidateDataService:
             raise ValidationError("Draft must include at least one working set")
         return True
 
+    def normalize_and_validate_goal_data(self, goal_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize and validate optional exercise goal payload."""
+        if not isinstance(goal_data, dict):
+            raise ValidationError("Goal must be an object")
+
+        normalized: Dict[str, Any] = {}
+        if goal_data.get("weight") is not None:
+            weight = float(goal_data.get("weight"))
+            Validators.validate_weight(weight)
+            normalized["weight"] = weight
+
+        if goal_data.get("sets") is not None:
+            sets = int(goal_data.get("sets"))
+            if sets <= 0:
+                raise ValidationError("Goal sets must be >= 1")
+            normalized["sets"] = sets
+
+        rep_min = goal_data.get("rep_min")
+        rep_max = goal_data.get("rep_max")
+        if rep_min is not None:
+            rep_min = int(rep_min)
+            if rep_min <= 0:
+                raise ValidationError("Goal min reps must be >= 1")
+            normalized["rep_min"] = rep_min
+        if rep_max is not None:
+            rep_max = int(rep_max)
+            if rep_max <= 0:
+                raise ValidationError("Goal max reps must be >= 1")
+            normalized["rep_max"] = rep_max
+        if rep_min is not None and rep_max is not None and rep_min > rep_max:
+            raise ValidationError("Goal min reps cannot exceed max reps")
+
+        if goal_data.get("rest_minutes") is not None:
+            rest_minutes = int(goal_data.get("rest_minutes"))
+            if rest_minutes < 0:
+                raise ValidationError("Goal rest minutes must be >= 0")
+            normalized["rest_minutes"] = rest_minutes
+
+        if not normalized:
+            raise ValidationError("Goal update must include at least one field")
+        return normalized

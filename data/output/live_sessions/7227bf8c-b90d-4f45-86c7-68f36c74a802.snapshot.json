@@ -1,0 +1,25 @@
+{
+  "updated_at": "2026-02-21T17:24:08.722938",
+  "status": "not_saved",
+  "session": {
+    "id": "7227bf8c-b90d-4f45-86c7-68f36c74a802",
+    "date": "2026-02-21T17:24:08.709016",
+    "phase": "phase 2",
+    "week": 1,
+    "focus": "upper-strength",
+    "is_deload": false,
+    "exercises": [
+      {
+        "name": "bench press",
+        "working_sets": [
+          {
+            "weight": 80.0,
+            "reps": 5
+          }
+        ]
+      }
+    ],
+    "created_at": "2026-02-21T17:24:08.709631"
+  },
+  "current_exercise": null
+}

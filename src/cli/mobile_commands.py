@@ -18,6 +18,12 @@ Commands:
   w <weight>x<reps>[@rpe]   Add warmup set (example: w 40x5)
   s <weight>x<reps>[@rpe]   Add working set (example: s 80x5@8)
   note <text>               Add/update note on current draft exercise
+  goal <text>               Set/update exercise goal (e.g. 60kg x 3 sets x 8-10)
+  rest <minutes>            Set rest minutes for current draft exercise
+  tempo <text>              Set tempo (e.g. 3-1-1-0)
+  muscles <csv>             Set target muscles
+  cue <text>                Add one cue line
+  warmup_note <text>        Add/update warmup note
   undo                      Remove last set from current draft (working first)
   done                      Commit current draft exercise into session
   finish                    Finalize session and save
@@ -64,6 +70,11 @@ def normalize_command(command: str) -> str:
         "/exit": "cancel",
         "/stop": "cancel",
         "st": "status",
+        "wnote": "warmup_note",
+        "warmupnote": "warmup_note",
+        "warmup-notes": "warmup_note",
+        "warmup_notes": "warmup_note",
+        "cues": "cue",
     }
     return aliases.get(command, command)
 

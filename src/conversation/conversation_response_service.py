@@ -13,17 +13,17 @@ class ConversationResponseService:
 
     def _humanize(self, text: str, kind: str) -> str:
         if self.ai and self.ai.is_enabled():
+            if hasattr(self.ai, "to_user_message"):
+                return self.ai.to_user_message(text, kind=kind)
             return self.ai.rewrite_message(text, kind=kind)
         return text
 
     def metadata_status(self, metadata: Dict[str, Any]) -> str:
-        text = (
-            "Session metadata"
-            f" | phase={metadata.get('phase')}"
-            f" | week={metadata.get('week')}"
-            f" | focus={metadata.get('focus')}"
-            f" | deload={metadata.get('is_deload')}"
-        )
+        phase = str(metadata.get("phase", "")).replace("phase ", "").strip() or "?"
+        week = metadata.get("week", "?")
+        focus = str(metadata.get("focus", "")).replace("-", " ").title() or "?"
+        deload = "Yes" if bool(metadata.get("is_deload")) else "No"
+        text = f"Session metadata: phase {phase}, week {week}, focus {focus}, deload {deload}."
         return self._humanize(text, "status")
 
     def mobile_status_lines(self, session, draft: Optional[Dict[str, Any]]) -> List[str]:

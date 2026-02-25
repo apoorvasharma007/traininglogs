@@ -45,7 +45,32 @@ class MetadataService:
         candidate.update(updates)
         self.validation.validate_metadata(candidate)
 
-        return parsed.preview or "Metadata update detected.", candidate
+        return self._build_update_preview(current, candidate, updates), candidate
+
+    @staticmethod
+    def _build_update_preview(
+        current: Dict[str, Any],
+        candidate: Dict[str, Any],
+        updates: Dict[str, Any],
+    ) -> str:
+        """Build a deterministic preview that shows only newly parsed values."""
+        fields = ("phase", "week", "focus", "is_deload")
+        labels = {
+            "phase": "phase",
+            "week": "week",
+            "focus": "focus",
+            "is_deload": "deload",
+        }
+        parts = []
+        for key in fields:
+            if key not in updates:
+                continue
+            value = candidate.get(key)
+            parts.append(f"{labels[key]}: {value}")
+
+        if parts:
+            return "Update metadata: " + "; ".join(parts)
+        return "Update metadata detected."
 
     def to_contract(self, metadata: Dict[str, Any]) -> SessionMetadataContract:
         """Convert validated metadata dict to canonical contract."""

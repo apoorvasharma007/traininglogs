@@ -38,6 +38,25 @@ def test_ai_service_parses_workout_action():
     assert result["payload"]["set_data"]["reps"] == 6
 
 
+def test_ai_service_parses_warmup_batch_feel_reps():
+    provider = FakeProvider(
+        [
+            '{"action":"w_batch","payload":{"count":3,"set_data":{"weight":0},"feel_reps":true},'
+            '"preview":"3 warmup sets, bodyweight, feel reps","confidence":0.87}'
+        ]
+    )
+    ai = ConversationalAIService(provider)
+    result = ai.parse_workout_action(
+        "add 3 warmup sets with zero weight and feel reps",
+        draft_active=True,
+    )
+    assert result is not None
+    assert result["action"] == "w_batch"
+    assert result["payload"]["count"] == 3
+    assert result["payload"]["set_data"]["weight"] == 0.0
+    assert result["payload"]["feel_reps"] is True
+
+
 def test_ai_service_parses_restart_action():
     provider = FakeProvider(
         [
@@ -93,6 +112,23 @@ def test_ai_service_metadata_focus_synonym_normalization():
     assert updates["focus"] == "mobility"
 
 
+def test_ai_service_metadata_preserves_specific_focus_label():
+    provider = FakeProvider(
+        [
+            '{"updates":{"phase":"phase 9","week":3,"focus":"hamstring mobility","is_deload":false},'
+            '"preview":"Set phase 9 week 3 hamstring mobility",'
+            '"confidence":0.9}'
+        ]
+    )
+    ai = ConversationalAIService(provider)
+    result = ai.parse_metadata_update(
+        "phase is 9th week is 3rd and focusing on hamstring mobility",
+        {"phase": "phase 2", "week": 1, "focus": "upper-strength", "is_deload": False},
+    )
+    assert result is not None
+    assert result["payload"]["updates"]["focus"] == "hamstring-mobility"
+
+
 def test_input_parsing_service_uses_ai_when_enabled(tmp_path):
     provider = FakeProvider(
         [
@@ -102,7 +138,6 @@ def test_input_parsing_service_uses_ai_when_enabled(tmp_path):
     )
     ai = LLMInterpreterService(ConversationalAIService(provider))
     parser = InputParsingService(
-        str(tmp_path / "nlu_learning.json"),
         conversational_ai_service=ai,
     )
 
@@ -111,6 +146,21 @@ def test_input_parsing_service_uses_ai_when_enabled(tmp_path):
     assert parsed.source == "llm"
     assert parsed.action == "ex"
     assert parsed.payload["exercise_name"] == "Incline Dumbbell Press"
+    assert parsed.requires_confirmation is True
+
+
+def test_ai_service_reinterprets_non_help_phrase_as_exercise():
+    provider = FakeProvider(
+        [
+            '{"action":"help","payload":{},'
+            '"preview":"Apply action: help","confidence":0.71}'
+        ]
+    )
+    ai = ConversationalAIService(provider)
+    result = ai.parse_workout_action("i wanna do flywheels", draft_active=False)
+    assert result is not None
+    assert result["action"] == "ex"
+    assert result["payload"]["exercise_name"] == "i wanna do flywheels"
 
 
 def test_ai_service_preview_null_uses_fallback_text():

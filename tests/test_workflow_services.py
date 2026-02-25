@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ai.conversational_ai_service import ConversationalAIService
 from ai.llm_interpreter_service import LLMInterpreterService
 from data.data_persistence_service import DataPersistenceService
+from intake.metadata_service import MetadataService
 from intake.input_parsing_service import InputParsingService
 from intake.validate_data_service import ValidateDataService
 from core.validators import ValidationError
@@ -82,7 +83,6 @@ def test_input_parsing_service_parses_commands_and_metadata(tmp_path):
         )
     ))
     parser = InputParsingService(
-        str(tmp_path / "nlu_learning.json"),
         conversational_ai_service=ai,
     )
 
@@ -90,6 +90,7 @@ def test_input_parsing_service_parses_commands_and_metadata(tmp_path):
     assert command is not None
     assert command.action == "s"
     assert command.argument == "80x5@8"
+    assert command.requires_confirmation is False
 
     metadata = parser.parse_metadata_update(
         "phase 3 week 4 pull hypertrophy no deload",
@@ -104,11 +105,12 @@ def test_input_parsing_service_parses_commands_and_metadata(tmp_path):
 
 
 def test_input_parsing_service_parses_restart_and_next_phrases(tmp_path):
-    parser = InputParsingService(str(tmp_path / "nlu_learning.json"))
+    parser = InputParsingService()
 
     restart = parser.parse_workout_input("start over", draft_active=True)
     assert restart is not None
     assert restart.action == "restart"
+    assert restart.requires_confirmation is False
 
     cancel = parser.parse_workout_input("quit program", draft_active=True)
     assert cancel is not None
@@ -118,6 +120,7 @@ def test_input_parsing_service_parses_restart_and_next_phrases(tmp_path):
     assert nxt is not None
     assert nxt.action == "ex"
     assert nxt.payload["exercise_name"].lower() == "cable row"
+    assert nxt.requires_confirmation is True
 
 
 def test_validate_data_service_rejects_missing_focus():
@@ -144,3 +147,15 @@ def test_data_persistence_service_returns_not_saved_status():
     outcome = service.persist_final_session("abc", session, save_requested=False)
     assert outcome.status == "not_saved"
     assert outcome.saved_local is False
+
+
+def test_metadata_service_preview_is_explicit_changes():
+    preview = MetadataService._build_update_preview(
+        current={"phase": "phase 2", "week": 1, "focus": "upper-strength", "is_deload": False},
+        candidate={"phase": "phase 4", "week": 9, "focus": "dance", "is_deload": False},
+        updates={"phase": "phase 4", "week": 9, "focus": "dance"},
+    )
+    assert "phase: phase 4" in preview
+    assert "week: 9" in preview
+    assert "focus: dance" in preview
+    assert "->" not in preview

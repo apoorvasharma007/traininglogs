@@ -99,6 +99,5 @@ If you confirm, it restores:
 
 - Event stream: `data/output/live_sessions/<session_id>.events.jsonl`
 - Latest state: `data/output/live_sessions/<session_id>.snapshot.json`
-- NLU learning memory: `data/output/nlu_learning.json`
 - Saved full session JSON: `data/output/sessions/`
 - Database: `data/database/traininglogs.db`

@@ -1,0 +1,18 @@
+{
+  "updated_at": "2026-02-21T17:32:19.307142",
+  "status": "in_progress",
+  "session": {
+    "id": "b2450766-03a7-47d7-9578-1c1c6c46159d",
+    "date": "2026-02-21T17:29:11.398022",
+    "phase": "phase 7",
+    "week": 6,
+    "focus": "power-generation",
+    "is_deload": false,
+    "exercises": [],
+    "created_at": "2026-02-21T17:29:11.398113"
+  },
+  "current_exercise": {
+    "name": "flywheels",
+    "warmup_notes": "3 warmup sets with body weight"
+  }
+}
