@@ -1,15 +1,15 @@
 {
   "data_model_version": "0.0.1",
   "data_model_type": "TrainingSession",
-  "session_id": "2026-02-20_pull-hypertrophy_7",
+  "session_id": "2026-02-27_pull-hypertrophy_7",
   "user_id": "7",
   "user_name": "Apoorva Sharma",
-  "date": "2026-02-20",
+  "date": "2026-02-27",
   "program": "BODYBUILDING TRANSFORMATION SYSTEM",
   "program_author": "Jeff Nippard",
   "program_length_weeks": 12,
   "phase": 3,
-  "week": 4,
+  "week": 5,
   "is_deload_week": false,
   "focus": "Pull Hypertrophy",
   "exercises": [
@@ -47,7 +47,7 @@
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 60.0,
+        "weight_kg": 73.0,
         "sets": 2,
         "rep_range": {
           "min": 8,
@@ -137,7 +137,7 @@
           "number": 1,
           "weight_kg": 47.6,
           "rep_count": {
-            "full": 10,
+            "full": 12,
             "partial": 0
           },
           "rpe": 9.5,
@@ -150,7 +150,7 @@
           "number": 2,
           "weight_kg": 47.6,
           "rep_count": {
-            "full": 12,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
@@ -160,7 +160,7 @@
           "failure_technique": {
             "technique_type": "LLP",
             "details": {
-              "partial_rep_count": 5
+              "partial_rep_count": 8
             }
           }
         }
@@ -189,7 +189,8 @@
       "form_cues": [
         "Squeeze shoulder blades together",
         "Elbows down and back",
-        "Sit upright"
+        "Sit upright",
+        "Try to touch belly button and not chest"
       ]
     },
     {
@@ -213,7 +214,7 @@
           "number": 2,
           "weight_kg": 9.1,
           "rep_count": {
-            "full": 8,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
@@ -294,8 +295,8 @@
           "number": 2,
           "weight_kg": 34.0,
           "rep_count": {
-            "full": 8,
-            "partial": 4
+            "full": 10,
+            "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "good",
@@ -332,9 +333,9 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 24.9,
+          "weight_kg": 27.9,
           "rep_count": {
-            "full": 9,
+            "full": 8,
             "partial": 0
           },
           "rpe": 10.0,
@@ -347,7 +348,7 @@
           "number": 2,
           "weight_kg": 24.9,
           "rep_count": {
-            "full": 9,
+            "full": 12,
             "partial": 0
           },
           "rpe": 10.0,
@@ -360,7 +361,7 @@
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 22.7,
+        "weight_kg": 24.9,
         "sets": 2,
         "rep_range": {
           "min": 10,
@@ -383,16 +384,43 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 20.0,
+          "weight_kg": 14.0,
           "rep_count": {
-            "full": 11,
-            "partial": 1
+            "full": 15,
+            "partial": 0
           },
           "rpe": 10.0,
-          "rep_quality_assessment": "perfect",
+          "rep_quality_assessment": null,
           "actual_rest_minutes": null,
           "notes": "2 to 3 second negative",
-          "failure_technique": null
+          "failure_technique": {
+            "technique_type": "MyoReps",
+            "details": {
+              "mini_sets": [
+                {
+                  "number": 1,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 2,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                },
+                {
+                  "number": 3,
+                  "rep_count": {
+                    "full": 3,
+                    "partial": 0
+                  }
+                }
+              ]
+            }
+          }
         }
       ],
       "target_muscle_groups": null,
@@ -417,5 +445,5 @@
       ]
     }
   ],
-  "session_duration_minutes": 120
+  "session_duration_minutes": 95
 }
