@@ -55,19 +55,6 @@ def get_current_branch() -> Optional[str]:
     return stdout.strip() if stdout.strip() != "HEAD" else None
 
 
-def extract_phase_week_from_branch() -> Optional[tuple[int, int]]:
-    """Extract phase & week from branch name (e.g., phase-3-week-5)."""
-    branch = get_current_branch()
-    if not branch:
-        return None
-    
-    import re
-    match = re.search(r'phase[_-](\d+)[_-]week[_-](\d+)', branch.lower())
-    if match:
-        return int(match.group(1)), int(match.group(2))
-    return None
-
-
 def ensure_feature_branch() -> bool:
     """Ensure we're on a feature branch (not main/master).
     
@@ -107,6 +94,18 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     
     parser.add_argument(
+        "--phase",
+        type=int,
+        required=True,
+        help="Phase number (required)",
+    )
+    parser.add_argument(
+        "--week",
+        type=int,
+        required=True,
+        help="Week number (required)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would happen without making changes",
@@ -138,21 +137,25 @@ def main(argv: Optional[list[str]] = None) -> int:
     if not args.dry_run and not ensure_feature_branch():
         return 1
     
+    phase = args.phase
+    week = args.week
+    
     # Step 1: Validate input files exist
-    print("\n[1/4] Checking for markdown files...")
-    md_files = list(INPUT_LOGS_DIR.glob("**/*.md"))
+    print(f"\n[1/4] Checking for markdown files in phase {phase} week {week}...")
+    target_dir = INPUT_LOGS_DIR / f"phase {phase} week {week}"
+    md_files = list(target_dir.glob("*.md"))
     if not md_files:
-        print("❌ No markdown files found in input_training_logs_md/")
+        print(f"❌ No markdown files found in phase {phase} week {week}/")
         return 1
     print(f"✓ Found {len(md_files)} markdown file(s)")
     
     # Step 2: Run parser
     print("\n[2/4] Running JSON parser...")
     if args.dry_run:
-        print("[DRY-RUN] Would run: python3 processor/processor.py")
+        print(f"[DRY-RUN] Would run: python3 processor/processor.py --phase {phase} --week {week}")
         ret = 0
     else:
-        ret, stdout, stderr = run_command([sys.executable, str(PROCESSOR_SCRIPT)])
+        ret, stdout, stderr = run_command([sys.executable, str(PROCESSOR_SCRIPT), "--phase", str(phase), "--week", str(week)])
         if ret != 0:
             print("❌ Parser failed!")
             print(stderr)
@@ -190,12 +193,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     
     # Create commit message
     if not args.message:
-        phase_week = extract_phase_week_from_branch()
-        if phase_week:
-            phase, week = phase_week
-            args.message = f"Sync training logs for phase {phase} week {week}"
-        else:
-            args.message = "Sync and parse training logs"
+        args.message = f"Sync training logs for phase {phase} week {week}"
     
     ret, _, stderr = run_command(["git", "commit", "-m", args.message])
     if ret != 0:

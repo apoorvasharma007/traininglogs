@@ -105,9 +105,18 @@ from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 # -------------------------------------------------------------------
 # ✅ Load the markdown training log dynamically - EDIT INPUT FOLDER HERE
 # -------------------------------------------------------------------
+# Parse command-line arguments for phase and week
+import argparse
+import sys as sys_module
+
+parser = argparse.ArgumentParser(description="Process training logs")
+parser.add_argument("--phase", type=int, default=3, help="Phase number (default: 3)")
+parser.add_argument("--week", type=int, default=5, help="Week number (default: 5)")
+args = parser.parse_args()
+
 # Define folder paths relative to project root
 # Raw logs and output live at project root
-RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md/phase 3 week 5")
+RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, f"input_training_logs_md/phase {args.phase} week {args.week}")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output_training_logs_json")
 
 
