@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-02-17
+- Date: 2026-02-24
 - Phase: 3
-- Week: 4
+- Week: 5
 - Deload: No
 - Focus: Upper Strength
-- Duration: 129 min
+- Duration: 101 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree
@@ -13,15 +13,15 @@
 **Rest:** 3 min
 ### Warmup
 1. 2.5 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based
-2. 15 x 6 - unilateral punches full range lift and twist lat also
+2. 17.5 x feel - unilateral punches full range lift and twist lat also, twist even more for reaching out to punch that made my spine loosen up
 3. 25 x feel
 
 ### Warmup Notes
 10 x feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 ### Working Sets
-1. 35 x  7 RPE 10 perfect 
-2. 35  x 7+1 RPE 10 perfect 
-3. 30  x 6 + 1 RPE 10 perfect 
+1. 35 x  6 RPE 10 perfect - very good tempo control
+2. 35  x 6 RPE 10 perfect 
+3. 30  x 6 RPE 10 perfect 
 
 ### Notes
 left side usually falls faster on negative and slightly weak on holding at top but today it was all good
@@ -33,7 +33,7 @@ left side usually falls faster on negative and slightly weak on holding at top b
 
 ## Exercise 2
 **Name:** Pec Dec Single Arm
-**Goal:** 100+ kg x 2 sets x 8-10 reps
+**Goal:** 100 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 32  x 10 - one light warmup, do heavier next time
@@ -41,8 +41,8 @@ left side usually falls faster on negative and slightly weak on holding at top b
 ### Warmup Notes
 pyramid warmup, was doing
 ### Working Sets 
-1. 100 x 10 RPE 9 perfect 
-2. 100 x 10 RPE 10 good 
+1. 120 x 8+2 RPE 9 good - need to work on keeping elbows full straight for later calisthenics 
+2. 120 x 8 RPE 10 bad - good explosive power but poor control in range of motion
 
 ### Notes
 Goal is to do 12 perfect reps at 100+
@@ -60,9 +60,9 @@ Goal is to do 12 perfect reps at 100+
 ### Warmup
 1. 0 x 2
 ### Working Sets
-1. 0 x 10 RPE 9.5 good 
-2. 0 x 9 RPE 9.5 good
-3. 0 x 9 RPE 10 - take chest to bar every rep
+1. 0 x 10 RPE 9.5 perfect 
+2. 0 x 9 RPE 9.5 perfect
+3. 0 x 7 RPE 10 perfect- take chest to bar every rep
 
 ### Cues
 - Used straps for killing lats
@@ -78,7 +78,7 @@ Goal is to do 12 perfect reps at 100+
 1. 4.5 x 6 - did very slow tempo to activate side delts
 ### Working Sets
 1. 9.1 x 12 RPE 10 good - left was two reps shy
-2. 9.1 x 11 RPE 10 failure:myo(3,3,3) good - v grip for better stability and isolating delts
+2. 9.1 x 10 RPE 10 good - feeling weak in elbows, it hurt on inner side so not doing failure sets
 
 ### Notes
 noticed left side is usually 0.5-1.5 rpe behind right
@@ -87,24 +87,19 @@ noticed left side is usually 0.5-1.5 rpe behind right
 - take more rest between hands to match reps
 
 ## Exercise 5
-**Name:** Deficit Pendlay Row
-**Goal:** 70 kg x 2 sets x 6-8 reps
+**Name:** Single Arm DB Row
+**Goal:** 40 kg x 2 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
-1. 40 x 5
-2. 50 x 5 
+ 
 ### Warmup Notes
-pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 80 x  6 RPE 10 good
-2. 80 x 6 + 3 RPE 10 good 
+1. 40 x 6 RPE 10 good
+2. 40 x 6 RPE 10 good 
 ### Notes
- controlled the bar on negative, let it drop. Also did explosive pulls. Felt good. Next tine try snatch grip to go wider maybe that gets more back
+ 
 ### Cues
-- stand on 20 plus 10 kg plate for deficit
-- touch chest, not stomach every rep and keep straight bar path
-- controlled negative and let the bar drop to the ground
 
 ## Exercise 6
 **Name:** Overhead Cable Tricep Extension Bar

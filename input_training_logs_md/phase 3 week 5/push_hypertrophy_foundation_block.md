@@ -1,10 +1,11 @@
 # Training Log
-- Date: 2026-02-21
+- Date: 2026-02-28
 - Phase: 3
-- Week: 4
+- Week: 5
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 150 min 
+- Duration: 168 min
+ 
 ## Exercise 1
 **Name:** Barbell Bench Press
 **Goal:** 80 kg x 3 sets x 8-10 reps
@@ -18,9 +19,9 @@
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 6 RPE 9.5 perfect - felt weak today 
+1. 80 x 8 RPE 10 good 
 2. 80 x 7 RPE 10 perfect 
-3. 80 x 7 RPE 10 good
+3. 80 x 6 RPE 10 perfect
 
 ### Notes
 
@@ -73,7 +74,7 @@ Only squeeze from chest, no pushing from wrist or forearm
 **Rest:** 2 min 
 ### Working Sets
 1. 9.1 x 12 RPE 10 perfect - very controlled eccentric
-2. 9.1 x 12 RPE 10 perfect - stay at 9.1 and i didnt do myo reps today
+2. 9.1 x 12 RPE 10 failure:myo(3,3,3) perfect 
 ### Notes
 Right is stronger. 
 ### Cues
@@ -86,8 +87,8 @@ Right is stronger.
 **Goal:** 31.8 kg x 2 sets x 10-12 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 22.7 x 12 RPE 10 good - good weight for this new hand held gripping cables
-2. 29.5 x 6+6 RPE 10 good - 6 with joined wrists
+1. 29.5 x 6 RPE 10 good - tired
+2. 29.5 x 7 RPE 10 good - 3 reps with joined wrists
   
 ### Notes
 i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
@@ -99,20 +100,22 @@ i used to be too slanted on these so now stand more upright enough to face front
 **Name:** Cable Tricep Kickback Upright
 **Goal:** 6.8 kg x 2 sets x 12-15 reps 
 ### Working Sets
-1. 9.1 x 10+2 RPE 10 good - upright, left did one rep less
-2. 6.8 x 10 RPE 10 bad - bending down , form was not good as it felt too heavy to fully extend tricep
-
+1. 9.1 x 10 RPE 10 good - upright, left did one rep less
+2. 6.8 x 10 RPE 10 good - bending down , form was not good as it felt too heavy to fully extend tricep
+### Notes
+Do both upright and bending down
 ### Cues
 - key is to keep elbow behind body and feel that sharp tension on full extension at bottom position 
 - See jeff’s form  
 - Take shoulder support
+
+
 ## Exercise 7
-**Name:** Hanging Leg Raise
+**Name:** Hanging Roman Chair Leg Raise
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 10 RPE 10 good
-2. 0 x 10 RPE 10 good - very good control on form, keep hustling
-
+1. 0 x 10 + 5 RPE 10 good
+2. 0 x 10 + 10 RPE 10 good 
 
 ### Notes
 Used ankle straps

@@ -1,25 +1,26 @@
 # Training Log
-- Date: 2026-02-18
+
+- Date: 2026-02-25
 - Phase: 3
-- Week: 4
+- Week: 5
 - Deload: No
 - Focus: Lower Strength
-- Duration: 156 min
-
+- Duration: 146 min
+  
 ## Exercise 1
 **Name:** Seated Leg Hamstring Curl
 **Goal:** 63 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 ### Warmup
-1. 29 x feel - unilateral, i can move this weight finally!
-2. 57 x feel - both legs, felt heavy
+1. 29 x feel - unilateral, i can move this weight finally
+2. 57 x feel - both legs
 ### Working Sets
-1. 63 x 8+1 RPE 10 good - getting better i dont do bad form at least 
-2. 63 x  8 RPE 10 good failure:llp(10) - all reps were partial 
+1. 63 x 6+6 RPE 10 good - getting better i dont do bad form at least 
+2. 63 x  8 RPE 10 good failure:llp(10) - trying to get to 90 degrees is a challenge 
 
 
 ### Notes
-Strength increasing on hamstring curls but at 57 wasn’t able to do perfect 10 reps range of motion wise, was struggling after 6-7 reps to get to the bottom. But today set one was really good! We are improving again! We are good with 57 for 10 i hope lets get 57 for 15 and 63 for 8 to 10. Tried pushing away the machine for a change but struggled due to change in form. 
+ 
 ## Exercise 2
 **Name:** Smith Machine Squat
 **Goal:** 70 kg x 3 sets x 6-8 reps
@@ -27,11 +28,11 @@ Strength increasing on hamstring curls but at 57 wasn’t able to do perfect 10 
 
 ### Warmup
 1. 50 x feel
-2. 60 x feel
+2. 70 x feel
 ### Working Sets
-1. 70 x 6 RPE 10 perfect 
-2. 70 x 7 RPE 10 perfect - very good depth
-3. 70 x 6 RPE 10 perfect 
+1. 70 x 9 RPE 10 perfect 
+2. 100 x 3 RPE 10 bad - went 90 degrees max
+3. 90 x 4 RPE 10 good - decent depth, i can push 80-85 for 6 reps 
 
 ### Notes
 Next week is deload and then ramp block but i can go heavier here in phase 3. Knees feeling better today. Think they will recover at a slow pace. Rpe 8.5 means im sure i had another rep at least, could have had 2 more i dont know
@@ -40,14 +41,13 @@ Next week is deload and then ramp block but i can go heavier here in phase 3. Kn
 **Goal:** 100 kg x 3 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
-1. 70 x 6
-2. 80 x 6
+
 ### Warmup Notes
 Pyramid warmup
 ### Working Sets
-1. 90 x 8 - deficit of 20 kg plate felt great, could have done one more if grip didnt fail
-2. 100 x 8  RPE 10 good - tried hook grip, felt better although hurt my thumbs a little
-3. 110 x 4 RPE 10 - used lifting straps 
+1. 110 x 6 - deficit of 25 plate, 3 reps with normal grip and 3 with hook
+2. 110 x 0  RPE 10 good - full CNS failure
+3. 80 x 12 RPE 10 - 8 with hook grip and 4 with normal grip
 
 
 ### Notes
@@ -64,7 +64,7 @@ Keep going after grip fails by dropping the bar taking a deep breath and push in
 **Goal:** 104 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
-1. 36 x feel - unilateral with alternating leg
+
 ### Warmup Notes
 Learning to do unilateral explosives with alternating leg as an experiment. These hurt the knee which is overworked, currently left knees front side bottom point. Need to find out what that is. Did less unilateral sets today since they were stressing the left knee. 
 ### Working Sets

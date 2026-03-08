@@ -1,10 +1,10 @@
 # Training Log
 - Date: 2026-02-22
 - Phase: 3  
-- Week: 4
+- Week: 3
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 142 min  
+- Duration: 120 min  
  
 ## Exercise 1  
 **Name:** Leg Press  
@@ -13,9 +13,9 @@
 ### Warmup Notes  
 Pyramid. 200 kgs power kicks. 
 ### Working Sets 
-1. 250 x 12 RPE 8 good - trying to learn to get full depth if possible by reducing load 
-2. 280 x 9 RPE 10 perfect - trying to improve depth
-3. 290 x 13 RPE 10 perfect - trying to do good depth
+1. 280 x 12 RPE 9.5 good - trying to learn to get full depth if possible by reducing load 
+2. 280 x 12 RPE 9.5 perfect - trying to improve depth
+3. 280 x 12 RPE 10 perfect - trying to do good depth
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
 ### Cues  
@@ -30,15 +30,14 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 **Rest:** 2 min   
 
 ### Warmup
-1. 29 x feel - unilateral, can do full range at this weight
-2. 57 x feel
+1. 29 x feel - unilateral, can do full range at this weight when not fatigued
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 63 x 9 RPE 10 good
-2. 63 x 9+8 RPE 10 good 
+1. 63 x 9 RPE 10 good - can still barely go 90 degrees
+2. 63 x 9 RPE 10 failure:llp(10) good 
 ### Notes 
-57 for 15 with perfect form is a good goal
+63 for 8 reps with full range of motion is the goal
 
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
@@ -54,8 +53,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 32.5 x 12 RPE 8  good - used stepper for deficit
-2. 32.5 x 10 RPE 8.5 perfect - used stepper for deficit
+1. 32.5 x 8 RPE 9  good - hind foot on flat bench and front foot on ground
+2. 32.5 x 9 RPE 10 perfect 
 ### Notes
 Can go heavier than 30 too but try with perfect technique 
 ### Cues  
@@ -75,7 +74,7 @@ Can go heavier than 30 too but try with perfect technique
 Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral.  43 x feel - unilateral.  50 x feel - unilateral but this weight hurt my knees and was hard
 ### Working Sets 
 1. 104 x 10  RPE 10
-2. 104 x 8 RPE 10 perfect - controlled descent
+2. 104 x 9 RPE 10 perfect - controlled descent
 
 ### Notes
 
@@ -90,7 +89,7 @@ Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral
 Pyramid   
 ### Working Sets 
 1. 18.1 x 12 RPE 10 good - decent control on the tempo
-2. 18.1 x 10 RPE 10 good
+2. 18.1 x 12 RPE 10 - last 6 reps no control
 ### Notes 
 15.9 for 15 or 18.1 for 10 perfect reps is a good goal
 ### Cues  
@@ -127,8 +126,8 @@ Pyramid   
 1. 110 x feel
 2. 120 x feel
 ### Working Sets
-1. 130 x 12 RPE 9.5 good 
-2. 130 x 10 RPE 10 good - did standing on plates and felt good or same mostly as standing on platform
+1. 140 x 10 RPE 9.5 good 
+2. 140 x 12 RPE 10 good - did standing on plates and felt good or same mostly as standing on platform
 ### Notes 
 adjust goal by testing as you progress
 ### Cues  

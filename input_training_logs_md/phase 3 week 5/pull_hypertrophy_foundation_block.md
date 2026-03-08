@@ -1,14 +1,14 @@
 # Training Log
-- Date: 2026-02-20
+- Date: 2026-02-27
 - Phase: 3
-- Week: 4
+- Week: 5
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 120 min 
+- Duration: 95 min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
-**Goal:** 60 kg x 2 sets x 8-10 reps
+**Goal:** 73 kg x 2 sets x 8-10 reps
 **Rest:** 2 min 
 
 ### Warmup 
@@ -50,7 +50,7 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 - use yoga block on chest  for more range
 
 ## Exercise 3
-**Name:** Neutral Grip Seated Cable Row Wide Grip
+**Name:** Seated Cable Row Wide Grip
 **Goal:** 60 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 
@@ -59,8 +59,8 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 47.6 x 10 RPE 9.5 perfect - used wide grip handle
-2. 47.6 x 12 RPE 10 perfect failure:llp(5) - keep back straight don’t push back, engage core for this
+1. 47.6 x 12 RPE 9.5 perfect - used wide grip handle
+2. 47.6 x 10 RPE 10 perfect failure:llp(8) - keep back straight don’t push back, engage core for this
 
 ### Notes
 Open your lats more by letting arms and torso forward
@@ -68,6 +68,7 @@ Open your lats more by letting arms and torso forward
 - Squeeze shoulder blades together  
 - Elbows down and back  
 - Sit upright 
+- Try to touch belly button and not chest
 
 ## Exercise 4
 **Name:** 1 Arm 45 Degree Cable Rear Fly
@@ -78,7 +79,7 @@ Open your lats more by letting arms and torso forward
 Pyramid 
 ### Working Sets
 1. 9.1 x 12 RPE 10 good
-2. 9.1 x 8 RPE 10 perfect failure:myo(3,3,3) - great pump in real delt
+2. 9.1 x 10 RPE 10 perfect failure:myo(3,3,3) - great pump in real delt
 
 ### Cues
 - Squeeze 1-2 sec on top.  
@@ -95,7 +96,7 @@ Pyramid 
 Pyramid 
 ### Working Sets
 1. 31.8 x 12 RPE 8.5 good  
-2. 34 x 8+4 RPE 10 good 
+2. 34 x 10 RPE 10 good 
 ### Notes
 i like this weight otherwise grip fails faster than traps 
 ### Cues
@@ -107,13 +108,13 @@ i like this weight otherwise grip fails faster than traps
 
 ## Exercise 6
 **Name:** EZ Bar Cable Curl
-**Goal:** 22.7 kg x 2 sets x 10-12 reps
+**Goal:** 24.9 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 24.9 x 9 RPE 10 good  
-2. 24.9 x 9 RPE 10 perfect - stand close to the machine and upright 
+1. 27.9 x 8 RPE 10 good  
+2. 24.9 x 12 RPE 10 perfect - stand close to the machine and upright 
 
 ### Notes
 Aim for 12 perfect reps at 22.7
@@ -127,7 +128,7 @@ Aim for 12 perfect reps at 22.7
 **Goal:** 20 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 20 x 11+1 RPE 10 perfect - 2 to 3 second negative
+1. 14 x 15 RPE 10 failure:myo(3,3,3) perfect - 2 to 3 second negative
 ### Notes
 Nailed the form of the gods
 ### Cues

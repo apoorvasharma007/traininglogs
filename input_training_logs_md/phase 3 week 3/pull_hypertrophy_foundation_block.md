@@ -50,7 +50,7 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 - Keep feet on ground. 
 
 ## Exercise 3
-**Name:** Neutral Grip Seated Cable Row Wide Grip
+**Name:** Seated Cable Row Wide Grip
 **Goal:** 60 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 
