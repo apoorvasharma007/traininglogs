@@ -1,7 +1,7 @@
 # Training Log
 - Date: 2026-02-22
 - Phase: 3  
-- Week: 3
+- Week: 5
 - Deload: No  
 - Focus: Legs Hypertrophy  
 - Duration: 120 min  
