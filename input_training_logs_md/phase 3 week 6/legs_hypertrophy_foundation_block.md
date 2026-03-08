@@ -1,11 +1,11 @@
 # Training Log
-- Date: 2026-02-22
+- Date: 2026-03-08
 - Phase: 3  
-- Week: 5
+- Week: 6
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 120 min  
- 
+- Duration: 193 min
+   
 ## Exercise 1  
 **Name:** Leg Press  
 **Goal:** 280 kg x 3 sets x 8-10 reps  
@@ -13,9 +13,9 @@
 ### Warmup Notes  
 Pyramid. 200 kgs power kicks. 
 ### Working Sets 
-1. 280 x 12 RPE 9.5 good - trying to learn to get full depth if possible by reducing load 
-2. 280 x 12 RPE 9.5 perfect - trying to improve depth
-3. 280 x 12 RPE 10 perfect - trying to do good depth
+1. 280 x 10 RPE 9.5 good - trying to get full depth if possible 
+2. 280 x 12 RPE 9.5 good - trying to improve depth
+3. 280 x 12 RPE 10 good - trying to do good depth
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves
 ### Cues  
@@ -34,8 +34,8 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 63 x 9 RPE 10 good - can still barely go 90 degrees
-2. 63 x 9 RPE 10 failure:llp(10) good 
+1. 63 x 10 RPE 9 good - can still barely go 90 degrees
+2. 63 x 12 RPE 10 failure:llp(10) perfect 
 ### Notes 
 63 for 8 reps with full range of motion is the goal
 
@@ -53,8 +53,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 32.5 x 8 RPE 9  good - hind foot on flat bench and front foot on ground
-2. 32.5 x 9 RPE 10 perfect 
+1. 30 x 12 RPE 8  good - hind foot on flat bench and front foot on ground
+2. 40 x 12 RPE 10 good 
 ### Notes
 Can go heavier than 30 too but try with perfect technique 
 ### Cues  
@@ -74,7 +74,7 @@ Can go heavier than 30 too but try with perfect technique
 Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral.  43 x feel - unilateral.  50 x feel - unilateral but this weight hurt my knees and was hard
 ### Working Sets 
 1. 104 x 10  RPE 10
-2. 104 x 9 RPE 10 perfect - controlled descent
+2. 104 x 10 RPE 10 perfect - controlled descent
 
 ### Notes
 
@@ -89,9 +89,9 @@ Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral
 Pyramid   
 ### Working Sets 
 1. 18.1 x 12 RPE 10 good - decent control on the tempo
-2. 18.1 x 12 RPE 10 - last 6 reps no control
+2. 18.1 x 12 RPE 10 perfect 
 ### Notes 
-15.9 for 15 or 18.1 for 10 perfect reps is a good goal
+18.1 for 10 perfect reps is a good goal
 ### Cues  
 - Brace your standing leg’s hip like in shoulder press to really lock in adductors.   
 - Height set to 6, see Jeff’s form(controlled release hard pull).   
@@ -117,30 +117,26 @@ Pyramid   
 - Perfect form with controlled negative and explosive push.   
 - see Jeff’s form in video  
 
-## Exercise 7
-**Name:** Standing Calf Raise
-**Goal:** 130 kg x 2 sets x 6-8 reps
-**Rest:** 2 min
-
+## Exercise 7 
+**Name:** Leg Press Calf Press  
+**Goal:** 250 kg x 2 sets x 10-12 reps  
+**Rest:** 2 min   
 ### Warmup
-1. 110 x feel
-2. 120 x feel
-### Working Sets
-1. 140 x 10 RPE 9.5 good 
-2. 140 x 12 RPE 10 good - did standing on plates and felt good or same mostly as standing on platform
-### Notes 
-adjust goal by testing as you progress
-### Cues  
-- I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit.  
-- 1-2 sec pause at the bottom.
 
+1. 200 x feel
+### Warmup Notes
+Pyramid warmups.  80 x 10 fast explosive tempo
+### Working Sets 
+1. 250 x 12 RPE 10 good
+2. 250 x 10 RPE 10 good
+3. 250 x 9 RPE 10 perfect failure:statichold(15)
 
 ## Exercise 8
 **Name:** Tibialis Raise Single Leg
 **Goal:** 12 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 12 x 20 - rested heel on stepper is crazy isolation for tibs
-2. 12 x 12 RPE 10  
+1. 16 x 6 - rested heel on stepper is crazy isolation for tibs
+2. 16 x 5 RPE 10  
 
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 

@@ -1,19 +1,19 @@
 # Training Log
 
-- Date: 2026-02-24
+- Date: 2026-03-03
 - Phase: 3
-- Week: 5
+- Week: 6
 - Deload: No
 - Focus: Upper Strength
-- Duration: 101 min
+- Duration: 130 min
 
 ## Exercise 1
 **Name:** Incline DB Press 45 Degree
 **Goal:** 35 kg x 3 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
-1. 2.5 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based
-2. 17.5 x feel - unilateral punches full range lift and twist lat also, twist even more for reaching out to punch that made my spine loosen up
+1. 5 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based
+2. 15 x feel - unilateral punches full range lift and twist lat also, twist even more for reaching out to punch that made my spine loosen up
 3. 25 x feel
 
 ### Warmup Notes
@@ -21,7 +21,7 @@
 ### Working Sets
 1. 35 x  6 RPE 10 perfect - very good tempo control
 2. 35  x 6 RPE 10 perfect 
-3. 30  x 6 RPE 10 perfect 
+3. 35  x 6 RPE 10 perfect 
 
 ### Notes
 left side usually falls faster on negative and slightly weak on holding at top but today it was all good
@@ -36,13 +36,12 @@ left side usually falls faster on negative and slightly weak on holding at top b
 **Goal:** 100 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
-1. 32  x 10 - one light warmup, do heavier next time
-2. 66 x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs
+1. 100 x feel   
 ### Warmup Notes
 pyramid warmup, was doing
 ### Working Sets 
 1. 120 x 8+2 RPE 9 good - need to work on keeping elbows full straight for later calisthenics 
-2. 120 x 8 RPE 10 bad - good explosive power but poor control in range of motion
+2. 120 x 10 RPE 10 bad - good explosive power but poor control in range of motion
 
 ### Notes
 Goal is to do 12 perfect reps at 100+
@@ -60,15 +59,16 @@ Goal is to do 12 perfect reps at 100+
 ### Warmup
 1. 0 x 2
 ### Working Sets
-1. 0 x 10 RPE 9.5 perfect 
-2. 0 x 9 RPE 9.5 perfect
-3. 0 x 7 RPE 10 perfect- take chest to bar every rep
+1. 0 x 10 RPE 9.5 good 
+2. 0 x 8 RPE 9.5 good
+3. 0 x 8 RPE 10 good 
 
 ### Cues
 - Used straps for killing lats
 - 1.5x shoulder width overhand grip
 - 2 to 3 sec negative
 - feel lats pull apart on way down
+- take chest to bar every rep
 
 ## Exercise 4
 **Name:** High Cable Lateral Raise
@@ -77,7 +77,7 @@ Goal is to do 12 perfect reps at 100+
 ### Warmup
 1. 4.5 x 6 - did very slow tempo to activate side delts
 ### Working Sets
-1. 9.1 x 12 RPE 10 good - left was two reps shy
+1. 9.1 x 10 RPE 10 good - left was two reps shy
 2. 9.1 x 10 RPE 10 good - feeling weak in elbows, it hurt on inner side so not doing failure sets
 
 ### Notes
@@ -87,29 +87,29 @@ noticed left side is usually 0.5-1.5 rpe behind right
 - take more rest between hands to match reps
 
 ## Exercise 5
-**Name:** Single Arm DB Row
-**Goal:** 40 kg x 2 sets x 6-8 reps
+**Name:** Front Lever
+**Goal:** 0 kg x 4 sets x 6-8 reps
 **Rest:** 3 min
 ### Warmup
  
 ### Warmup Notes
 
 ### Working Sets
-1. 40 x 6 RPE 10 good
-2. 40 x 6 RPE 10 good 
+1. 0 x 5
+2. 0 x 5 
 ### Notes
  
 ### Cues
 
 ## Exercise 6
-**Name:** Overhead Cable Tricep Extension Bar
+**Name:** Overhead Tricep Extension Bar
 **Goal:** 31.8 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 20.4 x feel 
 ### Working Sets
-1. 27.2 x 8 RPE 10 good - used hand held grip cables
-2. 27.2 x 10 RPE 10 good
+1. 40 x 8 RPE 10 good - used hand held grip cables
+2. 40 x 10 RPE 10 good
 
 ### Notes
 i used to be too slanted on these so now standing more upright enough to face front comfortably, lower the weight and work on technique now.  need to go heavier safely.
@@ -119,15 +119,16 @@ i used to be too slanted on these so now standing more upright enough to face fr
 - pull from squeezing triceps
 
 ## Exercise 7
-**Name:** Bayesian Cable Curl
+**Name:** Bicep Curl Incline Bench
 **Goal:** 13.6 kg x 3 sets x 10 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 12.5 x 12 RPE 10 good 
+1. 12.5 x 15 RPE 8 good 
 2. 15 x 10 RPE 10  perfect
 ### Cues
 - Using straps to overcome any grip limitations on the last few reps.
 - Squeezing hard on top.
+- Open full hand 
 
 ## Exercise 8
 
@@ -135,7 +136,7 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Goal:** 12 kg x 3 sets x 10-12 reps
 
 ### Working Sets
-1. 12.5 x 12 - right did partial range only
+1. 12.5 x 15 
 2. 12.5 x 10 RPE 10
 ### Notes
 Did only pain free range of motion for right wrist
@@ -150,8 +151,8 @@ Did only pain free range of motion for right wrist
 **Goal:** 7.5 kg x 3 sets x 10-15 reps
 
 ### Working Sets
-1. 7.5 x 12 
-2. 7.5 x 10 RPE 10 - thumb up 
+1. 7.5 x 15 
+2. 7.5 x 15 RPE 10 - thumb up 
 
 ### Notes
 pain free range of motion for right wrist has improved a lot

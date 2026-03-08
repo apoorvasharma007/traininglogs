@@ -1,11 +1,10 @@
 # Training Log
-- Date: 2026-02-28
+- Date: 2026-03-07
 - Phase: 3
-- Week: 5
+- Week: 6
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 168 min
- 
+- Duration: 180  min 
 ## Exercise 1
 **Name:** Barbell Bench Press
 **Goal:** 80 kg x 3 sets x 8-10 reps
@@ -19,9 +18,9 @@
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 8 RPE 10 good 
-2. 80 x 7 RPE 10 perfect 
-3. 80 x 6 RPE 10 perfect
+1. 80 x 5 RPE 10 bad 
+2. 80 x 4 RPE 10 good 
+3. 70 x 10 RPE 10 perfect
 
 ### Notes
 
@@ -45,7 +44,7 @@ Don’t use heavy weights preserve strength for working sets and avoid injury ri
 
 ### Working Sets
 1. 22.5 x 8 RPE 10 perfect 
-2. 22.5 x 6+1 RPE 10 perfect 
+2. 22.5 x 6 RPE 10 perfect 
 ### Notes
 Practise with 22.8 for 10 or 25 for 8
 ### Cues
@@ -59,8 +58,8 @@ Practise with 22.8 for 10 or 25 for 8
 ### Warmup Notes
 Go lighter and grease the shoulder groove in deepest ranges 
 ### Working Sets
-1. 12.5 x 12 RPE 10 perfect 
-2. 12.5 x 12 RPE 10 perfect - arms very open and wide
+1. 15 x 8 RPE 10 perfect 
+2. 15 x 8 RPE 10 perfect - arms very open and wide
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm
 ### Cues
@@ -69,12 +68,12 @@ Only squeeze from chest, no pushing from wrist or forearm
 - Constant tension on pecs 
 
 ## Exercise 4
-**Name:** High Cable Lateral Raise
-**Goal:** 9.1 kg x 2 sets x 12-15 reps 
+**Name:** Lateral Raise Leaning
+**Goal:** 7.5 kg x 2 sets x 12-15 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 9.1 x 12 RPE 10 perfect - very controlled eccentric
-2. 9.1 x 12 RPE 10 failure:myo(3,3,3) perfect 
+1. 7.5 x 12 RPE 10 perfect - leaning from incline bench at low incline
+2. 7.5 x 12 RPE 10 failure:myo(3,3,3) perfect 
 ### Notes
 Right is stronger. 
 ### Cues
@@ -83,12 +82,12 @@ Right is stronger.
 - Hold the top for a second  
   
 ## Exercise 5
-**Name:** Overhead Cable Tricep Extension Bar
-**Goal:** 31.8 kg x 2 sets x 10-12 reps 
+**Name:** Overhead Tricep Extension DB
+**Goal:** 12.5 kg x 2 sets x 10-12 reps 
 **Rest:** 2 min 
 ### Working Sets
-1. 29.5 x 6 RPE 10 good - tired
-2. 29.5 x 7 RPE 10 good - 3 reps with joined wrists
+1. 15 x 8 RPE 10 good - one DB in each hand this felt tough
+2. 12.5 x 10 RPE 10 good - 
   
 ### Notes
 i used to be too slanted on these so now stand more upright enough to face front comfortably, lower the weight and work on technique now
@@ -96,14 +95,14 @@ i used to be too slanted on these so now stand more upright enough to face front
 - anchor at height 7  
 - go to max range of motion  
 - pull from squeezing triceps , focus on arm path don’t push from forearms
+
 ## Exercise 6
-**Name:** Cable Tricep Kickback Upright
+**Name:**  Tricep Kickback DB
 **Goal:** 6.8 kg x 2 sets x 12-15 reps 
 ### Working Sets
-1. 9.1 x 10 RPE 10 good - upright, left did one rep less
-2. 6.8 x 10 RPE 10 good - bending down , form was not good as it felt too heavy to fully extend tricep
+1. 7.5 x 12 RPE 10 good - great stimulus with head supported and DB kickbacks, lot more pump 
 ### Notes
-Do both upright and bending down
+
 ### Cues
 - key is to keep elbow behind body and feel that sharp tension on full extension at bottom position 
 - See jeff’s form  
@@ -114,8 +113,8 @@ Do both upright and bending down
 **Name:** Hanging Roman Chair Leg Raise
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 ### Working Sets
-1. 0 x 10 + 5 RPE 10 good
-2. 0 x 10 + 10 RPE 10 good 
+1. 0 x 10 + 5 RPE 10 good - was using 2 kg ankle straps 
+2. 0 x 10 + 5 RPE 10 good 
 
 ### Notes
 Used ankle straps
@@ -128,7 +127,6 @@ Used ankle straps
 ### Working Sets
 1. 12.5 x 12 
 2. 12.5 x 12 
-3. 12.5 x 8 RPE 10
 
 ### Notes
  - slow down to do pain free and stop when pain emerges
@@ -141,7 +139,6 @@ Used ankle straps
 ### Working Sets
 1. 7.5 x 12 RPE 10 good
 2. 7.5 x 12 RPE 10 good 
-3. 7.5 x 10 RPE 10
 ### Notes
 
 ### Cues
@@ -152,9 +149,8 @@ Used ankle straps
 **Name:** Forearm Preacher Curl
 **Goal:** 15kg x 2 sets x 8-10 reps
 ### Working Sets
-1. 15 x 8 RPE 10
-2. 15 x 8 RPE 10
-3. 15 x 5 RPE 10
+1. 12.5 x 10 RPE 10
+2. 12.5 x 10 RPE 10
 ### Notes
 
 ### Cues

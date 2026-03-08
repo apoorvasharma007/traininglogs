@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2026-02-27
+- Date: 2026-03-06
 - Phase: 3
-- Week: 5
+- Week: 6
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 95 min 
+- Duration: 102 min 
 
 ## Exercise 1
 **Name:** Neutral Grip Lat Pulldown
@@ -17,7 +17,7 @@
 Pyramid 
 ### Working Sets
 1. 73 x 10 RPE 9.5
-2. 73 x 8+1 RPE 10 perfect
+2. 79 x 8+1 RPE 10 good
 
 ### Notes
 Get 8 perfect reps at 79
@@ -35,9 +35,9 @@ Get 8 perfect reps at 79
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 63 x 8 RPE 10 good   
-2. 63 x 8 RPE 10 good 
-3. 63 x 8 RPE 10 good
+1. 63 x 10 RPE 10 good   
+2. 63 x 10 RPE 10 perfect 
+3. 63 x 10 RPE 10 perfect 
 
 
 ### Notes
@@ -50,7 +50,7 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 - use yoga block on chest  for more range
 
 ## Exercise 3
-**Name:** Seated Cable Row Wide Grip
+**Name:** Neutral Grip Seated Cable Row Wide Grip Chest Supported
 **Goal:** 60 kg x 2 sets x 10-12 reps
 **Rest:** 2 min 
 
@@ -59,8 +59,8 @@ Redefine what TRUE failure looks like. Take a breath and keep pulling good reps 
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 47.6 x 12 RPE 9.5 perfect - used wide grip handle
-2. 47.6 x 10 RPE 10 perfect failure:llp(8) - keep back straight don’t push back, engage core for this
+1. 47.6 x 12 RPE 9.5 easy - used wide grip handle
+2. 47.6 x 12 RPE 10 perfect failure:llp(4) - keep back straight don’t push back, engage core for this
 
 ### Notes
 Open your lats more by letting arms and torso forward
@@ -69,6 +69,7 @@ Open your lats more by letting arms and torso forward
 - Elbows down and back  
 - Sit upright 
 - Try to touch belly button and not chest
+- Chest support on incline bench at low incline 
 
 ## Exercise 4
 **Name:** 1 Arm 45 Degree Cable Rear Fly
@@ -79,7 +80,7 @@ Open your lats more by letting arms and torso forward
 Pyramid 
 ### Working Sets
 1. 9.1 x 12 RPE 10 good
-2. 9.1 x 10 RPE 10 perfect failure:myo(3,3,3) - great pump in real delt
+2. 9.1 x 12 RPE 10 perfect failure:myo(3,3,3,3) - great pump in real delt
 
 ### Cues
 - Squeeze 1-2 sec on top.  
@@ -113,8 +114,8 @@ i like this weight otherwise grip fails faster than traps
 ### Warmup Notes
 Pyramid 
 ### Working Sets
-1. 27.9 x 8 RPE 10 good  
-2. 24.9 x 12 RPE 10 perfect - stand close to the machine and upright 
+1. 24.9 x 12 RPE 10 good - feeling tired  
+2. 24.9 x 10 RPE 10 perfect - stand close to the machine and upright 
 
 ### Notes
 Aim for 12 perfect reps at 22.7
@@ -128,7 +129,7 @@ Aim for 12 perfect reps at 22.7
 **Goal:** 20 kg x 1 sets x 12-15 reps
 **Rest:** 2 min 
 ### Working Sets
-1. 14 x 15 RPE 10 failure:myo(3,3,3) perfect - 2 to 3 second negative
+1. 14 x 15 RPE 10 failure:myo(3,3) perfect - 2 to 3 second negative
 ### Notes
 Nailed the form of the gods
 ### Cues
