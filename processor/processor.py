@@ -8,34 +8,6 @@ from pprint import pprint
 from dataclasses import is_dataclass, asdict
 
 # -------------------------------------------------------------------
-# ✅ Utility: Remove nulls from output JSON doc
-# -------------------------------------------------------------------
-def remove_nulls(obj):
-    """
-    Recursively remove all keys with None values from nested dicts, lists, or dataclasses.
-    Returns a cleaned copy of the structure.
-    """
-    # Convert dataclasses to dicts first
-    if is_dataclass(obj):
-        obj = asdict(obj)
-
-    if isinstance(obj, dict):
-        cleaned = {}
-        for k, v in obj.items():
-            v_clean = remove_nulls(v)
-            # keep only non-null, non-empty values
-            if v_clean is not None and v_clean != {} and v_clean != []:
-                cleaned[k] = v_clean
-        return cleaned
-
-    elif isinstance(obj, list):
-        cleaned_list = [remove_nulls(i) for i in obj if i is not None]
-        return [i for i in cleaned_list if i != {} and i != []]
-
-    else:
-        return obj
-
-# -------------------------------------------------------------------
 # ✅ Utility: Convert nested dataclasses/enums into primitives for JSON
 # -------------------------------------------------------------------
 def to_primitive(o):
@@ -133,9 +105,18 @@ from parser.two_parse_relevant_fields_into_objects import DeepTrainingParser
 # -------------------------------------------------------------------
 # ✅ Load the markdown training log dynamically - EDIT INPUT FOLDER HERE
 # -------------------------------------------------------------------
+# Parse command-line arguments for phase and week
+import argparse
+import sys as sys_module
+
+parser = argparse.ArgumentParser(description="Process training logs")
+parser.add_argument("--phase", type=int, default=3, help="Phase number (default: 3)")
+parser.add_argument("--week", type=int, default=5, help="Week number (default: 5)")
+args = parser.parse_args()
+
 # Define folder paths relative to project root
 # Raw logs and output live at project root
-RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, "input_training_logs_md/phase 3 week 5")
+RAW_LOGS_DIR = os.path.join(PROJECT_ROOT, f"input_training_logs_md/phase {args.phase} week {args.week}")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output_training_logs_json")
 
 
