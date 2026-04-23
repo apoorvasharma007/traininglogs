@@ -7,7 +7,10 @@ name = "traininglogs"
 version = "0.1.0"
 description = "Parse and process training session logs into structured JSON."
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "psycopg2-binary>=2.9",
+    "python-dotenv>=1.0",
+]
 
 [project.scripts]
 traininglogs = "traininglogs.processor.processor:main"
