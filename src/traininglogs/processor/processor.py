@@ -5,6 +5,10 @@ import argparse
 from pathlib import Path
 from dataclasses import is_dataclass
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from traininglogs.parser.extract import TrainingMarkdownParser
 from traininglogs.parser.parse import DeepTrainingParser
 
@@ -58,6 +62,15 @@ def process_md_file(md_path: Path) -> None:
         of.write(json_out)
 
     print(f">>> JSON written to: {output_path}\n")
+
+    if os.environ.get("DATABASE_URL"):
+        from traininglogs.db.db import get_connection, apply_schema
+        from traininglogs.db.insert import insert_session
+        conn = get_connection()
+        apply_schema(conn)
+        insert_session(conn, primitive_dict)
+        conn.close()
+        print(f">>> Inserted into DB: {primitive_dict['session_id']}\n")
 
 
 def main() -> None:

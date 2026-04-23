@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Dashboard — Apoorva Sharma</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #e8ff00;
+    --text: #f0f0f0;
+    --muted: #888;
+    --red: #ff4444;
+    --green: #44ff88;
+    --blue: #44aaff;
+    --orange: #ff8844;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; padding: 2rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 2.5rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.4rem; }
+  .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+  .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem 0.5rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .pr-weight { font-weight: 700; color: var(--accent); }
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+  .badge-phase { background: #1e2a10; color: var(--accent); }
+  canvas { max-height: 240px; }
+  .technique-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .technique-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+  .technique-bar { height: 100%; border-radius: 4px; }
+  .technique-label { font-size: 0.78rem; width: 80px; }
+  .technique-count { font-size: 0.78rem; color: var(--muted); width: 36px; text-align: right; }
+  @media (max-width: 900px) {
+    .grid-4, .grid-2, .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .grid-4, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Training Dashboard</h1>
+<p class="subtitle">Apoorva Sharma &nbsp;·&nbsp; Bodybuilding Transformation System &nbsp;·&nbsp; Last updated: 2026-04-19</p>
+
+<!-- Overview stats -->
+<div class="grid-4">
+  <div class="card">
+    <div class="stat-label">Total Sessions</div>
+    <div class="stat-value">115</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Total Working Sets</div>
+    <div class="stat-value">2318</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Current Phase</div>
+    <div class="stat-value">3</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Current Week</div>
+    <div class="stat-value">11</div>
+  </div>
+</div>
+
+<!-- Volume + RPE charts -->
+<div class="grid-2">
+  <div class="card">
+    <div class="section-title">Volume — Working Sets per Session</div>
+    <canvas id="volumeChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="section-title">Average RPE per Session</div>
+    <canvas id="rpeChart"></canvas>
+  </div>
+</div>
+
+<!-- PRs + Techniques + Consistency -->
+<div class="grid-3">
+  <div class="card">
+    <div class="section-title">Personal Records — Key Lifts</div>
+    <table>
+      <thead><tr><th>Exercise</th><th>Weight</th><th>Reps</th><th>Date</th></tr></thead>
+      <tbody id="prTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Failure Technique Usage</div>
+    <div id="techniqueList"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Sessions per Week</div>
+    <canvas id="consistencyChart"></canvas>
+  </div>
+</div>
+
+<script>
+const VOLUME = [{"session_id": "2025-10-13_upper-strength_7", "date": "2025-10-13", "phase": 2, "week": 1, "focus": "Upper Strength", "total_working_sets": 15}, {"session_id": "2025-10-15_lower-strength_7", "date": "2025-10-15", "phase": 2, "week": 1, "focus": "Lower Strength", "total_working_sets": 8}, {"session_id": "2025-10-16_pull-hypertrophy_7", "date": "2025-10-16", "phase": 2, "week": 1, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-10-17_push-hypertrophy_7", "date": "2025-10-17", "phase": 2, "week": 1, "focus": "Push Hypertrophy", "total_working_sets": 13}, {"session_id": "2025-10-19_legs-hypertrophy_7", "date": "2025-10-19", "phase": 2, "week": 1, "focus": "Legs Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-10-20_upper-strength_7", "date": "2025-10-20", "phase": 2, "week": 2, "focus": "Upper Strength", "total_working_sets": 25}, {"session_id": "2025-10-21_lower-strength_7", "date": "2025-10-21", "phase": 2, "week": 2, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2025-10-23_pull-hypertrophy_7", "date": "2025-10-23", "phase": 2, "week": 2, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-10-25_push-hypertrophy_7", "date": "2025-10-25", "phase": 2, "week": 2, "focus": "Push Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-10-26_legs-hypertrophy_7", "date": "2025-10-26", "phase": 2, "week": 2, "focus": "Legs Hypertrophy", "total_working_sets": 15}, {"session_id": "2025-10-28_upper-strength_7", "date": "2025-10-28", "phase": 2, "week": 3, "focus": "Upper Strength", "total_working_sets": 26}, {"session_id": "2025-10-29_lower-strength_7", "date": "2025-10-29", "phase": 2, "week": 3, "focus": "Lower Strength", "total_working_sets": 15}, {"session_id": "2025-11-01_push-hypertrophy_7", "date": "2025-11-01", "phase": 2, "week": 3, "focus": "Push Hypertrophy", "total_working_sets": 17}, {"session_id": "2025-11-01_pull-hypertrophy_7", "date": "2025-11-01", "phase": 2, "week": 3, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-11-02_legs-hypertrophy_7", "date": "2025-11-02", "phase": 2, "week": 3, "focus": "Legs Hypertrophy", "total_working_sets": 15}, {"session_id": "2025-11-04_upper-strength_7", "date": "2025-11-04", "phase": 2, "week": 4, "focus": "Upper Strength", "total_working_sets": 20}, {"session_id": "2025-11-05_lower-strength_7", "date": "2025-11-05", "phase": 2, "week": 4, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2025-11-07_pull-hypertrophy_7", "date": "2025-11-07", "phase": 2, "week": 4, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-11-08_push-hypertrophy_7", "date": "2025-11-08", "phase": 2, "week": 4, "focus": "Push Hypertrophy", "total_working_sets": 22}, {"session_id": "2025-11-09_legs-hypertrophy_7", "date": "2025-11-09", "phase": 2, "week": 4, "focus": "Legs Hypertrophy", "total_working_sets": 15}, {"session_id": "2025-11-11_upper-strength_7", "date": "2025-11-11", "phase": 2, "week": 5, "focus": "Upper Strength", "total_working_sets": 24}, {"session_id": "2025-11-12_lower-strength_7", "date": "2025-11-12", "phase": 2, "week": 5, "focus": "Lower Strength", "total_working_sets": 17}, {"session_id": "2025-11-14_pull-hypertrophy_7", "date": "2025-11-14", "phase": 2, "week": 5, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2025-11-15_push-hypertrophy_7", "date": "2025-11-15", "phase": 2, "week": 5, "focus": "Push Hypertrophy", "total_working_sets": 16}, {"session_id": "2025-11-16_legs-hypertrophy_7", "date": "2025-11-16", "phase": 2, "week": 5, "focus": "Legs Hypertrophy", "total_working_sets": 15}, {"session_id": "2025-11-19_upper-strength_7", "date": "2025-11-19", "phase": 2, "week": 6, "focus": "Upper Strength", "total_working_sets": 18}, {"session_id": "2025-11-20_lower-strength_7", "date": "2025-11-20", "phase": 2, "week": 6, "focus": "Lower Strength", "total_working_sets": 12}, {"session_id": "2025-11-21_pull-hypertrophy_7", "date": "2025-11-21", "phase": 2, "week": 6, "focus": "Pull Hypertrophy", "total_working_sets": 10}, {"session_id": "2025-11-22_push-hypertrophy_7", "date": "2025-11-22", "phase": 2, "week": 6, "focus": "Push Hypertrophy", "total_working_sets": 21}, {"session_id": "2025-11-23_legs-hypertrophy_7", "date": "2025-11-23", "phase": 2, "week": 6, "focus": "Legs Hypertrophy", "total_working_sets": 13}, {"session_id": "2025-11-25_upper-strength_7", "date": "2025-11-25", "phase": 2, "week": 7, "focus": "Upper Strength", "total_working_sets": 28}, {"session_id": "2025-11-26_lower-strength_7", "date": "2025-11-26", "phase": 2, "week": 7, "focus": "Lower Strength", "total_working_sets": 19}, {"session_id": "2025-11-28_pull-hypertrophy_7", "date": "2025-11-28", "phase": 2, "week": 7, "focus": "Pull Hypertrophy", "total_working_sets": 18}, {"session_id": "2025-11-29_push-hypertrophy_7", "date": "2025-11-29", "phase": 2, "week": 7, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2025-11-30_legs-hypertrophy_7", "date": "2025-11-30", "phase": 2, "week": 7, "focus": "Legs Hypertrophy", "total_working_sets": 16}, {"session_id": "2025-12-02_upper-strength_7", "date": "2025-12-02", "phase": 2, "week": 8, "focus": "Upper Strength", "total_working_sets": 25}, {"session_id": "2025-12-03_lower-strength_7", "date": "2025-12-03", "phase": 2, "week": 8, "focus": "Lower Strength", "total_working_sets": 18}, {"session_id": "2025-12-04_pull-hypertrophy_7", "date": "2025-12-04", "phase": 2, "week": 8, "focus": "Pull Hypertrophy", "total_working_sets": 19}, {"session_id": "2025-12-05_push-hypertrophy_7", "date": "2025-12-05", "phase": 2, "week": 8, "focus": "Push Hypertrophy", "total_working_sets": 23}, {"session_id": "2025-12-07_legs-hypertrophy_7", "date": "2025-12-07", "phase": 2, "week": 8, "focus": "Legs Hypertrophy", "total_working_sets": 19}, {"session_id": "2025-12-09_upper-strength_7", "date": "2025-12-09", "phase": 2, "week": 9, "focus": "Upper Strength", "total_working_sets": 26}, {"session_id": "2025-12-10_lower-strength_7", "date": "2025-12-10", "phase": 2, "week": 9, "focus": "Lower Strength", "total_working_sets": 21}, {"session_id": "2025-12-12_pull-hypertrophy_7", "date": "2025-12-12", "phase": 2, "week": 9, "focus": "Pull Hypertrophy", "total_working_sets": 20}, {"session_id": "2025-12-13_push-hypertrophy_7", "date": "2025-12-13", "phase": 2, "week": 9, "focus": "Push Hypertrophy", "total_working_sets": 26}, {"session_id": "2025-12-14_legs-hypertrophy_7", "date": "2025-12-14", "phase": 2, "week": 9, "focus": "Legs Hypertrophy", "total_working_sets": 23}, {"session_id": "2025-12-16_upper-strength_7", "date": "2025-12-16", "phase": 2, "week": 10, "focus": "Upper Strength", "total_working_sets": 26}, {"session_id": "2025-12-17_lower-strength_7", "date": "2025-12-17", "phase": 2, "week": 10, "focus": "Lower Strength", "total_working_sets": 21}, {"session_id": "2025-12-19_pull-hypertrophy_7", "date": "2025-12-19", "phase": 2, "week": 10, "focus": "Pull Hypertrophy", "total_working_sets": 20}, {"session_id": "2025-12-20_push-hypertrophy_7", "date": "2025-12-20", "phase": 2, "week": 10, "focus": "Push Hypertrophy", "total_working_sets": 26}, {"session_id": "2025-12-21_legs-hypertrophy_7", "date": "2025-12-21", "phase": 2, "week": 10, "focus": "Legs Hypertrophy", "total_working_sets": 23}, {"session_id": "2025-12-23_upper-strength_7", "date": "2025-12-23", "phase": 2, "week": 11, "focus": "Upper Strength", "total_working_sets": 28}, {"session_id": "2025-12-25_lower-strength_7", "date": "2025-12-25", "phase": 2, "week": 11, "focus": "Lower Strength", "total_working_sets": 22}, {"session_id": "2025-12-27_pull-hypertrophy_7", "date": "2025-12-27", "phase": 2, "week": 11, "focus": "Pull Hypertrophy", "total_working_sets": 22}, {"session_id": "2025-12-28_push-hypertrophy_7", "date": "2025-12-28", "phase": 2, "week": 11, "focus": "Push Hypertrophy", "total_working_sets": 28}, {"session_id": "2026-01-03_upper-strength_7", "date": "2026-01-03", "phase": 2, "week": 12, "focus": "Upper Strength", "total_working_sets": 28}, {"session_id": "2026-01-09_pull-hypertrophy_7", "date": "2026-01-09", "phase": 2, "week": 12, "focus": "Pull Hypertrophy", "total_working_sets": 22}, {"session_id": "2026-01-10_push-hypertrophy_7", "date": "2026-01-10", "phase": 2, "week": 11, "focus": "Push Hypertrophy", "total_working_sets": 28}, {"session_id": "2026-01-15_lower-strength_7", "date": "2026-01-15", "phase": 2, "week": 12, "focus": "Lower Strength", "total_working_sets": 22}, {"session_id": "2026-01-16_pull-hypertrophy_7", "date": "2026-01-16", "phase": 2, "week": 12, "focus": "Pull Hypertrophy", "total_working_sets": 22}, {"session_id": "2026-01-17_push-hypertrophy_7", "date": "2026-01-17", "phase": 2, "week": 12, "focus": "Push Hypertrophy", "total_working_sets": 31}, {"session_id": "2026-01-18_legs-hypertrophy_7", "date": "2026-01-18", "phase": 2, "week": 12, "focus": "Legs Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-01-20_upper-strength_7", "date": "2026-01-20", "phase": 3, "week": 1, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-01-23_pull-hypertrophy_7", "date": "2026-01-23", "phase": 3, "week": 1, "focus": "Pull Hypertrophy", "total_working_sets": 13}, {"session_id": "2026-01-24_push-hypertrophy_7", "date": "2026-01-24", "phase": 3, "week": 1, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-01-25_legs-hypertrophy_7", "date": "2026-01-25", "phase": 3, "week": 1, "focus": "Legs Hypertrophy", "total_working_sets": 20}, {"session_id": "2026-01-28_upper-strength_7", "date": "2026-01-28", "phase": 3, "week": 2, "focus": "Upper Strength", "total_working_sets": 21}, {"session_id": "2026-01-29_lower-strength_7", "date": "2026-01-29", "phase": 3, "week": 1, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2026-01-30_pull-hypertrophy_7", "date": "2026-01-30", "phase": 3, "week": 2, "focus": "Pull Hypertrophy", "total_working_sets": 13}, {"session_id": "2026-01-31_push-hypertrophy_7", "date": "2026-01-31", "phase": 3, "week": 2, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-02-01_legs-hypertrophy_7", "date": "2026-02-01", "phase": 3, "week": 2, "focus": "Legs Hypertrophy", "total_working_sets": 20}, {"session_id": "2026-02-10_upper-strength_7", "date": "2026-02-10", "phase": 3, "week": 3, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-02-11_lower-strength_7", "date": "2026-02-11", "phase": 3, "week": 3, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2026-02-13_pull-hypertrophy_7", "date": "2026-02-13", "phase": 3, "week": 3, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2026-02-14_push-hypertrophy_7", "date": "2026-02-14", "phase": 3, "week": 3, "focus": "Push Hypertrophy", "total_working_sets": 22}, {"session_id": "2026-02-15_legs-hypertrophy_7", "date": "2026-02-15", "phase": 3, "week": 3, "focus": "Legs Hypertrophy", "total_working_sets": 17}, {"session_id": "2026-02-17_upper-strength_7", "date": "2026-02-17", "phase": 3, "week": 4, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-02-18_lower-strength_7", "date": "2026-02-18", "phase": 3, "week": 4, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2026-02-20_pull-hypertrophy_7", "date": "2026-02-20", "phase": 3, "week": 4, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2026-02-21_push-hypertrophy_7", "date": "2026-02-21", "phase": 3, "week": 4, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-02-22_legs-hypertrophy_7", "date": "2026-02-22", "phase": 3, "week": 4, "focus": "Legs Hypertrophy", "total_working_sets": 17}, {"session_id": "2026-02-24_upper-strength_7", "date": "2026-02-24", "phase": 3, "week": 5, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-02-25_lower-strength_7", "date": "2026-02-25", "phase": 3, "week": 5, "focus": "Lower Strength", "total_working_sets": 16}, {"session_id": "2026-02-27_pull-hypertrophy_7", "date": "2026-02-27", "phase": 3, "week": 5, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2026-02-28_push-hypertrophy_7", "date": "2026-02-28", "phase": 3, "week": 5, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-03-01_legs-hypertrophy_7", "date": "2026-03-01", "phase": 3, "week": 5, "focus": "Legs Hypertrophy", "total_working_sets": 17}, {"session_id": "2026-03-03_upper-strength_7", "date": "2026-03-03", "phase": 3, "week": 6, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-03-04_lower-strength_7", "date": "2026-03-04", "phase": 3, "week": 6, "focus": "Lower Strength", "total_working_sets": 17}, {"session_id": "2026-03-06_pull-hypertrophy_7", "date": "2026-03-06", "phase": 3, "week": 6, "focus": "Pull Hypertrophy", "total_working_sets": 14}, {"session_id": "2026-03-07_push-hypertrophy_7", "date": "2026-03-07", "phase": 3, "week": 6, "focus": "Push Hypertrophy", "total_working_sets": 20}, {"session_id": "2026-03-08_legs-hypertrophy_7", "date": "2026-03-08", "phase": 3, "week": 6, "focus": "Legs Hypertrophy", "total_working_sets": 18}, {"session_id": "2026-03-17_upper-strength_7", "date": "2026-03-17", "phase": 3, "week": 7, "focus": "Upper Strength", "total_working_sets": 23}, {"session_id": "2026-03-18_lower-strength_7", "date": "2026-03-18", "phase": 3, "week": 7, "focus": "Lower Strength", "total_working_sets": 18}, {"session_id": "2026-03-20_pull-hypertrophy_7", "date": "2026-03-20", "phase": 3, "week": 7, "focus": "Pull Hypertrophy", "total_working_sets": 19}, {"session_id": "2026-03-21_push-hypertrophy_7", "date": "2026-03-21", "phase": 3, "week": 7, "focus": "Push Hypertrophy", "total_working_sets": 24}, {"session_id": "2026-03-22_legs-hypertrophy_7", "date": "2026-03-22", "phase": 3, "week": 7, "focus": "Legs Hypertrophy", "total_working_sets": 19}, {"session_id": "2026-03-26_upper-strength_7", "date": "2026-03-26", "phase": 3, "week": 8, "focus": "Upper Strength", "total_working_sets": 22}, {"session_id": "2026-03-27_lower-strength_7", "date": "2026-03-27", "phase": 3, "week": 8, "focus": "Lower Strength", "total_working_sets": 18}, {"session_id": "2026-03-28_pull-hypertrophy_7", "date": "2026-03-28", "phase": 3, "week": 8, "focus": "Pull Hypertrophy", "total_working_sets": 21}, {"session_id": "2026-03-31_push-hypertrophy_7", "date": "2026-03-31", "phase": 3, "week": 8, "focus": "Push Hypertrophy", "total_working_sets": 26}, {"session_id": "2026-04-01_legs-hypertrophy_7", "date": "2026-04-01", "phase": 3, "week": 8, "focus": "Legs Hypertrophy", "total_working_sets": 19}, {"session_id": "2026-04-02_upper-strength_7", "date": "2026-04-02", "phase": 3, "week": 9, "focus": "Upper Strength", "total_working_sets": 27}, {"session_id": "2026-04-03_lower-strength_7", "date": "2026-04-03", "phase": 3, "week": 9, "focus": "Lower Strength", "total_working_sets": 22}, {"session_id": "2026-04-04_pull-hypertrophy_7", "date": "2026-04-04", "phase": 3, "week": 9, "focus": "Pull Hypertrophy", "total_working_sets": 20}, {"session_id": "2026-04-06_push-hypertrophy_7", "date": "2026-04-06", "phase": 3, "week": 9, "focus": "Push Hypertrophy", "total_working_sets": 27}, {"session_id": "2026-04-07_legs-hypertrophy_7", "date": "2026-04-07", "phase": 3, "week": 9, "focus": "Legs Hypertrophy", "total_working_sets": 23}, {"session_id": "2026-04-08_upper-strength_7", "date": "2026-04-08", "phase": 3, "week": 10, "focus": "Upper Strength", "total_working_sets": 26}, {"session_id": "2026-04-10_lower-strength_7", "date": "2026-04-10", "phase": 3, "week": 10, "focus": "Lower Strength", "total_working_sets": 22}, {"session_id": "2026-04-11_pull-hypertrophy_7", "date": "2026-04-11", "phase": 3, "week": 11, "focus": "Pull Hypertrophy", "total_working_sets": 21}, {"session_id": "2026-04-12_push-hypertrophy_7", "date": "2026-04-12", "phase": 3, "week": 10, "focus": "Push Hypertrophy", "total_working_sets": 28}, {"session_id": "2026-04-13_legs-hypertrophy_7", "date": "2026-04-13", "phase": 3, "week": 10, "focus": "Legs Hypertrophy", "total_working_sets": 22}, {"session_id": "2026-04-14_upper-strength_7", "date": "2026-04-14", "phase": 3, "week": 11, "focus": "Upper Strength", "total_working_sets": 28}, {"session_id": "2026-04-16_lower-strength_7", "date": "2026-04-16", "phase": 3, "week": 11, "focus": "Lower Strength", "total_working_sets": 22}, {"session_id": "2026-04-17_pull-hypertrophy_7", "date": "2026-04-17", "phase": 3, "week": 11, "focus": "Pull Hypertrophy", "total_working_sets": 21}, {"session_id": "2026-04-18_push-hypertrophy_7", "date": "2026-04-18", "phase": 3, "week": 11, "focus": "Push Hypertrophy", "total_working_sets": 34}, {"session_id": "2026-04-19_legs-hypertrophy_7", "date": "2026-04-19", "phase": 3, "week": 11, "focus": "Legs Hypertrophy", "total_working_sets": 25}];
+const RPE    = [{"date": "2025-10-13", "phase": 2, "week": 1, "focus": "Upper Strength", "avg_rpe": 8.91, "sets_recorded": 11}, {"date": "2025-10-15", "phase": 2, "week": 1, "focus": "Lower Strength", "avg_rpe": 8.9, "sets_recorded": 5}, {"date": "2025-10-16", "phase": 2, "week": 1, "focus": "Pull Hypertrophy", "avg_rpe": 8.25, "sets_recorded": 8}, {"date": "2025-10-17", "phase": 2, "week": 1, "focus": "Push Hypertrophy", "avg_rpe": 9.13, "sets_recorded": 8}, {"date": "2025-10-19", "phase": 2, "week": 1, "focus": "Legs Hypertrophy", "avg_rpe": 8.63, "sets_recorded": 4}, {"date": "2025-10-20", "phase": 2, "week": 2, "focus": "Upper Strength", "avg_rpe": 9.55, "sets_recorded": 22}, {"date": "2025-10-21", "phase": 2, "week": 2, "focus": "Lower Strength", "avg_rpe": 9.04, "sets_recorded": 14}, {"date": "2025-10-23", "phase": 2, "week": 2, "focus": "Pull Hypertrophy", "avg_rpe": 9.42, "sets_recorded": 13}, {"date": "2025-10-25", "phase": 2, "week": 2, "focus": "Push Hypertrophy", "avg_rpe": 9.65, "sets_recorded": 10}, {"date": "2025-10-26", "phase": 2, "week": 2, "focus": "Legs Hypertrophy", "avg_rpe": 9.11, "sets_recorded": 14}, {"date": "2025-10-28", "phase": 2, "week": 3, "focus": "Upper Strength", "avg_rpe": 9.68, "sets_recorded": 22}, {"date": "2025-10-29", "phase": 2, "week": 3, "focus": "Lower Strength", "avg_rpe": 8.85, "sets_recorded": 13}, {"date": "2025-11-01", "phase": 2, "week": 3, "focus": "Pull Hypertrophy", "avg_rpe": 9.88, "sets_recorded": 13}, {"date": "2025-11-01", "phase": 2, "week": 3, "focus": "Push Hypertrophy", "avg_rpe": 9.64, "sets_recorded": 14}, {"date": "2025-11-02", "phase": 2, "week": 3, "focus": "Legs Hypertrophy", "avg_rpe": 9.25, "sets_recorded": 14}, {"date": "2025-11-04", "phase": 2, "week": 4, "focus": "Upper Strength", "avg_rpe": 9.44, "sets_recorded": 16}, {"date": "2025-11-05", "phase": 2, "week": 4, "focus": "Lower Strength", "avg_rpe": 9.18, "sets_recorded": 14}, {"date": "2025-11-07", "phase": 2, "week": 4, "focus": "Pull Hypertrophy", "avg_rpe": 9.5, "sets_recorded": 14}, {"date": "2025-11-08", "phase": 2, "week": 4, "focus": "Push Hypertrophy", "avg_rpe": 9.73, "sets_recorded": 15}, {"date": "2025-11-09", "phase": 2, "week": 4, "focus": "Legs Hypertrophy", "avg_rpe": 9.43, "sets_recorded": 15}, {"date": "2025-11-11", "phase": 2, "week": 5, "focus": "Upper Strength", "avg_rpe": 9.65, "sets_recorded": 20}, {"date": "2025-11-12", "phase": 2, "week": 5, "focus": "Lower Strength", "avg_rpe": 9.25, "sets_recorded": 14}, {"date": "2025-11-14", "phase": 2, "week": 5, "focus": "Pull Hypertrophy", "avg_rpe": 9.54, "sets_recorded": 14}, {"date": "2025-11-15", "phase": 2, "week": 5, "focus": "Push Hypertrophy", "avg_rpe": 9.83, "sets_recorded": 15}, {"date": "2025-11-16", "phase": 2, "week": 5, "focus": "Legs Hypertrophy", "avg_rpe": 9.37, "sets_recorded": 15}, {"date": "2025-11-19", "phase": 2, "week": 6, "focus": "Upper Strength", "avg_rpe": 9.83, "sets_recorded": 9}, {"date": "2025-11-22", "phase": 2, "week": 6, "focus": "Push Hypertrophy", "avg_rpe": 9.9, "sets_recorded": 10}, {"date": "2025-11-25", "phase": 2, "week": 7, "focus": "Upper Strength", "avg_rpe": 9.6, "sets_recorded": 21}, {"date": "2025-11-26", "phase": 2, "week": 7, "focus": "Lower Strength", "avg_rpe": 9.35, "sets_recorded": 17}, {"date": "2025-11-28", "phase": 2, "week": 7, "focus": "Pull Hypertrophy", "avg_rpe": 9.35, "sets_recorded": 17}, {"date": "2025-11-29", "phase": 2, "week": 7, "focus": "Push Hypertrophy", "avg_rpe": 9.41, "sets_recorded": 22}, {"date": "2025-11-30", "phase": 2, "week": 7, "focus": "Legs Hypertrophy", "avg_rpe": 9.35, "sets_recorded": 13}, {"date": "2025-12-02", "phase": 2, "week": 8, "focus": "Upper Strength", "avg_rpe": 9.31, "sets_recorded": 16}, {"date": "2025-12-03", "phase": 2, "week": 8, "focus": "Lower Strength", "avg_rpe": 9.59, "sets_recorded": 16}, {"date": "2025-12-04", "phase": 2, "week": 8, "focus": "Pull Hypertrophy", "avg_rpe": 9.53, "sets_recorded": 18}, {"date": "2025-12-05", "phase": 2, "week": 8, "focus": "Push Hypertrophy", "avg_rpe": 9.52, "sets_recorded": 22}, {"date": "2025-12-07", "phase": 2, "week": 8, "focus": "Legs Hypertrophy", "avg_rpe": 9.19, "sets_recorded": 18}, {"date": "2025-12-09", "phase": 2, "week": 9, "focus": "Upper Strength", "avg_rpe": 9.46, "sets_recorded": 23}, {"date": "2025-12-10", "phase": 2, "week": 9, "focus": "Lower Strength", "avg_rpe": 9.41, "sets_recorded": 16}, {"date": "2025-12-12", "phase": 2, "week": 9, "focus": "Pull Hypertrophy", "avg_rpe": 9.4, "sets_recorded": 20}, {"date": "2025-12-13", "phase": 2, "week": 9, "focus": "Push Hypertrophy", "avg_rpe": 9.82, "sets_recorded": 25}, {"date": "2025-12-14", "phase": 2, "week": 9, "focus": "Legs Hypertrophy", "avg_rpe": 9.41, "sets_recorded": 22}, {"date": "2025-12-16", "phase": 2, "week": 10, "focus": "Upper Strength", "avg_rpe": 9.59, "sets_recorded": 23}, {"date": "2025-12-17", "phase": 2, "week": 10, "focus": "Lower Strength", "avg_rpe": 9.35, "sets_recorded": 17}, {"date": "2025-12-19", "phase": 2, "week": 10, "focus": "Pull Hypertrophy", "avg_rpe": 9.65, "sets_recorded": 20}, {"date": "2025-12-20", "phase": 2, "week": 10, "focus": "Push Hypertrophy", "avg_rpe": 9.81, "sets_recorded": 24}, {"date": "2025-12-21", "phase": 2, "week": 10, "focus": "Legs Hypertrophy", "avg_rpe": 9.52, "sets_recorded": 22}, {"date": "2025-12-23", "phase": 2, "week": 11, "focus": "Upper Strength", "avg_rpe": 9.66, "sets_recorded": 25}, {"date": "2025-12-25", "phase": 2, "week": 11, "focus": "Lower Strength", "avg_rpe": 9.42, "sets_recorded": 18}, {"date": "2025-12-27", "phase": 2, "week": 11, "focus": "Pull Hypertrophy", "avg_rpe": 9.73, "sets_recorded": 22}, {"date": "2025-12-28", "phase": 2, "week": 11, "focus": "Push Hypertrophy", "avg_rpe": 9.85, "sets_recorded": 27}, {"date": "2026-01-03", "phase": 2, "week": 12, "focus": "Upper Strength", "avg_rpe": 9.76, "sets_recorded": 25}, {"date": "2026-01-09", "phase": 2, "week": 12, "focus": "Pull Hypertrophy", "avg_rpe": 9.7, "sets_recorded": 22}, {"date": "2026-01-10", "phase": 2, "week": 11, "focus": "Push Hypertrophy", "avg_rpe": 9.93, "sets_recorded": 27}, {"date": "2026-01-15", "phase": 2, "week": 12, "focus": "Lower Strength", "avg_rpe": 9.42, "sets_recorded": 19}, {"date": "2026-01-16", "phase": 2, "week": 12, "focus": "Pull Hypertrophy", "avg_rpe": 9.66, "sets_recorded": 22}, {"date": "2026-01-17", "phase": 2, "week": 12, "focus": "Push Hypertrophy", "avg_rpe": 9.93, "sets_recorded": 28}, {"date": "2026-01-18", "phase": 2, "week": 12, "focus": "Legs Hypertrophy", "avg_rpe": 9.59, "sets_recorded": 23}, {"date": "2026-01-20", "phase": 3, "week": 1, "focus": "Upper Strength", "avg_rpe": 9.6, "sets_recorded": 20}, {"date": "2026-01-23", "phase": 3, "week": 1, "focus": "Pull Hypertrophy", "avg_rpe": 9.46, "sets_recorded": 13}, {"date": "2026-01-24", "phase": 3, "week": 1, "focus": "Push Hypertrophy", "avg_rpe": 9.97, "sets_recorded": 19}, {"date": "2026-01-25", "phase": 3, "week": 1, "focus": "Legs Hypertrophy", "avg_rpe": 9.61, "sets_recorded": 19}, {"date": "2026-01-28", "phase": 3, "week": 2, "focus": "Upper Strength", "avg_rpe": 9.76, "sets_recorded": 19}, {"date": "2026-01-29", "phase": 3, "week": 1, "focus": "Lower Strength", "avg_rpe": 9.14, "sets_recorded": 11}, {"date": "2026-01-30", "phase": 3, "week": 2, "focus": "Pull Hypertrophy", "avg_rpe": 9.46, "sets_recorded": 13}, {"date": "2026-01-31", "phase": 3, "week": 2, "focus": "Push Hypertrophy", "avg_rpe": 9.97, "sets_recorded": 19}, {"date": "2026-02-01", "phase": 3, "week": 2, "focus": "Legs Hypertrophy", "avg_rpe": 9.61, "sets_recorded": 19}, {"date": "2026-02-10", "phase": 3, "week": 3, "focus": "Upper Strength", "avg_rpe": 9.85, "sets_recorded": 20}, {"date": "2026-02-11", "phase": 3, "week": 3, "focus": "Lower Strength", "avg_rpe": 9.54, "sets_recorded": 14}, {"date": "2026-02-13", "phase": 3, "week": 3, "focus": "Pull Hypertrophy", "avg_rpe": 9.68, "sets_recorded": 14}, {"date": "2026-02-14", "phase": 3, "week": 3, "focus": "Push Hypertrophy", "avg_rpe": 9.97, "sets_recorded": 18}, {"date": "2026-02-15", "phase": 3, "week": 3, "focus": "Legs Hypertrophy", "avg_rpe": 9.75, "sets_recorded": 16}, {"date": "2026-02-17", "phase": 3, "week": 4, "focus": "Upper Strength", "avg_rpe": 9.9, "sets_recorded": 20}, {"date": "2026-02-18", "phase": 3, "week": 4, "focus": "Lower Strength", "avg_rpe": 9.54, "sets_recorded": 14}, {"date": "2026-02-20", "phase": 3, "week": 4, "focus": "Pull Hypertrophy", "avg_rpe": 9.82, "sets_recorded": 14}, {"date": "2026-02-21", "phase": 3, "week": 4, "focus": "Push Hypertrophy", "avg_rpe": 9.98, "sets_recorded": 22}, {"date": "2026-02-22", "phase": 3, "week": 4, "focus": "Legs Hypertrophy", "avg_rpe": 9.63, "sets_recorded": 16}, {"date": "2026-02-24", "phase": 3, "week": 5, "focus": "Upper Strength", "avg_rpe": 9.9, "sets_recorded": 20}, {"date": "2026-02-25", "phase": 3, "week": 5, "focus": "Lower Strength", "avg_rpe": 9.54, "sets_recorded": 14}, {"date": "2026-02-27", "phase": 3, "week": 5, "focus": "Pull Hypertrophy", "avg_rpe": 9.82, "sets_recorded": 14}, {"date": "2026-02-28", "phase": 3, "week": 5, "focus": "Push Hypertrophy", "avg_rpe": 10.0, "sets_recorded": 22}, {"date": "2026-03-01", "phase": 3, "week": 5, "focus": "Legs Hypertrophy", "avg_rpe": 9.84, "sets_recorded": 16}, {"date": "2026-03-03", "phase": 3, "week": 6, "focus": "Upper Strength", "avg_rpe": 9.78, "sets_recorded": 18}, {"date": "2026-03-04", "phase": 3, "week": 6, "focus": "Lower Strength", "avg_rpe": 9.54, "sets_recorded": 14}, {"date": "2026-03-06", "phase": 3, "week": 6, "focus": "Pull Hypertrophy", "avg_rpe": 9.82, "sets_recorded": 14}, {"date": "2026-03-07", "phase": 3, "week": 6, "focus": "Push Hypertrophy", "avg_rpe": 10.0, "sets_recorded": 18}, {"date": "2026-03-08", "phase": 3, "week": 6, "focus": "Legs Hypertrophy", "avg_rpe": 9.76, "sets_recorded": 17}, {"date": "2026-03-17", "phase": 3, "week": 7, "focus": "Upper Strength", "avg_rpe": 9.79, "sets_recorded": 17}, {"date": "2026-03-18", "phase": 3, "week": 7, "focus": "Lower Strength", "avg_rpe": 9.8, "sets_recorded": 15}, {"date": "2026-03-20", "phase": 3, "week": 7, "focus": "Pull Hypertrophy", "avg_rpe": 9.68, "sets_recorded": 19}, {"date": "2026-03-21", "phase": 3, "week": 7, "focus": "Push Hypertrophy", "avg_rpe": 9.91, "sets_recorded": 23}, {"date": "2026-03-22", "phase": 3, "week": 7, "focus": "Legs Hypertrophy", "avg_rpe": 9.75, "sets_recorded": 18}, {"date": "2026-03-26", "phase": 3, "week": 8, "focus": "Upper Strength", "avg_rpe": 9.69, "sets_recorded": 18}, {"date": "2026-03-27", "phase": 3, "week": 8, "focus": "Lower Strength", "avg_rpe": 9.8, "sets_recorded": 15}, {"date": "2026-03-28", "phase": 3, "week": 8, "focus": "Pull Hypertrophy", "avg_rpe": 9.75, "sets_recorded": 20}, {"date": "2026-03-31", "phase": 3, "week": 8, "focus": "Push Hypertrophy", "avg_rpe": 9.86, "sets_recorded": 25}, {"date": "2026-04-01", "phase": 3, "week": 8, "focus": "Legs Hypertrophy", "avg_rpe": 9.86, "sets_recorded": 18}, {"date": "2026-04-02", "phase": 3, "week": 9, "focus": "Upper Strength", "avg_rpe": 9.85, "sets_recorded": 20}, {"date": "2026-04-03", "phase": 3, "week": 9, "focus": "Lower Strength", "avg_rpe": 9.91, "sets_recorded": 17}, {"date": "2026-04-04", "phase": 3, "week": 9, "focus": "Pull Hypertrophy", "avg_rpe": 9.75, "sets_recorded": 20}, {"date": "2026-04-06", "phase": 3, "week": 9, "focus": "Push Hypertrophy", "avg_rpe": 9.88, "sets_recorded": 26}, {"date": "2026-04-07", "phase": 3, "week": 9, "focus": "Legs Hypertrophy", "avg_rpe": 9.8, "sets_recorded": 22}, {"date": "2026-04-08", "phase": 3, "week": 10, "focus": "Upper Strength", "avg_rpe": 9.9, "sets_recorded": 20}, {"date": "2026-04-10", "phase": 3, "week": 10, "focus": "Lower Strength", "avg_rpe": 9.91, "sets_recorded": 17}, {"date": "2026-04-11", "phase": 3, "week": 11, "focus": "Pull Hypertrophy", "avg_rpe": 9.76, "sets_recorded": 21}, {"date": "2026-04-12", "phase": 3, "week": 10, "focus": "Push Hypertrophy", "avg_rpe": 9.87, "sets_recorded": 27}, {"date": "2026-04-13", "phase": 3, "week": 10, "focus": "Legs Hypertrophy", "avg_rpe": 9.4, "sets_recorded": 20}, {"date": "2026-04-14", "phase": 3, "week": 11, "focus": "Upper Strength", "avg_rpe": 9.93, "sets_recorded": 22}, {"date": "2026-04-16", "phase": 3, "week": 11, "focus": "Lower Strength", "avg_rpe": 9.82, "sets_recorded": 17}, {"date": "2026-04-17", "phase": 3, "week": 11, "focus": "Pull Hypertrophy", "avg_rpe": 9.88, "sets_recorded": 21}, {"date": "2026-04-18", "phase": 3, "week": 11, "focus": "Push Hypertrophy", "avg_rpe": 9.94, "sets_recorded": 33}, {"date": "2026-04-19", "phase": 3, "week": 11, "focus": "Legs Hypertrophy", "avg_rpe": 9.32, "sets_recorded": 22}];
+const PRS    = [{"exercise": "Barbell Back Squat", "weight_kg": 100.0, "reps_full": 6, "date": "2026-03-04", "phase": 3, "week": 6}, {"exercise": "Barbell Bench Press", "weight_kg": 90.0, "reps_full": 1, "date": "2026-03-31", "phase": 3, "week": 8}, {"exercise": "Barbell Romanian Deadlift", "weight_kg": 110.0, "reps_full": 4, "date": "2026-02-18", "phase": 3, "week": 4}, {"exercise": "Chest Supported Machine Row", "weight_kg": 63.0, "reps_full": 12, "date": "2026-04-11", "phase": 3, "week": 11}, {"exercise": "DB Bulgarian Split Squat", "weight_kg": 40.0, "reps_full": 12, "date": "2026-03-08", "phase": 3, "week": 6}, {"exercise": "Deficit Pendlay Row", "weight_kg": 80.0, "reps_full": 6, "date": "2026-02-10", "phase": 3, "week": 3}, {"exercise": "Hack Squat", "weight_kg": 150.0, "reps_full": 10, "date": "2026-04-07", "phase": 3, "week": 9}, {"exercise": "Incline DB Press 45 Degree", "weight_kg": 35.0, "reps_full": 6, "date": "2026-04-14", "phase": 3, "week": 11}, {"exercise": "Lean Back Lat Pulldown", "weight_kg": 73.0, "reps_full": 8, "date": "2026-03-28", "phase": 3, "week": 8}, {"exercise": "Leg Extension", "weight_kg": 104.0, "reps_full": 8, "date": "2026-03-18", "phase": 3, "week": 7}, {"exercise": "Leg Press", "weight_kg": 290.0, "reps_full": 13, "date": "2026-02-22", "phase": 3, "week": 4}, {"exercise": "Neutral Grip Lat Pulldown", "weight_kg": 79.0, "reps_full": 8, "date": "2026-03-06", "phase": 3, "week": 6}, {"exercise": "Seated Leg Curl", "weight_kg": 63.0, "reps_full": 9, "date": "2026-03-01", "phase": 3, "week": 5}, {"exercise": "Wide Grip Lat Pulldown", "weight_kg": 63.0, "reps_full": 10, "date": "2026-04-08", "phase": 3, "week": 10}];
+const TECH   = [{"technique": "LLP", "usage_count": 52}, {"technique": "MyoReps", "usage_count": 48}, {"technique": "StaticHold", "usage_count": 28}];
+const CONS   = [{"phase": 2, "week": 1, "session_count": 5, "week_start": "2025-10-13", "week_end": "2025-10-19"}, {"phase": 2, "week": 2, "session_count": 5, "week_start": "2025-10-20", "week_end": "2025-10-26"}, {"phase": 2, "week": 3, "session_count": 5, "week_start": "2025-10-28", "week_end": "2025-11-02"}, {"phase": 2, "week": 4, "session_count": 5, "week_start": "2025-11-04", "week_end": "2025-11-09"}, {"phase": 2, "week": 5, "session_count": 5, "week_start": "2025-11-11", "week_end": "2025-11-16"}, {"phase": 2, "week": 6, "session_count": 5, "week_start": "2025-11-19", "week_end": "2025-11-23"}, {"phase": 2, "week": 7, "session_count": 5, "week_start": "2025-11-25", "week_end": "2025-11-30"}, {"phase": 2, "week": 8, "session_count": 5, "week_start": "2025-12-02", "week_end": "2025-12-07"}, {"phase": 2, "week": 9, "session_count": 5, "week_start": "2025-12-09", "week_end": "2025-12-14"}, {"phase": 2, "week": 10, "session_count": 5, "week_start": "2025-12-16", "week_end": "2025-12-21"}, {"phase": 2, "week": 11, "session_count": 5, "week_start": "2025-12-23", "week_end": "2026-01-10"}, {"phase": 2, "week": 12, "session_count": 6, "week_start": "2026-01-03", "week_end": "2026-01-18"}, {"phase": 3, "week": 1, "session_count": 5, "week_start": "2026-01-20", "week_end": "2026-01-29"}, {"phase": 3, "week": 2, "session_count": 4, "week_start": "2026-01-28", "week_end": "2026-02-01"}, {"phase": 3, "week": 3, "session_count": 5, "week_start": "2026-02-10", "week_end": "2026-02-15"}, {"phase": 3, "week": 4, "session_count": 5, "week_start": "2026-02-17", "week_end": "2026-02-22"}, {"phase": 3, "week": 5, "session_count": 5, "week_start": "2026-02-24", "week_end": "2026-03-01"}, {"phase": 3, "week": 6, "session_count": 5, "week_start": "2026-03-03", "week_end": "2026-03-08"}, {"phase": 3, "week": 7, "session_count": 5, "week_start": "2026-03-17", "week_end": "2026-03-22"}, {"phase": 3, "week": 8, "session_count": 5, "week_start": "2026-03-26", "week_end": "2026-04-01"}, {"phase": 3, "week": 9, "session_count": 5, "week_start": "2026-04-02", "week_end": "2026-04-07"}, {"phase": 3, "week": 10, "session_count": 4, "week_start": "2026-04-08", "week_end": "2026-04-13"}, {"phase": 3, "week": 11, "session_count": 6, "week_start": "2026-04-11", "week_end": "2026-04-19"}];
+
+const ACCENT = '#e8ff00';
+const MUTED  = '#444';
+const chartDefaults = {
+  color: '#888',
+  borderColor: '#2a2a2a',
+};
+Chart.defaults.color = '#888';
+Chart.defaults.borderColor = '#2a2a2a';
+
+// Volume chart
+new Chart(document.getElementById('volumeChart'), {
+  type: 'bar',
+  data: {
+    labels: VOLUME.map(r => r.date),
+    datasets: [{
+      data: VOLUME.map(r => r.total_working_sets),
+      backgroundColor: VOLUME.map(r => r.phase === 3 ? '#e8ff0044' : '#44aaff22'),
+      borderColor: VOLUME.map(r => r.phase === 3 ? ACCENT : '#44aaff'),
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { display: false },
+      y: { grid: { color: '#1e1e1e' }, ticks: { stepSize: 5 } }
+    }
+  }
+});
+
+// RPE chart
+new Chart(document.getElementById('rpeChart'), {
+  type: 'line',
+  data: {
+    labels: RPE.map(r => r.date),
+    datasets: [{
+      data: RPE.map(r => parseFloat(r.avg_rpe)),
+      borderColor: '#ff8844',
+      backgroundColor: '#ff884411',
+      borderWidth: 2,
+      pointRadius: 2,
+      tension: 0.3,
+      fill: true,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { display: false },
+      y: { min: 7, max: 10.5, grid: { color: '#1e1e1e' } }
+    }
+  }
+});
+
+// PR table
+const tbody = document.getElementById('prTable');
+PRS.forEach(r => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${r.exercise}</td>
+    <td class="pr-weight">${r.weight_kg > 0 ? r.weight_kg + ' kg' : 'BW'}</td>
+    <td>${r.reps_full}</td>
+    <td style="color:var(--muted)">${r.date}</td>`;
+  tbody.appendChild(tr);
+});
+
+// Technique bars
+const techColors = { MyoReps: '#e8ff00', LLP: '#44aaff', StaticHold: '#ff8844' };
+const maxUsage = Math.max(...TECH.map(t => t.usage_count));
+const techDiv = document.getElementById('techniqueList');
+TECH.forEach(t => {
+  const pct = (t.usage_count / maxUsage * 100).toFixed(1);
+  techDiv.innerHTML += `
+    <div class="technique-row">
+      <div class="technique-label">${t.technique}</div>
+      <div class="technique-bar-wrap">
+        <div class="technique-bar" style="width:${pct}%;background:${techColors[t.technique] || '#888'}"></div>
+      </div>
+      <div class="technique-count">${t.usage_count}</div>
+    </div>`;
+});
+
+// Consistency chart
+new Chart(document.getElementById('consistencyChart'), {
+  type: 'bar',
+  data: {
+    labels: CONS.map(r => `P${r.phase}W${r.week}`),
+    datasets: [{
+      data: CONS.map(r => r.session_count),
+      backgroundColor: CONS.map(r => r.session_count >= 5 ? '#44ff8833' : '#ff444433'),
+      borderColor: CONS.map(r => r.session_count >= 5 ? '#44ff88' : '#ff4444'),
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { maxRotation: 90, font: { size: 9 } } },
+      y: { min: 0, max: 6, ticks: { stepSize: 1 }, grid: { color: '#1e1e1e' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
