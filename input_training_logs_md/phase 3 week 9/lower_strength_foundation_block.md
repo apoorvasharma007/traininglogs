@@ -1,24 +1,25 @@
 # Training Log
 
-- Date: 2026-03-27
+- Date: 2026-04-03
 - Phase: 3
-- Week: 8
+- Week: 9
 - Deload: No
 - Focus: Lower Strength
-- Duration: 109 min
+- Duration: 161  min
 
 ## Exercise 1
 
 **Name:** Seated Leg Hamstring Curl
-**Goal:** 57 kg x 3 sets x 10-12 reps
+**Goal:** 63 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 ### Warmup
-1. 29 x feel - unilateral couldn’t move full rom
+1. 23 x feel - unilateral couldn’t move full rom
 2. 57 x feel
 
 ### Working Sets
-1. 63 x 10 RPE 10 good - last 6 reps were perfect
-2. 63 x 6 RPE 10 bad failure:llp(10) - i went 90 degrees but couldn’t go beyond 
+1. 63 x 10 RPE 10 bad - first 6 reps were 90 degrees 
+2. 63 x 10 RPE 10 good - all rep’s were 90
+3. 63 x 10 RPE 10 good failure:llp(10) - i went 90 degrees but couldn’t go beyond 
 
   
 ### Notes
@@ -42,12 +43,12 @@ Need proper warmup to actually get going. Progressive sets feel better on this.
 
   
 ### Working Sets
-1. 40 x 6 RPE 9.5 good - tried my best to cut hind leg and to some success
-2. 40 x 6 RPE 10 good 
-3. 40 x 6 RPE 9 good 
+1. 40 x 8 RPE 9.5 good
+2. 40 x 8 RPE 10 good 
+3. 40 x 8 RPE 10 good 
 
 ### Notes
-Didnt feel lower back after last set. I think 17.5 might be a good weight to aim for 10 reps.
+Didnt feel lower back after last set cuz im either stronger or bracing properly 
 
 ### Cues
 - Emphasize front foot
@@ -66,8 +67,8 @@ Pyramid warmup
 
 ### Working Sets
 1. 25 x 8 RPE 9 good - arch back while coming up to feel more lower back than glutes
-2. 25 x 8 RPE 10 good - last two reps i lost eccentric control, had to wing it
-3. 25 x 8 RPE 10 perfect 
+2. 25 x 8 RPE 10 perfect - explosive concentric and squeeze on top
+3. 25 x 10 RPE 10 perfect 
 
 
 ### Notes
@@ -91,9 +92,9 @@ Can go heavier with good form, but increase weight slowly to avoid injury. imp t
 Do unilateral explosives with alternating leg as an experiment. These hurt the knee which is overworked, currently left knees front side bottom point. Still need to find out what that is. Did less unilateral sets today since they were stressing the left knee.
 
 ### Working Sets
-1. 104 x 10 RPE 10 good
-2. 104 x 10 RPE 10 good
-3. 104 x 8 RPE 10 good
+1. 104 x 12 RPE 10 bad - no full extension or eccentric control to let right knee recover
+2. 104 x  10+1 RPE 10 bad - we will come back once knee is recovered
+3. 104 x 10+1 RPE 10 bad
 
   
 ### Notes
@@ -105,16 +106,16 @@ Do unilateral explosives with alternating leg as an experiment. These hurt the k
 
 ## Exercise 5
 
-**Name:** Leg Press Calf Raise
+**Name:** Smith Machine Calf Raise
 **Goal:** 250 kg x 3 sets x 8-10 reps
 **Rest:** 2 min
 
 ### Warmup
 
 ### Working Sets
-1. 250 x 10 RPE 9.5  - getting pain in right knee so avoiding full extension
-2. 250 x 10 RPE 10 
-3. 250 x 10 RPE 10 good failure:statichold(14)
+1. 130 x 10 RPE 10 
+2. 130 x 10 RPE 10 
+3. 130 x 10 RPE 10 good failure:statichold(30)
 
 ### Notes
 Good form overall, heavy but maintain perfect technique. Do 8 perfect reps first. Didnt do failure technique on last set.
@@ -126,12 +127,14 @@ Good form overall, heavy but maintain perfect technique. Do 8 perfect reps first
 ## Exercise 6
 
 **Name:** Cable Crunches
-**Goal:** 22.7 kg x 3 sets x 10-12 reps
+**Goal:** 29.5 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 
 ### Working Sets
-1. 22.7 x 12 good
-2. 22.7 x 10 RPE 10 good
+1. 22.7 x 15 - felt easy
+2. 27.2 x 10 good
+3. 27.2 x 10 RPE 10 good
+4. 27.2 x 10 RPE 10 good
 
 
 ### Notes
@@ -146,8 +149,9 @@ Hold up the plate and contract core fast like wrestlers do.
 **Goal:** 16 kg x 3 sets x 1-15 reps
 
 ### Working Sets
-1. 16 x 15 good - heel supported on bench
-2. 16 x 12 good
+1. 8 x 10 good - around the world
+2. 8 x 10 good - around the world
+3. 8 x 10 good - around the world
 
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric.

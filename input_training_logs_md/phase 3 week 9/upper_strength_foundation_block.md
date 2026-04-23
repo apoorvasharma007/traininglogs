@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-26
+- Date: 2026-04-02
 - Phase: 3
-- Week: 8
+- Week: 9
 - Deload: No
 - Focus: Upper Strength
-- Duration: 83 min
+- Duration: 137 min
 
 ## Exercise 1
 
@@ -14,8 +14,9 @@
 **Rest:** 3 min
 
 ### Warmup
-1. 15 x feel - unilateral punches full range lift and twist lat also
+1. 12.5 x feel - unilateral punches full range lift and twist lat also
 2. 25 x feel
+3. 30 x feel
 
 ### Warmup Notes
 1. 0 x feel banded shoulder movement
@@ -25,15 +26,15 @@
 
 ### Working Sets
 1. 35 x 6 RPE 10 good
-2. 35 x 6 RPE 10 good - very little rest
-3. 35 x 5 RPE 10 good - very little rest
+2. 35 x 7 RPE 10 good - last rep my ass lifted a bit bit the set felt stronger
+3. 35 x 6+1 RPE 10 good - last rep was assisted by Asif
 
 ### Notes
-32.5 x 6 felt doable, left hand got stuck while setting up halfway lol. Held up like the superman. Be careful dont get injured.
+
 
 ### Cues
 - brace core
-- breathe every rep
+- breathe every rep if needed
 - feet on the ground
 - Lift DB from left as well as right when picking up for setup
 - In ramp high volume block we wanna pause for a sec on bottom
@@ -46,15 +47,17 @@
 **Rest:** 2 min
 
 ### Warmup
-1. 55 x 9 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs, do one light warmup for resilience
+
 
 ### Warmup Notes
-pyramid warmup
+1. pyramid warmup
+2. 55 x 9 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs, do one light warmup for resilience
+
 
 ### Working Sets
-1. 100 x 10 RPE 10 good
-2. 100 x 6+3 RPE 10 good - no rest 
-3. 100 x 10 RPE 10 good - got good rest
+1. 100 x 11 RPE 10 good - last rep form broke
+2. 100 x 10 RPE 10 bad - first few reps were good than i couldnt keep arms straight 
+3. 100 x 6+4 RPE 10 good 
 ### Notes
 100 for 10 with explosive push and controlled negatives is feeling good.
 Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive
@@ -69,16 +72,16 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 ## Exercise 3
 
 **Name:** Wide Grip Lat Pulldown
-**Goal:** 59 kg x 3 sets x 10-12 reps.
+**Goal:** 66 kg x 3 sets x 10-12 reps.
 **Rest:** 2 min
 
 ### Warmup
   
 
 ### Working Sets
-1. 59 x 13 RPE 9 good - without straps
-2. 63 x 8 RPE 9 perfect - increased weight cuz previous sets were not max effort so i am able to pull more i think
-3. 63 x 8 RPE 9.5 perfect - holding as wide as possible
+1. 63 x 10 RPE 9 good 
+2. 63 x 10 RPE 9 good 
+3. 63 x 10 RPE 10 bad - arching too much
 
 ### Notes
 
@@ -87,12 +90,13 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 - use straps for killing lats
 - drive elbows down squeeze shoulder blades together to feel Lats and mid back
 - Lean back very slightly, too much leaning doesn’t engage mid back I guess
+- Hold as wide as possible
 
 
 ## Exercise 4
 
 **Name:** High Cable Lateral Raise
-**Goal:** 9.1 kg x 3 sets x 10-12 reps
+**Goal:** 11.3 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 
 ### Warmup
@@ -100,7 +104,7 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 ### Warmup Notes
 
 ### Working Sets
-1. 9.1 x 12 RPE 10 good - one arm alternating with Asif 
+1. 9.1 x 13 RPE 10 good - one arm alternating with Asif 
 2. 9.1 x 12 RPE 10 good
 
 
@@ -115,20 +119,22 @@ noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. T
 
 ## Exercise 5
 
-**Name:** Smith Machine Row
-**Goal:** 60 kg x 3 sets x 8-10 reps
+**Name:** Deficit Pendlay Row
+**Goal:** 80 kg x 3 sets x 8-10 reps
 **Rest:** 3 min
 
 ### Warmup
-
+1. 60 x feel
+2. 70 x feel
+3. 80 x 6 - improper form
 
 ### Warmup Notes
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 60 x 6 RPE 9.5 perfect
-2. 60 x 8 RPE 9.5 perfect 
-3. 60 x 7 RPE 10 perfect - didnt too failure llp cuz pressed on time
+1. 70 x 10 RPE 9.5 perfect
+2. 70 x 10 RPE 9.5 perfect 
+3. 70 x 7 RPE 10 failure:llp(7) perfect
 
 ### Notes
 
@@ -147,8 +153,9 @@ pyramid warmups with slow tempo to feel the movement
 
 
 ### Working Sets
-1. 22.5 x 10 RPE 8 perfect - using the cable with handle attachment
-2. 24.9 x 8 RPE 10 perfect 
+1. 22.5 x 11 RPE 10 perfect - using the cable with handle attachment
+2. 22.5 x 9 RPE 10 perfect 
+3. 22.5 x 8 RPE 10 perfect
 
 
 ### Notes
@@ -167,8 +174,9 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Rest:** 2 min
 
 ### Working Sets
-1. 13.6 x 10 RPE 10 good
-2. 13.6 x 10+1 RPE 10 good 
+1. 13.6 x 11 RPE 10 good
+2. 13.6 x 10 RPE 10 good
+3. 13.6 x 9 RPE 10 good
 
 ### Cues
 - Using straps to overcome any grip limitations on the last few reps.
@@ -181,7 +189,8 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Goal:** 15 kg x 3 sets x 10-12 reps
 
 ### Working Sets
-1. 6.8 x 20
+1. 15 x 15
+2. 15 x 11
 ### Notes
 Did only pain free range of motion for right wrist
 
@@ -191,11 +200,12 @@ Did only pain free range of motion for right wrist
 
 ## Exercise 9
 
-**Name:** Wrist Extension Cable Curl
+**Name:** Wrist Extension DB Curl
 **Goal:** 7.5 kg x 3 sets x 10-15 reps
 
 ### Working Sets
-1. 2.5 x 20
+1. 7.5 x 16
+2. 7.5 x 11
 
 ### Notes
 pain free range of motion for right wrist has improved a lot
@@ -206,11 +216,11 @@ pain free range of motion for right wrist has improved a lot
 
 
 ## Exercise 10
-**Name:** Wrist Abduction Cable Curl Single Hand
+**Name:** Forearm Preacher Curl DB
 **Goal:** 2.5 kg x 2 sets x 8-10 reps
 ### Working Sets
-1. 2.5 x 11 learning
-
+1. 15 x 7
+2. 15 x 6
 ## Exercise 11
 **Name:** Wrist Adduction Cable Curl Single Hand
 **Goal:** 6.8 kg x 2 sets x 8-10 reps

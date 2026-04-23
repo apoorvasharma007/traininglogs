@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-20
+- Date: 2026-04-04
 - Phase: 2
-- Week: 7
+- Week: 9
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 148 min 
+- Duration:  144 min 
 
 ## Exercise 1
 
@@ -14,15 +14,15 @@
 **Rest:** 2 min 
 
 ### Warmup
-1. 55 x 6
+1. 59 x feel
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 66 x 10 RPE 8 good 
-2. 73 x 10 RPE 10 good 
-3. 73 x 11 + 1 RPE 10 good - used straps
+1. 73 x 11 RPE 9 good - used straps
+2. 73 x 10 RPE 10 good - used straps 
+3. 73 x 10 + 2 RPE 10 good - used straps
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -36,7 +36,7 @@ Get perfect 12 reps and then we move up in weight
 ## Exercise 2
 
 **Name:** Chest Supported Machine Row
-**Goal:** 57 kg x 4 sets x 10-12 reps
+**Goal:** 63 kg x 4 sets x 10-12 reps
 **Rest:** 2 min 
 
 ### Warmup
@@ -46,9 +46,9 @@ Get perfect 12 reps and then we move up in weight
 Pyramid 
 
 ### Working Sets
-1. 57 x 12 RPE 9 good
-2. 57 x 14 RPE 10 good
-3. 57 x 12 RPE 10 good - squeezing shoulder blades together
+1. 63 x 11+1 RPE 10 good
+2. 63 x 11 RPE 10 good
+3. 63 x 12 RPE 10 good - squeezing shoulder blades together
 
 
 ### Notes
@@ -73,8 +73,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 50 x 12 RPE 9 good 
-2. 50 x 15 RPE 10 good 
+1. 57 x 12 RPE 9 good 
+2. 57 x 12 RPE 10 good 
+3. 57 x 12 RPE 10 good
 
 ### Notes
 Try your best to not lean back
@@ -94,9 +95,9 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 9.1 x 13 RPE 10 good
-2. 9.1 x 15 RPE 10 perfect - keep arms straight for as many reps as possible
-3. 9.1 x 11 RPE 10 failure:myo(3,3,3) good
+1. 11.3 x 10 RPE 10 good
+2. 9.1 x 12 RPE 9 perfect - keep arms straight for as many reps as possible
+3. 9.1 x 12 RPE 10 failure:myo(3,3,3) good
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -111,16 +112,16 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 ## Exercise 5
 
 **Name:** Cable Paused Shrug In
-**Goal:** 38.6 kg x 2 sets x 12-15 reps
+**Goal:** 38.6 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 29.2 x 12 RPE 8.5 good 
+1. 38.6 x 11 RPE 8.5 bad 
 2. 38.6 x 10 RPE 10 good - paused at top and bottom
-3. 38.6 x 9 RPE 10 perfect 
+3. 38.6 x 10+2 RPE 10 good 
 ### Notes
 
 ### Cues
@@ -136,16 +137,16 @@ Pyramid 
 
 ## Exercise 6
 **Name:** Cable Rope Hammer Curl
-**Goal:** 29.5 kg x 3 sets x 12-15 reps
+**Goal:** 31.8 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 31.8 x 13 RPE 10 - controlled eccentric
+1. 31.8 x 13+3 RPE 10 - controlled eccentric
 2. 31.8 x 12 RPE 10 - controlled eccentric
-3. 31.8 x 10 RPE 10 - controlled eccentric
+3. 31.8 x 14 RPE 10 - controlled eccentric
 
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.
@@ -163,8 +164,8 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 10 x 10 RPE 9.5 perfect
-2. 10 x 12 RPE 10 perfect
+1. 10 x 13 RPE 9.5 perfect
+2. 10 x 12 RPE 10 failure:myo(3,2+1,2+1) perfect
 
 ### Notes
 

@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-31
+- Date: 2026-04-06
 - Phase: 3
-- Week: 8
+- Week: 9
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 136 min 
+- Duration: 120 min 
 
 ## Exercise 1
 
@@ -14,20 +14,14 @@
 **Rest:** 5 min  
 
 ### Warmup
-1. 40 x feel
-2. 60 x feel
-3. 70 x feel
-4. 80 x feel
-
+1. 90 x 2 - did more warmups before this Of course! 
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 90 x 1+1 RPE 10
-2. 80 x 6 RPE 10 good
-3. 80 x 6 RPE 9.5 perfect
-4. 80 x 7 RPE 10 perfect - last rep was war and ass came up a bit
-
+1. 80 x 7 RPE 10 perfect
+2. 80 x 7 RPE 10 good  
+3. 80 x 6+1 RPE 10 perfect
 
 ### Notes
 Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
@@ -53,10 +47,9 @@ Whatever reason strength has dropped by few reps on this, is the high volume ove
 Don’t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.
 
 ### Working Sets
-1. 22.5 x 8 RPE 9 perfect 
-2. 22.5 x 6 RPE 10 perfect - took less rest
-3. 22.5 x 1 RPE 10 good - very fatigued
-4. 17.5 x 6 RPE 10 good
+1. 22.5 x 9 RPE 9 perfect 
+2. 22.5 x 7 RPE 10 perfect 
+3. 22.5 x 6 RPE 10 good
 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.
@@ -72,8 +65,10 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 
 ### Working Sets
-1. 13.6 x 12 RPE 10 good
-2. 13.6 x 12 RPE 10 good
+1. 13.6 x 12 RPE 10 bad
+2. 13.6 x 13 RPE 10 good
+3. 13.6 x 13 RPE 10 good
+4. 13.6 x 9 RPE 10 good - did 6 full reps first and then switched to partials
 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
@@ -93,7 +88,8 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 
 ### Working Sets
 1. 9.1 x 15 RPE 10 good
-2. 9.1 x 15 RPE 10 failure:myo(3,3,3) good 
+2. 9.1 x 15 RPE 10 good
+3. 9.1 x 15 RPE 10 failure:myo(3,3,3) good 
 
 
   
@@ -112,9 +108,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Rest:** 2 min 
 
 ### Working Sets
-1. 30 x 12 RPE 9.5 good - incline bench
-2. 30 x 10 RPE 10 good - flat bench
-3. 30 x 6+2 RPE 10 good - decline bench
+1. 40 x 7 RPE 9.5 good - decline bench
+2. 30 x 13 RPE 10 good - decline bench
+3. 30 x 11 RPE 10 good - decline bench
 
 ### Notes
 
@@ -129,8 +125,8 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 12 RPE 10 perfect 
-2. 20.4 x 12 RPE 10 failure:myo(3,2,2) perfect
+1. 20.4 x 8 RPE 10 perfect 
+2. 20.4 x 15 RPE 10 failure:myo(3,3,3,3) perfect
 
 
 ### Notes
@@ -145,8 +141,8 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight.
 **Goal:** 0 kg x 2 sets x 10-20 reps  
 
 ### Working Sets
-1. 0 x 10 - good range really 
-2. 0 x 7 RPE 10 learning
+1. 0 x 6 - good range really 
+2. 0 x 6 RPE 10 
 3. 0 x 6 RPE 10 
 
 ### Notes
