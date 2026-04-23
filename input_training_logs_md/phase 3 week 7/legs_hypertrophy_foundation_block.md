@@ -1,23 +1,31 @@
 # Training Log
-- Date: 2026-03-01
+
+- Date: 2026-03-22
 - Phase: 3  
-- Week: 5
+- Week: 7
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 120 min  
- 
+- Duration: 158 min
+
 ## Exercise 1  
 **Name:** Leg Press  
-**Goal:** 280 kg x 3 sets x 8-10 reps  
+**Goal:** 250 kg x 3 sets x 10-12 reps  
 **Rest:** 3 min   
+
+### Warmup
+1. 150 x feel - full possible depth
+2. 200 x feel - full possible depth
+3. 250 x feel
 ### Warmup Notes  
-Pyramid. 200 kgs power kicks. 
+Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
-1. 280 x 12 RPE 9.5 good - trying to learn to get full depth if possible by reducing load 
-2. 280 x 12 RPE 9.5 perfect - trying to improve depth
-3. 280 x 12 RPE 10 perfect - trying to do good depth
+1. 280 x 12 RPE 9.5 good
+2. 280 x 12 RPE 9.5 good
+3. 280 x 15 RPE 10 good
+
+
 ### Notes 
-Work on form and use hands very lightly to protect knees until you have knee sleeves
+Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
 ### Cues  
 - Seat height at 2.   
 - Controlled negative and explosive positive  
@@ -26,55 +34,53 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 
 ## Exercise 2  
 **Name:** Seated Leg Curl   
-**Goal:** 57 kg x 2 sets x 10-12 reps  
+**Goal:** 50 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 
 ### Warmup
-1. 29 x feel - unilateral, can do full range at this weight when not fatigued
+1. 18 x feel - unilateral
+2. 50 x feel 
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 63 x 9 RPE 10 good - can still barely go 90 degrees
-2. 63 x 9 RPE 10 failure:llp(10) good 
+1. 63 x 10 RPE 9.5 good 
+2. 63 x 10 RPE 9.5 good - first 6 reps were perfect buddy!
+3. 63 x 10 RPE 10 good failure:llp(10) - llp was mostly from squeezing legs not using arm strength as much
 ### Notes 
-63 for 8 reps with full range of motion is the goal
-
+Seat at 4, 5 visible. Goal 50x15
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
-- start the set with subtle kickbacks to initiate first rep
 
 ## Exercise 3  
-**Name:** DB Bulgarian Split Squat  
-**Goal:** 32.5 kg x 2 sets x 8-10 reps  
+**Name:** Walking Lunge
+**Goal:** 20 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 
-### Notes
-1. 20 x feel
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 32.5 x 8 RPE 9  good - hind foot on flat bench and front foot on ground
-2. 32.5 x 9 RPE 10 perfect 
+1. 20 x 12 RPE 9 good 
+2. 20 x 12 RPE 9.5 good 
 ### Notes
-Can go heavier than 30 too but try with perfect technique 
+Careful with knee fatigue. We need to fix them before we killshot here.
 ### Cues  
 - can take 3 min rest  
-- Keep hind foot’s toes part on the bar for stabilty
-- Take knee over toe and go full depth
 - Controlled negative with explosive positive
+- Take your body over the knee as you walk
+- Try to push only from front leg
 
 ## Exercise 4 
 **Name:** Leg Extension  
-**Goal:** 104 kg x 2 sets x 10-12 reps  
+**Goal:** 104 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 
-### Warmup
-
+### Warmup Sets
+1. 23 x feel - unilateral 
 ### Warmup Notes  
-Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral.  43 x feel - unilateral.  50 x feel - unilateral but this weight hurt my knees and was hard
+Pyramid   
 ### Working Sets 
-1. 104 x 10  RPE 10
-2. 104 x 9 RPE 10 perfect - controlled descent
+1. 104 x 10  RPE 9.5 good
+2. 104 x 8  RPE 10 perfect 
 
 ### Notes
 
@@ -83,15 +89,15 @@ Pyramid warmup using unilateral, partials and isometric. 36 x feel - unilateral
 
 ## Exercise 5  
 **Name:** Cable Hip Adduction  
-**Goal:** 18.1 kg x 2 sets x 10-12 reps  
+**Goal:** 18.1 kg x 2 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 18.1 x 12 RPE 10 good - decent control on the tempo
-2. 18.1 x 12 RPE 10 - last 6 reps no control
+1. 18.1 x 12 RPE 9.5 
+2. 18.1 x 12 RPE 10 - took rest between legs
 ### Notes 
-15.9 for 15 or 18.1 for 10 perfect reps is a good goal
+13.6 for 15 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
 - Brace your standing leg’s hip like in shoulder press to really lock in adductors.   
 - Height set to 6, see Jeff’s form(controlled release hard pull).   
@@ -101,47 +107,47 @@ Pyramid   
 - Control tempo on negative
 ## Exercise 6
 **Name:** Cable Hip Abduction  
-**Goal:** 11.3 kg x 2 sets x 10-12 reps  
+**Goal:** 11.3 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warm Up
+
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 11.3 x 10  RPE 10 good
-2. 11.3 x 10 RPE 10 good 
+1. 11.3 x 12 RPE 10 - took rest between legs
+2. 11.3 x 12 RPE 10 -  full rom cross legs 
 ### Notes    
+Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
 
 ### Cues  
 - Feel in outer thighs and glutes
 - Think about kicking up, then you’d keep the hip stable.   
 - Perfect form with controlled negative and explosive push.   
 - see Jeff’s form in video  
+- Go full range of motion by letting legs cross
 
-## Exercise 7
-**Name:** Standing Calf Raise
-**Goal:** 130 kg x 2 sets x 6-8 reps
-**Rest:** 2 min
+## Exercise 7 
+**Name:** Standing Calf Raise  
+**Goal:** 130 kg x 3 sets x 12-15 reps  
+**Rest:** 2 min   
+### Warm Up
 
-### Warmup
-1. 110 x feel
-2. 120 x feel
-### Working Sets
-1. 140 x 10 RPE 9.5 good 
-2. 140 x 12 RPE 10 good - did standing on plates and felt good or same mostly as standing on platform
+### Working Sets 
+1. 130 x 11 RPE 10 perfect 
+2. 130 x 9 RPE 10 good failure:statichold(30) - chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly. 
 ### Notes 
-adjust goal by testing as you progress
+120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. 
 ### Cues  
 - I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit.  
 - 1-2 sec pause at the bottom.
 
-
 ## Exercise 8
 **Name:** Tibialis Raise Single Leg
-**Goal:** 12 kg x 3 sets x 8-15 reps
+**Goal:** 8 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 12 x 20 - rested heel on stepper is crazy isolation for tibs
-2. 12 x 12 RPE 10  
-
+1. 8 x 12 good 
+2. 8 x 12 RPE 10 good  
+3. 8 x 12 RPE 10 learning - went with feeling on rotations and angles
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 
 ### Cues
