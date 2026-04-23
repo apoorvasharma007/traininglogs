@@ -1,11 +1,13 @@
-import sys
-import pathlib
+import pytest
 
-# make sure local src package is importable
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from data_class_model.models import FailureTechnique, FailureTechniqueType, MyoRepDetails, RepCount, TrainingSession, Exercise
+from traininglogs.models.models import (
+    FailureTechnique,
+    FailureTechniqueType,
+    MyoRepDetails,
+    RepCount,
+    TrainingSession,
+    Exercise,
+)
 
 
 def test_failure_technique_aliases():
@@ -18,15 +20,14 @@ def test_failure_technique_aliases():
 def test_myorepdetails_accepts_int_repcount():
     data = {"miniSets": [{"miniSet": 1, "repCount": 3}, {"miniSet": 2, "repCount": {"full": 2}}]}
     m = MyoRepDetails.from_dict(data)
-    assert isinstance(m.mini_sets[0]["repCount"], RepCount)
-    assert m.mini_sets[0]["repCount"].full == 3
-    assert m.mini_sets[1]["repCount"].full == 2
+    assert isinstance(m.mini_sets[0].rep_count, RepCount)
+    assert m.mini_sets[0].rep_count.full == 3
+    assert m.mini_sets[1].rep_count.full == 2
 
 
 def test_omit_empty_lists_in_exercise_serialization():
     ex = Exercise(number=1, name="Test", working_sets=[])
     d = ex.to_dict()
-    # empty lists should be omitted by serializer
     assert "warmupSets" not in d
     assert "targetMuscleGroups" not in d
     assert "formCues" not in d

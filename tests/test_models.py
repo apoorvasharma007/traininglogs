@@ -1,12 +1,6 @@
-import sys
-import pathlib
 import pytest
 
-# Ensure the workspace root is on sys.path so tests can import the local package.
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from data_class_model.models import (
+from traininglogs.models.models import (
     TrainingSession,
     Exercise,
     Goal,
@@ -32,15 +26,12 @@ def test_warmupset_repcount_optional_none():
     d = {"set": 1, "weightKg": 10}
     w = WarmupSet.from_dict(d)
     assert w.rep_count is None
-    # to_dict includes repCount key (None) in this implementation
     out = w.to_dict()
-    # serializer omits None repCount
     assert "repCount" not in out
 
 
 def test_workingset_missing_repcount_raises():
     d = {"set": 1, "weightKg": 20}
-    import pytest
     with pytest.raises(Exception):
         WorkingSet.from_dict(d)
 

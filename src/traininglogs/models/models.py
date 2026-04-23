@@ -86,6 +86,8 @@ class RepCount:
         """
         if data is None:
             return None
+        if isinstance(data, int):
+            return cls(full=data, partial=0)
         return cls(full=data["full"], partial=data.get("partial", 0))
 
 @dataclass
@@ -154,12 +156,12 @@ class Goal:
             raise TrainingLogValidationError("Invalid rest minutes value")
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary representation using snake_case keys."""
+        """Convert to dictionary representation using camelCase keys."""
         return _clean_none_and_empty({
-            "weight_kg": self.weight_kg,
+            "weightKg": self.weight_kg,
             "sets": self.sets,
-            "rep_range": self.rep_range.to_dict(),
-            "rest_minutes": self.rest_minutes,
+            "repRange": self.rep_range.to_dict(),
+            "restMinutes": self.rest_minutes,
         })
     
     @classmethod
@@ -234,8 +236,8 @@ class MyoRep:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MyoRep':
         return cls(
-            number=data["number"],
-            rep_count=RepCount.from_dict(data.get("rep_count"))
+            number=data.get("number", data.get("miniSet")),
+            rep_count=RepCount.from_dict(data.get("rep_count", data.get("repCount")))
         )
     
 @dataclass
@@ -587,16 +589,16 @@ class WorkingSet:
             raise TrainingLogValidationError("rep_count is required and must be a RepCount instance")
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary representation."""
+        """Convert to dictionary representation using camelCase keys."""
         return _clean_none_and_empty({
             "set": self.number,
-            "weight_kg": self.weight_kg,
-            "rep_count": self.rep_count.to_dict(),
+            "weightKg": self.weight_kg,
+            "repCount": self.rep_count.to_dict(),
             "rpe": self.rpe,
-            "rep_quality": (self.rep_quality_assessment.value if isinstance(self.rep_quality_assessment, RepQualityAssessment) else None),
-            "actual_rest_minutes": self.actual_rest_minutes,
+            "repQuality": (self.rep_quality_assessment.value if isinstance(self.rep_quality_assessment, RepQualityAssessment) else None),
+            "actualRestMinutes": self.actual_rest_minutes,
             "notes": self.notes,
-            "failure_technique": self.failure_technique.to_dict() if self.failure_technique is not None else None,
+            "failureTechnique": self.failure_technique.to_dict() if self.failure_technique is not None else None,
         })
     
     @classmethod

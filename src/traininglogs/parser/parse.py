@@ -2,18 +2,11 @@
 import re, uuid
 from typing import Dict, Any, Optional, List
 from dataclasses import is_dataclass
-from data_class_model.models import (
+from traininglogs.models.models import (
     TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
     FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment, MyoRep,
     DropSet, DropSetDetails
 )
-import os, sys
-# -------------------------------------------------------------------
-# ✅ Add root path so imports like `parser.*` and `datamodels.*` work
-# -------------------------------------------------------------------
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
 
 # TODO: add more validations and error hadling wherever we are returning None currently and all the TODOs mentioned in the code below
 # TODO: we can use ValueError or custom exceptions to handle errors in parsing and validation
@@ -37,10 +30,10 @@ class DeepTrainingParser:
             is_deload_week = "false"
         else:
             is_deload_week = str(deload_raw).strip().lower() in ("yes", "true", "1")
-        
+
         ## THIS IS WHERE WE ARE SETTING UP THE DEFAULTS FOR TRAINING OBJECT FOR NOW..
         ## TODO: WE WIL MOVE THIS INFO OUT TO ITS OWN MODULE LATER, A MODULE FOR DEFAULT VALUES.
-        
+
         # build a deterministic session id from date + focus + user_id (fallback to uuid if not enough info)
         user_id_val = str(meta.get("user_id", "7"))
         date_val = meta.get("date", "")

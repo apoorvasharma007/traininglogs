@@ -28,7 +28,7 @@ THIS_DIR = Path(__file__).parent
 PROJECT_ROOT = THIS_DIR.parent
 INPUT_LOGS_DIR = PROJECT_ROOT / "input_training_logs_md"
 OUTPUT_LOGS_DIR = PROJECT_ROOT / "output_training_logs_json"
-PROCESSOR_SCRIPT = PROJECT_ROOT / "processor" / "processor.py"
+PROCESSOR_SCRIPT = PROJECT_ROOT / "src" / "traininglogs" / "processor" / "processor.py"
 
 
 def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
@@ -152,7 +152,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Step 2: Run parser
     print("\n[2/4] Running JSON parser...")
     if args.dry_run:
-        print(f"[DRY-RUN] Would run: python3 processor/processor.py --phase {phase} --week {week}")
+        print(f"[DRY-RUN] Would run: traininglogs --phase {phase} --week {week}")
         ret = 0
     else:
         ret, stdout, stderr = run_command([sys.executable, str(PROCESSOR_SCRIPT), "--phase", str(phase), "--week", str(week)])

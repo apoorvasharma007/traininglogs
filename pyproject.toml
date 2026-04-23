@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traininglogs"
+version = "0.1.0"
+description = "Parse and process training session logs into structured JSON."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+traininglogs = "traininglogs.processor.processor:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
