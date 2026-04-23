@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     is_deload_week       BOOLEAN,
     focus                TEXT,
     duration_minutes     INT,
+    user_id              TEXT,
     user_name            TEXT
 );
 
@@ -20,11 +21,13 @@ CREATE TABLE IF NOT EXISTS exercises (
     notes           TEXT,
     warmup_notes    TEXT,
     form_cues       TEXT[],
-    goal_weight_kg  NUMERIC,
-    goal_sets       INT,
-    goal_rep_min    INT,
-    goal_rep_max    INT,
-    goal_rest_min   INT
+    goal_weight_kg        NUMERIC,
+    goal_sets             INT,
+    goal_rep_min          INT,
+    goal_rep_max          INT,
+    goal_rest_min         INT,
+    target_muscle_groups  TEXT[],
+    rep_tempo             TEXT
 );
 
 CREATE TABLE IF NOT EXISTS working_sets (

@@ -13,8 +13,8 @@ def insert_session(conn: Connection, session: dict) -> None:
             """
             INSERT INTO sessions (
                 session_id, date, program, program_author, program_length_weeks,
-                phase, week, is_deload_week, focus, duration_minutes, user_name
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                phase, week, is_deload_week, focus, duration_minutes, user_id, user_name
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session["session_id"],
@@ -27,6 +27,7 @@ def insert_session(conn: Connection, session: dict) -> None:
                 session.get("is_deload_week"),
                 session.get("focus"),
                 session.get("session_duration_minutes"),
+                session.get("user_id"),
                 session.get("user_name"),
             ),
         )
@@ -39,8 +40,9 @@ def insert_session(conn: Connection, session: dict) -> None:
                 """
                 INSERT INTO exercises (
                     session_id, number, name, notes, warmup_notes, form_cues,
-                    goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
+                    target_muscle_groups, rep_tempo
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -55,6 +57,8 @@ def insert_session(conn: Connection, session: dict) -> None:
                     rep_range.get("min"),
                     rep_range.get("max"),
                     goal.get("rest_minutes"),
+                    exercise.get("target_muscle_groups"),
+                    exercise.get("rep_tempo"),
                 ),
             )
             exercise_id = cur.fetchone()[0]
