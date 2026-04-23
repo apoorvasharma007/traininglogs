@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-02
+- Date: 2026-04-08
 - Phase: 3
-- Week: 9
+- Week: 10
 - Deload: No
 - Focus: Upper Strength
-- Duration: 137 min
+- Duration:  100 min
 
 ## Exercise 1
 
@@ -14,9 +14,9 @@
 **Rest:** 3 min
 
 ### Warmup
-1. 12.5 x feel - unilateral punches full range lift and twist lat also
+1. 2.5 x feel - unilateral punches full range lift and twist lat also
 2. 25 x feel
-3. 30 x feel
+
 
 ### Warmup Notes
 1. 0 x feel banded shoulder movement
@@ -25,9 +25,9 @@
 4. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 
 ### Working Sets
-1. 35 x 6 RPE 10 good
-2. 35 x 7 RPE 10 good - last rep my ass lifted a bit bit the set felt stronger
-3. 35 x 6+1 RPE 10 good - last rep was assisted by Asif
+1. 35 x 7 RPE 10 good - felt hard also not warmed up enough
+2. 35 x 6 RPE 10 good - last rep my ass lifted a bit bur the set felt stronger, not able to pause on bottom
+3. 35 x 7+1 RPE 10 good - first rep was partial and i didn’t pause at bottom
 
 ### Notes
 
@@ -55,9 +55,9 @@
 
 
 ### Working Sets
-1. 100 x 11 RPE 10 good - last rep form broke
-2. 100 x 10 RPE 10 bad - first few reps were good than i couldnt keep arms straight 
-3. 100 x 6+4 RPE 10 good 
+1. 100 x 12 RPE 10 good 
+2. 100 x 10 RPE 10 bad - last few reps couldn’t close arms
+3. 100 x 10+1 RPE 10 good - last few reps were not full range
 ### Notes
 100 for 10 with explosive push and controlled negatives is feeling good.
 Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive
@@ -79,9 +79,9 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
   
 
 ### Working Sets
-1. 63 x 10 RPE 9 good 
-2. 63 x 10 RPE 9 good 
-3. 63 x 10 RPE 10 bad - arching too much
+1. 63 x 10 RPE 9 bad - wasn’t touching chest, but i was holding max wide possible 
+2. 63 x 10 RPE 10 good - 1.5x shoulder width and got more midback
+3. 63 x 10 RPE 10 perfect - loved the burn in back post this
 
 ### Notes
 
@@ -104,8 +104,8 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 ### Warmup Notes
 
 ### Working Sets
-1. 9.1 x 13 RPE 10 good - one arm alternating with Asif 
-2. 9.1 x 12 RPE 10 good
+1. 9.1 x 15 RPE 10 good - one arm alternating with Asif 
+2. 11.3 x 12 RPE 10 good
 
 
 ### Notes
@@ -119,7 +119,7 @@ noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. T
 
 ## Exercise 5
 
-**Name:** Deficit Pendlay Row
+**Name:** Smith Machine Row
 **Goal:** 80 kg x 3 sets x 8-10 reps
 **Rest:** 3 min
 

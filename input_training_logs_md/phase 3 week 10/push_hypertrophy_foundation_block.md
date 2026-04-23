@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-06
+- Date: 2026-04-12
 - Phase: 3
-- Week: 9
+- Week: 10
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 120 min 
+- Duration: 171 min 
 
 ## Exercise 1
 
@@ -14,14 +14,16 @@
 **Rest:** 5 min  
 
 ### Warmup
-1. 90 x 2 - did more warmups before this Of course! 
+1. 40 x feel
+2. 60 x feel
+3. 70 x feel
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 7 RPE 10 perfect
-2. 80 x 7 RPE 10 good  
-3. 80 x 6+1 RPE 10 perfect
+1. 80 x 8 RPE 10 perfect - first 4 reps in one brace
+2. 80 x 8 RPE 10 perfect  
+3. 80 x 8 RPE 10 perfect
 
 ### Notes
 Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
@@ -39,17 +41,14 @@ Whatever reason strength has dropped by few reps on this, is the high volume ove
 
 ### Warmup
 
-1. 0 x feel - around the world arms extended time under tension is good enough resistance
-2. 2.5  x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based  
-3. 17.5 x  feel
 
 ### Warmup Notes
 Don’t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.
 
 ### Working Sets
-1. 22.5 x 9 RPE 9 perfect 
-2. 22.5 x 7 RPE 10 perfect 
-3. 22.5 x 6 RPE 10 good
+1. 22.5 x 6 RPE 9 perfect 
+2. 22.5 x 6 RPE 10 perfect 
+3. 22.5 x 5 RPE 10 good
 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.
@@ -65,10 +64,9 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 
 ### Working Sets
-1. 13.6 x 12 RPE 10 bad
-2. 13.6 x 13 RPE 10 good
+1. 13.6 x 12 RPE 10 good
+2. 13.6 x 12 RPE 10 good - first did 5 full reps
 3. 13.6 x 13 RPE 10 good
-4. 13.6 x 9 RPE 10 good - did 6 full reps first and then switched to partials
 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
@@ -87,9 +85,9 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 9.1 x 15 RPE 10 good
-2. 9.1 x 15 RPE 10 good
-3. 9.1 x 15 RPE 10 failure:myo(3,3,3) good 
+1. 9.1 x 12 RPE 10 good - used loop around wrist 
+2. 9.1 x 12 RPE 10 good
+3. 9.1 x 12 RPE 10 failure:myo(3,3,3) good 
 
 
   
@@ -108,9 +106,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Rest:** 2 min 
 
 ### Working Sets
-1. 40 x 7 RPE 9.5 good - decline bench
+1. 30 x 12 RPE 9.5 good - decline bench
 2. 30 x 13 RPE 10 good - decline bench
-3. 30 x 11 RPE 10 good - decline bench
+3. 30 x 12 RPE 10 good - decline bench
 
 ### Notes
 
@@ -125,8 +123,8 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 8 RPE 10 perfect 
-2. 20.4 x 15 RPE 10 failure:myo(3,3,3,3) perfect
+1. 20.4 x 12 RPE 10 perfect 
+2. 20.4 x 12 RPE 10 failure:myo(4,3,3,4) perfect
 
 
 ### Notes
@@ -142,8 +140,8 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight.
 
 ### Working Sets
 1. 0 x 6 - good range really 
-2. 0 x 6 RPE 10 
-3. 0 x 6 RPE 10 
+2. 0 x 5+1 RPE 10 
+3. 0 x 3 RPE 10 
 
 ### Notes
 Keep working on range of motion.
@@ -159,16 +157,14 @@ Keep working on range of motion.
 **Goal:** 12.5 kg x 3 sets x 12-15 reps
 
 ### Working Sets
-1. 12.5 x 16 RPE 9 good
-2. 12.5 x 16 RPE 10 good - right wrist hurts less on set two with more range of motion now 
+1. 15 x 12 RPE 9 good
+2. 15 x 12 RPE 10 good 
 
 ### Notes
 Did less range of motion for right wrist to avoid pain
 
 ### Cues
 - Sagittal Plane wrist flexion i.e. bending the wrist to bring the palm toward the forearm.
-
-  
 
 ## Exercise 9
 
@@ -188,12 +184,24 @@ Did less range of motion with right wrist. But the pain feels less after exercis
 
 ## Exercise 10
 
+**Name:** Pronated Grip Curl
+**Goal:** 25 kg x 2 sets x 8-10 reps
+
+### Working Sets
+1. 25 x 12 RPE 9.5 good
+2. 25 x 12 RPE 10 good
+### Notes
+
+
+### Cues
+## Exercise 11
+
 **Name:** Forearm Preacher Curl
 **Goal:** 15kg x 2 sets x 8-10 reps
 
 ### Working Sets
-1. 12.5 x 12 RPE 9.5 good
-2. 12.5 x 10 RPE 10 good
+1. 15 x 6 RPE 9.5 good
+2. 15 x 6 RPE 10 good
 ### Notes
 
 

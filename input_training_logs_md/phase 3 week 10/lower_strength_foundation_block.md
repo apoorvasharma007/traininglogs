@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-03
+- Date: 2026-04-10
 - Phase: 3
-- Week: 9
+- Week: 10
 - Deload: No
 - Focus: Lower Strength
-- Duration: 161  min
+- Duration: 117  min
 
 ## Exercise 1
 
@@ -13,13 +13,14 @@
 **Goal:** 63 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 ### Warmup
-1. 23 x feel - unilateral couldn’t move full rom
-2. 57 x feel
+1. 23 x feel - unilateral full rom
+2. 29 x feel - unilateral partial 
+3. 59 x feel
 
 ### Working Sets
-1. 63 x 10 RPE 10 bad - first 6 reps were 90 degrees 
-2. 63 x 10 RPE 10 good - all rep’s were 90
-3. 63 x 10 RPE 10 good failure:llp(10) - i went 90 degrees but couldn’t go beyond 
+1. 63 x 11 RPE 10 good - all reps were 90 except for last one
+2. 63 x 11 RPE 10 good - all rep’s were 90
+3. 63 x 11 RPE 10 good failure:llp(10)
 
   
 ### Notes
@@ -36,7 +37,8 @@
 
 ### Warmup
 1. 20 x feel
-2. 30 x feel
+2. 20 x fee
+3. 30 x feel
 
 ### Warmup Notes
 Need proper warmup to actually get going. Progressive sets feel better on this.
@@ -66,18 +68,21 @@ Didnt feel lower back after last set cuz im either stronger or bracing properly
 Pyramid warmup
 
 ### Working Sets
-1. 25 x 8 RPE 9 good - arch back while coming up to feel more lower back than glutes
+1. 25 x 8 RPE 9 good 
 2. 25 x 8 RPE 10 perfect - explosive concentric and squeeze on top
 3. 25 x 10 RPE 10 perfect 
 
 
 ### Notes
-Can go heavier with good form, but increase weight slowly to avoid injury. imp to engage core by bracing and deep breath this helps target glutes much better and prevents lower back. Do more warmup if feeling lowerback.
+Can go heavier with good form, but increase weight slowly to avoid injury. imp to engage core by bracing and deep breath this helps target glutes much better and prevents lower back. Do more warmup if feeling lowerback. 
+
+Felt great pain in lower back today cuz didn’t take much rest. 
 
 ### Cues
 - explosive up, controlled negative
 - Hold top position to squeeze glutes
-- engage core by bracing and deep breath
+- engage core by bracing and deep breath, this feels more glutes for me
+- arch back while coming up to feel more lower back than glutes
   
 
 ## Exercise 4
@@ -92,9 +97,9 @@ Can go heavier with good form, but increase weight slowly to avoid injury. imp t
 Do unilateral explosives with alternating leg as an experiment. These hurt the knee which is overworked, currently left knees front side bottom point. Still need to find out what that is. Did less unilateral sets today since they were stressing the left knee.
 
 ### Working Sets
-1. 104 x 12 RPE 10 bad - no full extension or eccentric control to let right knee recover
-2. 104 x  10+1 RPE 10 bad - we will come back once knee is recovered
-3. 104 x 10+1 RPE 10 bad
+1. 50 x 12 RPE 10 good - no full extension or eccentric control to let right knee recover
+2. 57 x 12 RPE 10 good - we will come back once knee is recovered
+3. 70 x 10 RPE 10 good
 
   
 ### Notes
@@ -113,9 +118,9 @@ Do unilateral explosives with alternating leg as an experiment. These hurt the k
 ### Warmup
 
 ### Working Sets
-1. 130 x 10 RPE 10 
-2. 130 x 10 RPE 10 
-3. 130 x 10 RPE 10 good failure:statichold(30)
+1. 130 x 8+2 RPE 10 - scared for right knee so going slow
+2. 130 x 10 RPE 10 - felt better after first set
+3. 130 x 10 RPE 10 good failure:statichold(20)
 
 ### Notes
 Good form overall, heavy but maintain perfect technique. Do 8 perfect reps first. Didnt do failure technique on last set.

@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-04
-- Phase: 2
-- Week: 9
+- Date: 2026-04-11
+- Phase: 3
+- Week: 11
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration:  144 min 
+- Duration: 134  min 
 
 ## Exercise 1
 
@@ -14,15 +14,15 @@
 **Rest:** 2 min 
 
 ### Warmup
-1. 59 x feel
+1. 66 x feel
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 73 x 11 RPE 9 good - used straps
-2. 73 x 10 RPE 10 good - used straps 
-3. 73 x 10 + 2 RPE 10 good - used straps
+1. 73 x 10 RPE 9 good 
+2. 73 x 8+2 RPE 10 good 
+3. 73 x 10 + 2 RPE 10 good
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -40,15 +40,15 @@ Get perfect 12 reps and then we move up in weight
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x feel
+1. 63 x feel
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 63 x 11+1 RPE 10 good
+1. 63 x 10 RPE 10 good
 2. 63 x 11 RPE 10 good
-3. 63 x 12 RPE 10 good - squeezing shoulder blades together
+3. 63 x 12 +2 RPE 10 good - squeezing shoulder blades together
 
 
 ### Notes
@@ -74,8 +74,8 @@ Pyramid 
 
 ### Working Sets
 1. 57 x 12 RPE 9 good 
-2. 57 x 12 RPE 10 good 
-3. 57 x 12 RPE 10 good
+2. 50 x 12 RPE 10 perfect - initiate from rear delt squeeze 
+3. 50 x 12 RPE 10 perfect
 
 ### Notes
 Try your best to not lean back
@@ -96,8 +96,8 @@ Pyramid 
 
 ### Working Sets
 1. 11.3 x 10 RPE 10 good
-2. 9.1 x 12 RPE 9 perfect - keep arms straight for as many reps as possible
-3. 9.1 x 12 RPE 10 failure:myo(3,3,3) good
+2. 11.3 x 10 RPE 9 good - keep arms straight for as many reps as possible
+3. 11.3 x 10 RPE 10 failure:myo(3,3,3) good
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -120,8 +120,8 @@ Pyramid 
 
 ### Working Sets
 1. 38.6 x 11 RPE 8.5 bad 
-2. 38.6 x 10 RPE 10 good - paused at top and bottom
-3. 38.6 x 10+2 RPE 10 good 
+2. 47.6 x 10 RPE 10 good - paused at top and bottom for first 6 reps
+3. 47.6 x 10+1 RPE 10 good 
 ### Notes
 
 ### Cues
@@ -144,9 +144,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 31.8 x 13+3 RPE 10 - controlled eccentric
-2. 31.8 x 12 RPE 10 - controlled eccentric
-3. 31.8 x 14 RPE 10 - controlled eccentric
+1. 31.8 x 15 RPE 10 - controlled eccentric
+2. 31.8 x 15 RPE 10 - controlled eccentric
+3. 31.8 x 15 RPE 10 - controlled eccentric
 
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.
@@ -164,8 +164,9 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 10 x 13 RPE 9.5 perfect
-2. 10 x 12 RPE 10 failure:myo(3,2+1,2+1) perfect
+1. 10 x 15 RPE 9.5 perfect
+2. 10 x 15 RPE 10
+3. 10 x 15 RPE 10 failure:myo(3,2+1,2+1) perfect
 
 ### Notes
 

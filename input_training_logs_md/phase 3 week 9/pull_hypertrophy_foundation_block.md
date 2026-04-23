@@ -1,7 +1,7 @@
 # Training Log
 
 - Date: 2026-04-04
-- Phase: 2
+- Phase: 3
 - Week: 9
 - Deload: No
 - Focus: Pull Hypertrophy
