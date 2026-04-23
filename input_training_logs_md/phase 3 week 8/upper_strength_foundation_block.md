@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-17
+- Date: 2026-03-26
 - Phase: 3
-- Week: 7
+- Week: 8
 - Deload: No
 - Focus: Upper Strength
-- Duration: 193 min
+- Duration: 83 min
 
 ## Exercise 1
 
@@ -14,9 +14,8 @@
 **Rest:** 3 min
 
 ### Warmup
-1. 2.5 x feel - all shoulder range of motion
-2. 15 x feel - unilateral punches full range lift and twist lat also
-3. 25 x 4
+1. 15 x feel - unilateral punches full range lift and twist lat also
+2. 25 x feel
 
 ### Warmup Notes
 1. 0 x feel banded shoulder movement
@@ -25,9 +24,9 @@
 4. 20 x feel - unilateral without rotation, can go explosive and controlled descent or play with more time under tension with very slow reps to feel deepest muscles.
 
 ### Working Sets
-1. 35 x 8 RPE 10 bad - wasn’t confident moving the weight
-2. 35 x 8 RPE 10 good - this was fuckin tough
-3. 35 x 8 RPE 10 good - mad hard
+1. 35 x 6 RPE 10 good
+2. 35 x 6 RPE 10 good - very little rest
+3. 35 x 5 RPE 10 good - very little rest
 
 ### Notes
 32.5 x 6 felt doable, left hand got stuck while setting up halfway lol. Held up like the superman. Be careful dont get injured.
@@ -53,9 +52,9 @@
 pyramid warmup
 
 ### Working Sets
-1. 120 x 8 RPE 10 bad
-2. 113 x 5+3 RPE 10 good 
-3. 100 x 9+1 RPE 10 good 
+1. 100 x 10 RPE 10 good
+2. 100 x 6+3 RPE 10 good - no rest 
+3. 100 x 10 RPE 10 good - got good rest
 ### Notes
 100 for 10 with explosive push and controlled negatives is feeling good.
 Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive
@@ -77,9 +76,9 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
   
 
 ### Working Sets
-1. 59 x 10 RPE 9 good - without straps
-2. 59 x 10 RPE 9 perfect - with straps, grip would have failed
-3. 59 x 9+1 RPE 9.5 good - felt great pain in the lats
+1. 59 x 13 RPE 9 good - without straps
+2. 63 x 8 RPE 9 perfect - increased weight cuz previous sets were not max effort so i am able to pull more i think
+3. 63 x 8 RPE 9.5 perfect - holding as wide as possible
 
 ### Notes
 
@@ -101,7 +100,7 @@ Left footing on last rep on right hand so its clear a lot of strength is coming 
 ### Warmup Notes
 
 ### Working Sets
-1. 9.1 x 12 RPE 10 good 
+1. 9.1 x 12 RPE 10 good - one arm alternating with Asif 
 2. 9.1 x 12 RPE 10 good
 
 
@@ -121,16 +120,15 @@ noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. T
 **Rest:** 3 min
 
 ### Warmup
-1. 40 x feel
-2. 60 x 4
+
 
 ### Warmup Notes
 pyramid warmups with slow tempo to feel the movement
 
 ### Working Sets
-1. 60 x 8 RPE 9.5 perfect
+1. 60 x 6 RPE 9.5 perfect
 2. 60 x 8 RPE 9.5 perfect 
-3. 60 x 8 RPE 10 perfect failure:llp(4)
+3. 60 x 7 RPE 10 perfect - didnt too failure llp cuz pressed on time
 
 ### Notes
 
@@ -149,9 +147,8 @@ pyramid warmups with slow tempo to feel the movement
 
 
 ### Working Sets
-1. 24.9 x 8 RPE 10 good - using the cable rope
-2. 24.9 x 8 RPE 10 good 
-3. 24.9 x RPE 10 good
+1. 22.5 x 10 RPE 8 perfect - using the cable with handle attachment
+2. 24.9 x 8 RPE 10 perfect 
 
 
 ### Notes
@@ -170,11 +167,11 @@ i used to be too slanted on these so now standing more upright enough to face fr
 **Rest:** 2 min
 
 ### Working Sets
-1. 11.3 x 10 
-2. 13.6 x 7+1 RPE 10 good 
+1. 13.6 x 10 RPE 10 good
+2. 13.6 x 10+1 RPE 10 good 
 
 ### Cues
-- Using straps W rto overcome any grip limitations on the last few reps.
+- Using straps to overcome any grip limitations on the last few reps.
 - Squeezing hard on top.
 
 

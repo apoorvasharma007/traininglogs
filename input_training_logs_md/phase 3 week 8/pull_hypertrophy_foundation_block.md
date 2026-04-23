@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-20
+- Date: 2026-03-28
 - Phase: 2
-- Week: 7
+- Week: 8
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 148 min 
+- Duration: 53 min 
 
 ## Exercise 1
 
@@ -14,15 +14,14 @@
 **Rest:** 2 min 
 
 ### Warmup
-1. 55 x 6
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 66 x 10 RPE 8 good 
-2. 73 x 10 RPE 10 good 
-3. 73 x 11 + 1 RPE 10 good - used straps
+1. 73 x 8 RPE 8 good 
+2. 73 x 8 RPE 10 good 
+3. 73 x 8 RPE 10 good 
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -40,16 +39,14 @@ Get perfect 12 reps and then we move up in weight
 **Rest:** 2 min 
 
 ### Warmup
-1. 50 x feel
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 57 x 12 RPE 9 good
-2. 57 x 14 RPE 10 good
-3. 57 x 12 RPE 10 good - squeezing shoulder blades together
-
+1. 57 x 10 
+2. 57 x 10 RPE 10 
+3. 57 x 10 RPE 10 
 
 ### Notes
 
@@ -73,8 +70,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 50 x 12 RPE 9 good 
+1. 50 x 15 RPE 9 good 
 2. 50 x 15 RPE 10 good 
+3. 50 x 15 RPE 10
 
 ### Notes
 Try your best to not lean back
@@ -94,9 +92,9 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 9.1 x 13 RPE 10 good
-2. 9.1 x 15 RPE 10 perfect - keep arms straight for as many reps as possible
-3. 9.1 x 11 RPE 10 failure:myo(3,3,3) good
+1. 9.1 x 15 RPE 10 good
+2. 9.1 x 15 RPE 10 good - keep arms straight for as many reps as possible
+3. 9.1 x 15 RPE 10 failure:myo(3,3,3) good
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -118,9 +116,10 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 Pyramid 
 
 ### Working Sets
-1. 29.2 x 12 RPE 8.5 good 
-2. 38.6 x 10 RPE 10 good - paused at top and bottom
-3. 38.6 x 9 RPE 10 perfect 
+1. 38.6 x 10 RPE 8.5 good 
+2. 38.6 x 10 RPE 10 good
+3. 38.6 x 10 RPE 10 good 
+
 ### Notes
 
 ### Cues
@@ -143,9 +142,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 31.8 x 13 RPE 10 - controlled eccentric
+1. 31.8 x 12 RPE 10 - controlled eccentric
 2. 31.8 x 12 RPE 10 - controlled eccentric
-3. 31.8 x 10 RPE 10 - controlled eccentric
+3. 31.8 x 12 RPE 10 - controlled eccentric
 
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.
@@ -163,8 +162,9 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 10 x 10 RPE 9.5 perfect
-2. 10 x 12 RPE 10 perfect
+1. 10 x 10 RPE 9.5 
+2. 10 x 10 RPE 10 
+3. 10 x 10 RPE 10
 
 ### Notes
 

@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-18
+- Date: 2026-03-27
 - Phase: 3
-- Week: 7
+- Week: 8
 - Deload: No
 - Focus: Lower Strength
-- Duration: 153 min
+- Duration: 109 min
 
 ## Exercise 1
 
@@ -13,20 +13,19 @@
 **Goal:** 57 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 ### Warmup
-1. 23 x feel - unilateral
-2. 29 x feel - unilateral couldn’t move full rom
-3. 57 x feel
+1. 29 x feel - unilateral couldn’t move full rom
+2. 57 x feel
 
 ### Working Sets
-1. 63 x 10 RPE 10 bad - last few reps were partial
-2. 63 x 5 RPE 10 bad failure:llp(8) - lets work on this 
+1. 63 x 10 RPE 10 good - last 6 reps were perfect
+2. 63 x 6 RPE 10 bad failure:llp(10) - i went 90 degrees but couldn’t go beyond 
 
   
 ### Notes
-At 57 i have to use my hands and the rest of me more to get reps in but 50 is quite easy to isolate hamstrings. Keep pushing at 57 until they start to get easier. first rep is sometimes the bottleneck, it was partial but then we get in the groove. 
 
 ### Cues
 * Bring the seat forward to see point 5 so set at 4
+* first rep is sometimes the bottleneck, it was partial but then we get in the groove. 
 
 ## Exercise 2
 
@@ -36,15 +35,16 @@ At 57 i have to use my hands and the rest of me more to get reps in but 50 is qu
 
 ### Warmup
 1. 20 x feel
+2. 30 x feel
 
 ### Warmup Notes
 Need proper warmup to actually get going. Progressive sets feel better on this.
 
   
 ### Working Sets
-1. 30 x 8 RPE 9.5 good - tried my best to cut hind leg and to some success
-2. 30 x 8 RPE 10 good 
-3. 30 x 12 RPE 9 good 
+1. 40 x 6 RPE 9.5 good - tried my best to cut hind leg and to some success
+2. 40 x 6 RPE 10 good 
+3. 40 x 6 RPE 9 good 
 
 ### Notes
 Didnt feel lower back after last set. I think 17.5 might be a good weight to aim for 10 reps.
@@ -56,7 +56,7 @@ Didnt feel lower back after last set. I think 17.5 might be a good weight to aim
 ## Exercise 3
 
 **Name:** Hyperextension
-**Goal:** 15 kg x 3 sets x 8-10 reps
+**Goal:** 25 kg x 3 sets x 8-10 reps
 **Rest:** 3 min
 
 ### Warmup
@@ -66,8 +66,8 @@ Pyramid warmup
 
 ### Working Sets
 1. 25 x 8 RPE 9 good - arch back while coming up to feel more lower back than glutes
-2. 25 x 8 RPE 10 good
-3. 25 x 8 RPE 10 perfect
+2. 25 x 8 RPE 10 good - last two reps i lost eccentric control, had to wing it
+3. 25 x 8 RPE 10 perfect 
 
 
 ### Notes
@@ -92,7 +92,7 @@ Do unilateral explosives with alternating leg as an experiment. These hurt the k
 
 ### Working Sets
 1. 104 x 10 RPE 10 good
-2. 104 x 8 RPE 10 good
+2. 104 x 10 RPE 10 good
 3. 104 x 8 RPE 10 good
 
   
@@ -112,8 +112,8 @@ Do unilateral explosives with alternating leg as an experiment. These hurt the k
 ### Warmup
 
 ### Working Sets
-1. 250 x 8 RPE 9.5 good 
-2. 250 x 10 RPE 10 good
+1. 250 x 10 RPE 9.5  - getting pain in right knee so avoiding full extension
+2. 250 x 10 RPE 10 
 3. 250 x 10 RPE 10 good failure:statichold(14)
 
 ### Notes

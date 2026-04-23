@@ -1,27 +1,27 @@
 # Training Log
-
-- Date: 2026-03-22
+- Date: 2026-04-01
 - Phase: 3  
-- Week: 7
+- Week: 8
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 158 min
+- Duration: 168 min
 
 ## Exercise 1  
 **Name:** Leg Press  
-**Goal:** 250 kg x 3 sets x 10-12 reps  
+**Goal:** 300 kg x 3 sets x 10-12 reps  
 **Rest:** 3 min   
 
 ### Warmup
 1. 150 x feel - full possible depth
 2. 200 x feel - full possible depth
-3. 250 x feel
+3. 240 x feel 
+
 ### Warmup Notes  
 Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
 1. 280 x 12 RPE 9.5 good
 2. 280 x 12 RPE 9.5 good
-3. 280 x 15 RPE 10 good
+3. 280 x 12 RPE 10 good - maintain max depth, right knee was very fatigued so engage both quads equally
 
 
 ### Notes 
@@ -34,35 +34,35 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 
 ## Exercise 2  
 **Name:** Seated Leg Curl   
-**Goal:** 50 kg x 3 sets x 12-15 reps  
+**Goal:** 70 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 
 ### Warmup
-1. 18 x feel - unilateral
-2. 50 x feel 
+1. 23 x feel - unilateral
+2. 57 x feel 
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 63 x 10 RPE 9.5 good 
-2. 63 x 10 RPE 9.5 good - first 6 reps were perfect buddy!
-3. 63 x 10 RPE 10 good failure:llp(10) - llp was mostly from squeezing legs not using arm strength as much
+1. 63 x 10 RPE 9.5 good - all reps were beyond 90
+2. 63 x 10+2 RPE 10 good - first 6 reps were perfect buddy! Then 90 degrees ish
+3. 63 x 9 RPE 10 good failure:llp(10) - llp was mostly from squeezing legs not using arm strength as much
 ### Notes 
-Seat at 4, 5 visible. Goal 50x15
+Seat at 4, 5 visible. 
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
 
 ## Exercise 3  
-**Name:** Walking Lunge
-**Goal:** 20 kg x 2 sets x 10-12 reps  
+**Name:** Walking Lunge 
+**Goal:** 50 kg x 2 sets x 10-12 reps  
 **Rest:** 2 min   
 
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 20 x 12 RPE 9 good 
-2. 20 x 12 RPE 9.5 good 
+1. 50 x 10 RPE 10 good 
+2. 40 x 12 RPE 9.5 good 
 ### Notes
-Careful with knee fatigue. We need to fix them before we killshot here.
+Careful with knee fatigue. We need to fix them before we killshot here. Using DB! I didn’t mention that and suddenly started using total weight. 
 ### Cues  
 - can take 3 min rest  
 - Controlled negative with explosive positive
@@ -79,8 +79,8 @@ Careful with knee fatigue. We need to fix them before we killshot here.
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 104 x 10  RPE 9.5 good
-2. 104 x 8  RPE 10 perfect 
+1. 104 x 11  RPE 10 good
+2. 104 x 10 RPE 10 failure:myo(2,2) good  
 
 ### Notes
 
@@ -94,8 +94,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 18.1 x 12 RPE 9.5 
-2. 18.1 x 12 RPE 10 - took rest between legs
+1. 18.1 x 15 RPE 9.5
+2. 18.1 x 15 RPE 10 - took rest between legs
 ### Notes 
 13.6 for 15 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -114,8 +114,8 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 11.3 x 12 RPE 10 - took rest between legs
-2. 11.3 x 12 RPE 10 -  full rom cross legs 
+1. 11.3 x 12 RPE 10 - full rom cross legs
+2. 11.3 x 10 RPE 10 -  full rom cross legs 
 ### Notes    
 Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
 
@@ -133,8 +133,8 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 ### Warm Up
 
 ### Working Sets 
-1. 130 x 11 RPE 10 perfect 
-2. 130 x 9 RPE 10 good failure:statichold(30) - chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly. 
+1. 130 x 12 RPE 10 perfect 
+2. 130 x 10 RPE 10 good failure:statichold(30) - chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly. 
 ### Notes 
 120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. 
 ### Cues  
@@ -145,9 +145,9 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 **Name:** Tibialis Raise Single Leg
 **Goal:** 8 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 8 x 12 good 
-2. 8 x 12 RPE 10 good  
-3. 8 x 12 RPE 10 learning - went with feeling on rotations and angles
+1. 16 x 15 good 
+2. 12 x 11 RPE 10 good  
+3. 8 x 10 RPE 10 learning - went with feeling on rotations and angles around the world
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 
 ### Cues

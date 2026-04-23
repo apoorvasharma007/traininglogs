@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-03-21
+- Date: 2026-03-31
 - Phase: 3
-- Week: 7
+- Week: 8
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 166 min 
+- Duration: 136 min 
 
 ## Exercise 1
 
@@ -14,17 +14,19 @@
 **Rest:** 5 min  
 
 ### Warmup
-1. 60 x feel
+1. 40 x feel
 2. 60 x feel
 3. 70 x feel
+4. 80 x feel
 
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 5 RPE 10 good
-2. 75 x 12 RPE 10 perfect
-3. 80 x 8 RPE 10 perfect - last rep was war
+1. 90 x 1+1 RPE 10
+2. 80 x 6 RPE 10 good
+3. 80 x 6 RPE 9.5 perfect
+4. 80 x 7 RPE 10 perfect - last rep was war and ass came up a bit
 
 
 ### Notes
@@ -38,7 +40,7 @@ Whatever reason strength has dropped by few reps on this, is the high volume ove
 
 ## Exercise 2
 **Name:** Seated DB Shoulder Press
-**Goal:** 20 kg x 3 sets x 10-12 reps
+**Goal:** 22.5 kg x 3 sets x 10-12 reps
 **Rest:** 3 min 
 
 ### Warmup
@@ -51,9 +53,10 @@ Whatever reason strength has dropped by few reps on this, is the high volume ove
 Don’t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x  feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.
 
 ### Working Sets
-1. 22.5 x 8 RPE 10 perfect 
-2. 22.5 x 7 RPE 10 perfect
-3. 22.5 x 6 RPE 10 perfect
+1. 22.5 x 8 RPE 9 perfect 
+2. 22.5 x 6 RPE 10 perfect - took less rest
+3. 22.5 x 1 RPE 10 good - very fatigued
+4. 17.5 x 6 RPE 10 good
 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.
@@ -85,12 +88,12 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 ## Exercise 4
 
 **Name:** High Cable Lateral Raise
-**Goal:** 6.8 kg x 3 sets x 12-15 reps 
+**Goal:** 9.1 kg x 3 sets x 12-15 reps 
 **Rest:** 2 min 
 
 ### Working Sets
-1. 9.1 x 12 RPE 10 good
-2. 9.1 x 12 RPE 10 failure:myo(3,3,3) good 
+1. 9.1 x 15 RPE 10 good
+2. 9.1 x 15 RPE 10 failure:myo(3,3,3) good 
 
 
   
@@ -109,9 +112,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Rest:** 2 min 
 
 ### Working Sets
-1. 40 x 8 RPE 9.5 good
-2. 40 x 7 RPE 10 good
-3. 30 x 11+1 RPE 10 good
+1. 30 x 12 RPE 9.5 good - incline bench
+2. 30 x 10 RPE 10 good - flat bench
+3. 30 x 6+2 RPE 10 good - decline bench
 
 ### Notes
 
@@ -126,12 +129,12 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 10 RPE 10 perfect 
-2. 20.4 x 10+1 RPE 10 perfect
+1. 20.4 x 12 RPE 10 perfect 
+2. 20.4 x 12 RPE 10 failure:myo(3,2,2) perfect
 
 
 ### Notes
-Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight. Forgot to do myo reps.
+Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight.
 
 ### Cues
 - squeeze tricep to move weight
