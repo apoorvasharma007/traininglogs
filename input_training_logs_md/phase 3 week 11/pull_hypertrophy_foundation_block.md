@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-11
+- Date: 2026-04-17
 - Phase: 3
 - Week: 11
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 134  min 
+- Duration: 132 min 
 
 ## Exercise 1
 
@@ -14,15 +14,15 @@
 **Rest:** 2 min 
 
 ### Warmup
-1. 66 x feel
+1. 59 x feel
 
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
 1. 73 x 10 RPE 9 good 
-2. 73 x 8+2 RPE 10 good 
-3. 73 x 10 + 2 RPE 10 good
+2. 73 x 10+1 RPE 10 good 
+3. 73 x 10  RPE 10 good
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -46,9 +46,9 @@ Get perfect 12 reps and then we move up in weight
 Pyramid 
 
 ### Working Sets
-1. 63 x 10 RPE 10 good
-2. 63 x 11 RPE 10 good
-3. 63 x 12 +2 RPE 10 good - squeezing shoulder blades together
+1. 63 x 10 RPE 10 perfect 
+2. 63 x 10 RPE 10 perfect 
+3. 63 x 12 RPE 10 perfect - 
 
 
 ### Notes
@@ -60,6 +60,7 @@ Pyramid 
 - Pause at the top and squeeze shoulder blades
 - Keep feet on ground. 
 - Redefine what TRUE failure looks like. Take a breath and keep pulling good reps with full range, fuck the tempo.
+- Squeeze shoulder blades together
 
 ## Exercise 3
 
@@ -73,9 +74,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 57 x 12 RPE 9 good 
-2. 50 x 12 RPE 10 perfect - initiate from rear delt squeeze 
-3. 50 x 12 RPE 10 perfect
+1. 50 x 12 RPE 10 bad 
+2. 50 x 12 RPE 10 good 
+3. 50 x 12 RPE 10 perfect - initiated from rear delt squeeze 
 
 ### Notes
 Try your best to not lean back
@@ -84,6 +85,7 @@ Try your best to not lean back
 - Squeeze shoulder blades together  
 - bring wrists to chest
 - Sit upright 
+- initiate from rear delt squeeze 
 
 ## Exercise 4
 
@@ -95,9 +97,9 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 11.3 x 10 RPE 10 good
-2. 11.3 x 10 RPE 9 good - keep arms straight for as many reps as possible
-3. 11.3 x 10 RPE 10 failure:myo(3,3,3) good
+1. 9.1 x 12 RPE 10 good
+2. 11.3 x 10 RPE 9 good 
+3. 11.3 x 10 RPE 10 failure:myo(3,2+1,1+2) good
 
 ### Notes
 Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
@@ -108,6 +110,7 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 - Goal 6.8 x 15 perfect reps for hypertrophy
 - Hold with thumb under finger grip
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
+- keep arms straight for as many reps as possible
 
 ## Exercise 5
 
@@ -119,9 +122,9 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 Pyramid 
 
 ### Working Sets
-1. 38.6 x 11 RPE 8.5 bad 
-2. 47.6 x 10 RPE 10 good - paused at top and bottom for first 6 reps
-3. 47.6 x 10+1 RPE 10 good 
+1. 47.6 x 8+1 RPE 10 good 
+2. 47.6 x 8+2 RPE 10 good - paused at top and bottom fir 8 reps and i pulled my neck on right side
+3. 47.6 x 8+1 RPE 10 good - didnt pause to save neck
 ### Notes
 
 ### Cues

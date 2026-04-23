@@ -1,11 +1,10 @@
 # Training Log
-
-- Date: 2026-04-13
+- Date: 2026-04-19
 - Phase: 3  
-- Week: 10
+- Week: 11
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 121 min
+- Duration: 217 min
 
 ## Exercise 1  
 **Name:** Leg Press  
@@ -20,9 +19,9 @@
 ### Warmup Notes  
 Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
-1. 280 x 12 RPE 9.5 good - go easy with right knee
-2. 280 x 12 RPE 9.5 good - take care of right knee
-3. 280 x 12 RPE 10 good - less depth with hands on knees
+1. 280 x 12 RPE 8.5 good - protecting knees
+2. 280 x 12 RPE 8.5 good - protecting knees
+3. 280 x 12 RPE 8 good - protecting knees
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
@@ -42,8 +41,9 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 Pyramid   
 ### Working Sets 
 1. 63 x 10 RPE 10 bad - all reps slightly less than 90
-2. 63 x 10 RPE 10 bad - all reps were less than 90, going harder might create knee pain
-3. 63 x 10 RPE 10 bad failure:llp(10) - first 6 reps were 90 
+2. 63 x 10 RPE 10 good 
+3. 63 x 12 RPE 10 good - all reps were 90
+4. 63 x 10 RPE 10 bad failure:llp(10) - all reps were 90
 ### Notes 
 Seat at 4, 5 visible. 
 ### Cues  
@@ -59,6 +59,7 @@ Pyramid   
 ### Working Sets 
 1. 40 x 12 RPE 8 good - felt easy but did carefully to protect right knee
 2. 40 x 12 RPE 9 good 
+3. 40 x 12 RPE 10 good
 ### Notes
 Careful with knee fatigue. We need to fix them before we killshot here. Using DB! I didn’t mention that and suddenly started using total weight. 
 ### Cues  
@@ -77,9 +78,9 @@ Careful with knee fatigue. We need to fix them before we killshot here. Using DB
 ### Warmup Notes  
 Pyramid  with unilaterals
 ### Working Sets 
-1. 50 x 15 RPE 8 good - should do at least 20 reps
-2. 63 x 15 RPE 8 good
-3. 70 x 15 RPE 10 good failure:llp(3,3,3,3)
+1. 104 x 10 RPE 8 good - protect knees
+2. 104 x 8 RPE 8 good
+3. 104 x 10 RPE 10 
 
 ### Notes
 
@@ -88,14 +89,14 @@ Pyramid  with unilaterals
 
 ## Exercise 5  
 **Name:** Cable Hip Adduction  
-**Goal:** 18.1 kg x 2 sets x 12-15 reps  
+**Goal:** 18.1 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 18.1 x 12 RPE 8
-2. 18.1 x 13 RPE 8.5 - took rest between legs
-3. 18.1 x 15 RPE 10
+1. 18.1 x 15 RPE 8.5
+2. 20.1 x 12 RPE 10 - took rest between legs
+3. 20.1 x 12 RPE 10
 ### Notes 
 13.6 for 15 or 15.9 for 9 to 10 perfect reps is a good goal. 
 ### Cues  
@@ -114,9 +115,9 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 11.3 x 12 RPE 10 - full rom cross legs
-2. 11.3 x 11 RPE 10 -  full rom cross legs 
-3. 11.3 x 10+1 RPE 10 
+1. 11.3 x 15 RPE 9 - full rom cross legs
+2. 13.6 x 12 RPE 10 -  full rom cross legs 
+3. 13.6 x 8+1 RPE 10 
 ### Notes    
 Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
 
@@ -128,15 +129,15 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 - Go full range of motion by letting legs cross
 
 ## Exercise 7 
-**Name:** Standing Calf Raise  
-**Goal:** 130 kg x 3 sets x 12-15 reps  
+**Name:** Seated Calf Raise  
+**Goal:** 70 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warm Up
 
 ### Working Sets 
-1. 130 x 9+1 RPE 9.5 perfect 
-2. 130 x 10 RPE 10
-3. 130 x 10 RPE 10 
+1. 70 x 7+1 RPE 9.5 perfect 
+2. 70 x 8 RPE 10
+3. 70 x 10 RPE 10 
 ### Notes 
 120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly. 
 ### Cues  
@@ -147,8 +148,9 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 **Name:** Tibialis Raise Single Leg
 **Goal:** 8 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 8 x 15 good 
-2. 8 x 12
+1. 16 x 12 good RPE 10
+2. 16 x 12 good RPE 10
+3. 8 x 10 good RPE 10
 
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 

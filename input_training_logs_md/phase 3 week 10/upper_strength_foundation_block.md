@@ -221,9 +221,3 @@ pain free range of motion for right wrist has improved a lot
 ### Working Sets
 1. 15 x 7
 2. 15 x 6
-## Exercise 11
-**Name:** Wrist Adduction Cable Curl Single Hand
-**Goal:** 6.8 kg x 2 sets x 8-10 reps
-### Working Sets
-1. 2.5  x 10 learning
-### Notes
