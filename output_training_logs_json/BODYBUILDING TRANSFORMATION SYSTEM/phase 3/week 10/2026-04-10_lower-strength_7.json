@@ -1,0 +1,516 @@
+{
+  "data_model_version": "0.0.1",
+  "data_model_type": "TrainingSession",
+  "session_id": "2026-04-10_lower-strength_7",
+  "user_id": "7",
+  "user_name": "Apoorva Sharma",
+  "date": "2026-04-10",
+  "program": "BODYBUILDING TRANSFORMATION SYSTEM",
+  "program_author": "Jeff Nippard",
+  "program_length_weeks": 12,
+  "phase": 3,
+  "week": 10,
+  "is_deload_week": false,
+  "focus": "Lower Strength",
+  "exercises": [
+    {
+      "number": 1,
+      "name": "Seated Leg Hamstring Curl",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "all reps were 90 except for last one",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "all rep\u2019s were 90",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 63.0,
+          "rep_count": {
+            "full": 11,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": {
+            "technique_type": "LLP",
+            "details": {
+              "partial_rep_count": 10
+            }
+          }
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 63.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 23.0,
+          "rep_count": null,
+          "notes": "unilateral full rom"
+        },
+        {
+          "number": 2,
+          "weight_kg": 29.0,
+          "rep_count": null,
+          "notes": "unilateral partial"
+        },
+        {
+          "number": 3,
+          "weight_kg": 59.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": null,
+      "warmup_notes": null,
+      "form_cues": []
+    },
+    {
+      "number": 2,
+      "name": "Smith Machine Static Lunge with elevated front foot",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 40.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.5,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 40.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 40.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 40.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 6,
+          "max": 8
+        },
+        "rest_minutes": 5
+      },
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 20.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 30.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
+      "notes": "Didnt feel lower back after last set cuz im either stronger or bracing properly",
+      "warmup_notes": "Need proper warmup to actually get going. Progressive sets feel better on this.",
+      "form_cues": [
+        "Emphasize front foot",
+        "stay more upright, adjust stepper position"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Hyperextension",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "explosive concentric and squeeze on top",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 25.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 25.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 3
+      },
+      "warmup_sets": null,
+      "notes": "Can go heavier with good form, but increase weight slowly to avoid injury. imp to engage core by bracing and deep breath this helps target glutes much better and prevents lower back. Do more warmup if feeling lowerback. Felt great pain in lower back today cuz didn\u2019t take much rest.",
+      "warmup_notes": "Pyramid warmup",
+      "form_cues": [
+        "explosive up, controlled negative",
+        "Hold top position to squeeze glutes",
+        "engage core by bracing and deep breath, this feels more glutes for me",
+        "arch back while coming up to feel more lower back than glutes"
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Leg Extension",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 50.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "no full extension or eccentric control to let right knee recover",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 57.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "we will come back once knee is recovered",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 70.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 104.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": null,
+      "warmup_notes": "Do unilateral explosives with alternating leg as an experiment. These hurt the knee which is overworked, currently left knees front side bottom point. Still need to find out what that is. Did less unilateral sets today since they were stressing the left knee.",
+      "form_cues": [
+        "True failure is far from getting these reps, I can do reverse pyramids to get even better contraction and failure, my recovery might sustain that impact."
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Smith Machine Calf Raise",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 8,
+            "partial": 2
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "scared for right knee so going slow",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt better after first set",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": {
+            "technique_type": "StaticHold",
+            "details": {
+              "hold_duration_seconds": 20
+            }
+          }
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 250.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 8,
+          "max": 10
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Good form overall, heavy but maintain perfect technique. Do 8 perfect reps first. Didnt do failure technique on last set.",
+      "warmup_notes": null,
+      "form_cues": [
+        "put safety clips",
+        "1-2 sec pause at the bottom of each rep"
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Cable Crunches",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 22.7,
+          "rep_count": {
+            "full": 15,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "felt easy",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 27.2,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 27.2,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 4,
+          "weight_kg": 27.2,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 29.5,
+        "sets": 3,
+        "rep_range": {
+          "min": 10,
+          "max": 12
+        },
+        "rest_minutes": 2
+      },
+      "warmup_sets": null,
+      "notes": "Hold up the plate and contract core fast like wrestlers do.",
+      "warmup_notes": null,
+      "form_cues": [
+        "Keep mind muscle connection with abs"
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Tibialis Raise Single Leg",
+      "working_sets": [
+        {
+          "number": 1,
+          "weight_kg": 8.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "around the world",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 8.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "around the world",
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 8.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": null,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "around the world",
+          "failure_technique": null
+        }
+      ],
+      "target_muscle_groups": null,
+      "rep_tempo": null,
+      "current_goal": {
+        "weight_kg": 16.0,
+        "sets": 3,
+        "rep_range": {
+          "min": 1,
+          "max": 15
+        },
+        "rest_minutes": null
+      },
+      "warmup_sets": null,
+      "notes": "Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric.",
+      "warmup_notes": null,
+      "form_cues": [
+        "go around the world"
+      ]
+    }
+  ],
+  "session_duration_minutes": 117
+}
