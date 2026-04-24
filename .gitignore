@@ -7,3 +7,4 @@ src/tests/__pycache__/
 
 .DS_Store
 .env
+*.egg-info/

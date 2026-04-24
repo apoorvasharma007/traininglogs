@@ -1,2 +1,0 @@
-[console_scripts]
-traininglogs = traininglogs.processor.processor:main
