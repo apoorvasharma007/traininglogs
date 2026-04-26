@@ -1,38 +1,38 @@
 {
   "data_model_version": "0.0.1",
   "data_model_type": "TrainingSession",
-  "session_id": "2026-04-07_legs-hypertrophy_7",
+  "session_id": "2026-04-26_legs-hypertrophy_7",
   "user_id": "7",
   "user_name": "Apoorva Sharma",
-  "date": "2026-04-07",
+  "date": "2026-04-26",
   "program": "BODYBUILDING TRANSFORMATION SYSTEM",
   "program_author": "Jeff Nippard",
   "program_length_weeks": 12,
   "phase": 3,
-  "week": 9,
+  "week": 12,
   "is_deload_week": false,
   "focus": "Legs Hypertrophy",
   "exercises": [
     {
       "number": 1,
-      "name": "Hack Squat",
+      "name": "Leg Press",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 150.0,
+          "weight_kg": 300.0,
           "rep_count": {
-            "full": 10,
+            "full": 12,
             "partial": 0
           },
-          "rpe": 9.5,
+          "rpe": 8.5,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "felt good as reps went on, better quality",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 150.0,
+          "weight_kg": 300.0,
           "rep_count": {
             "full": 12,
             "partial": 0
@@ -40,20 +40,33 @@
           "rpe": 9.5,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "reps get better as reps go on, last rep could have hurt knees",
           "failure_technique": null
         },
         {
           "number": 3,
-          "weight_kg": 150.0,
+          "weight_kg": 300.0,
           "rep_count": {
-            "full": 11,
+            "full": 12,
             "partial": 0
           },
           "rpe": 10.0,
-          "rep_quality_assessment": "good",
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
-          "notes": "depth improved",
+          "notes": "reps got really good with stable spine and legs squeezing to move weight instead of whole upper body",
+          "failure_technique": null
+        },
+        {
+          "number": 4,
+          "weight_kg": 300.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "actual_rest_minutes": null,
+          "notes": "great set bitch!",
           "failure_technique": null
         }
       ],
@@ -71,15 +84,21 @@
       "warmup_sets": [
         {
           "number": 1,
-          "weight_kg": 50.0,
+          "weight_kg": 150.0,
           "rep_count": null,
-          "notes": "full possible depth"
+          "notes": null
         },
         {
           "number": 2,
-          "weight_kg": 100.0,
+          "weight_kg": 200.0,
           "rep_count": null,
-          "notes": "full possible depth"
+          "notes": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 250.0,
+          "rep_count": null,
+          "notes": null
         }
       ],
       "notes": "Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus.",
@@ -92,27 +111,27 @@
     },
     {
       "number": 2,
-      "name": "Lying Leg Curl",
+      "name": "Seated Leg Curl",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 60.0,
+          "weight_kg": 43.0,
           "rep_count": {
-            "full": 8,
+            "full": 25,
             "partial": 0
           },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
+          "rpe": 9.0,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
-          "notes": "all reps 90",
+          "notes": "mukund made me do this",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 60.0,
+          "weight_kg": 50.0,
           "rep_count": {
-            "full": 6,
-            "partial": 2
+            "full": 25,
+            "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "good",
@@ -122,13 +141,26 @@
         },
         {
           "number": 3,
-          "weight_kg": 60.0,
+          "weight_kg": 36.0,
           "rep_count": {
-            "full": 4,
+            "full": 25,
             "partial": 0
           },
           "rpe": 10.0,
           "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 4,
+          "weight_kg": 36.0,
+          "rep_count": {
+            "full": 25,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "bad",
           "actual_rest_minutes": null,
           "notes": null,
           "failure_technique": {
@@ -153,15 +185,16 @@
       "warmup_sets": [
         {
           "number": 1,
-          "weight_kg": 60.0,
+          "weight_kg": 23.0,
           "rep_count": null,
           "notes": null
         }
       ],
-      "notes": "Seat at 4, 5 visible.",
+      "notes": null,
       "warmup_notes": "Pyramid",
       "form_cues": [
-        "Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that\u2019s okay!"
+        "Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that\u2019s okay!",
+        "Seat at 4, 5 visible."
       ]
     },
     {
@@ -170,9 +203,9 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 40.0,
+          "weight_kg": 45.0,
           "rep_count": {
-            "full": 10,
+            "full": 9,
             "partial": 0
           },
           "rpe": 8.0,
@@ -189,6 +222,19 @@
             "partial": 0
           },
           "rpe": 9.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 40.0,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
           "notes": null,
@@ -222,22 +268,22 @@
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 90.0,
+          "weight_kg": 104.0,
           "rep_count": {
-            "full": 15,
+            "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "rpe": 8.0,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "protect knees",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 90.0,
+          "weight_kg": 104.0,
           "rep_count": {
-            "full": 15,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
@@ -248,9 +294,9 @@
         },
         {
           "number": 3,
-          "weight_kg": 90.0,
+          "weight_kg": 104.0,
           "rep_count": {
-            "full": 15,
+            "full": 10,
             "partial": 0
           },
           "rpe": 10.0,
@@ -280,23 +326,23 @@
         }
       ],
       "notes": null,
-      "warmup_notes": "Pyramid",
+      "warmup_notes": "Pyramid\u00a0 with unilaterals",
       "form_cues": [
         "2-3 seconds negative to feel quads tear apart."
       ]
     },
     {
       "number": 5,
-      "name": "Machine Hip Adduction",
+      "name": "Cable Hip Adduction",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 50.0,
+          "weight_kg": 20.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.5,
+          "rpe": 8.5,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
           "notes": null,
@@ -304,7 +350,7 @@
         },
         {
           "number": 2,
-          "weight_kg": 55.0,
+          "weight_kg": 20.1,
           "rep_count": {
             "full": 12,
             "partial": 0
@@ -312,27 +358,27 @@
           "rpe": 10.0,
           "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": "used momentum in last 4 reps",
+          "notes": "took rest between legs",
           "failure_technique": null
         },
         {
           "number": 3,
-          "weight_kg": 60.0,
+          "weight_kg": 20.1,
           "rep_count": {
-            "full": 8,
+            "full": 12,
             "partial": 0
           },
           "rpe": 10.0,
-          "rep_quality_assessment": "bad",
+          "rep_quality_assessment": null,
           "actual_rest_minutes": null,
-          "notes": "hard sets limited range",
+          "notes": null,
           "failure_technique": null
         }
       ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 60.0,
+        "weight_kg": 18.1,
         "sets": 3,
         "rep_range": {
           "min": 12,
@@ -354,11 +400,24 @@
     },
     {
       "number": 6,
-      "name": "Machine Hip Abduction",
+      "name": "Cable Hip Abduction",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 70.0,
+          "weight_kg": 13.6,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 9.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": "not full rom cross legs",
+          "failure_technique": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
@@ -370,21 +429,8 @@
           "failure_technique": null
         },
         {
-          "number": 2,
-          "weight_kg": 70.0,
-          "rep_count": {
-            "full": 10,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
-          "failure_technique": null
-        },
-        {
           "number": 3,
-          "weight_kg": 70.0,
+          "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
@@ -399,7 +445,7 @@
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 70.0,
+        "weight_kg": 11.3,
         "sets": 3,
         "rep_range": {
           "min": 12,
@@ -408,7 +454,7 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg.",
+      "notes": "Felt so tired that had to just rest between legs and keep going.",
       "warmup_notes": "Pyramid",
       "form_cues": [
         "Feel in outer thighs and glutes",
@@ -420,57 +466,52 @@
     },
     {
       "number": 7,
-      "name": "Standing Calf Raise on Hack Squat",
+      "name": "Smith Machine Calf Raise",
       "working_sets": [
         {
           "number": 1,
-          "weight_kg": 200.0,
+          "weight_kg": 130.0,
           "rep_count": {
-            "full": 12,
+            "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
-          "rep_quality_assessment": "good",
+          "rpe": 9.5,
+          "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
-          "notes": null,
+          "notes": "paused at bottom",
           "failure_technique": null
         },
         {
           "number": 2,
-          "weight_kg": 200.0,
+          "weight_kg": 130.0,
           "rep_count": {
-            "full": 10,
-            "partial": 0
-          },
-          "rpe": 10.0,
-          "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "pause at top and bottom",
-          "failure_technique": null
-        },
-        {
-          "number": 3,
-          "weight_kg": 200.0,
-          "rep_count": {
-            "full": 10,
-            "partial": 0
+            "full": 8,
+            "partial": 1
           },
           "rpe": 10.0,
           "rep_quality_assessment": "perfect",
           "actual_rest_minutes": null,
           "notes": null,
-          "failure_technique": {
-            "technique_type": "StaticHold",
-            "details": {
-              "hold_duration_seconds": 10
-            }
-          }
+          "failure_technique": null
+        },
+        {
+          "number": 3,
+          "weight_kg": 130.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": null,
+          "actual_rest_minutes": null,
+          "notes": null,
+          "failure_technique": null
         }
       ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
-        "weight_kg": 250.0,
+        "weight_kg": 130.0,
         "sets": 3,
         "rep_range": {
           "min": 12,
@@ -479,11 +520,10 @@
         "rest_minutes": 2
       },
       "warmup_sets": null,
-      "notes": "120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120.",
+      "notes": "120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly.",
       "warmup_notes": null,
       "form_cues": [
-        "I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit.",
-        "CAUTION chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly."
+        "I can keep more surface of my feet on the stepper, being more on toes pushed my knee to the limit."
       ]
     },
     {
@@ -494,7 +534,7 @@
           "number": 1,
           "weight_kg": 16.0,
           "rep_count": {
-            "full": 15,
+            "full": 10,
             "partial": 0
           },
           "rpe": null,
@@ -505,12 +545,12 @@
         },
         {
           "number": 2,
-          "weight_kg": 12.0,
+          "weight_kg": 16.0,
           "rep_count": {
-            "full": 11,
+            "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "rpe": null,
           "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
           "notes": null,
@@ -523,10 +563,23 @@
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
-          "rep_quality_assessment": "learning",
+          "rpe": null,
+          "rep_quality_assessment": "good",
           "actual_rest_minutes": null,
-          "notes": "went with feeling on rotations and angles around the world",
+          "notes": "around the world",
+          "failure_technique": null
+        },
+        {
+          "number": 4,
+          "weight_kg": 8.0,
+          "rep_count": {
+            "full": 10,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "good",
+          "actual_rest_minutes": null,
+          "notes": "around the world",
           "failure_technique": null
         }
       ],
@@ -550,5 +603,5 @@
       ]
     }
   ],
-  "session_duration_minutes": 125
+  "session_duration_minutes": 198
 }

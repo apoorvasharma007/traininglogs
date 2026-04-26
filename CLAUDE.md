@@ -189,15 +189,15 @@ docker-compose.yml
 ## Commands
 
 ```bash
-# Install
-pip install -e .
+# Install (always use the project venv)
+.venv/bin/pip install -e .
 
 # Run tests
-pytest tests/
+.venv/bin/pytest tests/
 
 # Start local Postgres
 docker compose up -d
 
-# Current CLI (markdown parser, main only)
-traininglogs --phase 3 --week 5
+# Process and commit training logs (markdown parser)
+.venv/bin/python3 scripts/process_and_commit.py --phase 3 --week 11
 ```

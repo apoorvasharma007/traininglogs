@@ -284,7 +284,14 @@
         },
         "rest_minutes": 2
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 23.0,
+          "rep_count": null,
+          "notes": "unilateral"
+        }
+      ],
       "notes": "70 for 15 is a good hyper trophy goal",
       "warmup_notes": "Pyramid",
       "form_cues": [
