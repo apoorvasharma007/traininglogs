@@ -1,11 +1,11 @@
 # Training Log
 
-- Date: 2026-04-17
+- Date: 2026-04-24
 - Phase: 3
-- Week: 11
+- Week: 12
 - Deload: No
 - Focus: Pull Hypertrophy
-- Duration: 132 min 
+- Duration: 140 min 
 
 ## Exercise 1
 
@@ -20,9 +20,9 @@
 Pyramid 
 
 ### Working Sets
-1. 73 x 10 RPE 9 good 
-2. 73 x 10+1 RPE 10 good 
-3. 73 x 10  RPE 10 good
+1. 73 x 10 RPE 8 good 
+2. 73 x 10 RPE 10 good - last two reps were lot more leaning
+3. 73 x 10  RPE 10 perfect - last two reps i leaned more but felt great in lats and upper back
 
 ### Notes
 Get perfect 12 reps and then we move up in weight
@@ -46,9 +46,10 @@ Get perfect 12 reps and then we move up in weight
 Pyramid 
 
 ### Working Sets
-1. 63 x 10 RPE 10 perfect 
-2. 63 x 10 RPE 10 perfect 
-3. 63 x 12 RPE 10 perfect - 
+1. 63 x 10 RPE 10 good - all reps were controlled to prevent any lower back fatigue since it’s already tired
+2. 63 x 10 RPE 10 good - went slow
+3. 63 x 10 RPE 10 perfect - better than last set
+4. 63 x 10 RPE 10 perfect -didnt event use leg drive from ground, kept footing loose
 
 
 ### Notes
@@ -74,9 +75,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 50 x 12 RPE 10 bad 
-2. 50 x 12 RPE 10 good 
-3. 50 x 12 RPE 10 perfect - initiated from rear delt squeeze 
+1. 50 x 12 RPE 8 good 
+2. 50 x 12 RPE 10 perfect - initiated from rear delt squeeze 
+3. 50 x 12 RPE 9 perfect - initiated from rear delt squeeze 
 
 ### Notes
 Try your best to not lean back
@@ -97,17 +98,16 @@ Try your best to not lean back
 Pyramid 
 
 ### Working Sets
-1. 9.1 x 12 RPE 10 good
-2. 11.3 x 10 RPE 9 good 
-3. 11.3 x 10 RPE 10 failure:myo(3,2+1,1+2) good
+1. 9.1 x 15 RPE 10 good
+2. 9.1 x 12 RPE 9 perfect 
+3. 9.1 x 12 RPE 10 failure:myo(3,3,3,3) perfect
 
 ### Notes
-Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep exploring technique. 9.1 for 12 is a good goal.
 
 ### Cues
 - Squeeze 1-2 sec on top.  
 - Elbows straight and go all the way up  
-- Goal 6.8 x 15 perfect reps for hypertrophy
+- Goal 9.1 x 15 perfect reps for hypertrophy
 - Hold with thumb under finger grip
 - Keep shoulder down and back with chest pushed out to get that burn in rear delt
 - keep arms straight for as many reps as possible
@@ -118,13 +118,16 @@ Need to keep shoulder stable and back to feel a good stretch in rear delt. Keep 
 **Goal:** 38.6 kg x 3 sets x 12-15 reps
 **Rest:** 2 min 
 
+### Warmup
+1. 24.9 x feel - felt  easy and controlled 
+2. 34 x feel - felt doable
 ### Warmup Notes
 Pyramid 
 
 ### Working Sets
-1. 47.6 x 8+1 RPE 10 good 
-2. 47.6 x 8+2 RPE 10 good - paused at top and bottom fir 8 reps and i pulled my neck on right side
-3. 47.6 x 8+1 RPE 10 good - didnt pause to save neck
+1. 47.6 x 6+2 RPE 10 bad 
+2. 47.6 x 8+2 RPE 10 bad - lower back fatigue stopping from doing good form
+3. 47.6 x 5+3 RPE 10 bad - straps made it really good but could have done better reps
 ### Notes
 
 ### Cues
@@ -147,9 +150,9 @@ Pyramid 
 Pyramid 
 
 ### Working Sets
-1. 31.8 x 15 RPE 10 - controlled eccentric
-2. 31.8 x 15 RPE 10 - controlled eccentric
-3. 31.8 x 15 RPE 10 - controlled eccentric
+1. 34 x 12 RPE 10 perfect - controlled eccentric
+2. 34 x 13 RPE 10 perfect - controlled eccentric
+3. 34 x 13 RPE 10 perfect - controlled eccentric
 
 ### Notes
 Didn't control eccentric today to protect wrists. Did explosive concentric.
@@ -167,9 +170,9 @@ Didn't control eccentric today to protect wrists. Did explosive concentric.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 10 x 15 RPE 9.5 perfect
-2. 10 x 15 RPE 10
-3. 10 x 15 RPE 10 failure:myo(3,2+1,2+1) perfect
+1. 10 x 13 RPE 9.5 perfect - right did one more rep
+2. 10 x 12 RPE 10 good - right did one more rep
+3. 10 x 15 RPE 10 failure:myo(3+1,3+1,3) perfect
 
 ### Notes
 

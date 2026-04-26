@@ -1,30 +1,32 @@
+
 # Training Log
 
-- Date: 2026-04-18
+- Date: 2026-04-25
 - Phase: 3
-- Week: 11
+- Week: 12
 - Deload: No
 - Focus: Push Hypertrophy
-- Duration: 177 min 
+- Duration: 195 min 
 
 ## Exercise 1
 
 **Name:** Barbell Bench Press
-**Goal:** 75 kg x 3 sets x 8-10 reps
+**Goal:** 85 kg x 3 sets x 8-10 reps
 **Rest:** 5 min  
 
 ### Warmup
 1. 40 x feel
-2. 60 x feel
-3. 70 x feel
+2. 50 x feel
+3. 60 x feel
+4. 70 x feel
 ### Warmup Notes
 Pyramid warmup figure
 
 ### Working Sets
-1. 80 x 8 RPE 10 perfect - first  rep was ass liftoff 
-2. 80 x 8 RPE 10 perfect  
+1. 80 x 8 RPE 10 perfect - last  rep was ass liftoff 
+2. 80 x 7 RPE 10 perfect  - last rep ass broke contact with seat, could have done one more with more rest i rushed it
 3. 80 x 8 RPE 10 perfect
-4. 80 x 8+2 RPE 10 perfect - mukund helped squeeze two more reps by touching midway on sticking point
+4. 80 x 7+2 RPE 10 perfect - sabrish helped squeeze two more reps by touching midway on sticking point
 
 ### Notes
 Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
@@ -48,8 +50,8 @@ Don’t use heavy weights preserve strength for working sets and avoid injury ri
 
 ### Working Sets
 1. 22.5 x 8 RPE 10 perfect 
-2. 22.5 x 8 RPE 10 perfect 
-3. 22.5 x 6+2 RPE 10 good
+2. 22.5 x 9 RPE 10 perfect 
+3. 22.5 x 7 RPE 10 perfect
 
 ### Notes
 Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.
@@ -65,7 +67,7 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 
 ### Working Sets
-1. 13.6 x 15 RPE 10 good - first 5 full reps that we don’t count 
+1. 13.6 x 13 RPE 8.5 good - first 5 full reps that we don’t count 
 2. 13.6 x 12 RPE 10 good - first did 5 full reps
 3. 13.6 x 10 RPE 10 perfect - first 5 full reps that we don’t count 
 
@@ -86,14 +88,14 @@ Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over.
 **Rest:** 2 min 
 
 ### Working Sets
-1. 9.1 x 12 RPE 10 good - used loop around wrist 
-2. 9.1 x 12 RPE 10 good
-3. 9.1 x 12 RPE 10 failure:myo(3,3,3) good 
+1. 11.3 x 12 RPE 9.5 good - used ankle strap around forearm 
+2. 11.3 x 12 RPE 10 learning
+3. 11.3 x 12 RPE 10 failure:myo(3,3,3) learning - i need to put the height lower i feel to get stimulus in shoulder when hand is fully raised,  cuz right now the elbow is getting pulled in and not down at top position of rep
 
 
   
 ### Notes
-Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
+
 
 ### Cues
 - Annihilate the delt with controlled tempo  
@@ -107,9 +109,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Rest:** 2 min 
 
 ### Working Sets
-1. 30 x 14+1 RPE 10 good - decline bench
-2. 30 x 12 RPE 10 good - decline bench
-3. 30 x 10+2 RPE 10 perfect - decline bench
+1. 30 x 13 RPE 10 good - decline bench
+2. 30 x 13 RPE 10 good - decline bench
+3. 30 x 13+1 RPE 10 perfect - decline bench
 
 ### Notes
 
@@ -124,9 +126,9 @@ Right is stronger. Try to get good 10 reps at 6.8 or get 20 reps at 4.5
 **Goal:** 20.4 kg x 3 sets x 15-20 reps 
 
 ### Working Sets
-1. 20.4 x 12 RPE 10 perfect 
+1. 20.4 x 15 RPE 10 perfect 
 2. 20.4 x 10 RPE 10 perfect
-3. 20.4 x 10 RPE 10 failure:myo(4,4,4) perfect
+3. 20.4 x 10 RPE 10 failure:myo(4,4,4,4) perfect
 
 
 ### Notes
@@ -143,7 +145,7 @@ Goal is 20 perfect reps at 20.4 with squeezing from tricep to move weight.
 ### Working Sets
 1. 0 x 6 - good range really 
 2. 0 x 6 RPE 10 
-3. 0 x 6 RPE 10 
+3. 0 x 7 RPE 10 
 
 ### Notes
 Keep working on range of motion.
@@ -159,9 +161,9 @@ Keep working on range of motion.
 **Goal:** 12.5 kg x 3 sets x 12-15 reps
 
 ### Working Sets
-1. 15 x 12 RPE 9 bad
-2. 12.5 x 15 RPE 10 good 
-3. 12.5 x 15 RPE 10 good
+1. 12 x 12 RPE 9 perfect - nailed form of the gods taking it slow and controlled and letting wrist unravel and fold under load
+2. 12.5 x 12 RPE 10 perfect 
+3. 12.5 x 12 RPE 10 perfect
 
 ### Notes
 Did less range of motion for right wrist to avoid pain
@@ -175,9 +177,9 @@ Did less range of motion for right wrist to avoid pain
 **Goal:** 7.5 kg x 2 sets x 10-15 reps
 
 ### Working Sets
-1. 7.5 x 12 RPE 10 good
-2. 7.5 x 12 RPE 10 good
-3. 7.5 x 12 RPE 10 good
+1. 7.5 x 12 RPE 10 perfect - nailed form of the gods letting wrist do a accelerating twist like on a bike and controlled negative
+2. 7.5 x 12 RPE 10 perfect
+3. 7.5 x 12 RPE 10 perfect
 
 ### Notes
 Did less range of motion with right wrist. But the pain feels less after exercising the wrists! Wow
@@ -192,9 +194,9 @@ Did less range of motion with right wrist. But the pain feels less after exercis
 **Goal:** 25 kg x 2 sets x 8-10 reps
 
 ### Working Sets
-1. 25 x 12 RPE 9.5 bad
-2. 20 x 12 RPE 10 good
-3. 20 x 12 RPE 10 good - good form at this weight, doesn’t hurt wrist
+1. 20 x 12 RPE 10 perfect
+2. 20 x 12 RPE 10 perfect
+3. 20 x 12 RPE 10 perfect
 ### Notes
 
 
