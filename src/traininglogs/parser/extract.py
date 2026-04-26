@@ -52,7 +52,7 @@ class TrainingMarkdownParser:
                 continue
 
             # Warmup numbered lines
-            if current_section == "warmup" and re.match(r"^\d+\.", line.strip()):
+            if current_section in ("warmup", "warmup_sets") and re.match(r"^\d+\.", line.strip()):
                 current_ex["warmup_sets"].append(line.strip())
                 continue
 
