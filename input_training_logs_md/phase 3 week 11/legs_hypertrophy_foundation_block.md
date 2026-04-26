@@ -22,6 +22,8 @@ Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight
 1. 280 x 12 RPE 8.5 good - protecting knees
 2. 280 x 12 RPE 8.5 good - protecting knees
 3. 280 x 12 RPE 8 good - protecting knees
+4. 280 x 12 RPE 8 good - protecting knees
+
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
@@ -44,6 +46,7 @@ Pyramid   
 2. 63 x 10 RPE 10 good 
 3. 63 x 12 RPE 10 good - all reps were 90
 4. 63 x 10 RPE 10 bad failure:llp(10) - all reps were 90
+
 ### Notes 
 Seat at 4, 5 visible. 
 ### Cues  
@@ -73,7 +76,7 @@ Careful with knee fatigue. We need to fix them before we killshot here. Using DB
 **Goal:** 104 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 
-### Warmup Sets
+### Warmup
 1. 23 x feel - unilateral 
 ### Warmup Notes  
 Pyramid  with unilaterals
