@@ -282,7 +282,14 @@
         },
         "rest_minutes": 2
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 23.0,
+          "rep_count": null,
+          "notes": "unilateral"
+        }
+      ],
       "notes": null,
       "warmup_notes": "Pyramid\u00a0 with unilaterals",
       "form_cues": [

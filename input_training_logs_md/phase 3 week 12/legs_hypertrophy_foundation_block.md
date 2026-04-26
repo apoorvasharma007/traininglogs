@@ -1,10 +1,10 @@
 # Training Log
-- Date: 2026-04-19
+- Date: 2026-04-26
 - Phase: 3  
-- Week: 11
+- Week: 12
 - Deload: No  
 - Focus: Legs Hypertrophy  
-- Duration: 217 min
+- Duration: 198 min
 
 ## Exercise 1  
 **Name:** Leg Press  
@@ -19,11 +19,10 @@
 ### Warmup Notes  
 Pyramid. 120 x feel - tried unilateral, explosives were very hard at this weight so did bilateral explosive 
 ### Working Sets 
-1. 280 x 12 RPE 8.5 good - protecting knees
-2. 280 x 12 RPE 8.5 good - protecting knees
-3. 280 x 12 RPE 8 good - protecting knees
-4. 280 x 12 RPE 8 good - protecting knees
-
+1. 300 x 12 RPE 8.5 good - felt good as reps went on, better quality 
+2. 300 x 12 RPE 9.5 good - reps get better as reps go on, last rep could have hurt knees
+3. 300 x 12 RPE 10 perfect - reps got really good with stable spine and legs squeezing to move weight instead of whole upper body 
+4. 300 x 12 RPE 10 perfect - great set bitch!
 
 ### Notes 
 Work on form and use hands very lightly to protect knees until you have knee sleeves. Bracing core every rep really focuses on leg drive. And try to think about leg drive that really helps focus. 
@@ -42,15 +41,15 @@ Work on form and use hands very lightly to protect knees until you have knee sle
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 63 x 10 RPE 10 bad - all reps slightly less than 90
-2. 63 x 10 RPE 10 good 
-3. 63 x 12 RPE 10 good - all reps were 90
-4. 63 x 10 RPE 10 bad failure:llp(10) - all reps were 90
-
+1. 43 x 25 RPE 9 perfect - mukund made me do this
+2. 50 x 25 RPE 10 good 
+3. 36 x 25 RPE 10 good 
+4. 36 x 25 RPE 10 bad failure:llp(2) 
 ### Notes 
-Seat at 4, 5 visible. 
+
 ### Cues  
 - Because we learnt that first sets are most important we should try to get a proper rpe 8-9 on first set and with every other set reps can decrease and rpe increase because of strict rest time period and that’s okay!  
+- Seat at 4, 5 visible. 
 
 ## Exercise 3  
 **Name:** Walking Lunge 
@@ -60,7 +59,7 @@ Seat at 4, 5 visible.
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 40 x 12 RPE 8 good - felt easy but did carefully to protect right knee
+1. 45 x 9 RPE 8 good
 2. 40 x 12 RPE 9 good 
 3. 40 x 12 RPE 10 good
 ### Notes
@@ -76,14 +75,14 @@ Careful with knee fatigue. We need to fix them before we killshot here. Using DB
 **Goal:** 104 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 
-### Warmup
+### Warmup Sets
 1. 23 x feel - unilateral 
 ### Warmup Notes  
 Pyramid  with unilaterals
 ### Working Sets 
 1. 104 x 10 RPE 8 good - protect knees
-2. 104 x 8 RPE 8 good
-3. 104 x 10 RPE 10 
+2. 104 x 10 RPE 10 good
+3. 104 x 10 RPE 10 good
 
 ### Notes
 
@@ -97,7 +96,7 @@ Pyramid  with unilaterals
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 18.1 x 15 RPE 8.5
+1. 20.1 x 12 RPE 8.5
 2. 20.1 x 12 RPE 10 - took rest between legs
 3. 20.1 x 12 RPE 10
 ### Notes 
@@ -118,12 +117,11 @@ Pyramid   
 ### Warmup Notes  
 Pyramid   
 ### Working Sets 
-1. 11.3 x 15 RPE 9 - full rom cross legs
-2. 13.6 x 12 RPE 10 -  full rom cross legs 
-3. 13.6 x 8+1 RPE 10 
+1. 13.6 x 12 RPE 9 - not full rom cross legs 
+2. 13.6 x 12 RPE 10  
+3. 13.6 x 12 RPE 10 
 ### Notes    
-Felt so tired that had to just rest between legs and keep going. This is a good idea instead of going both legs together cuz i fall short of a few reps on second order leg. 
-
+Felt so tired that had to just rest between legs and keep going. 
 ### Cues  
 - Feel in outer thighs and glutes
 - Think about kicking up, then you’d keep the hip stable.   
@@ -132,15 +130,15 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 - Go full range of motion by letting legs cross
 
 ## Exercise 7 
-**Name:** Seated Calf Raise  
-**Goal:** 70 kg x 3 sets x 12-15 reps  
+**Name:** Smith Machine Calf Raise  
+**Goal:** 130 kg x 3 sets x 12-15 reps  
 **Rest:** 2 min   
 ### Warm Up
 
 ### Working Sets 
-1. 70 x 7+1 RPE 9.5 perfect 
-2. 70 x 8 RPE 10
-3. 70 x 10 RPE 10 
+1. 130 x 10 RPE 9.5 perfect - paused at bottom 
+2. 130 x 8+1 RPE 10 perfect
+3. 130 x 10 RPE 10 
 ### Notes 
 120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120. chances of injury cuz my back and core are not locked. Midsection slips under load. Brace properly. 
 ### Cues  
@@ -151,9 +149,10 @@ Felt so tired that had to just rest between legs and keep going. This is a good 
 **Name:** Tibialis Raise Single Leg
 **Goal:** 8 kg x 3 sets x 8-15 reps
 ### Working Sets
-1. 16 x 12 good RPE 10
-2. 16 x 12 good RPE 10
-3. 8 x 10 good RPE 10
+1. 16 x 10 good RPE 10
+2. 16 x 10 good RPE 10
+3. 8 x 10 good RPE 10 - around the world
+4. 8 x 10 RPE 10 good - around the world
 
 ### Notes
 Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric. 
