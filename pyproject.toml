@@ -13,10 +13,12 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "httpx>=0.27",
+    "pydantic>=2.0",
 ]
 
 [project.scripts]
 traininglogs = "traininglogs.processor.processor:main"
+traininglogs-v2 = "traininglogs.processor.processor_v2:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

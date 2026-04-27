@@ -1,5 +1,5 @@
 # Training Log
-- Date: 2026-01-29
+- Date: 2026-01-21
 - Phase: 3
 - Week: 1
 - Deload: No
