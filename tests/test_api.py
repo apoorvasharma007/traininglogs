@@ -4,7 +4,8 @@ from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert import insert_session
+from traininglogs.db.insert_v2 import insert_session
+from traininglogs.models.models_v2 import TrainingSession
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -15,6 +16,8 @@ os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ["API_KEY"] = "testkey"
 
 SESSION_A = {
+    "data_model_version": "0.0.1",
+    "data_model_type": "TrainingSession",
     "session_id": "api-test-session-001",
     "user_id": "7",
     "user_name": "Apoorva Sharma",
@@ -81,8 +84,8 @@ def db_conn():
 
 @pytest.fixture(scope="module")
 def client(db_conn):
-    insert_session(db_conn, SESSION_A)
-    insert_session(db_conn, SESSION_B)
+    insert_session(db_conn, TrainingSession.model_validate(SESSION_A))
+    insert_session(db_conn, TrainingSession.model_validate(SESSION_B))
     with TestClient(app) as c:
         yield c
     with db_conn.cursor() as cur:

@@ -2,7 +2,8 @@ import os
 import pytest
 
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert import insert_session
+from traininglogs.db.insert_v2 import insert_session
+from traininglogs.models.models_v2 import TrainingSession
 from traininglogs.analytics.queries import (
     exercise_progression,
     personal_records,
@@ -30,6 +31,8 @@ TEST_DB_URL = os.environ.get(
 
 # Two sessions: same exercise across both so we can test progression and PRs
 SESSION_1 = {
+    "data_model_version": "0.0.1",
+    "data_model_type": "TrainingSession",
     "session_id": "q-test-session-001",
     "user_id": "7",
     "user_name": "Apoorva Sharma",
@@ -55,13 +58,15 @@ SESSION_1 = {
             "warmup_sets": None,
             "working_sets": [
                 {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 8.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 9.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
+                {"number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
             ],
         }
     ],
 }
 
 SESSION_2 = {
+    "data_model_version": "0.0.1",
+    "data_model_type": "TrainingSession",
     "session_id": "q-test-session-002",
     "user_id": "7",
     "user_name": "Apoorva Sharma",
@@ -95,6 +100,8 @@ SESSION_2 = {
 
 
 SESSION_3_DELOAD = {
+    "data_model_version": "0.0.1",
+    "data_model_type": "TrainingSession",
     "session_id": "q-test-session-003",
     "user_id": "7",
     "user_name": "Apoorva Sharma",
@@ -131,9 +138,9 @@ SESSION_3_DELOAD = {
 def conn():
     c = get_connection(TEST_DB_URL)
     apply_schema(c)
-    insert_session(c, SESSION_1)
-    insert_session(c, SESSION_2)
-    insert_session(c, SESSION_3_DELOAD)
+    insert_session(c, TrainingSession.model_validate(SESSION_1))
+    insert_session(c, TrainingSession.model_validate(SESSION_2))
+    insert_session(c, TrainingSession.model_validate(SESSION_3_DELOAD))
     yield c
     with c.cursor() as cur:
         cur.execute("DELETE FROM sessions WHERE session_id LIKE 'q-test-%'")
@@ -184,7 +191,7 @@ def test_rpe_trend_averages_correctly(conn):
     rows = rpe_trend(conn, phase=1)
     s1 = next((r for r in rows if str(r["date"]) == "2026-01-01"), None)
     assert s1 is not None
-    assert float(s1["avg_rpe"]) == 8.5  # (8 + 9) / 2
+    assert float(s1["avg_rpe"]) == 9.0  # (8 + 10) / 2
 
 
 def test_top_rpe_sets_only_returns_rpe10(conn):
