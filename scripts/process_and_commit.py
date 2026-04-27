@@ -28,7 +28,20 @@ THIS_DIR = Path(__file__).parent
 PROJECT_ROOT = THIS_DIR.parent
 INPUT_LOGS_DIR = PROJECT_ROOT / "input_training_logs_md"
 OUTPUT_LOGS_DIR = PROJECT_ROOT / "output_training_logs_json"
-PROCESSOR_SCRIPT = PROJECT_ROOT / "src" / "traininglogs" / "processor" / "processor.py"
+PROCESSOR_SCRIPT = PROJECT_ROOT / "src" / "traininglogs" / "processor" / "processor_v2.py"
+
+
+def _rebuild_dashboard(this_dir: Path, dry_run: bool) -> None:
+    print("\n[5/5] Rebuilding dashboard...")
+    dashboard_script = this_dir / "build_dashboard.py"
+    if dry_run:
+        print("[DRY-RUN] Would rebuild dashboard")
+        return
+    if not dashboard_script.exists():
+        print("⊘ build_dashboard.py not found, skipping")
+        return
+    ret, _, stderr = run_command([sys.executable, str(dashboard_script)])
+    print("✓ Dashboard updated" if ret == 0 else f"⚠️  Dashboard build failed: {stderr}")
 
 
 def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
@@ -165,6 +178,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Step 3: Git commit
     if args.no_commit:
         print("\n[3/4] Skipping git commit (--no-commit)")
+        _rebuild_dashboard(THIS_DIR, args.dry_run)
         return 0
     
     print("\n[3/4] Staging and committing changes...")
@@ -233,7 +247,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         print("✓ Pull request created!")
     else:
         print("\n[4/4] Skipped PR creation (use --pr to enable)")
-    
+
+    # Step 5: Rebuild dashboard
+    _rebuild_dashboard(THIS_DIR, args.dry_run)
+
     print("\n" + "=" * 70)
     print("✅ WORKFLOW COMPLETE")
     print("=" * 70)
