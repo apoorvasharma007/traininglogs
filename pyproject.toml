@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 traininglogs = "traininglogs.processor.processor:main"
+traininglogs-v2 = "traininglogs.processor.processor_v2:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

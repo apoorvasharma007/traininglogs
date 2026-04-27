@@ -28,7 +28,7 @@ THIS_DIR = Path(__file__).parent
 PROJECT_ROOT = THIS_DIR.parent
 INPUT_LOGS_DIR = PROJECT_ROOT / "input_training_logs_md"
 OUTPUT_LOGS_DIR = PROJECT_ROOT / "output_training_logs_json"
-PROCESSOR_SCRIPT = PROJECT_ROOT / "src" / "traininglogs" / "processor" / "processor.py"
+PROCESSOR_SCRIPT = PROJECT_ROOT / "src" / "traininglogs" / "processor" / "processor_v2.py"
 
 
 def _rebuild_dashboard(this_dir: Path, dry_run: bool) -> None:
