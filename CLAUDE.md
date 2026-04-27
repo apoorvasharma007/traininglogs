@@ -75,7 +75,7 @@ main  ←  stable, current markdown parser, never touched during new development
 
 ### Track B — AI Agent (after Track A is stable)
 
-- [x] Migrate dataclass models → Pydantic models (`models_v2.py`; old `models.py` to be deleted when all callers are updated)
+- [x] Migrate dataclass models → Pydantic models (`models_v2.py`; old `models.py`, `insert.py`, `processor.py` to be deleted when agent is wired)
 - [ ] Add `anthropic` SDK dependency
 - [ ] Structured extraction: send session draft + schema, get validated model back
 - [ ] Clarification loop: ask targeted questions if extraction is incomplete
@@ -139,9 +139,9 @@ The dashboard reads like a training yearbook — a printed almanac of your lifti
 | Markdown → JSON parser | Working (on main) |
 | Dataclass models + validation | Working and tested (on main) |
 | JSON-on-disk output | Working (on main) |
-| Pydantic models | In progress — `models/models_v2.py` + `db/insert_v2.py` (new modules, old ones not yet deleted) |
-| PostgreSQL | Not started |
-| FastAPI | Not started |
+| Pydantic models | Done — `models_v2.py`, `insert_v2.py`, `processor_v2.py`, `import_json_to_db_v2.py` (old modules kept, pending deletion) |
+| PostgreSQL | Done — schema, insert, fetch, import script, 121 sessions loaded |
+| FastAPI | Done — 3 endpoints, API key auth |
 | AI agent | Not started |
 | Dashboard | Not started |
 
