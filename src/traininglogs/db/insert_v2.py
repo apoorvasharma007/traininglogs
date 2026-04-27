@@ -5,14 +5,17 @@ from psycopg2.extensions import connection as Connection
 from traininglogs.models.models_v2 import TrainingSession
 
 
-def insert_session(conn: Connection, session: TrainingSession) -> None:
-    """Insert a full training session and all child records. Skips if session_id already exists."""
+def insert_session(conn: Connection, session: TrainingSession) -> bool:
+    """Insert a full training session and all child records.
+
+    Returns True if inserted, False if session_id already existed (skipped).
+    """
     with conn.cursor() as cur:
         cur.execute(
             "SELECT 1 FROM sessions WHERE session_id = %s", (session.session_id,)
         )
         if cur.fetchone():
-            return
+            return False
 
         cur.execute(
             """
@@ -111,3 +114,4 @@ def insert_session(conn: Connection, session: TrainingSession) -> None:
                 )
 
     conn.commit()
+    return True
