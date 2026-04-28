@@ -1,0 +1,1 @@
+Currently running the **Bodybuilding Transformation System**, Phase 3 — Foundation Block. This phase builds the base for the accumulation to come: moderate intensity, high technique focus, re-establishing movement patterns after the Phase 2 deload. Priority in this block is keeping the key lifts progressing on goal weight while managing fatigue going into the heavier weeks.
