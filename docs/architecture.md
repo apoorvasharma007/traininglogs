@@ -45,7 +45,7 @@ flowchart LR
 | DB layer | `db/db.py`, `db/schema.sql`, `db/insert_v2.py`, `db/fetch.py` | Schema creation, insert, and fetch — raw SQL via psycopg2 |
 | FastAPI | `api/app.py` | REST API with API key auth, 3 endpoints |
 | Analytics | `analytics/queries.py` | SQL queries for dashboard aggregations |
-| Dashboard builder | `scripts/build_dashboard.py` | Runs analytics queries and renders `dashboard/index.html` |
+| CLI | `cli/log.py`, `cli/dashboard.py` | `traininglogs log`: full workflow; `dashboard.py`: renders Training Almanac HTML |
 
 ---
 
@@ -55,7 +55,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["traininglogs-v2 --phase N --week N"]
+    A["traininglogs log --phase N --week N"]
     B["Read .md files from\ninput_training_logs_md/phase N week N/"]
     C["TrainingMarkdownParser\n→ intermediate dict"]
     D["DeepTrainingParser\n→ old dataclass objects"]
@@ -78,8 +78,8 @@ flowchart TD
 ```mermaid
 flowchart LR
     DB[(PostgreSQL)] --> QUERIES["analytics/queries.py\n11 aggregation queries"]
-    QUERIES --> BUILD["scripts/build_dashboard.py\nrenders HTML + inline JS"]
-    BUILD --> HTML["dashboard/index.html"]
+    QUERIES --> BUILD["cli/dashboard.py\nrenders HTML + inline JS"]
+    BUILD --> HTML["website/static/training-almanac/index.html"]
 ```
 
 ---
@@ -353,15 +353,16 @@ All working sets for a given exercise across all sessions, ordered by date and s
 
 ## 7. Dashboard
 
-The dashboard is a single static HTML file at `dashboard/index.html`, built by `scripts/build_dashboard.py`.
+The dashboard is a single static HTML file built by `cli/dashboard.py` and written to `website/static/training-almanac/index.html`. It is rebuilt automatically as part of `traininglogs log`.
 
-**Rebuild:**
+**Rebuild via the normal workflow:**
 
 ```bash
-python scripts/build_dashboard.py
+traininglogs log --phase <n> --week <n>           # rebuild only
+traininglogs log --phase <n> --week <n> --publish  # rebuild + push to website
 ```
 
-Requires `DATABASE_URL` in `.env` and Postgres running. Output overwrites `dashboard/index.html`.
+Requires `DATABASE_URL` in `.env` and Postgres running.
 
 **Analytics queries run at build time** (from `analytics/queries.py`):
 
