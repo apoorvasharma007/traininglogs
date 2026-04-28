@@ -21,8 +21,7 @@ from traininglogs.analytics.queries import (
 )
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
-WEBSITE_ROOT = REPO_ROOT.parent / "website"
-OUTPUT = WEBSITE_ROOT / "static" / "training-almanac" / "index.html"
+OUTPUT = REPO_ROOT / "docs" / "index.html"
 KEY_LIFTS_CONFIG = REPO_ROOT / "config" / "key_lifts.yaml"
 PROGRAM_BRIEF = REPO_ROOT / "program_brief.md"
 GITHUB_BASE = "https://github.com/apoorvasharma007/traininglogs/blob/main"
