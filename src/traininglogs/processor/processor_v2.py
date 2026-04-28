@@ -71,7 +71,7 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
     week_dir.mkdir(parents=True, exist_ok=True)
 
     output_path = week_dir / f"{session.session_id}.json"
-    output_path.write_text(json.dumps(primitive_dict, indent=2))
+    output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
 
     print(f">>> JSON written to: {output_path}\n")
     return session
