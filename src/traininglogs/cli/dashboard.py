@@ -1,8 +1,4 @@
-"""
-Build a static HTML training dashboard from the database.
-Run: python scripts/build_dashboard.py
-Output: dashboard/index.html
-"""
+"""Build a static HTML training dashboard from the database."""
 from __future__ import annotations
 
 import json
@@ -16,7 +12,6 @@ import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from traininglogs.db.db import get_connection
 from traininglogs.analytics.queries import (
@@ -25,8 +20,9 @@ from traininglogs.analytics.queries import (
     key_lift_prs,
 )
 
-REPO_ROOT = Path(__file__).parent.parent
-OUTPUT = REPO_ROOT / "dashboard" / "index.html"
+REPO_ROOT = Path(__file__).parent.parent.parent.parent
+WEBSITE_ROOT = REPO_ROOT.parent / "website"
+OUTPUT = WEBSITE_ROOT / "static" / "training-almanac" / "index.html"
 KEY_LIFTS_CONFIG = REPO_ROOT / "config" / "key_lifts.yaml"
 PROGRAM_BRIEF = REPO_ROOT / "program_brief.md"
 GITHUB_BASE = "https://github.com/apoorvasharma007/traininglogs/blob/main"
@@ -109,7 +105,6 @@ def get_all_goal_vs_actual(conn, exercise_names: list[str]) -> dict:
             name = d.pop("name")
             raw.setdefault(name, []).append(d)
 
-    # Transform to {sets: [...], goals: [...]} per exercise
     result: dict = {}
     for name, rows in raw.items():
         sets = [
@@ -176,7 +171,6 @@ def render(data: dict) -> str:
 
     brief_html = data["brief_html"]
 
-    # Session dropdown options
     session_opts = ""
     for s in data["sessions"]:
         src = s.get("source_file") or ""
@@ -186,7 +180,6 @@ def render(data: dict) -> str:
         label = f"{s['date']} — {focus} (P{s['phase']}·W{s['week']}){deload}"
         session_opts += f'<option value="{href}">{label}</option>\n'
 
-    # PR table rows
     rep_brackets = [1, 3, 5, 8, 10]
 
     def pr_cell(rep_prs: dict, reps: int) -> str:
@@ -208,7 +201,6 @@ def render(data: dict) -> str:
         cells = "".join(pr_cell(rep_prs, r) for r in rep_brackets)
         pr_rows += f'<tr><td class="lift-name">{lift}</td>{e1rm_cell}{cells}</tr>\n'
 
-    # Progression dropdown options
     prog_opts = "".join(
         f'<option value="{ex}">{ex}</option>\n'
         for ex in data["prog_exercises"]
@@ -610,7 +602,6 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
     const hasGoals = ex.goals && ex.goals.length > 0;
     document.getElementById("noGoalNote").style.display = hasGoals ? "none" : "block";
 
-    // Compute e1RM for each set; keep original weight/reps for tooltip
     const e1rmSets = ex.sets.map(s => ({{
       x: s.x,
       y: Math.round(epley(s.y, s.reps) * 10) / 10,
@@ -621,7 +612,6 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
       date: s.date,
     }}));
 
-    // Best e1RM per session for the trend line
     const topByDate = {{}};
     e1rmSets.forEach(s => {{
       if (topByDate[s.x] == null || s.y > topByDate[s.x]) topByDate[s.x] = s.y;
@@ -630,7 +620,6 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([x, y]) => ({{ x: Number(x), y }}));
 
-    // Convert goal weight → goal e1RM using programmed rep target (midpoint of goal rep range)
     const e1rmGoals = ex.goals.map(g => {{
       const reps = g.goal_reps || 5;
       return {{
@@ -737,7 +726,11 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
 </html>"""
 
 
-if __name__ == "__main__":
+def main() -> None:
     conn = get_connection()
     build(conn)
     conn.close()
+
+
+if __name__ == "__main__":
+    main()
