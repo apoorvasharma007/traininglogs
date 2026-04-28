@@ -1,4 +1,5 @@
 import os
+import sys
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -28,6 +29,12 @@ def _auth(x_api_key: Annotated[str, Header()] = ""):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not API_KEY:
+        print(
+            "ERROR: API_KEY is not set. Set it in .env before starting the server.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     conn = get_connection()
     apply_schema(conn)
     conn.close()

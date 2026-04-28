@@ -59,19 +59,20 @@ main  ←  stable, current markdown parser, never touched during new development
 
 ## Roadmap
 
-### Track A — Storage & Retrieval (current focus)
+### Track A — Storage & Retrieval (complete)
 
-- [ ] Create `dev` branch
-- [ ] Docker Compose with Postgres
-- [ ] Design and create DB schema (sessions, exercises, working_sets, warmup_sets)
-- [ ] Import existing JSON output files into DB
-- [ ] FastAPI scaffold (`src/api/`)
-- [ ] `GET /sessions` — list sessions (filters: phase, week, date range)
-- [ ] `GET /sessions/{id}` — session detail
-- [ ] `GET /exercises/{name}/history` — weight and reps over time
-- [ ] API key auth (single key, just you)
-- [ ] Tests for DB layer (real test DB via Docker, no mocks)
-- [ ] Tests for API endpoints
+- [x] Create `dev` branch
+- [x] Docker Compose with Postgres
+- [x] Design and create DB schema (sessions, exercises, working_sets, warmup_sets)
+- [x] Import existing JSON output files into DB (121 sessions)
+- [x] FastAPI scaffold (`src/api/`)
+- [x] `GET /sessions` — list sessions (filters: phase, week, date range)
+- [x] `GET /sessions/{id}` — session detail
+- [x] `GET /exercises/{name}/history` — weight and reps over time
+- [x] API key auth (single key, just you)
+- [x] Tests for DB layer (real test DB via Docker, no mocks)
+- [x] Tests for API endpoints
+- [x] Pydantic v2 models (`models_v2.py`), v2 insert and processor, old modules archived
 
 ### Track B — AI Agent (after Track A is stable)
 
@@ -136,14 +137,17 @@ The dashboard reads like a training yearbook — a printed almanac of your lifti
 
 | Component | Status |
 |---|---|
-| Markdown → JSON parser | Working (on main) |
-| Dataclass models + validation | Working and tested (on main) |
-| JSON-on-disk output | Working (on main) |
-| Pydantic models | Done — `models_v2.py`, `insert_v2.py`, `processor_v2.py`, `import_json_to_db_v2.py` (old modules kept, pending deletion) |
-| PostgreSQL | Done — schema, insert, fetch, import script, 121 sessions loaded |
-| FastAPI | Done — 3 endpoints, API key auth |
+| Markdown → JSON parser | Working — `parser/extract.py` + `parser/parse.py` (dataclass bridge, replaced by agent in Track B) |
+| Pydantic models | Done — `models/models_v2.py` is the canonical schema; `models/__init__.py` re-exports all v2 types |
+| DB insert | Done — `db/insert_v2.py` takes `TrainingSession` (Pydantic), returns `bool` |
+| Processor CLI | Done — `processor/processor_v2.py`; DB-first, JSON-second; errors on session_id collision |
+| Import script | Done — `scripts/import_json_to_db_v2.py`; idempotent, supports `--overwrite` |
+| JSON-on-disk output | Done — written from `session.model_dump(mode="json")` after DB insert |
+| PostgreSQL | Done — schema, insert, fetch, 121 sessions loaded |
+| FastAPI | Done — 3 endpoints, API key auth (fails at startup if `API_KEY` unset) |
 | AI agent | Not started |
-| Dashboard | Not started |
+| Dashboard | In progress — static HTML, synthetic data; needs real DB wiring |
+| Old modules | Archived — `archived/` contains `insert.py`, `processor.py`, `import_json_to_db.py`, old tests; deleted from live path when agent is wired |
 
 ---
 
@@ -193,26 +197,45 @@ The dashboard reads like a training yearbook — a printed almanac of your lifti
 
 ---
 
-## Project Layout (target)
+## Project Layout
 
 ```
 src/traininglogs/
-  models/      — dataclass models (current) → Pydantic models (Track B)
-  agent/       — Claude API integration (Track B)
-  db/          — Postgres layer: schema, insert, fetch
-  api/         — FastAPI app and route handlers
-  parser/      — legacy markdown parser (main only)
-  processor/   — legacy CLI (main only)
+  models/
+    models_v2.py     — canonical Pydantic schema (TrainingSession and all children)
+    __init__.py      — re-exports all v2 public types
+    models.py        — old dataclasses (used only by parser bridge, deleted in Track B)
+    validators.py    — old validators (used only by parser bridge, deleted in Track B)
+    exceptions.py    — old exceptions (used only by parser bridge, deleted in Track B)
+  db/
+    db.py            — get_connection(), apply_schema()
+    schema.sql       — CREATE TABLE IF NOT EXISTS (no migrations yet)
+    insert_v2.py     — insert_session(conn, TrainingSession) → bool
+    fetch.py         — get_sessions(), get_session(), get_exercise_history()
+  api/
+    app.py           — FastAPI app, 3 endpoints, API key auth
+  parser/
+    extract.py       — raw markdown → intermediate dict
+    parse.py         — intermediate dict → old dataclasses (bridge, replaced in Track B)
+  processor/
+    processor_v2.py  — CLI: markdown → DB + JSON; DB-first, errors on collision
+  analytics/
+    queries.py       — analytics queries (progression, PRs, volume, RPE, etc.)
+  agent/             — not yet created (Track B)
+scripts/
+  process_and_commit.py   — full workflow: parse + commit + optional PR
+  import_json_to_db_v2.py — bulk import JSON → DB
+  build_dashboard.py      — regenerate static dashboard HTML
+archived/                 — old modules kept for reference, not imported anywhere
 tests/
-  test_models.py
-  test_db.py
+  test_models_v2.py
+  test_db_v2.py
+  test_import_v2.py
+  test_processor_v2.py
   test_api.py
-  test_agent.py       (Track B)
+  test_queries.py
 docker-compose.yml
 .env.example
-.github/
-  workflows/
-    ci.yml
 ```
 
 ---
