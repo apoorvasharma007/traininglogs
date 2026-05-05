@@ -77,6 +77,35 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      # Keep the app version stamped in docs/design.html in sync with
+      # pyproject.toml. The eyebrow contains a stable target span:
+      #   App v<span class="app-version">X.Y.Z</span>
+      # We rewrite the span's inner text to the current version. If nothing
+      # changed, sed is a no-op and we skip the commit. If it did change, we
+      # push a small docs-only commit back to main.
+      #
+      # Safe from loops: the workflow's `paths` filter excludes docs/**, so
+      # this bot commit will not re-trigger CI. No [skip ci] marker needed.
+      - name: Sync app version into design.html
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DOC=docs/design.html
+          if [ ! -f "$DOC" ]; then
+            echo "No $DOC found, skipping sync."
+            exit 0
+          fi
+          sed -i.bak -E "s|(<span class=\"app-version\">)[^<]+(</span>)|\1${VERSION}\2|" "$DOC"
+          rm -f "$DOC.bak"
+          if git diff --quiet "$DOC"; then
+            echo "design.html already at v${VERSION}, no sync needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DOC"
+          git commit -m "chore(docs): sync design.html app version to v${VERSION}"
+          git push
+
       - name: Check if release already exists
         id: tag_check
         run: |

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>traininglogs — Design</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --rule: #e5e5e5;
+    --accent: #b8460e;
+    --bg: #fafaf7;
+    --code-bg: #f0efe9;
+    --max: 760px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Iowan Old Style", Georgia, serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  .layout {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 4rem;
+  }
+  main { min-width: 0; max-width: var(--max); }
+  aside {
+    position: sticky;
+    top: 3rem;
+    align-self: start;
+    font-size: 0.85rem;
+    border-right: 1px solid var(--rule);
+    padding-right: 1.25rem;
+    order: -1;
+  }
+  aside h4 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+  }
+  aside ul { list-style: none; padding: 0; margin: 0; }
+  aside li { margin: 0.4rem 0; }
+  aside a {
+    color: var(--muted);
+    text-decoration: none;
+    display: block;
+    padding: 0.1rem 0;
+    border-right: 2px solid transparent;
+    margin-right: -1.25rem;
+    padding-right: 1.15rem;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  aside a:hover { color: var(--ink); }
+  aside a.active {
+    color: var(--accent);
+    border-right-color: var(--accent);
+    font-weight: 500;
+  }
+  .header {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  h1 {
+    font-size: 2.4rem;
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+    font-style: italic;
+    margin: 0;
+  }
+  h2 {
+    font-size: 1.6rem;
+    margin: 3.5rem 0 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    scroll-margin-top: 2rem;
+  }
+  h3 {
+    font-size: 1.15rem;
+    margin: 2rem 0 0.5rem;
+    font-weight: 600;
+  }
+  p { margin: 0 0 1.1rem; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 1rem 1.2rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    border-left: 3px solid var(--accent);
+  }
+  pre code { background: transparent; padding: 0; }
+  .diagram {
+    background: white;
+    border: 1px solid var(--rule);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--ink);
+  }
+  .callout {
+    border-left: 3px solid var(--muted);
+    padding: 0.5rem 0 0.5rem 1.2rem;
+    color: var(--muted);
+    margin: 1.5rem 0;
+    font-style: italic;
+  }
+  blockquote {
+    margin: 1.5rem 0;
+    padding-left: 1.2rem;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+    font-style: italic;
+  }
+  ul.body, ol.body { padding-left: 1.5rem; }
+  ul.body li, ol.body li { margin: 0.35rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  th { font-weight: 600; background: var(--code-bg); }
+  footer {
+    margin-top: 5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; gap: 2rem; padding: 2rem 1.25rem; }
+    aside { position: static; border-right: none; border-bottom: 1px solid var(--rule); padding: 0 0 1rem; order: -1; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<main>
+
+<header class="header">
+  <div class="eyebrow">Technical Design · App v<span class="app-version">1.0.0</span> · 2026-05-05</div>
+  <h1>traininglogs</h1>
+  <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
+</header>
+
+<section>
+  <h2 id="why">Why this exists</h2>
+  <p>I lift weights. I write down what I do, and later I want to answer questions: <em>am I getting stronger? am I hammering the same muscle group three days in a row? what was my squat doing six months ago? did the deload actually do anything?</em></p>
+  <p>Spreadsheets work until they don't. Off-the-shelf apps assume a workout shape that isn't mine — they don't model myo-reps, partial reps, or the difference between a warmup set and a working set the way I think about them. The shape I want is: write the session the way I'd write it in a notebook, and have a system parse it into something strict enough to query and chart.</p>
+  <p>That's traininglogs. It is small on purpose.</p>
+</section>
+
+<section>
+  <h2 id="shape">The shape of the system</h2>
+  <p>Five things, in order:</p>
+  <div class="diagram">markdown  →  parser  →  Pydantic  →  PostgreSQL  →  dashboard
+  files       (rules)    models       (truth)       (HTML)
+                                          ↓
+                                       FastAPI
+                                       (REST)</div>
+  <p>Each step is a boundary. Markdown is what I write. Pydantic is what the rest of the system trusts. Postgres is the source of truth for everything queryable. The API and the dashboard both read from Postgres; nothing writes back through them.</p>
+  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based and will be replaced by an LLM-driven capture flow ("Track B"); the Pydantic model and the database schema have stayed largely the same through that planning.</p>
+</section>
+
+<section>
+  <h2 id="data">The data model</h2>
+  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>working sets</strong> and optionally <strong>warmup sets</strong>. A working set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
+  <pre><code>TrainingSession
+├── session_id, date, program, phase, week, focus
+├── is_deload_week, session_duration_minutes
+└── exercises[]
+    ├── number, name, target_muscle_groups, rep_tempo
+    ├── current_goal           (weight, sets, rep_range, rest)
+    ├── warmup_sets[]          (number, weight_kg, rep_count)
+    └── working_sets[]
+        ├── number, weight_kg, rep_count {full, partial}
+        ├── rpe?, rep_quality?, actual_rest_minutes?
+        └── failure_technique?  (discriminated union)
+            ├── MyoReps    → mini_sets[]
+            ├── LLP        → partial_rep_count
+            ├── Static     → hold_duration_seconds
+            └── DropSet    → drop_sets[]</code></pre>
+  <p>Working sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
+  <p>A few invariants the model enforces:</p>
+  <ul class="body">
+    <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
+    <li>Exercise <code>number</code> fields must be sequential starting at 1.</li>
+    <li><code>week</code> must be between 1 and <code>program_length_weeks</code>.</li>
+    <li>RPE is a whole or half step between 1 and 10.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="parser">The parser</h2>
+  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into the legacy dataclass shape. The processor then bridges the dataclass into a Pydantic <code>TrainingSession</code> via <code>model_validate()</code> — that's where validation actually fires.</p>
+  <p>The parser is rule-based. There is no LLM in the hot path. This is a deliberate choice: parsing must be deterministic and free, and my markdown is regular enough that rules win.</p>
+  <div class="callout">An LLM-assisted capture flow ("Track B") is planned: a PWA captures free-form notes during the workout, and Claude maps the draft to <code>TrainingSession</code> after the fact, with a clarification loop for anything ambiguous. It will replace the rule parser, not live alongside it.</div>
+</section>
+
+<section>
+  <h2 id="storage">Storage</h2>
+  <p>Two artifacts, one source of truth.</p>
+  <ul class="body">
+    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>.</li>
+    <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
+  </ul>
+  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision (same date, same focus, already in the DB) raises <code>SystemExit</code> rather than silently overwriting. Fix the date in the markdown and re-run.</p>
+</section>
+
+<section>
+  <h2 id="api">The API</h2>
+  <p>FastAPI, read-only. Three endpoints, mapped to the questions I actually ask:</p>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Answers</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /sessions</code></td><td>What did I do, and when? (filterable by phase, week, date range)</td></tr>
+      <tr><td><code>GET /sessions/{id}</code></td><td>Full detail of one session, exercises and sets included.</td></tr>
+      <tr><td><code>GET /exercises/{name}/history</code></td><td>How has this lift moved over time? Every working set, every session.</td></tr>
+    </tbody>
+  </table>
+  <p>Every request requires an <code>X-Api-Key</code> header. The app fails at startup if <code>API_KEY</code> is unset. Single key, no users table, no OAuth — it's mine and the dashboard's.</p>
+</section>
+
+<section>
+  <h2 id="dashboard">The dashboard</h2>
+  <p>The dashboard is a single static HTML file: serif type, cream paper, vermilion accent. It reads like a printed almanac of the training year, not a SaaS chart wall. Nine sections, in a fixed order:</p>
+  <table>
+    <thead><tr><th>§</th><th>Title</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>I</td><td>The Numbers, so far</td><td>Tonnage · weeks · sessions · last lift</td></tr>
+      <tr><td>II</td><td>The Shape of the Year</td><td>Weekly tonnage, deloads in red</td></tr>
+      <tr><td>III</td><td>One Lift, Over Time</td><td>e1RM trend per exercise (Epley)</td></tr>
+      <tr><td>IV</td><td>Volume, by Muscle</td><td>Weekly sets per muscle group</td></tr>
+      <tr><td>V</td><td>Intensity, Distilled</td><td>RPE histogram + within-phase fatigue</td></tr>
+      <tr><td>VI</td><td>Does the Deload Work?</td><td>Pre/during/post deload comparison</td></tr>
+      <tr><td>VII</td><td>Stimulus vs Fatigue</td><td>RPE vs tonnage-per-set scatter</td></tr>
+      <tr><td>VIII</td><td>Personal Bests</td><td>Heaviest set per exercise</td></tr>
+      <tr><td>IX</td><td>Techniques Employed</td><td>Myo-reps, LLP, static, drop sets</td></tr>
+    </tbody>
+  </table>
+  <p>The data flow at build time:</p>
+  <div class="diagram">PostgreSQL  →  analytics/queries.py  →  cli/dashboard.py  →  docs/index.html
+                  (11 SQL queries)       (renders HTML +
+                                          inline JSON)</div>
+  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>cli/dashboard.py</code> writes to <code>docs/index.html</code> in the repo. <code>traininglogs log --publish</code> separately stages, commits, and pushes the equivalent file in the website repo at <code>website/static/training-almanac/index.html</code>, which a GitHub Action then deploys.</p>
+
+  <h3>Typography and palette</h3>
+  <p>The almanac feel is held together by a small, deliberate set of typographic choices. Display and headings use Fraunces (variable, opsz 144, SOFT 0; italic for emphasis in red). Body and editorial notes use Newsreader (italic, drop cap on the first letter). Numbers and labels use JetBrains Mono with tabular figures.</p>
+  <p>Colours: background <code>#F1E9D6</code> (aged cream paper) with an SVG grain overlay; ink <code>#1A1410</code> (warm near-black); accent <code>#C83C29</code> (vermilion) for the current phase marker, deload bars, and emphasis; muted <code>#8A7F6E</code> for secondary text.</p>
+
+  <h3>Rules of the road</h3>
+  <ul>
+    <li>The nine-section order is the story arc. Don't reorder or drop sections without an explicit reason.</li>
+    <li>Iterate one section at a time. The dashboard is dense; cross-section changes compound.</li>
+    <li>Always regenerate against the real DB before judging what looks right. Synthetic preview data lies.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="versioning">Versioning</h2>
+  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields, written into the JSON snapshot and the DB row. A re-parse can be detected by comparing the version stamped on a snapshot to the current model version. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format).</p>
+  <p>There are no migrations yet. The schema is small enough that <code>CREATE TABLE IF NOT EXISTS</code> in <code>db/schema.sql</code> has been sufficient. When the first breaking schema change lands, this section will grow a paragraph about how migrations are run.</p>
+</section>
+
+<section>
+  <h2 id="next">What's next</h2>
+  <ul class="body">
+    <li><strong>Track B — AI capture.</strong> A PWA captures free-form workout notes offline. On reconnect, Claude (Haiku 4.5) maps the draft to <code>TrainingSession</code>, asks clarifying questions if the mapping is incomplete, confirms the parsed summary with me, and only then writes to the DB. Replaces the rule parser.</li>
+    <li><strong>Cloud sync.</strong> Supabase as a remote replica of the local Postgres. Writing locally remains the source of truth; the cloud copy exists so the dashboard build and the API can run from anywhere.</li>
+    <li><strong>Programs.</strong> A layer above sessions: a training plan describes intended sessions (exercise, target sets, target weight), and logged sessions reconcile against the plan. This is where "did I follow the program?" becomes a query.</li>
+  </ul>
+  <p>Each of these will get its own section here when it lands. This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
+</section>
+
+<footer>
+  Last updated 2026-05-05 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+</footer>
+
+</main>
+
+<aside>
+  <h4>On this page</h4>
+  <ul>
+    <li><a href="#why">Why this exists</a></li>
+    <li><a href="#shape">The shape of the system</a></li>
+    <li><a href="#data">The data model</a></li>
+    <li><a href="#parser">The parser</a></li>
+    <li><a href="#storage">Storage</a></li>
+    <li><a href="#api">The API</a></li>
+    <li><a href="#dashboard">The dashboard</a></li>
+    <li><a href="#versioning">Versioning</a></li>
+    <li><a href="#next">What's next</a></li>
+  </ul>
+</aside>
+</div>
+
+<script>
+  const links = document.querySelectorAll('aside a');
+  const sections = Array.from(links).map(a => document.querySelector(a.getAttribute('href')));
+  function onScroll() {
+    const y = window.scrollY + 120;
+    let active = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop <= y) active = i; });
+    links.forEach((a, i) => a.classList.toggle('active', i === active));
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+</body>
+</html>
