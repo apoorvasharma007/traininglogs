@@ -1,12 +1,11 @@
 """
-Processor v2: DATABASE_URL required, DB insert first, JSON write second.
+Processor: DATABASE_URL required, DB insert first, JSON write second.
 On session_id collision the process errors — fix the date in the markdown and re-run.
 """
 import hashlib
 import json
 import os
 import sys
-import argparse
 from dataclasses import is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -145,66 +144,3 @@ def process_md_file(
     return session
 
 
-def _resolve_targets(args: argparse.Namespace) -> list[Path]:
-    """Resolve CLI args to a list of .md files to process."""
-    if args.target:
-        target = Path(args.target)
-        if target.is_file():
-            return [target]
-        if target.is_dir():
-            files = sorted(target.glob("*.md"))
-            if not files:
-                print(f"ERROR: no .md files found in {target}", file=sys.stderr)
-                sys.exit(1)
-            return files
-        print(f"ERROR: {target} is not a file or directory", file=sys.stderr)
-        sys.exit(1)
-
-    if args.program:
-        program_slug = args.program.lower().replace(" ", "_")
-        target_dir = INPUTS_DIR / "programs" / program_slug / f"phase_{args.phase}" / f"week_{args.week}"
-        if not target_dir.exists():
-            print(f"ERROR: directory not found: {target_dir}", file=sys.stderr)
-            sys.exit(1)
-        files = sorted(target_dir.glob("*.md"))
-        if not files:
-            print(f"ERROR: no .md files found in {target_dir}", file=sys.stderr)
-            sys.exit(1)
-        return files
-
-    print("ERROR: provide a target file/directory or --program --phase --week", file=sys.stderr)
-    sys.exit(1)
-
-
-def main() -> None:
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        print(
-            "ERROR: DATABASE_URL is not set.\n"
-            "Start Postgres with 'docker compose up -d' and set DATABASE_URL in .env",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    parser = argparse.ArgumentParser(
-        description="Process training log markdown files into DB + JSON."
-    )
-    parser.add_argument("target", nargs="?", help="Path to a .md file or directory of .md files")
-    parser.add_argument("--program", help="Program name (with --phase and --week)")
-    parser.add_argument("--phase", type=int, help="Phase number (used with --program)")
-    parser.add_argument("--week", type=int, help="Week number (used with --program)")
-    args = parser.parse_args()
-
-    md_files = _resolve_targets(args)
-
-    conn = get_connection()
-    apply_schema(conn)
-    try:
-        for md_path in md_files:
-            process_md_file(md_path, conn)
-    finally:
-        conn.close()
-
-
-if __name__ == "__main__":
-    main()

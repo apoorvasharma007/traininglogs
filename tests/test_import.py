@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
-from import_json_to_db_v2 import import_sessions
+from import_sessions_to_db import import_sessions
 from traininglogs.db.db import apply_schema, get_connection
 
 TEST_DB_URL = os.environ.get(

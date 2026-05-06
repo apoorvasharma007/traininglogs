@@ -23,7 +23,6 @@ from traininglogs.analytics.queries import (
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 OUTPUT = REPO_ROOT / "docs" / "index.html"
 KEY_LIFTS_CONFIG = REPO_ROOT / "config" / "key_lifts.yaml"
-PROGRAM_BRIEF = REPO_ROOT / "program_brief.md"
 GITHUB_BASE = "https://github.com/apoorvasharma007/traininglogs/blob/main"
 
 
@@ -141,7 +140,7 @@ def build(conn) -> None:
     sessions = session_list(conn)
     key_lifts = load_key_lifts()
     prs = key_lift_prs(conn, key_lifts)
-    brief_html = brief_to_html(PROGRAM_BRIEF.read_text()) if PROGRAM_BRIEF.exists() else "<p>—</p>"
+    brief_html = "<p>—</p>"
 
     prog_exercises = get_exercises_with_sessions(conn, min_sessions=3)
     prog_data = get_all_goal_vs_actual(conn, prog_exercises)

@@ -14,5 +14,4 @@ def apply_schema(conn: Connection) -> None:
     db_dir = Path(__file__).parent
     with conn.cursor() as cur:
         cur.execute((db_dir / "schema.sql").read_text())
-        cur.execute((db_dir / "migrate_v2_activity.sql").read_text())
     conn.commit()

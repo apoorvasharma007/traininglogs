@@ -1,4 +1,3 @@
-# parse_training_log_deep.py
 import re, uuid
 from typing import Dict, Any, Optional, List
 from dataclasses import is_dataclass

@@ -1,10 +1,10 @@
-"""Regenerate all historical JSON files using the current processor_v2 pipeline.
+"""Regenerate all historical JSON files using the current processor pipeline.
 
 Safety-isolated: writes to output_training_logs_json_v2/ and inserts into the
 traininglogs_validation DB — never touches the live output dir or prod/test DBs.
 
 Usage:
-    python scripts/regen_v2.py [--overwrite] [--db-url URL] [--output-dir DIR]
+    python scripts/regen_historical.py [--overwrite] [--db-url URL] [--output-dir DIR]
 
 Run docker compose up -d db_validation before running this script.
 After reviewing output, sign off manually before swapping dirs:
@@ -24,11 +24,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.processor.processor_v2 import process_md_file
+from traininglogs.db.insert import insert_session
+from traininglogs.processor.processor import process_md_file
 
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json_v2"
-INPUT_DIR = PROJECT_ROOT / "input_training_logs_md"
+INPUT_DIR = PROJECT_ROOT / "inputs"
 
 VALIDATION_DB_URL = (
     os.environ.get("VALIDATION_DATABASE_URL")
@@ -37,7 +37,7 @@ VALIDATION_DB_URL = (
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Regenerate historical JSON files via processor_v2.")
+    parser = argparse.ArgumentParser(description="Regenerate historical JSON files.")
     parser.add_argument(
         "--overwrite",
         action="store_true",
