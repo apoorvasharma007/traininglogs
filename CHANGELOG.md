@@ -63,14 +63,32 @@ Changes shipped:
    unilateral strength sets, all hitting the real test DB.
 - **Test suite** — 115 passing, 17 skipped (skips require `chore/historical-data-regen`).
 
-#### Still deferred (not in this wave)
+#### Up next — pipeline cleanup (Wave TL-1, in priority order)
+
+1. `feature/fetch-activity-support` — update `fetch.py` for new columns + fix
+   `test_api.py` `SESSION_A` fixture → unblocks 3 skipped API tests.
+2. `chore/historical-data-regen` — regenerate all 121 historical JSON files;
+   output to `output_training_logs_json_v2/` + `traininglogs_validation` DB for
+   manual sign-off before replacing live data → unblocks 14 skipped import/query
+   tests → 0 total skips.
+3. `chore/cleanup` — delete `archived/`, resolve v1/v2 naming duplication.
+
+#### Up next — input generalization (Wave TL-2, after TL-1)
+
+- New `inputs/` directory structure (programs + standalone sessions + test_inputs).
+- Session ID auto-generation: `YYYY-MM-DD-<6-char SHA256 of relative file path>`.
+- File-first CLI: `traininglogs log <file|dir>`, `--program --phase --week` flags.
+- `traininglogs validate <file>` command.
+- Migration script: copies existing `training_logs/` files into `inputs/`.
+- See `~/Projects/PLAN.md` Wave TL-2 for full design decisions.
+
+#### Safely deferred (no pipeline breakage today)
 - Lbs duplicate column in DB + dashboard unit toggle.
-- `fetch.py` updates for new columns (`set_type`, `exercise_type`, `weight_unit`,
-  etc.) — 3 API tests remain skipped until this lands.
-- `chore/historical-data-regen` — regenerate all historical JSON under new schema;
-  unblocks 14 skipped import/query tests.
+- `queries.py` `set_type = 'strength'` filter — NULL arithmetic protects strength
+  metrics from activity set contamination for now.
 - Superset / circuit support (sets linked across exercises).
 - Sport/martial-arts session type (BJJ, Muay Thai).
+- Dashboard generalization (timeline view, program metadata display) — Wave 6.
 
 ---
 
