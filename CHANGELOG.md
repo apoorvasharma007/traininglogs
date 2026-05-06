@@ -7,9 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned — data model flexibility + activity support
+### Data model flexibility + activity support — in progress (as of 2026-05-06)
 
-Design decisions made 2026-05-06. Not yet implemented.
+#### Done (squash-merged to `dev`)
+
+- **Model refactor** (`models/models_v2.py`) — `WorkingSet` refactored into
+  `StrengthSet` and `ActivitySet` subclasses with a `Rest` model; `AnySet`
+  discriminated union on `set_type`; `UnilateralReps` added to `StrengthSet`;
+  `Goal` fields made Optional with `distance_meters` and `target_duration_seconds`
+  added; all program/phase/week/focus fields made Optional on `TrainingSession`;
+  `weight_unit: Literal["kg", "lbs"] = "kg"` added to `TrainingSession`.
+  See design decisions below for full field-level detail.
+- **DB migration** (additive, no destructive changes) — `working_sets` gains
+  `set_type`, `duration_seconds`, `distance_meters`, `heart_rate_bpm`,
+  unilateral rep columns, and `rest_seconds`; `sessions` gains `weight_unit`;
+  `exercises` gains `exercise_type`.
+- **insert_v2.py** — updated to write all new columns.
+- **Processor lbs conversion** (`processor_v2.py`) — detects `- Unit: lbs` in
+  markdown metadata, recursively converts every `weight_kg` field in the
+  primitive dict via `_convert_lbs_to_kg()`, sets `weight_unit = "lbs"` on the
+  session before DB insert. Parser goal regex extended to accept `lbs`/`lb`.
+- **Test suite** — 112 passing, 17 skipped (skips require `chore/historical-data-regen`).
+
+#### Next — parser activity + unilateral support (`feature/parser-activity-unilateral`)
+
+Markdown syntax decisions (made 2026-05-06):
+
+- `### Working Sets` header → exercise is `strength` (existing, unchanged)
+- `### Activity Sets` header → exercise is `activity` (new); no `**Type:**` field needed
+- Activity set line format: `1. 20 min 2.5 km HR 145`
+  - `<N> min` or `<N> sec` → `duration_seconds`
+  - `<N.N> km` or `<N> m` → `distance_meters`
+  - `HR <N>` → `heart_rate_bpm`
+  - All tokens optional; any combination is valid
+- Unilateral strength set format: `1. 30 x 8L/7R RPE 8 good`
+  - `8L/7R` → `unilateral_rep_count: {left: {full: 8}, right: {full: 7}}`
+  - Partial reps: `8L+1/7R+1` → `{left: {full: 8, partial: 1}, right: {full: 7, partial: 1}}`
+  - Bilateral sets continue to use existing format (no change)
+- Goal line stays bilateral-only for now (`**Goal:** 80 kg x 3 sets x 8-10 reps`)
+
+Files to change:
+1. `parser/extract.py` — recognize `### Activity Sets`, collect into `activity_sets`
+   list, set `exercise_type = "activity"` on the exercise dict.
+2. `parser/parse.py` — new `_parse_activity_set_line()` for `ActivitySet` objects;
+   update `_parse_working_set_line()` to handle unilateral `8L/7R` format;
+   update `_parse_exercise()` to build the correct set type.
+3. `processor/processor_v2.py` — bridge step after `_to_primitive()` to rename
+   `working_sets` → `sets` in each exercise dict (fixes the existing gap where
+   `Exercise.sets` is always `None` in the validated model).
+4. `tests/test_processor_v2.py` — add integration tests for an activity exercise
+   session and a unilateral strength set.
+
+#### Still deferred (not in this wave)
+- Lbs duplicate column in DB + dashboard unit toggle.
+- `fetch.py` updates for new columns (`set_type`, `exercise_type`, `weight_unit`,
+  etc.) — 3 API tests remain skipped until this lands.
+- `chore/historical-data-regen` — regenerate all historical JSON under new schema;
+  unblocks 14 skipped import/query tests.
+- Superset / circuit support (sets linked across exercises).
+- Sport/martial-arts session type (BJJ, Muay Thai).
+
+---
+
+### Design decisions (reference)
 
 #### `TrainingSession`
 - Make `program`, `program_author`, `program_length_weeks`, `phase`, `week`,
@@ -25,84 +85,32 @@ Design decisions made 2026-05-06. Not yet implemented.
 - Add `Rest(BaseModel)` with `minutes: Optional[int]` and
   `seconds: Optional[int]`. Validators: `minutes` 0–15, `seconds` 0–900,
   and a model validator that rejects both being set simultaneously.
-  `StrengthSet` populates `rest.minutes`; `ActivitySet` populates
-  `rest.seconds`. Replaces bare `actual_rest_minutes` int field on the old
-  `WorkingSet`.
-- Add `StrengthSet(WorkingSet)` — carries `weight_kg` (Optional), `rep_count`
-  (Optional), `unilateral_rep_count` (Optional), `rep_quality_assessment`
-  (Optional), `failure_technique` (Optional). Owns the
-  `failure_technique_requires_rpe_10` validator.
-- Add `ActivitySet(WorkingSet)` — carries `duration_seconds` (Optional),
-  `distance_meters` (Optional), `heart_rate_bpm` (Optional). Covers running,
-  swimming, sprinting, striking, kicking, drills, and unweighted stretching.
+- Add `StrengthSet(WorkingSet)` — carries `weight_kg`, `rep_count`,
+  `unilateral_rep_count`, `rep_quality_assessment`, `failure_technique`.
+- Add `ActivitySet(WorkingSet)` — carries `duration_seconds`, `distance_meters`,
+  `heart_rate_bpm`. Covers running, cardio, drills.
 - Add `AnySet` discriminated union (`StrengthSet | ActivitySet`) on `set_type`.
 - Add `UnilateralReps(BaseModel)` with `left: Optional[RepCount]`,
-  `right: Optional[RepCount]` for tracking left/right imbalance per set.
+  `right: Optional[RepCount]`.
 
 #### `Exercise`
 - `working_sets: List[WorkingSet]` → `sets: Optional[List[AnySet]]`.
-- Add `exercise_type: Literal["strength", "activity"] = "strength"`. Default
-  exists for backwards compatibility with historical data only — the AI agent
-  prompt must always set this explicitly and never rely on the default.
-- `WarmupSet` stays as a separate field and class — warmup volume is not
-  performance data and should not be mixed into working sets.
+- Add `exercise_type: Literal["strength", "activity"] = "strength"`.
+- `WarmupSet` stays as a separate field.
 
 #### `Goal`
-- `weight_kg`, `sets`, `rep_range` → `Optional` (were required, broke for
-  non-strength exercises).
-- `rest_minutes: Optional[int]` → `rest: Optional[Rest]` — consistent with
-  set-level rest; goal can prescribe either minutes (strength) or seconds
-  (cardio intervals).
-- Add `distance_meters: Optional[float]`, `target_duration_seconds: Optional[int]`
-  for cardio/interval goals (e.g. 8 × 40 m sprints in under 5 s each).
+- `weight_kg`, `sets`, `rep_range` → `Optional`.
+- `rest_minutes: Optional[int]` → `rest: Optional[Rest]`.
+- Add `distance_meters: Optional[float]`, `target_duration_seconds: Optional[int]`.
 
 #### DB migration (additive, no destructive changes)
 - `working_sets`: add `set_type TEXT NOT NULL DEFAULT 'strength'`,
   `duration_seconds INT`, `distance_meters NUMERIC`, `heart_rate_bpm INT`,
   `left_reps_full INT`, `left_reps_partial INT`, `right_reps_full INT`,
   `right_reps_partial INT`; add `rest_seconds INT` alongside existing
-  `rest_minutes` (both kept — minutes for strength, seconds for activity).
+  `rest_minutes`.
 - `sessions`: add `weight_unit TEXT NOT NULL DEFAULT 'kg'`.
 - `exercises`: add `exercise_type TEXT NOT NULL DEFAULT 'strength'`.
-
-#### Testing plan
-
-**Phase 1 — model unit tests** (`tests/test_models_v2.py`)
-
-Run after model changes, before touching any pipeline code. Existing tests must
-still pass. New tests must cover:
-- `Rest` — valid minutes, valid seconds, both set simultaneously (must fail),
-  minutes > 15 (fail), seconds > 900 (fail)
-- `UnilateralReps` — valid left/right, both None (valid)
-- `StrengthSet` — all existing `WorkingSet` tests ported + `rest.minutes`,
-  `unilateral_rep_count`, `weight_kg=None` (bodyweight), `rep_count=None` (feel)
-- `ActivitySet` — `duration_seconds`, `distance_meters`, `heart_rate_bpm`,
-  `rest.seconds`
-- `AnySet` discriminator — correct dispatch on `set_type` field
-- `Goal` — `Rest` field, all previously required fields now Optional
-- `TrainingSession` — ad-hoc session (no program/phase/week/focus), `weight_unit`
-
-**Phase 2 — end-to-end pipeline** (manual validation against test DB + JSON)
-
-Create sample markdown inputs in `input_training_logs_md/` that cover:
-1. Standard strength session — regression baseline, output must match pre-change
-2. Ad-hoc session — no program, phase, week, or focus fields
-3. Lbs input — weight specified in lbs in markdown, stored as kg in DB and JSON
-4. Activity exercise — a run or sprint block using `ActivitySet` fields
-5. Unilateral set — left/right rep counts captured separately
-
-Run `traininglogs log` against the test DB. Inspect JSON output in
-`output_training_logs_json/` manually. Dashboard and API are out of scope for
-this wave.
-
-Note: the parser (`parser/extract.py`, `parser/parse.py`) is rule-based and will
-need a markdown syntax decision for new fields (activity sets, unilateral reps,
-lbs). This is a design step at the start of Phase 2 — do not skip it.
-
-#### Deferred (not in this wave)
-- Lbs duplicate column in DB + dashboard unit toggle.
-- Superset / circuit support (sets linked across exercises).
-- Sport/martial-arts session type (BJJ, Muay Thai).
 
 ## [1.0.0] - 2026-05-05
 
