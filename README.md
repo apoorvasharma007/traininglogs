@@ -2,7 +2,7 @@
 
 A personal training log system. Write workouts in markdown, process them into a structured database, query via a REST API, and view a static dashboard.
 
-See [docs/architecture.md](docs/architecture.md) for a full reference.
+See [docs/design.html](docs/design.html) for the full technical reference.
 
 ---
 
@@ -27,15 +27,31 @@ docker compose up -d
 
 ## Usage
 
-**Process a training week** (parses markdown, inserts to DB, commits, rebuilds dashboard):
+**Process a single session file** (parses markdown, inserts to DB, commits, rebuilds dashboard):
 
 ```bash
-traininglogs log --phase <n> --week <n>
+traininglogs log inputs/programs/<slug>/phase_N/week_N/<session>.md
 ```
 
-Input files must be in `input_training_logs_md/phase <n> week <n>/*.md`.
+**Process all sessions in a directory:**
+
+```bash
+traininglogs log inputs/programs/<slug>/phase_N/week_N/
+```
+
+**Process a week by program/phase/week flags:**
+
+```bash
+traininglogs log --program <name> --phase <n> --week <n>
+```
 
 Add `--publish` to also push the updated dashboard to the website.
+
+**Validate a file without writing to the DB:**
+
+```bash
+traininglogs validate inputs/programs/<slug>/phase_N/week_N/<session>.md
+```
 
 **Start the API:**
 

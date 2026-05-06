@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-### `feature/inputs-restructure` (Wave TL-2) — in progress (2026-05-07)
+### `feature/inputs-restructure` (Wave TL-2) — 2026-05-07
 
 #### Added
 - `inputs/` directory layout: `inputs/programs/<slug>/phase_N/week_N/` for program sessions,
@@ -51,9 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--program <name> --phase N --week N` to resolve to
   `inputs/programs/<slug>/phase_N/week_N/`. Old `--phase`/`--week` required args removed.
   `--dry-run`, `--no-commit`, `--publish`, `--pr`, `--message` unchanged.
-- `processor_v2.process_md_file()` accepts an `inputs_root` parameter (defaults to
+- `processor.process_md_file()` accepts an `inputs_root` parameter (defaults to
   `inputs/`) used for session ID computation.
-- `processor_v2.main()` updated to accept positional `target` (file or dir) or
+- `processor.main()` updated to accept positional `target` (file or dir) or
   `--program/--phase/--week` in place of old required `--phase`/`--week`.
 
 ### `chore/historical-data-regen` — done (2026-05-07)
@@ -70,9 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discriminator, `Rest` model for `current_goal.rest`).
 - **Test suite**: 132 passing, 0 skipped.
 
-### Data model flexibility + activity support — in progress (as of 2026-05-06)
-
-#### Done (squash-merged to `dev`)
+### Data model flexibility + activity support — 2026-05-06
 
 - **Model refactor** (`models/models_v2.py`) — `WorkingSet` refactored into
   `StrengthSet` and `ActivitySet` subclasses with a `Rest` model; `AnySet`
@@ -139,24 +137,7 @@ Changes shipped:
   `test_exercise_history_returns_sets_in_order`, `test_exercise_history_case_insensitive`.
 - **Test suite** — 118 passing, 14 skipped (remaining skips need `chore/historical-data-regen`).
 
-#### Up next — pipeline cleanup (Wave TL-1, in priority order)
-
-1. `chore/historical-data-regen` — regenerate all 121 historical JSON files;
-   output to `output_training_logs_json_v2/` + `traininglogs_validation` DB for
-   manual sign-off before replacing live data → unblocks 14 skipped import/query
-   tests → 0 total skips.
-3. `chore/cleanup` — delete `archived/`, resolve v1/v2 naming duplication.
-
-#### Up next — input generalization (Wave TL-2, after TL-1)
-
-- New `inputs/` directory structure (programs + standalone sessions + test_inputs).
-- Session ID auto-generation: `YYYY-MM-DD-<6-char SHA256 of relative file path>`.
-- File-first CLI: `traininglogs log <file|dir>`, `--program --phase --week` flags.
-- `traininglogs validate <file>` command.
-- Migration script: copies existing `training_logs/` files into `inputs/`.
-- See `~/Projects/PLAN.md` Wave TL-2 for full design decisions.
-
-#### Safely deferred (no pipeline breakage today)
+#### Safely deferred
 - Lbs duplicate column in DB + dashboard unit toggle.
 - `queries.py` `set_type = 'strength'` filter — NULL arithmetic protects strength
   metrics from activity set contamination for now.
@@ -216,13 +197,13 @@ rather than reconstructing pre-1.0 history.
 
 ### Added
 
-- **Pydantic v2 data model** (`models/models_v2.py`) as the canonical schema.
+- **Pydantic v2 data model** (`models/models.py`) as the canonical schema.
   Root type `TrainingSession` with nested `Exercise`, `WorkingSet`, `WarmupSet`,
   `Goal`, `RepRange`, `RepCount`, and a `FailureTechnique` discriminated union
   covering myo-reps, lengthened-partials, static holds, and drop sets.
 - **Markdown parser** (`parser/extract.py`, `parser/parse.py`) — rule-based,
   deterministic, no LLM in the hot path. Bridges to Pydantic via the processor.
-- **Processor CLI** (`processor/processor_v2.py`) — DB-first, JSON-second.
+- **Processor CLI** (`processor/processor.py`) — DB-first, JSON-second.
   Errors on `session_id` collision rather than silently overwriting.
 - **PostgreSQL storage** with four tables: `sessions`, `exercises`,
   `working_sets`, `warmup_sets`. Cascading deletes on `session_id`.
@@ -259,11 +240,10 @@ rather than reconstructing pre-1.0 history.
 ### Notes
 
 - 121 historical sessions imported into the DB via
-  `scripts/import_json_to_db_v2.py` (idempotent, supports `--overwrite`).
-- Old dataclass-era modules (`models.py`, `insert.py`, `processor.py`) live
-  in `archived/` and are not imported anywhere on the live path. They will be
-  deleted when the AI agent (Track B) is wired in and the parser bridge is
-  retired.
+  `scripts/import_sessions_to_db.py` (idempotent, supports `--overwrite`).
+- v1 dataclass models consolidated into `models/models_dataclass.py` — still
+  used by `parser/parse.py` as an intermediate representation before the
+  Pydantic bridge.
 
 [Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/apoorvasharma007/traininglogs/releases/tag/v1.0.0
