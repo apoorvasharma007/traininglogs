@@ -11,7 +11,8 @@ def get_connection(database_url: str | None = None) -> Connection:
 
 
 def apply_schema(conn: Connection) -> None:
-    schema = (Path(__file__).parent / "schema.sql").read_text()
+    db_dir = Path(__file__).parent
     with conn.cursor() as cur:
-        cur.execute(schema)
+        cur.execute((db_dir / "schema.sql").read_text())
+        cur.execute((db_dir / "migrate_v2_activity.sql").read_text())
     conn.commit()
