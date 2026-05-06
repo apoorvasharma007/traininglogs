@@ -8,6 +8,7 @@ from typing import Annotated, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 MAX_REST_INTERVAL_MINUTES = 15
+MAX_REST_INTERVAL_SECONDS = 900
 
 
 class RepCount(BaseModel):
@@ -53,32 +54,70 @@ class RepRange(BaseModel):
         return self
 
 
+class Rest(BaseModel):
+    minutes: Optional[int] = None
+    seconds: Optional[int] = None
+
+    @field_validator("minutes")
+    @classmethod
+    def minutes_in_range(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and (v < 0 or v > MAX_REST_INTERVAL_MINUTES):
+            raise ValueError(f"rest minutes must be between 0 and {MAX_REST_INTERVAL_MINUTES}")
+        return v
+
+    @field_validator("seconds")
+    @classmethod
+    def seconds_in_range(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and (v < 0 or v > MAX_REST_INTERVAL_SECONDS):
+            raise ValueError(f"rest seconds must be between 0 and {MAX_REST_INTERVAL_SECONDS}")
+        return v
+
+    @model_validator(mode="after")
+    def not_both_set(self) -> Rest:
+        if self.minutes is not None and self.seconds is not None:
+            raise ValueError("rest cannot have both minutes and seconds set simultaneously")
+        return self
+
+
+class UnilateralReps(BaseModel):
+    left: Optional[RepCount] = None
+    right: Optional[RepCount] = None
+
+
 class Goal(BaseModel):
-    weight_kg: float
-    sets: int
-    rep_range: RepRange
-    rest_minutes: Optional[int] = None
+    weight_kg: Optional[float] = None
+    sets: Optional[int] = None
+    rep_range: Optional[RepRange] = None
+    rest: Optional[Rest] = None
+    distance_meters: Optional[float] = None
+    target_duration_seconds: Optional[int] = None
 
     @field_validator("weight_kg")
     @classmethod
-    def weight_non_negative(cls, v: float) -> float:
-        if v < 0:
+    def weight_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
             raise ValueError("Weight must be positive or zero for bodyweight")
         return v
 
     @field_validator("sets")
     @classmethod
-    def sets_positive(cls, v: int) -> int:
-        if v <= 0:
+    def sets_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
             raise ValueError("Number of sets must be positive")
         return v
 
-    @field_validator("rest_minutes")
+    @field_validator("distance_meters")
     @classmethod
-    def rest_in_range(cls, v: Optional[int]) -> Optional[int]:
-        # Fixed: was `and` (never true); correct logic is `or`
-        if v is not None and (v < 0 or v > MAX_REST_INTERVAL_MINUTES):
-            raise ValueError(f"rest_minutes must be between 0 and {MAX_REST_INTERVAL_MINUTES}")
+    def distance_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("distance_meters must be non-negative")
+        return v
+
+    @field_validator("target_duration_seconds")
+    @classmethod
+    def target_duration_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("target_duration_seconds must be positive")
         return v
 
 
@@ -151,10 +190,6 @@ class DropSetDetails(BaseModel):
     drop_sets: List[DropSet]
 
 
-# Discriminated union on technique_type — each variant owns its Literal type.
-# Pydantic dispatches based on the technique_type value present in the input dict.
-# Canonical values match FailureTechniqueType enum values used by to_primitive().
-
 class MyoRepsTechnique(BaseModel):
     technique_type: Literal["MyoReps"]
     details: MyoRepDetails
@@ -222,26 +257,15 @@ def _validate_rpe(v: float) -> float:
 
 class WorkingSet(BaseModel):
     number: int
-    weight_kg: float
-    rep_count: RepCount
     rpe: Optional[float] = None
-    rep_quality_assessment: Optional[RepQualityAssessment] = None
-    actual_rest_minutes: Optional[int] = None
+    rest: Optional[Rest] = None
     notes: Optional[str] = None
-    failure_technique: Optional[FailureTechnique] = None
 
     @field_validator("number")
     @classmethod
     def number_positive(cls, v: int) -> int:
         if v <= 0:
             raise ValueError("Set number must be positive")
-        return v
-
-    @field_validator("weight_kg")
-    @classmethod
-    def weight_non_negative(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError("Weight must be positive or zero for bodyweight")
         return v
 
     @field_validator("rpe")
@@ -251,25 +275,68 @@ class WorkingSet(BaseModel):
             _validate_rpe(v)
         return v
 
-    @field_validator("actual_rest_minutes")
+
+class StrengthSet(WorkingSet):
+    set_type: Literal["strength"] = "strength"
+    weight_kg: Optional[float] = None
+    rep_count: Optional[RepCount] = None
+    unilateral_rep_count: Optional[UnilateralReps] = None
+    rep_quality_assessment: Optional[RepQualityAssessment] = None
+    failure_technique: Optional[FailureTechnique] = None
+
+    @field_validator("weight_kg")
     @classmethod
-    def rest_in_range(cls, v: Optional[int]) -> Optional[int]:
-        # Fixed: was `and` (never true); correct logic is `or`
-        if v is not None and (v < 0 or v > MAX_REST_INTERVAL_MINUTES):
-            raise ValueError(f"actual_rest_minutes must be between 0 and {MAX_REST_INTERVAL_MINUTES}")
+    def weight_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("Weight must be positive or zero for bodyweight")
         return v
 
     @model_validator(mode="after")
-    def failure_technique_requires_rpe_10(self) -> WorkingSet:
+    def failure_technique_requires_rpe_10(self) -> StrengthSet:
         if self.failure_technique is not None and (self.rpe is None or self.rpe != 10):
             raise ValueError("Failure technique can only be used with RPE 10 sets")
         return self
 
 
+class ActivitySet(WorkingSet):
+    set_type: Literal["activity"] = "activity"
+    duration_seconds: Optional[int] = None
+    distance_meters: Optional[float] = None
+    heart_rate_bpm: Optional[int] = None
+
+    @field_validator("duration_seconds")
+    @classmethod
+    def duration_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("duration_seconds must be positive")
+        return v
+
+    @field_validator("distance_meters")
+    @classmethod
+    def distance_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("distance_meters must be non-negative")
+        return v
+
+    @field_validator("heart_rate_bpm")
+    @classmethod
+    def heart_rate_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("heart_rate_bpm must be positive")
+        return v
+
+
+AnySet = Annotated[
+    Union[StrengthSet, ActivitySet],
+    Field(discriminator="set_type"),
+]
+
+
 class Exercise(BaseModel):
     number: int
     name: str
-    working_sets: Optional[List[WorkingSet]] = None
+    exercise_type: Literal["strength", "activity"] = "strength"
+    sets: Optional[List[AnySet]] = None
     target_muscle_groups: Optional[List[str]] = None
     rep_tempo: Optional[str] = None
     current_goal: Optional[Goal] = None
@@ -295,7 +362,6 @@ class Exercise(BaseModel):
     @field_validator("warmup_sets", mode="before")
     @classmethod
     def filter_null_warmup_sets(cls, v: object) -> object:
-        # Real data sometimes has None entries in the warmup_sets list — filter them out.
         if isinstance(v, list):
             return [x for x in v if x is not None]
         return v
@@ -308,23 +374,31 @@ class TrainingSession(BaseModel):
     user_id: str
     user_name: str
     date: str
-    program: str
-    program_author: str
-    program_length_weeks: int
-    phase: int
-    week: int
-    is_deload_week: bool
-    focus: str
+    program: Optional[str] = None
+    program_author: Optional[str] = None
+    program_length_weeks: Optional[int] = None
+    phase: Optional[int] = None
+    week: Optional[int] = None
+    is_deload_week: Optional[bool] = None
+    focus: Optional[str] = None
     exercises: List[Exercise]
-    session_duration_minutes: int
+    session_duration_minutes: Optional[int] = None
+    weight_unit: Literal["kg", "lbs"] = "kg"
 
     @field_validator(
         "data_model_version", "data_model_type", "session_id", "user_id",
-        "user_name", "program", "program_author", "focus",
+        "user_name",
     )
     @classmethod
     def not_empty_string(cls, v: str) -> str:
         if not v or not v.strip():
+            raise ValueError("cannot be empty")
+        return v
+
+    @field_validator("program", "program_author", "focus")
+    @classmethod
+    def not_empty_string_if_set(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
             raise ValueError("cannot be empty")
         return v
 
@@ -341,17 +415,19 @@ class TrainingSession(BaseModel):
 
     @field_validator("program_length_weeks", "phase", "session_duration_minutes")
     @classmethod
-    def positive_int(cls, v: int) -> int:
-        if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
-            raise ValueError("must be a positive integer")
+    def positive_int(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
+                raise ValueError("must be a positive integer")
         return v
 
     @model_validator(mode="after")
     def validate_session(self) -> TrainingSession:
-        if not (1 <= self.week <= self.program_length_weeks):
-            raise ValueError(
-                f"week must be between 1 and {self.program_length_weeks}, got {self.week}"
-            )
+        if self.week is not None and self.program_length_weeks is not None:
+            if not (1 <= self.week <= self.program_length_weeks):
+                raise ValueError(
+                    f"week must be between 1 and {self.program_length_weeks}, got {self.week}"
+                )
         for i, exercise in enumerate(self.exercises):
             if exercise.number != i + 1:
                 raise ValueError(
