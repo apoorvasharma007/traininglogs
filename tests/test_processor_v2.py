@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.processor.processor_v2 import process_md_file
+from traininglogs.processor.processor_v2 import _convert_lbs_to_kg, process_md_file
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -47,7 +47,7 @@ def conn():
 def clean_db(conn):
     yield
     with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id = %s", (EXPECTED_SESSION_ID,))
+        cur.execute("DELETE FROM sessions WHERE session_id LIKE '2099-%'")
     conn.commit()
 
 
@@ -122,3 +122,110 @@ def test_db_row_count_after_single_process(md_file, conn, tmp_path):
             "SELECT COUNT(*) FROM exercises WHERE session_id = %s", (EXPECTED_SESSION_ID,)
         )
         assert cur.fetchone()[0] == 1
+
+
+# --- lbs conversion unit tests (no DB) ---
+
+def test_convert_lbs_to_kg_simple():
+    d = {"weight_kg": 200.0}
+    result = _convert_lbs_to_kg(d)
+    assert result["weight_kg"] == pytest.approx(200.0 * 0.453592, abs=1e-4)
+
+
+def test_convert_lbs_to_kg_nested():
+    d = {
+        "exercises": [
+            {
+                "current_goal": {"weight_kg": 135.0},
+                "working_sets": [{"weight_kg": 135.0}, {"weight_kg": 135.0}],
+            }
+        ]
+    }
+    result = _convert_lbs_to_kg(d)
+    expected = pytest.approx(135.0 * 0.453592, abs=1e-4)
+    assert result["exercises"][0]["current_goal"]["weight_kg"] == expected
+    assert result["exercises"][0]["working_sets"][0]["weight_kg"] == expected
+    assert result["exercises"][0]["working_sets"][1]["weight_kg"] == expected
+
+
+def test_convert_lbs_to_kg_ignores_none():
+    d = {"weight_kg": None, "other": "unchanged"}
+    result = _convert_lbs_to_kg(d)
+    assert result["weight_kg"] is None
+    assert result["other"] == "unchanged"
+
+
+def test_convert_lbs_to_kg_leaves_non_weight_fields():
+    d = {"weight_kg": 100.0, "rpe": 8.0, "notes": "felt strong"}
+    result = _convert_lbs_to_kg(d)
+    assert result["rpe"] == 8.0
+    assert result["notes"] == "felt strong"
+
+
+# --- lbs integration test ---
+
+LBS_MD = """\
+# Training Log
+- Date: 2099-06-16
+- Phase: 9
+- Week: 1
+- Deload: No
+- Focus: Push
+- Duration: 45 min
+- Unit: lbs
+
+## Exercise 1
+**Name:** Bench Press
+**Goal:** 200 lbs x 3 sets x 5-6 reps
+**Rest:** 3 min
+### Working Sets
+1. 200 x 5 RPE 8 good
+2. 200 x 5 RPE 8.5 good
+"""
+
+LBS_SESSION_ID = "2099-06-16_push_7"
+
+
+@pytest.fixture
+def lbs_md_file(tmp_path) -> Path:
+    f = tmp_path / "push_lbs.md"
+    f.write_text(LBS_MD)
+    return f
+
+
+def test_process_lbs_stores_weight_unit(lbs_md_file, conn, tmp_path):
+    process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT weight_unit FROM sessions WHERE session_id = %s", (LBS_SESSION_ID,)
+        )
+        assert cur.fetchone()[0] == "lbs"
+
+
+def test_process_lbs_converts_goal_weight_to_kg(lbs_md_file, conn, tmp_path):
+    process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT goal_weight_kg FROM exercises WHERE session_id = %s AND number = 1",
+            (LBS_SESSION_ID,),
+        )
+        row = cur.fetchone()
+
+    assert row is not None
+    assert float(row[0]) == pytest.approx(200.0 * 0.453592, abs=0.01)
+
+
+def test_process_lbs_json_has_weight_unit_field(lbs_md_file, conn, tmp_path):
+    session = process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+
+    expected_path = (
+        tmp_path
+        / session.program
+        / f"phase {session.phase}"
+        / f"week {session.week}"
+        / f"{session.session_id}.json"
+    )
+    data = json.loads(expected_path.read_text())
+    assert data["weight_unit"] == "lbs"

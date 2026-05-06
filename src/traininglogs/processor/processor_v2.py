@@ -21,6 +21,20 @@ from traininglogs.db.insert_v2 import insert_session
 from traininglogs.models.models_v2 import TrainingSession
 
 
+LBS_TO_KG = 0.453592
+
+
+def _convert_lbs_to_kg(obj):
+    if isinstance(obj, dict):
+        return {
+            k: round(v * LBS_TO_KG, 4) if k == "weight_kg" and isinstance(v, (int, float)) else _convert_lbs_to_kg(v)
+            for k, v in obj.items()
+        }
+    if isinstance(obj, list):
+        return [_convert_lbs_to_kg(i) for i in obj]
+    return obj
+
+
 def _to_primitive(o):
     if isinstance(o, Enum):
         return o.value
@@ -55,6 +69,12 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
 
     # Bridge: dataclass → Pydantic (parser still returns old dataclass models)
     primitive_dict = _to_primitive(session_obj)
+
+    weight_unit = intermediate["metadata"].get("unit", "kg").lower()
+    if weight_unit == "lbs":
+        primitive_dict = _convert_lbs_to_kg(primitive_dict)
+        primitive_dict["weight_unit"] = "lbs"
+
     session = TrainingSession.model_validate(primitive_dict)
 
     # DB insert first — a collision means the input date is wrong, not a silent skip

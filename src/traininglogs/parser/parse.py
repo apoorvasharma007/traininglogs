@@ -94,7 +94,7 @@ class DeepTrainingParser:
     def _parse_goal(self, goal_str: Optional[str], rest_str: Optional[str]) -> Optional[Goal]:
         if not goal_str:
             return None
-        m = re.search(r"([\d.]+)\s*kg\s*x\s*(\d+)\s*sets?\s*x\s*(\d+)-(\d+)\s*reps?", goal_str, re.IGNORECASE)
+        m = re.search(r"([\d.]+)\s*(?:kg|lbs?)\s*x\s*(\d+)\s*sets?\s*x\s*(\d+)-(\d+)\s*reps?", goal_str, re.IGNORECASE)
         # TODO: this returning None will cause an error later; add validation
         if not m:
             return None
