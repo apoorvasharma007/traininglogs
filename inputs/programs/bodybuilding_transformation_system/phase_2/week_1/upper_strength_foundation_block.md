@@ -34,8 +34,8 @@ left side falls faster on negative and slightly weak on holding at top
 **Rest:** 2 min
 
 ### Warmup
-1. 32 kg x 10 - one light warmup
-2. 66 kg x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs
+1. 32 x 10 - one light warmup
+2. 66 x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs
 
 ### Warmup Notes
 pyramid warmup
@@ -128,7 +128,7 @@ i used to be too slanted on these so now stand more upright enough to face front
 
 ## Exercise 7
 **Name:** Bayesian Cable Curl  
-**Goal:** 13.6 kg x 3 sets x 10 reps  
+**Goal:** 13.6 kg x 3 sets x 10-12 reps  
 **Rest:** 2 min
 
 ### Working Sets

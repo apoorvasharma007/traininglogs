@@ -16,7 +16,6 @@
 ### Warmup
 1. 2.5 x feel - unilateral punches full range lift and twist lat also
 2. 15 x feel
-3. 25
 
 
 ### Warmup Notes
@@ -170,7 +169,7 @@ i used to be too slanted on these so now standing more upright enough to face fr
 ## Exercise 7
 
 **Name:** Bayesian Cable Curl
-**Goal:** 13.6 kg x 3 sets x 10 reps
+**Goal:** 13.6 kg x 3 sets x 10-12 reps
 **Rest:** 2 min
 
 ### Working Sets

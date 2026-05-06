@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `fix/parser-goal-warmup-formats` — 2026-05-07
+
+#### Fixed
+- `processor.py` bridge: `Goal.rest_minutes` (dataclass) was not mapped to `Goal.rest`
+  (Pydantic `Rest` object) — `goal_rest_min` was silently stored as NULL in the DB for
+  every session. Now correctly mapped to `{"minutes": X}` before Pydantic validation.
+- Input files: 24 `upper_strength_foundation_block.md` files had `13.6 kg x 3 sets x 10 reps`
+  (single rep count, no range) which the parser rejected. Fixed to `10-12 reps`.
+- Input files: 3 `upper_strength_foundation_block.md` files (phase_3/week_2/3/4) had
+  `100+ kg x 2 sets x 8-10 reps` — `+` suffix not valid in goal weight. Removed.
+- Input files: phase_2/week_1 warmup lines `1. 32 kg x 10` and `2. 66 kg x 4` had explicit
+  `kg` unit which the warmup parser does not expect. Removed units.
+- Input files: phase_3/week_11 warmup line `3. 25` was a bare number with no weight/reps
+  structure. Removed.
+- Regenerated all 121 session JSON files with path-based session IDs (replacing old
+  `YYYY-MM-DD_focus_N` scheme).
+
 ### `fix/parser-error-handling` — 2026-05-07
 
 #### Fixed

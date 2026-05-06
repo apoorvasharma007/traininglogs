@@ -100,6 +100,13 @@ def process_md_file(
             if has_activity:
                 ex["exercise_type"] = "activity"
 
+        # Map dataclass Goal.rest_minutes → Pydantic Goal.rest: {minutes: X}
+        goal = ex.get("current_goal")
+        if isinstance(goal, dict):
+            rest_min = goal.pop("rest_minutes", None)
+            if rest_min is not None:
+                goal["rest"] = {"minutes": rest_min}
+
     weight_unit = intermediate["metadata"].get("unit", "kg").lower()
     if weight_unit == "lbs":
         primitive_dict = _convert_lbs_to_kg(primitive_dict)

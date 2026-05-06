@@ -33,7 +33,7 @@ left side usually falls faster on negative and slightly weak on holding at top b
 
 ## Exercise 2
 **Name:** Pec Dec Single Arm
-**Goal:** 100+ kg x 2 sets x 8-10 reps
+**Goal:** 100 kg x 2 sets x 8-10 reps
 **Rest:** 2 min
 ### Warmup
 1. 32  x 10 - one light warmup, do heavier next time
@@ -125,7 +125,7 @@ i used to be too slanted on these so now standing more upright enough to face fr
 
 ## Exercise 7
 **Name:** Bayesian Cable Curl
-**Goal:** 13.6 kg x 3 sets x 10 reps
+**Goal:** 13.6 kg x 3 sets x 10-12 reps
 **Rest:** 2 min 
 ### Working Sets
 1. 12.5 x 12 RPE 10 good 

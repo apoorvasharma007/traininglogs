@@ -120,7 +120,7 @@ i used to be too slanted on these so now standing more upright enough to face fr
 
 ## Exercise 7
 **Name:** Bicep Curl Incline Bench
-**Goal:** 13.6 kg x 3 sets x 10 reps
+**Goal:** 13.6 kg x 3 sets x 10-12 reps
 **Rest:** 2 min 
 ### Working Sets
 1. 12.5 x 15 RPE 8 good 
