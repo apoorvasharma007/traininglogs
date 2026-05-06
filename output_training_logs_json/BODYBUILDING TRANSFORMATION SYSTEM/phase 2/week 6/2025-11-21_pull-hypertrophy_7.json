@@ -16,7 +16,8 @@
     {
       "number": 1,
       "name": "Lean Back Lat Pulldown",
-      "working_sets": [],
+      "exercise_type": "strength",
+      "sets": [],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -26,7 +27,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Squeezed from lats",
@@ -39,44 +42,51 @@
     {
       "number": 2,
       "name": "Chest Supported Machine Row",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 57.0,
           "rep_count": {
             "full": 11,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 57.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 57.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -89,7 +99,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -112,18 +124,21 @@
     {
       "number": 3,
       "name": "Dual Handle Elbows Out Cable Row",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -136,7 +151,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -150,31 +167,36 @@
     {
       "number": 4,
       "name": "1 Arm 45 Degree Cable Rear Fly",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -187,7 +209,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -203,31 +227,36 @@
     {
       "number": 5,
       "name": "Cable Paused Shrug In",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 27.2,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 29.5,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -240,7 +269,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -257,18 +288,21 @@
     {
       "number": 6,
       "name": "Cable Rope Hammer Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 29.6,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -281,7 +315,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -295,18 +331,21 @@
     {
       "number": 7,
       "name": "DB Concentration Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 10.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -319,7 +358,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Nail the form of the gods for 12 and then 15 reps",
@@ -332,5 +373,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 126
+  "session_duration_minutes": 126,
+  "weight_unit": "kg"
 }

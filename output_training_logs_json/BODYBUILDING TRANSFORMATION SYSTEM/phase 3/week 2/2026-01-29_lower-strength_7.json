@@ -16,31 +16,36 @@
     {
       "number": 1,
       "name": "Seated Leg Hamstring Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "only few reps were good range",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 0,
             "partial": 8
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "only few reps were good range",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "all reps were partial",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 0,
             "partial": 9
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "all reps were partial",
           "failure_technique": null
         }
       ],
@@ -53,7 +58,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -82,31 +89,36 @@
     {
       "number": 2,
       "name": "Smith Machine Squat",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 70.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "very good depth",
+          "set_type": "strength",
           "weight_kg": 70.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "very good depth",
           "failure_technique": null
         }
       ],
@@ -119,7 +131,9 @@
           "min": 6,
           "max": 8
         },
-        "rest_minutes": 5
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -142,31 +156,36 @@
     {
       "number": 3,
       "name": "Barbell Romanian Deadlift",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": "deficit of 10  plate felt great",
+          "set_type": "strength",
           "weight_kg": 90.0,
           "rep_count": {
             "full": 7,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "deficit of 10  plate felt great",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "grip failed me, use chalk next time",
+          "set_type": "strength",
           "weight_kg": 90.0,
           "rep_count": {
             "full": 6,
             "partial": 1
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "grip failed me, use chalk next time",
           "failure_technique": null
         }
       ],
@@ -179,7 +198,9 @@
           "min": 6,
           "max": 8
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -201,31 +222,36 @@
     {
       "number": 4,
       "name": "Leg Extension",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 104.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "almost getting to effective tempo control on this",
+          "set_type": "strength",
           "weight_kg": 104.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "almost getting to effective tempo control on this",
           "failure_technique": null
         }
       ],
@@ -238,7 +264,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -255,31 +283,36 @@
     {
       "number": 5,
       "name": "Standing Calf Raise",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 130.0,
           "rep_count": {
             "full": 9,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 130.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -292,7 +325,9 @@
           "min": 6,
           "max": 8
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -318,31 +353,36 @@
     {
       "number": 6,
       "name": "Cable Crunch",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 7.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 22.7,
           "rep_count": {
             "full": 15,
             "partial": 0
           },
-          "rpe": 7.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 7.0,
+          "rest": null,
+          "notes": "better ab contractions and bracing core helped a little to feel left abs too.",
+          "set_type": "strength",
           "weight_kg": 22.7,
           "rep_count": {
             "full": 15,
             "partial": 0
           },
-          "rpe": 7.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "better ab contractions and bracing core helped a little to feel left abs too.",
           "failure_technique": null
         }
       ],
@@ -355,7 +395,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Need to go lighter to engage left abs as much as right abs. Lighter weight will also help get rid of grip issues. Keep working on figuring out how to initiate movement from core not hands",
@@ -369,31 +411,36 @@
     {
       "number": 7,
       "name": "Tibialis Raise Single Leg",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "went around the world",
+          "set_type": "strength",
           "weight_kg": 12.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "learning",
-          "actual_rest_minutes": null,
-          "notes": "went around the world",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "strict raises",
+          "set_type": "strength",
           "weight_kg": 12.0,
           "rep_count": {
             "full": 8,
             "partial": 2
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "strict raises",
           "failure_technique": null
         }
       ],
@@ -406,7 +453,9 @@
           "min": 1,
           "max": 15
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Didnt put too much stress on joints, allowing them to recover",
@@ -416,5 +465,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 122
+  "session_duration_minutes": 122,
+  "weight_unit": "kg"
 }

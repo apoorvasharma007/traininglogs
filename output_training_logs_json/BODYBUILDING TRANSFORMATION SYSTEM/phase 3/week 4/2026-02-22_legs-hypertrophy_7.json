@@ -16,44 +16,51 @@
     {
       "number": 1,
       "name": "Leg Press",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": "trying to learn to get full depth if possible by reducing load",
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "trying to learn to get full depth if possible by reducing load",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "trying to improve depth",
+          "set_type": "strength",
           "weight_kg": 280.0,
           "rep_count": {
             "full": 9,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "trying to improve depth",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "trying to do good depth",
+          "set_type": "strength",
           "weight_kg": 290.0,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "trying to do good depth",
           "failure_technique": null
         }
       ],
@@ -66,7 +73,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Work on form and use hands very lightly to protect knees until you have knee sleeves",
@@ -81,31 +90,36 @@
     {
       "number": 2,
       "name": "Seated Leg Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 9,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 9,
             "partial": 8
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -118,7 +132,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -144,31 +160,36 @@
     {
       "number": 3,
       "name": "DB Bulgarian Split Squat",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": "used stepper for deficit",
+          "set_type": "strength",
           "weight_kg": 32.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "used stepper for deficit",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 8.5,
+          "rest": null,
+          "notes": "used stepper for deficit",
+          "set_type": "strength",
           "weight_kg": 32.5,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 8.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "used stepper for deficit",
           "failure_technique": null
         }
       ],
@@ -181,7 +202,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "1. 20 x feel Can go heavier than 30 too but try with perfect technique",
@@ -196,31 +219,36 @@
     {
       "number": 4,
       "name": "Leg Extension",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 104.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "controlled descent",
+          "set_type": "strength",
           "weight_kg": 104.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "controlled descent",
           "failure_technique": null
         }
       ],
@@ -233,7 +261,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -245,31 +275,36 @@
     {
       "number": 5,
       "name": "Cable Hip Adduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "decent control on the tempo",
+          "set_type": "strength",
           "weight_kg": 18.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "decent control on the tempo",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 18.1,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -282,7 +317,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "15.9 for 15 or 18.1 for 10 perfect reps is a good goal",
@@ -299,31 +336,36 @@
     {
       "number": 6,
       "name": "Cable Hip Abduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 11.3,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 11.3,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -336,7 +378,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -351,31 +395,36 @@
     {
       "number": 7,
       "name": "Standing Calf Raise",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 130.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "did standing on plates and felt good or same mostly as standing on platform",
+          "set_type": "strength",
           "weight_kg": 130.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "did standing on plates and felt good or same mostly as standing on platform",
           "failure_technique": null
         }
       ],
@@ -388,7 +437,9 @@
           "min": 6,
           "max": 8
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -413,31 +464,36 @@
     {
       "number": 8,
       "name": "Tibialis Raise Single Leg",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "rested heel on stepper is crazy isolation for tibs",
+          "set_type": "strength",
           "weight_kg": 12.0,
           "rep_count": {
             "full": 20,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "rested heel on stepper is crazy isolation for tibs",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 12.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -450,7 +506,9 @@
           "min": 8,
           "max": 15
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric.",
@@ -461,5 +519,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 142
+  "session_duration_minutes": 142,
+  "weight_unit": "kg"
 }

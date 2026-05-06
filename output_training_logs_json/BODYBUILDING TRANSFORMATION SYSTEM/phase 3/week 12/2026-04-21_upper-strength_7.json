@@ -16,57 +16,66 @@
     {
       "number": 1,
       "name": "Incline DB Press 45 Degree",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "pr bitches",
+          "set_type": "strength",
           "weight_kg": 35.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "pr bitches",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "pr bitch",
+          "set_type": "strength",
           "weight_kg": 35.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "pr bitch",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "pr bitch",
+          "set_type": "strength",
           "weight_kg": 35.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "pr bitch",
           "failure_technique": null
         },
         {
           "number": 4,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "last 2 reps were a fight, set pr muhfucker",
+          "set_type": "strength",
           "weight_kg": 35.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "last 2 reps were a fight, set pr muhfucker",
           "failure_technique": null
         }
       ],
@@ -79,7 +88,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -114,44 +125,51 @@
     {
       "number": 2,
       "name": "Pec Dec",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 100.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 100.0,
           "rep_count": {
             "full": 8,
             "partial": 2
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 100.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -164,7 +182,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "100 for 10 with explosive push and controlled negatives is feeling good. Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive",
@@ -179,44 +199,51 @@
     {
       "number": 3,
       "name": "Wide Grip Lat Pulldown",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "used straps and held very wide and loved it",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 11,
             "partial": 1
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "used straps and held very wide and loved it",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -229,7 +256,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -244,44 +273,51 @@
     {
       "number": 4,
       "name": "High Cable Lateral Raise",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "used loop attachment at upper forearm",
+          "set_type": "strength",
           "weight_kg": 11.3,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "used loop attachment at upper forearm",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "used ankle strap and felt even better",
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 11,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "used ankle strap and felt even better",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "used ankle strap",
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "used ankle strap",
           "failure_technique": null
         }
       ],
@@ -294,7 +330,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "noticed left side is usually 0.5-1.5 rpe behind right. Felt hot in side delts. The pause at the top is a must.",
@@ -308,44 +346,51 @@
     {
       "number": 5,
       "name": "Barbell  Row",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": "more 45 degrees",
+          "set_type": "strength",
           "weight_kg": 70.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "more 45 degrees",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "more horizontal",
+          "set_type": "strength",
           "weight_kg": 80.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "more horizontal",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 80.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": {
             "technique_type": "LLP",
             "details": {
@@ -363,7 +408,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -383,44 +430,51 @@
     {
       "number": 6,
       "name": "Overhead Cable Tricep Extension",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "using the rope attachment",
+          "set_type": "strength",
           "weight_kg": 24.9,
           "rep_count": {
             "full": 9,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "using the rope attachment",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 24.9,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 24.9,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -433,7 +487,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "i used to be too slanted on these so now standing more upright enough to face front comfortably, lower the weight and work on technique now. need to go heavier safely. Looking up or keeping neck straight makes it even harder somehow?",
@@ -447,44 +503,51 @@
     {
       "number": 7,
       "name": "Bayesian Cable Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -502,31 +565,36 @@
     {
       "number": 8,
       "name": "Wrist Flexion DB Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 12.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 12.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -539,7 +607,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Did only pain free range of motion for right wrist",
@@ -551,31 +621,36 @@
     {
       "number": 9,
       "name": "Wrist Extension DB Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 7.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 7.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -588,7 +663,9 @@
           "min": 10,
           "max": 15
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "pain free range of motion for right wrist has improved a lot",
@@ -601,31 +678,36 @@
     {
       "number": 10,
       "name": "Pronated Grip EZ bar curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 25.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 30.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -638,7 +720,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Did only pain free range of motion for right wrist",
@@ -650,31 +734,36 @@
     {
       "number": 11,
       "name": "Forearm Preacher Curl DB",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 15.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 15.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -687,7 +776,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -695,5 +786,6 @@
       "form_cues": []
     }
   ],
-  "session_duration_minutes": 161
+  "session_duration_minutes": 161,
+  "weight_unit": "kg"
 }

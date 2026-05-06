@@ -16,44 +16,51 @@
     {
       "number": 1,
       "name": "Lean Back Lat Pulldown",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 73.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "last two reps were lot more leaning",
+          "set_type": "strength",
           "weight_kg": 73.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "last two reps were lot more leaning",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "last two reps i leaned more but felt great in lats and upper back",
+          "set_type": "strength",
           "weight_kg": 73.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "last two reps i leaned more but felt great in lats and upper back",
           "failure_technique": null
         }
       ],
@@ -66,7 +73,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -88,57 +97,66 @@
     {
       "number": 2,
       "name": "Chest Supported Machine Row",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "all reps were controlled to prevent any lower back fatigue since it\u2019s already tired",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "all reps were controlled to prevent any lower back fatigue since it\u2019s already tired",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "went slow",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "went slow",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "better than last set",
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "better than last set",
           "failure_technique": null
         },
         {
           "number": 4,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -151,7 +169,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -175,44 +195,51 @@
     {
       "number": 3,
       "name": "Dual Handle Elbows Out Cable Row",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "initiated from rear delt squeeze",
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "initiated from rear delt squeeze",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": "initiated from rear delt squeeze",
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "initiated from rear delt squeeze",
           "failure_technique": null
         }
       ],
@@ -225,7 +252,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Try your best to not lean back",
@@ -240,44 +269,51 @@
     {
       "number": 4,
       "name": "1 Arm 45 Degree Cable Rear Fly",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 15,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -324,7 +360,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -341,44 +379,51 @@
     {
       "number": 5,
       "name": "Cable Paused Shrug In",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 47.6,
           "rep_count": {
             "full": 6,
             "partial": 2
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "lower back fatigue stopping from doing good form",
+          "set_type": "strength",
           "weight_kg": 47.6,
           "rep_count": {
             "full": 8,
             "partial": 2
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "lower back fatigue stopping from doing good form",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "straps made it really good but could have done better reps",
+          "set_type": "strength",
           "weight_kg": 47.6,
           "rep_count": {
             "full": 5,
             "partial": 3
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "straps made it really good but could have done better reps",
           "failure_technique": null
         }
       ],
@@ -391,7 +436,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -423,44 +470,51 @@
     {
       "number": 6,
       "name": "Cable Rope Hammer Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "controlled eccentric",
+          "set_type": "strength",
           "weight_kg": 34.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "controlled eccentric",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "controlled eccentric",
+          "set_type": "strength",
           "weight_kg": 34.0,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "controlled eccentric",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "controlled eccentric",
+          "set_type": "strength",
           "weight_kg": 34.0,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "controlled eccentric",
           "failure_technique": null
         }
       ],
@@ -473,7 +527,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Didn't control eccentric today to protect wrists. Did explosive concentric.",
@@ -487,44 +543,51 @@
     {
       "number": 7,
       "name": "DB Concentration Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": "right did one more rep",
+          "set_type": "strength",
           "weight_kg": 10.0,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "right did one more rep",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "right did one more rep",
+          "set_type": "strength",
           "weight_kg": 10.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "right did one more rep",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 10.0,
           "rep_count": {
             "full": 15,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -564,7 +627,9 @@
           "min": 15,
           "max": 20
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Nail the form of the gods for 12 and then 15 reps",
@@ -577,5 +642,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 140
+  "session_duration_minutes": 140,
+  "weight_unit": "kg"
 }

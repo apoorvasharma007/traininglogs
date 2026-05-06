@@ -16,31 +16,36 @@
     {
       "number": 1,
       "name": "Leg Press",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "learning",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": "learning",
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "learning",
           "failure_technique": null
         }
       ],
@@ -53,7 +58,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "250 added to press for 15 reps in week 12. Im adding weight too fast for my knees to tolerate. 250 for 8 with absolutely perfect form is hard enough with very little knee pain or wobbling.",
@@ -67,7 +74,8 @@
     {
       "number": 2,
       "name": "Seated Leg Curl",
-      "working_sets": [],
+      "exercise_type": "strength",
+      "sets": [],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -77,7 +85,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "43 for 13 plus reps for 4 sets in week 12.",
@@ -89,44 +99,51 @@
     {
       "number": 3,
       "name": "DB Bulgarian Split Squat",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt pretty easy",
+          "set_type": "strength",
           "weight_kg": 15.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "felt pretty easy",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt easy",
+          "set_type": "strength",
           "weight_kg": 15.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "felt easy",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt good",
+          "set_type": "strength",
           "weight_kg": 17.5,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "felt good",
           "failure_technique": null
         }
       ],
@@ -139,7 +156,9 @@
           "min": 8,
           "max": 10
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -154,44 +173,51 @@
     {
       "number": 4,
       "name": "Leg Extension",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt easyish",
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "felt easyish",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": "damn easy",
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "damn easy",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt good",
+          "set_type": "strength",
           "weight_kg": 57.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "felt good",
           "failure_technique": null
         }
       ],
@@ -204,7 +230,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "I can perhaps handle 63kg for 8 reps easily. Other exercises will be affected accordingly.",
@@ -216,31 +244,36 @@
     {
       "number": 5,
       "name": "Cable Hip Adduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt good",
+          "set_type": "strength",
           "weight_kg": 15.9,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "felt good",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": null,
+          "rest": null,
+          "notes": "felt easy after getting warmed up",
+          "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "felt easy after getting warmed up",
           "failure_technique": null
         }
       ],
@@ -253,7 +286,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "13.6 for 13 to 17 reps for 3 sets in week 12, adjust goal accordingly. Need proper warmup to be able to execute at higher intensity.",
@@ -269,18 +304,21 @@
     {
       "number": 6,
       "name": "Cable Hip Abduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": "need to stay at 6.8 and perfect technique",
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 6,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "bad",
-          "actual_rest_minutes": null,
-          "notes": "need to stay at 6.8 and perfect technique",
           "failure_technique": null
         }
       ],
@@ -293,7 +331,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Perfect technique at 6.8 kg",
@@ -308,44 +348,51 @@
     {
       "number": 7,
       "name": "Standing Calf Raise",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 100.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 100.0,
           "rep_count": {
             "full": 10,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 105.0,
           "rep_count": {
             "full": 8,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -358,7 +405,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "adjust goal by testing as you progress into week 5",
@@ -368,5 +417,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 141
+  "session_duration_minutes": 141,
+  "weight_unit": "kg"
 }

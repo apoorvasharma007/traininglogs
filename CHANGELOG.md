@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `chore/historical-data-regen` — done (2026-05-07)
+
+- Regenerated all 121 historical JSON files using the current `processor_v2.py` pipeline.
+  Output verified against originals via `scripts/compare_v2.py`: 0 suspicious diffs,
+  5356 expected structural changes (key rename `working_sets→sets`, `set_type`/`exercise_type`
+  discriminators added, `current_goal.rest_minutes→rest`, `weight_unit` stamped, `None`
+  warmup-parse entries cleaned).
+- Added `db_validation` service to `docker-compose.yml` (port 5434, isolated from prod/test).
+- Added `scripts/regen_v2.py` and `scripts/compare_v2.py`.
+- Removed all `pytest.mark.skip` markers gated on this branch.
+- Updated query/import test fixtures to use new schema shape (`sets` key, `set_type`
+  discriminator, `Rest` model for `current_goal.rest`).
+- **Test suite**: 132 passing, 0 skipped.
+
 ### Data model flexibility + activity support — in progress (as of 2026-05-06)
 
 #### Done (squash-merged to `dev`)

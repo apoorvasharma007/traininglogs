@@ -16,44 +16,51 @@
     {
       "number": 1,
       "name": "Leg Press",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 14,
             "partial": 0
           },
-          "rpe": 8.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 14,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "every rep stopped for a brief second to take a deep breath and brace my core. I was able to push with better technique this way.",
+          "set_type": "strength",
           "weight_kg": 250.0,
           "rep_count": {
             "full": 15,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "every rep stopped for a brief second to take a deep breath and brace my core. I was able to push with better technique this way.",
           "failure_technique": null
         }
       ],
@@ -66,7 +73,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 3
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -100,44 +109,51 @@
     {
       "number": 2,
       "name": "Seated Leg Curl",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 14,
             "partial": 0
           },
-          "rpe": 8.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 8.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 14,
             "partial": 0
           },
-          "rpe": 8.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 50.0,
           "rep_count": {
             "full": 14,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": {
             "technique_type": "LLP",
             "details": {
@@ -155,7 +171,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": [
         {
@@ -180,44 +198,51 @@
     {
       "number": 3,
       "name": "Walking Lunge",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 8.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 15.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 8.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 8.5,
+          "rest": null,
+          "notes": "felt less tired. Keep pushing",
+          "set_type": "strength",
           "weight_kg": 17.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 8.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "felt less tired. Keep pushing",
           "failure_technique": null
         },
         {
           "number": 3,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 17.5,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -230,7 +255,9 @@
           "min": 10,
           "max": 12
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "1. 20 x feel Careful with knee fatigue. We need to fix them before we killshot here.",
@@ -245,31 +272,36 @@
     {
       "number": 4,
       "name": "Leg Extension",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.5,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 77.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 9.5,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "last rep was a fight",
+          "set_type": "strength",
           "weight_kg": 77.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "last rep was a fight",
           "failure_technique": null
         }
       ],
@@ -282,7 +314,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "70 for 15 is a good hyper trophy goal",
@@ -294,31 +328,36 @@
     {
       "number": 5,
       "name": "Cable Hip Adduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 9.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 15.9,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 9.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "took proper rest between legs",
+          "set_type": "strength",
           "weight_kg": 15.9,
           "rep_count": {
             "full": 13,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": "took proper rest between legs",
           "failure_technique": null
         }
       ],
@@ -331,7 +370,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "13.6 for 12 or 15.9 for 9 to 10 perfect reps is a good goal.",
@@ -348,31 +389,36 @@
     {
       "number": 6,
       "name": "Cable Hip Abduction",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 7.0,
+          "rest": null,
+          "notes": "felt like warmup, do 15 reps next time",
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 7.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "felt like warmup, do 15 reps next time",
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "full rom cross legs",
+          "set_type": "strength",
           "weight_kg": 9.1,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": null,
-          "actual_rest_minutes": null,
-          "notes": "full rom cross legs",
           "failure_technique": null
         }
       ],
@@ -385,7 +431,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": null,
@@ -401,31 +449,36 @@
     {
       "number": 7,
       "name": "Standing Calf Raise",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 120.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": "forgot static hold",
+          "set_type": "strength",
           "weight_kg": 120.0,
           "rep_count": {
             "full": 12,
             "partial": 1
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "perfect",
-          "actual_rest_minutes": null,
-          "notes": "forgot static hold",
           "failure_technique": null
         }
       ],
@@ -438,7 +491,9 @@
           "min": 12,
           "max": 15
         },
-        "rest_minutes": 2
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120.",
@@ -450,31 +505,36 @@
     {
       "number": 8,
       "name": "Tibialis Raise Single Leg",
-      "working_sets": [
+      "exercise_type": "strength",
+      "sets": [
         {
           "number": 1,
+          "rpe": null,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 8.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": null,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         },
         {
           "number": 2,
+          "rpe": 10.0,
+          "rest": null,
+          "notes": null,
+          "set_type": "strength",
           "weight_kg": 8.0,
           "rep_count": {
             "full": 12,
             "partial": 0
           },
-          "rpe": 10.0,
+          "unilateral_rep_count": null,
           "rep_quality_assessment": "good",
-          "actual_rest_minutes": null,
-          "notes": null,
           "failure_technique": null
         }
       ],
@@ -487,7 +547,9 @@
           "min": 1,
           "max": 15
         },
-        "rest_minutes": null
+        "rest": null,
+        "distance_meters": null,
+        "target_duration_seconds": null
       },
       "warmup_sets": null,
       "notes": "Don't put too much stress on joints, allow them to recover. Tried doing fast reps on concentric.",
@@ -498,5 +560,6 @@
       ]
     }
   ],
-  "session_duration_minutes": 168
+  "session_duration_minutes": 168,
+  "weight_unit": "kg"
 }
