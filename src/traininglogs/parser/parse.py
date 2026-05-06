@@ -1,5 +1,5 @@
 import re, uuid
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from dataclasses import is_dataclass
 from traininglogs.models.models_dataclass import (
     TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
@@ -7,8 +7,6 @@ from traininglogs.models.models_dataclass import (
     DropSet, DropSetDetails
 )
 
-# TODO: add more validations and error hadling wherever we are returning None currently and all the TODOs mentioned in the code below
-# TODO: we can use ValueError or custom exceptions to handle errors in parsing and validation
 
 class DeepTrainingParser:
     """
@@ -50,6 +48,19 @@ class DeepTrainingParser:
         else:
             session_id = str(uuid.uuid4())
 
+        phase_raw = meta.get("phase")
+        week_raw = meta.get("week")
+        duration_raw = meta.get("duration")
+        if phase_raw is None:
+            raise ValueError("Session metadata missing required field: 'phase'")
+        if week_raw is None:
+            raise ValueError("Session metadata missing required field: 'week'")
+        if not duration_raw:
+            raise ValueError("Session metadata missing required field: 'duration'")
+        duration_nums = re.findall(r"\d+", str(duration_raw))
+        if not duration_nums:
+            raise ValueError(f"Cannot parse duration value: {duration_raw!r}")
+
         return TrainingSession(
             data_model_version="0.0.1",
             data_model_type="TrainingSession",
@@ -60,12 +71,12 @@ class DeepTrainingParser:
             program=meta.get("program", "BODYBUILDING TRANSFORMATION SYSTEM"),
             program_author=meta.get("author", "Jeff Nippard"),
             program_length_weeks=int(meta.get("program length weeks", 12)),
-            phase=int(meta.get("phase")),
-            week=int(meta.get("week")),
+            phase=int(phase_raw),
+            week=int(week_raw),
             is_deload_week=is_deload_week,
             focus=meta.get("focus"),
             exercises=exercises,
-            session_duration_minutes=int(re.findall(r"\d+", meta.get("duration"))[0])
+            session_duration_minutes=int(duration_nums[0])
         )
 
     def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Exercise:
@@ -102,19 +113,16 @@ class DeepTrainingParser:
         if not goal_str:
             return None
         m = re.search(r"([\d.]+)\s*(?:kg|lbs?)\s*x\s*(\d+)\s*sets?\s*x\s*(\d+)-(\d+)\s*reps?", goal_str, re.IGNORECASE)
-        # TODO: this returning None will cause an error later; add validation
         if not m:
-            return None
+            raise ValueError(f"Cannot parse goal string: {goal_str!r}")
         weight, sets, rmin, rmax = m.groups()
         rest = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else None
-        # TODO: this will thrown an error if weight_kg , sets, rmin, rmax are None from regex; add validation
         return Goal(weight_kg=float(weight), sets=int(sets), rep_range=RepRange(min=int(rmin), max=int(rmax)), rest_minutes=rest)
 
-    def _parse_warmup_set_line(self, line: str) -> Optional[WarmupSet]:
+    def _parse_warmup_set_line(self, line: str) -> WarmupSet:
         m = re.match(r"^\s*(\d+)\.\s*([\d.]+)\s*x\s*([\w+-]+)?\s*-?\s*(.*)$", line)
         if not m:
-            # TODO: we should handle and log this error here itself in the parser cuz returning None will cause an error later; add validation
-            return None
+            raise ValueError(f"Cannot parse warmup set line: {line!r}")
         num, weight, reps, note = m.groups()
         reps_val = None
         if reps and reps.lower() not in ("feel", ""):
@@ -151,11 +159,10 @@ class DeepTrainingParser:
 
         return result
 
-    def _parse_working_set_line(self, line: str) -> WorkingSet:
+    def _parse_working_set_line(self, line: str) -> Union[WorkingSet, dict]:
         m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
         if not m_num:
-            # TODO: we should handle and log this error here itself in the parser cuz returning None will cause an error later; add validation
-            return None
+            raise ValueError(f"Cannot parse working set line: {line!r}")
         set_num = int(m_num.group(1))
         rest_of = m_num.group(2).strip()
 

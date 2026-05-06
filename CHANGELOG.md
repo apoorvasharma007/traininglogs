@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `fix/parser-error-handling` — 2026-05-07
+
+#### Fixed
+- `_parse_working_set_line`: was silently returning `None` on malformed lines; now raises
+  `ValueError` with the offending line. Type annotation corrected to `Union[WorkingSet, dict]`
+  (unilateral sets return a dict by design; the processor bridge depends on this).
+- `_parse_warmup_set_line`: was silently returning `None` on malformed lines; now raises
+  `ValueError`. Return type corrected to `WarmupSet`.
+- `_parse_goal`: was silently returning `None` when the goal string was present but didn't
+  match the expected pattern; now raises `ValueError`. Absent goal (`None`/empty) still
+  returns `None` correctly.
+- `build_training_session`: accessing `int(meta.get("phase"))` / `int(meta.get("week"))` /
+  `re.findall(…, meta.get("duration"))` crashed with unhelpful `TypeError`/`IndexError` when
+  those metadata fields were missing. Now raises `ValueError` with a named-field message before
+  the `int()` conversion.
+
+#### Added
+- `tests/test_parse.py` — 15 unit tests covering the fixed error paths and key happy paths
+  for `_parse_goal`, `_parse_warmup_set_line`, `_parse_working_set_line`, and
+  `build_training_session`.
+
+---
+
 ### `feature/inputs-restructure` (Wave TL-2) — in progress (2026-05-07)
 
 #### Added
