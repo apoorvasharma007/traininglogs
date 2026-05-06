@@ -2,6 +2,7 @@
 Processor v2: DATABASE_URL required, DB insert first, JSON write second.
 On session_id collision the process errors — fix the date in the markdown and re-run.
 """
+import hashlib
 import json
 import os
 import sys
@@ -22,6 +23,20 @@ from traininglogs.models.models_v2 import TrainingSession
 
 
 LBS_TO_KG = 0.453592
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+INPUTS_DIR = PROJECT_ROOT / "inputs"
+OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json"
+
+
+def compute_session_id(md_path: Path, inputs_root: Path, date_str: str) -> str:
+    """Deterministic session ID: YYYY-MM-DD-<6-char SHA256 of path relative to inputs_root>."""
+    try:
+        rel = md_path.relative_to(inputs_root)
+    except ValueError:
+        rel = Path(md_path.name)
+    h = hashlib.sha256(str(rel).encode()).hexdigest()[:6]
+    return f"{date_str}-{h}"
 
 
 def _convert_lbs_to_kg(obj):
@@ -47,12 +62,12 @@ def _to_primitive(o):
     return o
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-INPUT_LOGS_DIR = PROJECT_ROOT / "input_training_logs_md"
-OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json"
-
-
-def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> TrainingSession:
+def process_md_file(
+    md_path: Path,
+    conn,
+    inputs_root: Path | None = None,
+    output_dir: Path = OUTPUT_DIR,
+) -> TrainingSession:
     """Parse a markdown file, insert to DB, then write JSON.
 
     Returns the inserted TrainingSession.
@@ -91,6 +106,11 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
         primitive_dict = _convert_lbs_to_kg(primitive_dict)
         primitive_dict["weight_unit"] = "lbs"
 
+    # Override session_id with the path-based deterministic scheme.
+    date_str = intermediate["metadata"].get("date", primitive_dict.get("date", ""))
+    _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
+    primitive_dict["session_id"] = compute_session_id(md_path, _inputs_root, date_str)
+
     session = TrainingSession.model_validate(primitive_dict)
 
     # DB insert first — a collision means the input date is wrong, not a silent skip
@@ -125,6 +145,37 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
     return session
 
 
+def _resolve_targets(args: argparse.Namespace) -> list[Path]:
+    """Resolve CLI args to a list of .md files to process."""
+    if args.target:
+        target = Path(args.target)
+        if target.is_file():
+            return [target]
+        if target.is_dir():
+            files = sorted(target.glob("*.md"))
+            if not files:
+                print(f"ERROR: no .md files found in {target}", file=sys.stderr)
+                sys.exit(1)
+            return files
+        print(f"ERROR: {target} is not a file or directory", file=sys.stderr)
+        sys.exit(1)
+
+    if args.program:
+        program_slug = args.program.lower().replace(" ", "_")
+        target_dir = INPUTS_DIR / "programs" / program_slug / f"phase_{args.phase}" / f"week_{args.week}"
+        if not target_dir.exists():
+            print(f"ERROR: directory not found: {target_dir}", file=sys.stderr)
+            sys.exit(1)
+        files = sorted(target_dir.glob("*.md"))
+        if not files:
+            print(f"ERROR: no .md files found in {target_dir}", file=sys.stderr)
+            sys.exit(1)
+        return files
+
+    print("ERROR: provide a target file/directory or --program --phase --week", file=sys.stderr)
+    sys.exit(1)
+
+
 def main() -> None:
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
@@ -136,21 +187,15 @@ def main() -> None:
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
-        description="Process training logs for a given phase and week."
+        description="Process training log markdown files into DB + JSON."
     )
-    parser.add_argument("--phase", type=int, required=True, help="Phase number")
-    parser.add_argument("--week", type=int, required=True, help="Week number")
+    parser.add_argument("target", nargs="?", help="Path to a .md file or directory of .md files")
+    parser.add_argument("--program", help="Program name (with --phase and --week)")
+    parser.add_argument("--phase", type=int, help="Phase number (used with --program)")
+    parser.add_argument("--week", type=int, help="Week number (used with --program)")
     args = parser.parse_args()
 
-    raw_logs_dir = INPUT_LOGS_DIR / f"phase {args.phase} week {args.week}"
-    if not raw_logs_dir.exists():
-        print(f"ERROR: directory not found: {raw_logs_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    md_files = list(raw_logs_dir.glob("*.md"))
-    if not md_files:
-        print(f"ERROR: no markdown files found in {raw_logs_dir}", file=sys.stderr)
-        sys.exit(1)
+    md_files = _resolve_targets(args)
 
     conn = get_connection()
     apply_schema(conn)

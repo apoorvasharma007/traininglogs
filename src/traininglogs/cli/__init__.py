@@ -8,7 +8,8 @@ def main() -> None:
         print("Usage: traininglogs <command> [options]")
         print()
         print("Commands:")
-        print("  log    Process training logs, commit, and optionally publish dashboard")
+        print("  log       Process training logs, commit, and optionally publish dashboard")
+        print("  validate  Parse and validate a training log file (no DB write)")
         sys.exit(0 if len(sys.argv) >= 2 else 1)
 
     cmd = sys.argv[1]
@@ -16,6 +17,9 @@ def main() -> None:
 
     if cmd == "log":
         from traininglogs.cli.log import main as _main
+        raise SystemExit(_main())
+    elif cmd == "validate":
+        from traininglogs.cli.validate import main as _main
         raise SystemExit(_main())
     else:
         print(f"Unknown command: {cmd}")

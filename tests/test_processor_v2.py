@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.processor.processor_v2 import _convert_lbs_to_kg, process_md_file
+from traininglogs.processor.processor_v2 import _convert_lbs_to_kg, compute_session_id, process_md_file
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -32,8 +32,6 @@ MINIMAL_MD = """\
 3. 80 x 7 RPE 9 good
 """
 
-EXPECTED_SESSION_ID = "2099-06-15_push-hypertrophy_7"
-
 
 @pytest.fixture(scope="module")
 def conn():
@@ -58,25 +56,30 @@ def md_file(tmp_path) -> Path:
     return f
 
 
+def _session_id(md_path: Path, date: str) -> str:
+    return compute_session_id(md_path, md_path.parent, date)
+
+
 def test_process_inserts_to_db(md_file, conn, tmp_path):
-    process_md_file(md_file, conn, output_dir=tmp_path)
+    expected_id = _session_id(md_file, "2099-06-15")
+    process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT session_id, focus, phase, week FROM sessions WHERE session_id = %s",
-            (EXPECTED_SESSION_ID,),
+            (expected_id,),
         )
         row = cur.fetchone()
 
     assert row is not None
-    assert row[0] == EXPECTED_SESSION_ID
+    assert row[0] == expected_id
     assert row[1] == "Push Hypertrophy"
     assert row[2] == 9
     assert row[3] == 1
 
 
 def test_process_writes_json_after_db_insert(md_file, conn, tmp_path):
-    session = process_md_file(md_file, conn, output_dir=tmp_path)
+    session = process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
     expected_path = (
         tmp_path
@@ -88,38 +91,38 @@ def test_process_writes_json_after_db_insert(md_file, conn, tmp_path):
     assert expected_path.exists()
 
     data = json.loads(expected_path.read_text())
-    assert data["session_id"] == EXPECTED_SESSION_ID
+    assert data["session_id"] == _session_id(md_file, "2099-06-15")
 
 
 def test_process_errors_on_collision(md_file, conn, tmp_path):
-    process_md_file(md_file, conn, output_dir=tmp_path)
+    process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
     with pytest.raises(SystemExit) as exc_info:
-        process_md_file(md_file, conn, output_dir=tmp_path)
+        process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
-    assert EXPECTED_SESSION_ID in str(exc_info.value)
+    assert _session_id(md_file, "2099-06-15") in str(exc_info.value)
 
 
 def test_json_not_written_on_collision(md_file, conn, tmp_path):
-    process_md_file(md_file, conn, output_dir=tmp_path)
+    process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
     output_dir_2 = tmp_path / "second_run"
     output_dir_2.mkdir()
 
     with pytest.raises(SystemExit):
-        process_md_file(md_file, conn, output_dir=output_dir_2)
+        process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=output_dir_2)
 
-    # No JSON should exist in the second output dir
     json_files = list(output_dir_2.rglob("*.json"))
     assert json_files == [], f"JSON written despite collision: {json_files}"
 
 
 def test_db_row_count_after_single_process(md_file, conn, tmp_path):
-    process_md_file(md_file, conn, output_dir=tmp_path)
+    expected_id = _session_id(md_file, "2099-06-15")
+    process_md_file(md_file, conn, inputs_root=md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*) FROM exercises WHERE session_id = %s", (EXPECTED_SESSION_ID,)
+            "SELECT COUNT(*) FROM exercises WHERE session_id = %s", (expected_id,)
         )
         assert cur.fetchone()[0] == 1
 
@@ -183,8 +186,6 @@ LBS_MD = """\
 2. 200 x 5 RPE 8.5 good
 """
 
-LBS_SESSION_ID = "2099-06-16_push_7"
-
 
 @pytest.fixture
 def lbs_md_file(tmp_path) -> Path:
@@ -194,22 +195,24 @@ def lbs_md_file(tmp_path) -> Path:
 
 
 def test_process_lbs_stores_weight_unit(lbs_md_file, conn, tmp_path):
-    process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+    lbs_id = _session_id(lbs_md_file, "2099-06-16")
+    process_md_file(lbs_md_file, conn, inputs_root=lbs_md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT weight_unit FROM sessions WHERE session_id = %s", (LBS_SESSION_ID,)
+            "SELECT weight_unit FROM sessions WHERE session_id = %s", (lbs_id,)
         )
         assert cur.fetchone()[0] == "lbs"
 
 
 def test_process_lbs_converts_goal_weight_to_kg(lbs_md_file, conn, tmp_path):
-    process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+    lbs_id = _session_id(lbs_md_file, "2099-06-16")
+    process_md_file(lbs_md_file, conn, inputs_root=lbs_md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT goal_weight_kg FROM exercises WHERE session_id = %s AND number = 1",
-            (LBS_SESSION_ID,),
+            (lbs_id,),
         )
         row = cur.fetchone()
 
@@ -218,7 +221,7 @@ def test_process_lbs_converts_goal_weight_to_kg(lbs_md_file, conn, tmp_path):
 
 
 def test_process_lbs_json_has_weight_unit_field(lbs_md_file, conn, tmp_path):
-    session = process_md_file(lbs_md_file, conn, output_dir=tmp_path)
+    session = process_md_file(lbs_md_file, conn, inputs_root=lbs_md_file.parent, output_dir=tmp_path)
 
     expected_path = (
         tmp_path
@@ -249,8 +252,6 @@ ACTIVITY_MD = """\
 2. 5 min 500 m HR 160
 """
 
-ACTIVITY_SESSION_ID = "2099-07-01_cardio_7"
-
 
 @pytest.fixture
 def activity_md_file(tmp_path) -> Path:
@@ -260,7 +261,8 @@ def activity_md_file(tmp_path) -> Path:
 
 
 def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
-    process_md_file(activity_md_file, conn, output_dir=tmp_path)
+    activity_id = _session_id(activity_md_file, "2099-07-01")
+    process_md_file(activity_md_file, conn, inputs_root=activity_md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -271,7 +273,7 @@ def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
             WHERE e.session_id = %s
             ORDER BY ws.number
             """,
-            (ACTIVITY_SESSION_ID,),
+            (activity_id,),
         )
         rows = cur.fetchall()
 
@@ -291,12 +293,13 @@ def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
 
 
 def test_activity_exercise_type_stored_in_db(activity_md_file, conn, tmp_path):
-    process_md_file(activity_md_file, conn, output_dir=tmp_path)
+    activity_id = _session_id(activity_md_file, "2099-07-01")
+    process_md_file(activity_md_file, conn, inputs_root=activity_md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT exercise_type FROM exercises WHERE session_id = %s AND number = 1",
-            (ACTIVITY_SESSION_ID,),
+            (activity_id,),
         )
         row = cur.fetchone()
 
@@ -324,8 +327,6 @@ UNILATERAL_MD = """\
 2. 25 x left 8 + 1, right 7 + 1 RPE 8.5 good
 """
 
-UNILATERAL_SESSION_ID = "2099-07-02_arms_7"
-
 
 @pytest.fixture
 def unilateral_md_file(tmp_path) -> Path:
@@ -335,7 +336,8 @@ def unilateral_md_file(tmp_path) -> Path:
 
 
 def test_unilateral_sets_stored_in_db(unilateral_md_file, conn, tmp_path):
-    process_md_file(unilateral_md_file, conn, output_dir=tmp_path)
+    unilateral_id = _session_id(unilateral_md_file, "2099-07-02")
+    process_md_file(unilateral_md_file, conn, inputs_root=unilateral_md_file.parent, output_dir=tmp_path)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -346,7 +348,7 @@ def test_unilateral_sets_stored_in_db(unilateral_md_file, conn, tmp_path):
             WHERE e.session_id = %s
             ORDER BY ws.number
             """,
-            (UNILATERAL_SESSION_ID,),
+            (unilateral_id,),
         )
         rows = cur.fetchall()
 

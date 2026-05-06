@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `feature/inputs-restructure` (Wave TL-2) — in progress (2026-05-07)
+
+#### Added
+- `inputs/` directory layout: `inputs/programs/<slug>/phase_N/week_N/` for program sessions,
+  `inputs/sessions/` for standalone workouts.
+- `test_inputs/` with three canonical fixture files: `strength_session.md`,
+  `activity_session.md`, `unilateral_session.md`.
+- `scripts/migrate_inputs.py` — copies existing files from `input_training_logs_md/` into
+  the new `inputs/` structure. Supports `--dry-run` and `--overwrite`. Safe to re-run.
+- `traininglogs validate <file>` subcommand — parse + validate a single session file,
+  print a model summary, exit non-zero on failure. No DB write.
+
+#### Changed
+- **Session ID scheme** — changed from `date_focus_userid` to
+  `YYYY-MM-DD-<first 6 chars of SHA256(path relative to inputs_root)>`.
+  Deterministic: same file path → same ID. Unique across same-day sessions with different
+  file names.
+- `traininglogs log` now accepts a positional `<file>` or `<dir>` argument, or
+  `--program <name> --phase N --week N` to resolve to
+  `inputs/programs/<slug>/phase_N/week_N/`. Old `--phase`/`--week` required args removed.
+  `--dry-run`, `--no-commit`, `--publish`, `--pr`, `--message` unchanged.
+- `processor_v2.process_md_file()` accepts an `inputs_root` parameter (defaults to
+  `inputs/`) used for session ID computation.
+- `processor_v2.main()` updated to accept positional `target` (file or dir) or
+  `--program/--phase/--week` in place of old required `--phase`/`--week`.
+
 ### `chore/historical-data-regen` — done (2026-05-07)
 
 - Regenerated all 121 historical JSON files using the current `processor_v2.py` pipeline.
