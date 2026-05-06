@@ -2,8 +2,8 @@ import os
 import pytest
 
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 from traininglogs.analytics.queries import (
     exercise_progression,
     personal_records,

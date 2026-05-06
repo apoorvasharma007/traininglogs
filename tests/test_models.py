@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from traininglogs.models.models_v2 import (
+from traininglogs.models.models import (
     ActivitySet,
     AnySet,
     DropSet,

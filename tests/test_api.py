@@ -4,8 +4,8 @@ from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",

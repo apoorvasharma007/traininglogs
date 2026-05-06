@@ -22,8 +22,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     from traininglogs.parser.extract import TrainingMarkdownParser
     from traininglogs.parser.parse import DeepTrainingParser
-    from traininglogs.processor.processor_v2 import _to_primitive, compute_session_id
-    from traininglogs.models.models_v2 import TrainingSession
+    from traininglogs.processor.processor import _to_primitive, compute_session_id
+    from traininglogs.models.models import TrainingSession
     from dataclasses import is_dataclass
     from enum import Enum
     from pydantic import ValidationError

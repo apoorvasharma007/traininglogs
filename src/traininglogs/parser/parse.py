@@ -2,7 +2,7 @@
 import re, uuid
 from typing import Dict, Any, Optional, List
 from dataclasses import is_dataclass
-from traininglogs.models.models import (
+from traininglogs.models.models_dataclass import (
     TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
     FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment, MyoRep,
     DropSet, DropSetDetails

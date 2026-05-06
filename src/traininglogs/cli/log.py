@@ -185,7 +185,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     load_dotenv()
 
     from traininglogs.db.db import get_connection, apply_schema
-    from traininglogs.processor.processor_v2 import process_md_file
+    from traininglogs.processor.processor import process_md_file
 
     conn = get_connection()
     apply_schema(conn)

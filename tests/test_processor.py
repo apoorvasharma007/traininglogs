@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.processor.processor_v2 import _convert_lbs_to_kg, compute_session_id, process_md_file
+from traininglogs.processor.processor import _convert_lbs_to_kg, compute_session_id, process_md_file
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",

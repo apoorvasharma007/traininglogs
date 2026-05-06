@@ -2,7 +2,7 @@ import json
 
 from psycopg2.extensions import connection as Connection
 
-from traininglogs.models.models_v2 import ActivitySet, Rest, StrengthSet, TrainingSession
+from traininglogs.models.models import ActivitySet, Rest, StrengthSet, TrainingSession
 
 
 def _rest_minutes(rest: Rest | None) -> float | None:

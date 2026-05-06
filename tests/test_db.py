@@ -4,8 +4,8 @@ import os
 import pytest
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import (
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import (
     ActivitySet,
     Exercise,
     Goal,

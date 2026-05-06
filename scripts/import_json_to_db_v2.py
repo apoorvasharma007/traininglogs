@@ -13,8 +13,8 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 
 OUTPUT_DIR = Path(__file__).parent.parent / "output_training_logs_json"
 

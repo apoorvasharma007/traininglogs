@@ -18,8 +18,8 @@ load_dotenv()
 from traininglogs.parser.extract import TrainingMarkdownParser
 from traininglogs.parser.parse import DeepTrainingParser
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 
 
 LBS_TO_KG = 0.453592

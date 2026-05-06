@@ -1,4 +1,4 @@
-from .models_v2 import (
+from .models import (
     DropSet,
     DropSetDetails,
     DropSetTechnique,
