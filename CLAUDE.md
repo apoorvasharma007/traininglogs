@@ -8,6 +8,17 @@ Capture happens offline during the workout (draft saved locally in a PWA). Proce
 
 ---
 
+## Active plans
+
+| Plan | Status |
+|---|---|
+| [`migration-plan.md`](migration-plan.md) | Cutover complete. Old volume retained. |
+| [`refactor-plan.md`](refactor-plan.md) | Drop dataclass bridge — not started. |
+
+Check `▶ Resume here` at the bottom of each plan file before picking up work.
+
+---
+
 ## Source of truth
 
 Don't duplicate what these documents already say. Link to them.
