@@ -68,11 +68,35 @@ main  ←  stable, releases cut from here
 
 ## Testing
 
-- Every new function, model, or endpoint gets a test before the PR merges.
-- Tests in `tests/` mirroring `src/` structure.
-- Run `.venv/bin/pytest tests/` before opening any PR.
-- DB tests use a real test database (Docker), never mocks.
-- Agent tests use mocked Claude responses, never real API calls.
+### Phase order — always follow this sequence
+
+1. **Unit tests first.** Model, validation, and pure-logic changes get unit tests before any pipeline code is touched. Run them green before proceeding to the next phase.
+2. **Integration tests second.** Parser, processor, and DB insert changes get integration tests against a real test DB (Docker). Never mock the DB.
+3. **E2E last.** Manual validation using `traininglogs log --dry-run` and `--no-commit` against sample inputs before opening a PR.
+
+### Breaking changes
+
+- When a field rename, schema change, or model restructure breaks existing tests, mark them `pytest.mark.skip` with a comment stating exactly what unblocks the skip (e.g., `"unblocked by: historical data regen in chore/historical-data-regen"`).
+- Never delete a test to make CI green. Skip with a reason.
+- All skips must be resolved before merging to `main`.
+- Historical data regeneration is a separate branch (`chore/historical-data-regen`) after model + parser are stable on `dev`. It is not part of any feature branch.
+
+### Feature checklist — required before opening a PR
+
+- [ ] Every new model class has unit tests for: valid construction, each validator (valid + rejection cases), and `model_dump(mode="json")` round-trip.
+- [ ] Every new discriminated union has dispatch tests for each variant.
+- [ ] Every changed field that becomes Optional has a test confirming `None` is accepted and an empty string is still rejected.
+- [ ] Existing tests pass or are explicitly skipped with a reason.
+- [ ] `pytest tests/` runs clean locally (skips are fine, failures are not).
+- [ ] CHANGELOG.md has an entry under `[Unreleased]`.
+- [ ] If schema or API contract changed: `docs/design.html` updated in the same PR.
+
+### Test fixtures
+
+- New feature tests create their own in-code fixtures or sample JSON using the new schema. Do not modify existing output JSON files during feature development.
+- Existing JSON in `output_training_logs_json/` is historical data — treated as read-only until `chore/historical-data-regen` runs.
+- DB tests use a real Postgres test DB via Docker Compose. Never mocks.
+- Agent tests use mocked Claude responses. Never real API calls.
 
 ## Working conventions
 
