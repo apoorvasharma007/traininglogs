@@ -33,15 +33,16 @@ class TrainingMarkdownParser:
             if re.match(r"^##\s*Exercise\s*\d+", line):
                 if current_ex:
                     self.parsed_data["exercises"].append(current_ex)
-                current_ex = {"warmup_sets": [], "working_sets": [], "cues": []}
+                current_ex = {"warmup_sets": [], "working_sets": [], "activity_sets": [], "exercise_type": "strength", "cues": []}
                 current_section = "exercise_header"
                 continue
-            
-            # TODO: add a detailed comment here to explain the logic of section parsing
-            # TODO: move it to a separate function if needed
+
             # Section headers (### and ####)
             if line.startswith("### "):
-                current_section = line[4:].strip().lower().replace(" ", "_")
+                new_section = line[4:].strip().lower().replace(" ", "_")
+                if new_section == "activity_sets" and current_ex is not None:
+                    current_ex["exercise_type"] = "activity"
+                current_section = new_section
                 continue
             
             # Bolded key-value pairs in header
@@ -64,6 +65,11 @@ class TrainingMarkdownParser:
             # Working sets numbered lines
             if current_section == "working_sets" and re.match(r"^\d+\.", line.strip()):
                 current_ex["working_sets"].append(line.strip())
+                continue
+
+            # Activity sets numbered lines
+            if current_section == "activity_sets" and re.match(r"^\d+\.", line.strip()):
+                current_ex["activity_sets"].append(line.strip())
                 continue
 
             # Notes (accumulate)

@@ -74,9 +74,17 @@ class DeepTrainingParser:
         muscles = self._split_csv(ex.get("muscles"))
         tempo = ex.get("tempo")
         goal = self._parse_goal(ex.get("goal"), ex.get("rest"))
+        exercise_type = ex.get("exercise_type", "strength")
 
         warmup_sets = [self._parse_warmup_set_line(l) for l in ex.get("warmup_sets", [])]
-        working_sets = [self._parse_working_set_line(l) for l in ex.get("working_sets", [])]
+
+        if exercise_type == "activity":
+            working_sets = [
+                s for s in (self._parse_activity_set_line(l) for l in ex.get("activity_sets", []))
+                if s is not None
+            ]
+        else:
+            working_sets = [self._parse_working_set_line(l) for l in ex.get("working_sets", [])]
 
         return Exercise(
             number=idx,
@@ -86,7 +94,7 @@ class DeepTrainingParser:
             rep_tempo=tempo,
             current_goal=goal,
             warmup_sets=warmup_sets if warmup_sets else None,
-            notes=ex.get("notes"), # TODO: get method saves me here but i should explicitly handle missing keys by returning None
+            notes=ex.get("notes"),
             warmup_notes=ex.get("warmup_notes"),
             form_cues=ex.get("cues")
         )
@@ -115,6 +123,35 @@ class DeepTrainingParser:
             reps_val = int(nm.group(1)) if nm else None
         return WarmupSet(number=int(num), weight_kg=float(weight), rep_count=reps_val, notes=note.strip() if note else None)
 
+    def _parse_activity_set_line(self, line: str) -> Optional[dict]:
+        m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
+        if not m_num:
+            return None
+        set_num = int(m_num.group(1))
+        rest_of = m_num.group(2).strip()
+
+        result: Dict[str, Any] = {"set_type": "activity", "number": set_num}
+
+        min_m = re.search(r"(\d+)\s*min\b", rest_of, re.IGNORECASE)
+        sec_m = re.search(r"(\d+)\s*sec\b", rest_of, re.IGNORECASE)
+        if min_m:
+            result["duration_seconds"] = int(min_m.group(1)) * 60
+        elif sec_m:
+            result["duration_seconds"] = int(sec_m.group(1))
+
+        km_m = re.search(r"([\d.]+)\s*km\b", rest_of, re.IGNORECASE)
+        m_dist = re.search(r"(\d+)\s*m\b", rest_of, re.IGNORECASE)
+        if km_m:
+            result["distance_meters"] = float(km_m.group(1)) * 1000
+        elif m_dist:
+            result["distance_meters"] = float(m_dist.group(1))
+
+        hr_m = re.search(r"\bHR\s+(\d+)\b", rest_of, re.IGNORECASE)
+        if hr_m:
+            result["heart_rate_bpm"] = int(hr_m.group(1))
+
+        return result
+
     def _parse_working_set_line(self, line: str) -> WorkingSet:
         m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
         if not m_num:
@@ -135,6 +172,52 @@ class DeepTrainingParser:
         f_match = re.search(r"failure:\s*([a-zA-Z_]+)\s*\(\s*([^)]+)\s*\)", line, re.IGNORECASE)
         if f_match:
             failure = self._parse_failure(f_match.group(1), f_match.group(2))
+
+        # unilateral format: weight x (left|L):? full [+ partial], (right|R):? full [+ partial]
+        # sides can appear in either order; comma separates them; spaces around +/: ignored
+        # e.g. "30 x left: 8 + 1, right: 9 + 1 RPE 8.5 good"
+        #      "30 x R 9, L 8 RPE 8 good"
+        _side = r"(?:left|right|[lr])\s*:?\s*(\d+)\s*(?:\+\s*(\d+))?"
+        uni_re = re.compile(
+            r"([\d.]+)\s*x\s*((?:left|right|[lr])\s*:?\s*\d+(?:\s*\+\s*\d+)?)"
+            r"\s*,\s*((?:left|right|[lr])\s*:?\s*\d+(?:\s*\+\s*\d+)?)"
+            r"(?:\s+RPE\s*([\d.]+))?(?:\s+\b(perfect|good|bad|learning)\b)?",
+            re.IGNORECASE,
+        )
+        um = uni_re.search(core_part)
+        if um:
+            weight_s, side_a_s, side_b_s, rpe_s, quality_s = um.groups()
+
+            def _parse_side(s: str) -> tuple[str, int, int]:
+                """Return (side_name, full, partial) from a side token."""
+                m = re.match(
+                    r"(left|right|[lr])\s*:?\s*(\d+)\s*(?:\+\s*(\d+))?",
+                    s.strip(), re.IGNORECASE,
+                )
+                name = m.group(1).lower()
+                side = "left" if name in ("l", "left") else "right"
+                return side, int(m.group(2)), int(m.group(3)) if m.group(3) else 0
+
+            s_a = _parse_side(side_a_s)
+            s_b = _parse_side(side_b_s)
+            sides = {s_a[0]: (s_a[1], s_a[2]), s_b[0]: (s_b[1], s_b[2])}
+
+            rpe = float(rpe_s) if rpe_s else None
+            quality = self._parse_quality(quality_s)
+            left = sides.get("left")
+            right = sides.get("right")
+            return {
+                "set_type": "strength",
+                "number": set_num,
+                "weight_kg": float(weight_s),
+                "unilateral_rep_count": {
+                    "left":  {"full": left[0],  "partial": left[1]}  if left  else None,
+                    "right": {"full": right[0], "partial": right[1]} if right else None,
+                },
+                "rpe": rpe,
+                "rep_quality_assessment": quality.value if quality else None,
+                "notes": note,
+            }
 
         # core parse: weight x reps [+ partial] [RPE n.n] [quality]
         core_re = re.compile(

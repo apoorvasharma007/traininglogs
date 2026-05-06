@@ -29,9 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   session before DB insert. Parser goal regex extended to accept `lbs`/`lb`.
 - **Test suite** — 112 passing, 17 skipped (skips require `chore/historical-data-regen`).
 
-#### Next — parser activity + unilateral support (`feature/parser-activity-unilateral`)
+#### Done — parser activity + unilateral support (`feature/parser-activity-unilateral`)
 
-Markdown syntax decisions (made 2026-05-06):
+Markdown syntax (finalised 2026-05-06):
 
 - `### Working Sets` header → exercise is `strength` (existing, unchanged)
 - `### Activity Sets` header → exercise is `activity` (new); no `**Type:**` field needed
@@ -40,23 +40,28 @@ Markdown syntax decisions (made 2026-05-06):
   - `<N.N> km` or `<N> m` → `distance_meters`
   - `HR <N>` → `heart_rate_bpm`
   - All tokens optional; any combination is valid
-- Unilateral strength set format: `1. 30 x 8L/7R RPE 8 good`
-  - `8L/7R` → `unilateral_rep_count: {left: {full: 8}, right: {full: 7}}`
-  - Partial reps: `8L+1/7R+1` → `{left: {full: 8, partial: 1}, right: {full: 7, partial: 1}}`
+- Unilateral strength set format: `1. 30 x left 8 + 1, right 9 + 1 RPE 8.5 good`
+  - Side keyword: `left`/`L`/`left:` or `right`/`R`/`right:` (case-insensitive)
+  - Either side can come first; comma separates them; whitespace ignored
+  - Partial reps: `left 8 + 1` → `{full: 8, partial: 1}`
+  - RPE is a property of the whole set (shared for both sides)
   - Bilateral sets continue to use existing format (no change)
 - Goal line stays bilateral-only for now (`**Goal:** 80 kg x 3 sets x 8-10 reps`)
+- Bodyweight exercises: use `0` as weight value
 
-Files to change:
-1. `parser/extract.py` — recognize `### Activity Sets`, collect into `activity_sets`
-   list, set `exercise_type = "activity"` on the exercise dict.
+Changes shipped:
+1. `parser/extract.py` — recognizes `### Activity Sets`, collects into `activity_sets`
+   list, sets `exercise_type = "activity"` on the exercise dict.
 2. `parser/parse.py` — new `_parse_activity_set_line()` for `ActivitySet` objects;
-   update `_parse_working_set_line()` to handle unilateral `8L/7R` format;
-   update `_parse_exercise()` to build the correct set type.
-3. `processor/processor_v2.py` — bridge step after `_to_primitive()` to rename
-   `working_sets` → `sets` in each exercise dict (fixes the existing gap where
-   `Exercise.sets` is always `None` in the validated model).
-4. `tests/test_processor_v2.py` — add integration tests for an activity exercise
-   session and a unilateral strength set.
+   `_parse_working_set_line()` extended with unilateral keyword regex;
+   `_parse_exercise()` routes by `exercise_type`.
+3. `processor/processor_v2.py` — bridge step after `_to_primitive()` renames
+   `working_sets` → `sets` in each exercise dict and injects `set_type` discriminator.
+   This also fixed a pre-existing bug where `Exercise.sets` was always `None` in the
+   validated model (working sets were silently dropped on every insert).
+4. `tests/test_processor_v2.py` — integration tests for activity sessions and
+   unilateral strength sets, all hitting the real test DB.
+- **Test suite** — 115 passing, 17 skipped (skips require `chore/historical-data-regen`).
 
 #### Still deferred (not in this wave)
 - Lbs duplicate column in DB + dashboard unit toggle.

@@ -229,3 +229,139 @@ def test_process_lbs_json_has_weight_unit_field(lbs_md_file, conn, tmp_path):
     )
     data = json.loads(expected_path.read_text())
     assert data["weight_unit"] == "lbs"
+
+
+# --- activity set integration tests ---
+
+ACTIVITY_MD = """\
+# Training Log
+- Date: 2099-07-01
+- Phase: 9
+- Week: 1
+- Deload: No
+- Focus: Cardio
+- Duration: 30 min
+
+## Exercise 1
+**Name:** Treadmill Run
+### Activity Sets
+1. 20 min 2.5 km HR 145
+2. 5 min 500 m HR 160
+"""
+
+ACTIVITY_SESSION_ID = "2099-07-01_cardio_7"
+
+
+@pytest.fixture
+def activity_md_file(tmp_path) -> Path:
+    f = tmp_path / "cardio.md"
+    f.write_text(ACTIVITY_MD)
+    return f
+
+
+def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
+    process_md_file(activity_md_file, conn, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT set_type, duration_seconds, distance_meters, heart_rate_bpm
+            FROM working_sets ws
+            JOIN exercises e ON e.id = ws.exercise_id
+            WHERE e.session_id = %s
+            ORDER BY ws.number
+            """,
+            (ACTIVITY_SESSION_ID,),
+        )
+        rows = cur.fetchall()
+
+    assert len(rows) == 2
+
+    # set 1: 20 min → 1200 s, 2.5 km → 2500 m, HR 145
+    assert rows[0][0] == "activity"
+    assert rows[0][1] == 1200
+    assert float(rows[0][2]) == pytest.approx(2500.0)
+    assert rows[0][3] == 145
+
+    # set 2: 5 min → 300 s, 500 m, HR 160
+    assert rows[1][0] == "activity"
+    assert rows[1][1] == 300
+    assert float(rows[1][2]) == pytest.approx(500.0)
+    assert rows[1][3] == 160
+
+
+def test_activity_exercise_type_stored_in_db(activity_md_file, conn, tmp_path):
+    process_md_file(activity_md_file, conn, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT exercise_type FROM exercises WHERE session_id = %s AND number = 1",
+            (ACTIVITY_SESSION_ID,),
+        )
+        row = cur.fetchone()
+
+    assert row is not None
+    assert row[0] == "activity"
+
+
+# --- unilateral set integration tests ---
+
+UNILATERAL_MD = """\
+# Training Log
+- Date: 2099-07-02
+- Phase: 9
+- Week: 1
+- Deload: No
+- Focus: Arms
+- Duration: 45 min
+
+## Exercise 1
+**Name:** Dumbbell Curl
+**Goal:** 25 kg x 3 sets x 10-12 reps
+**Rest:** 2 min
+### Working Sets
+1. 25 x left 8, right 7 RPE 8 good
+2. 25 x left 8 + 1, right 7 + 1 RPE 8.5 good
+"""
+
+UNILATERAL_SESSION_ID = "2099-07-02_arms_7"
+
+
+@pytest.fixture
+def unilateral_md_file(tmp_path) -> Path:
+    f = tmp_path / "arms.md"
+    f.write_text(UNILATERAL_MD)
+    return f
+
+
+def test_unilateral_sets_stored_in_db(unilateral_md_file, conn, tmp_path):
+    process_md_file(unilateral_md_file, conn, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT set_type, left_reps_full, left_reps_partial, right_reps_full, right_reps_partial
+            FROM working_sets ws
+            JOIN exercises e ON e.id = ws.exercise_id
+            WHERE e.session_id = %s
+            ORDER BY ws.number
+            """,
+            (UNILATERAL_SESSION_ID,),
+        )
+        rows = cur.fetchall()
+
+    assert len(rows) == 2
+
+    # set 1: 8L/7R, no partials
+    assert rows[0][0] == "strength"
+    assert rows[0][1] == 8
+    assert rows[0][2] == 0
+    assert rows[0][3] == 7
+    assert rows[0][4] == 0
+
+    # set 2: 8L+1/7R+1
+    assert rows[1][0] == "strength"
+    assert rows[1][1] == 8
+    assert rows[1][2] == 1
+    assert rows[1][3] == 7
+    assert rows[1][4] == 1

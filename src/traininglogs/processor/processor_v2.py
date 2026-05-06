@@ -70,6 +70,22 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
     # Bridge: dataclass → Pydantic (parser still returns old dataclass models)
     primitive_dict = _to_primitive(session_obj)
 
+    # Rename working_sets → sets (old field name → new) and inject set_type discriminator.
+    # Also infer exercise_type from set contents so activity exercises are tagged correctly.
+    for ex in primitive_dict.get("exercises", []):
+        if "working_sets" in ex:
+            raw_sets = ex.pop("working_sets") or []
+            has_activity = False
+            for s in raw_sets:
+                if isinstance(s, dict):
+                    if "set_type" not in s:
+                        s["set_type"] = "strength"
+                    elif s.get("set_type") == "activity":
+                        has_activity = True
+            ex["sets"] = raw_sets
+            if has_activity:
+                ex["exercise_type"] = "activity"
+
     weight_unit = intermediate["metadata"].get("unit", "kg").lower()
     if weight_unit == "lbs":
         primitive_dict = _convert_lbs_to_kg(primitive_dict)

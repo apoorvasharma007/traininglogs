@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">1.0.0</span> · 2026-05-05</div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">1.0.0</span> · 2026-05-06</div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -209,23 +209,28 @@
 
 <section>
   <h2 id="data">The data model</h2>
-  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>working sets</strong> and optionally <strong>warmup sets</strong>. A working set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
+  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>sets</strong> (strength or activity) and optionally <strong>warmup sets</strong>. A strength set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
   <pre><code>TrainingSession
 ├── session_id, date, program, phase, week, focus
-├── is_deload_week, session_duration_minutes
+├── is_deload_week, session_duration_minutes, weight_unit
 └── exercises[]
-    ├── number, name, target_muscle_groups, rep_tempo
+    ├── number, name, target_muscle_groups, rep_tempo, exercise_type
     ├── current_goal           (weight, sets, rep_range, rest)
     ├── warmup_sets[]          (number, weight_kg, rep_count)
-    └── working_sets[]
-        ├── number, weight_kg, rep_count {full, partial}
-        ├── rpe?, rep_quality?, actual_rest_minutes?
-        └── failure_technique?  (discriminated union)
-            ├── MyoReps    → mini_sets[]
-            ├── LLP        → partial_rep_count
-            ├── Static     → hold_duration_seconds
-            └── DropSet    → drop_sets[]</code></pre>
-  <p>Working sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
+    └── sets[]                 (discriminated union on set_type)
+        ├── StrengthSet        (set_type = "strength")
+        │   ├── number, weight_kg, rep_count {full, partial}
+        │   ├── unilateral_rep_count?  {left: {full, partial}, right: {full, partial}}
+        │   ├── rpe?, rep_quality?
+        │   └── failure_technique?  (discriminated union)
+        │       ├── MyoReps    → mini_sets[]
+        │       ├── LLP        → partial_rep_count
+        │       ├── Static     → hold_duration_seconds
+        │       └── DropSet    → drop_sets[]
+        └── ActivitySet        (set_type = "activity")
+            ├── number, rpe?
+            ├── duration_seconds?, distance_meters?, heart_rate_bpm?</code></pre>
+  <p>Sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
   <p>A few invariants the model enforces:</p>
   <ul class="body">
     <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
@@ -246,7 +251,7 @@
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>.</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.exercise_type</code>; <code>working_sets.set_type</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision (same date, same focus, already in the DB) raises <code>SystemExit</code> rather than silently overwriting. Fix the date in the markdown and re-run.</p>
@@ -318,7 +323,7 @@
 </section>
 
 <footer>
-  Last updated 2026-05-05 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+  Last updated 2026-05-06 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
 </footer>
 
 </main>
