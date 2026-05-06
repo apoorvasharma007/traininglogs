@@ -63,11 +63,22 @@ Changes shipped:
    unilateral strength sets, all hitting the real test DB.
 - **Test suite** — 115 passing, 17 skipped (skips require `chore/historical-data-regen`).
 
+#### Done — `feature/fetch-activity-support`
+
+- **fetch.py** — `get_sessions()` selects `weight_unit`; `get_session()` selects
+  `weight_unit`, `exercise_type`, and all new `working_sets` columns (`set_type`,
+  unilateral rep cols, `rest_seconds`, `duration_seconds`, `distance_meters`,
+  `heart_rate_bpm`); result key renamed `working_sets` → `sets` to match
+  `Exercise.sets` in the model.
+- **test_api.py SESSION_A** — fixture updated to new model shape: `sets` key,
+  `set_type: "strength"` discriminator, `rest: {minutes: 3}` Goal field.
+- **3 API tests unskipped** — `test_session_detail_returns_full_structure`,
+  `test_exercise_history_returns_sets_in_order`, `test_exercise_history_case_insensitive`.
+- **Test suite** — 118 passing, 14 skipped (remaining skips need `chore/historical-data-regen`).
+
 #### Up next — pipeline cleanup (Wave TL-1, in priority order)
 
-1. `feature/fetch-activity-support` — update `fetch.py` for new columns + fix
-   `test_api.py` `SESSION_A` fixture → unblocks 3 skipped API tests.
-2. `chore/historical-data-regen` — regenerate all 121 historical JSON files;
+1. `chore/historical-data-regen` — regenerate all 121 historical JSON files;
    output to `output_training_logs_json_v2/` + `traininglogs_validation` DB for
    manual sign-off before replacing live data → unblocks 14 skipped import/query
    tests → 0 total skips.
