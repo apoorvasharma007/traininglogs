@@ -27,13 +27,15 @@ docker compose up -d
 
 ## Usage
 
-**Process a training week** (parses markdown, inserts to DB, writes JSON):
+**Process a training week** (parses markdown, inserts to DB, commits, rebuilds dashboard):
 
 ```bash
-traininglogs-v2 --phase <n> --week <n>
+traininglogs log --phase <n> --week <n>
 ```
 
 Input files must be in `input_training_logs_md/phase <n> week <n>/*.md`.
+
+Add `--publish` to also push the updated dashboard to the website.
 
 **Start the API:**
 
@@ -42,14 +44,6 @@ uvicorn traininglogs.api.app:app --reload
 ```
 
 API is available at `http://localhost:8000`. All requests require `X-Api-Key` header.
-
-**Rebuild the dashboard:**
-
-```bash
-python scripts/build_dashboard.py
-```
-
-Output: `dashboard/index.html`. Open in a browser directly — no server needed.
 
 **Run tests:**
 

@@ -460,6 +460,123 @@ def stimulus_fatigue_by_exercise(conn: Connection, min_sets: int = 10) -> list[d
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def session_list(conn: Connection) -> list[dict]:
+    """All sessions ordered by date descending, with source_file for linking."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                session_id,
+                date,
+                phase,
+                week,
+                focus,
+                is_deload_week,
+                source_file
+            FROM sessions
+            ORDER BY date DESC
+            """
+        )
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def key_lift_prs(conn: Connection, key_lifts: list[str]) -> dict:
+    """
+    For each key lift: best weight at exactly 1, 3, 5, 8, 10 reps, plus Epley e1RM.
+    Returns dict keyed by exercise name.
+    Tie-break: most recent date wins.
+    """
+    result: dict = {}
+    rep_brackets = [1, 3, 5, 8, 10]
+
+    for lift in key_lifts:
+        lift_data: dict = {"rep_prs": {}, "e1rm_kg": None, "e1rm_date": None}
+
+        for reps in rep_brackets:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT ws.weight_kg, s.date
+                    FROM working_sets ws
+                    JOIN exercises e ON e.id = ws.exercise_id
+                    JOIN sessions  s ON s.session_id = e.session_id
+                    WHERE LOWER(e.name) = LOWER(%s)
+                      AND ws.reps_full = %s
+                      AND ws.weight_kg IS NOT NULL
+                      AND ws.weight_kg > 0
+                    ORDER BY ws.weight_kg DESC, s.date DESC
+                    LIMIT 1
+                    """,
+                    (lift, reps),
+                )
+                row = cur.fetchone()
+            if row:
+                lift_data["rep_prs"][reps] = {"weight_kg": float(row[0]), "date": str(row[1])}
+
+        # Epley e1RM: best weight * (1 + reps/30) across all sets
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    ws.weight_kg,
+                    ws.reps_full,
+                    s.date,
+                    ROUND((ws.weight_kg * (1 + ws.reps_full::numeric / 30))::numeric, 2) AS e1rm
+                FROM working_sets ws
+                JOIN exercises e ON e.id = ws.exercise_id
+                JOIN sessions  s ON s.session_id = e.session_id
+                WHERE LOWER(e.name) = LOWER(%s)
+                  AND ws.weight_kg IS NOT NULL
+                  AND ws.weight_kg > 0
+                  AND ws.reps_full IS NOT NULL
+                  AND ws.reps_full > 0
+                ORDER BY e1rm DESC, s.date DESC
+                LIMIT 1
+                """,
+                (lift,),
+            )
+            row = cur.fetchone()
+        if row:
+            lift_data["e1rm_kg"] = float(row[3])
+            lift_data["e1rm_date"] = str(row[2])
+
+        result[lift] = lift_data
+
+    return result
+
+
+def goal_vs_actual(conn: Connection, exercise_name: str) -> list[dict]:
+    """
+    Every working set for an exercise, with the session's goal_weight_kg alongside.
+    Used to plot goal line vs actual dots on the progression chart.
+    goal_weight_kg is NULL for sessions where it wasn't set — skip those for the goal line.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                s.date,
+                s.phase,
+                s.week,
+                ws.number      AS set_number,
+                ws.weight_kg   AS actual_kg,
+                e.goal_weight_kg,
+                ws.reps_full,
+                ws.rpe
+            FROM working_sets ws
+            JOIN exercises e ON e.id = ws.exercise_id
+            JOIN sessions  s ON s.session_id = e.session_id
+            WHERE LOWER(e.name) = LOWER(%s)
+              AND ws.weight_kg IS NOT NULL
+            ORDER BY s.date ASC, ws.number ASC
+            """,
+            (exercise_name,),
+        )
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
 def weekly_tonnage_by_phase(conn: Connection) -> list[dict]:
     """
     Total tonnage (kg) per phase/week. Visualising this shows the mesocycle shape:

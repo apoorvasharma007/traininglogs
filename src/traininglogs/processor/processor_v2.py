@@ -64,6 +64,18 @@ def process_md_file(md_path: Path, conn, output_dir: Path = OUTPUT_DIR) -> Train
             f"The date in '{md_path.name}' is likely wrong. Fix it and re-run.\n"
         )
 
+    try:
+        source_file: str | None = str(md_path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        source_file = None
+    if source_file:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE sessions SET source_file = %s WHERE session_id = %s",
+                (source_file, session.session_id),
+            )
+        conn.commit()
+
     print(f">>> Inserted into DB: {session.session_id}\n")
 
     # JSON write second — only after the DB confirms this is a new session

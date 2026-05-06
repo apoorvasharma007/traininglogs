@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     focus                TEXT,
     duration_minutes     INT,
     user_id              TEXT,
-    user_name            TEXT
+    user_name            TEXT,
+    source_file          TEXT
 );
 
 CREATE TABLE IF NOT EXISTS exercises (
