@@ -22,10 +22,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     from traininglogs.parser.extract import TrainingMarkdownParser
     from traininglogs.parser.parse import DeepTrainingParser
-    from traininglogs.processor.processor import _to_primitive, compute_session_id
+    from traininglogs.processor.processor import _convert_lbs_to_kg, compute_session_id, INPUTS_DIR
     from traininglogs.models.models import TrainingSession
-    from dataclasses import is_dataclass
-    from enum import Enum
     from pydantic import ValidationError
 
     md_text = md_path.read_text(encoding="utf-8")
@@ -35,29 +33,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         intermediate = base_parser.parse()
 
         deep_parser = DeepTrainingParser(intermediate)
-        session_obj = deep_parser.build_training_session()
+        session_dict = deep_parser.build_training_session()
 
-        primitive_dict = _to_primitive(session_obj)
+        weight_unit = intermediate["metadata"].get("unit", "kg").lower()
+        if weight_unit == "lbs":
+            session_dict = _convert_lbs_to_kg(session_dict)
+            session_dict["weight_unit"] = "lbs"
 
-        for ex in primitive_dict.get("exercises", []):
-            if "working_sets" in ex:
-                raw_sets = ex.pop("working_sets") or []
-                has_activity = False
-                for s in raw_sets:
-                    if isinstance(s, dict):
-                        if "set_type" not in s:
-                            s["set_type"] = "strength"
-                        elif s.get("set_type") == "activity":
-                            has_activity = True
-                ex["sets"] = raw_sets
-                if has_activity:
-                    ex["exercise_type"] = "activity"
+        date_str = intermediate["metadata"].get("date", session_dict.get("date", ""))
+        session_dict["session_id"] = compute_session_id(md_path, INPUTS_DIR, date_str)
 
-        date_str = intermediate["metadata"].get("date", primitive_dict.get("date", ""))
-        session_id = compute_session_id(md_path, md_path.parent, date_str)
-        primitive_dict["session_id"] = session_id
-
-        session = TrainingSession.model_validate(primitive_dict)
+        session = TrainingSession.model_validate(session_dict)
 
     except ValidationError as e:
         print(f"✗ Validation failed:\n{e}")

@@ -100,7 +100,10 @@ def process_md_file(
     print(f">>> Inserted into DB: {session.session_id}\n")
 
     # JSON write second — only after the DB confirms this is a new session
-    week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
+    if session.program and session.phase is not None and session.week is not None:
+        week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
+    else:
+        week_dir = output_dir / "sessions"
     week_dir.mkdir(parents=True, exist_ok=True)
 
     output_path = week_dir / f"{session.session_id}.json"

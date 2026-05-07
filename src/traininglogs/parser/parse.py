@@ -26,15 +26,15 @@ class DeepTrainingParser:
         phase_raw = meta.get("phase")
         week_raw = meta.get("week")
         duration_raw = meta.get("duration")
-        if phase_raw is None:
-            raise ValueError("Session metadata missing required field: 'phase'")
-        if week_raw is None:
-            raise ValueError("Session metadata missing required field: 'week'")
-        if not duration_raw:
-            raise ValueError("Session metadata missing required field: 'duration'")
-        duration_nums = re.findall(r"\d+", str(duration_raw))
-        if not duration_nums:
-            raise ValueError(f"Cannot parse duration value: {duration_raw!r}")
+
+        duration_minutes: Optional[int] = None
+        if duration_raw:
+            duration_nums = re.findall(r"\d+", str(duration_raw))
+            if not duration_nums:
+                raise ValueError(f"Cannot parse duration value: {duration_raw!r}")
+            duration_minutes = int(duration_nums[0])
+
+        program_length_raw = meta.get("program length weeks")
 
         return {
             "data_model_version": "0.0.1",
@@ -42,15 +42,15 @@ class DeepTrainingParser:
             "user_id": str(meta.get("user_id", "7")),
             "user_name": meta.get("name", "Apoorva Sharma"),
             "date": meta.get("date"),
-            "program": meta.get("program", "BODYBUILDING TRANSFORMATION SYSTEM"),
-            "program_author": meta.get("author", "Jeff Nippard"),
-            "program_length_weeks": int(meta.get("program length weeks", 12)),
-            "phase": int(phase_raw),
-            "week": int(week_raw),
+            "program": meta.get("program") or None,
+            "program_author": meta.get("author") or None,
+            "program_length_weeks": int(program_length_raw) if program_length_raw else None,
+            "phase": int(phase_raw) if phase_raw is not None else None,
+            "week": int(week_raw) if week_raw is not None else None,
             "is_deload_week": is_deload_week,
             "focus": meta.get("focus"),
             "exercises": exercises,
-            "session_duration_minutes": int(duration_nums[0]),
+            "session_duration_minutes": duration_minutes,
         }
 
     def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Dict[str, Any]:
@@ -221,7 +221,7 @@ class DeepTrainingParser:
         if not cm:
             simple = re.search(r"([\d.]+)\s*x\s*(\d+)", core_part)
             if not simple:
-                return {"set_type": "strength", "number": set_num, "weight_kg": 0.0, "rep_count": {"full": 0, "partial": 0}}
+                raise ValueError(f"Cannot parse working set line: {line!r}")
             weight = float(simple.group(1))
             full = int(simple.group(2))
             result = {"set_type": "strength", "number": set_num, "weight_kg": weight, "rep_count": {"full": full, "partial": 0}}

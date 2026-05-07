@@ -25,29 +25,45 @@ def _base_session(**overrides) -> dict:
 # ---------------------------------------------------------------------------
 # build_training_session — missing required metadata fields
 # ---------------------------------------------------------------------------
-class TestBuildTrainingSessionMissingFields:
-    def test_missing_phase_raises(self):
+class TestBuildTrainingSessionOptionalFields:
+    def test_missing_phase_returns_none(self):
         s = _base_session()
         del s["metadata"]["phase"]
-        with pytest.raises(ValueError, match="phase"):
-            DeepTrainingParser(s).build_training_session()
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["phase"] is None
 
-    def test_missing_week_raises(self):
+    def test_missing_week_returns_none(self):
         s = _base_session()
         del s["metadata"]["week"]
-        with pytest.raises(ValueError, match="week"):
-            DeepTrainingParser(s).build_training_session()
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["week"] is None
 
-    def test_missing_duration_raises(self):
+    def test_missing_duration_returns_none(self):
         s = _base_session()
         del s["metadata"]["duration"]
-        with pytest.raises(ValueError, match="duration"):
-            DeepTrainingParser(s).build_training_session()
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["session_duration_minutes"] is None
 
     def test_unparseable_duration_raises(self):
         s = _base_session(duration="tomorrow")
         with pytest.raises(ValueError, match="duration"):
             DeepTrainingParser(s).build_training_session()
+
+    def test_missing_program_returns_none(self):
+        s = _base_session()
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["program"] is None
+
+    def test_standalone_session_builds_successfully(self):
+        s = {
+            "metadata": {"date": "2099-08-01", "duration": "45 min"},
+            "exercises": [],
+        }
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["phase"] is None
+        assert result["week"] is None
+        assert result["program"] is None
+        assert result["session_duration_minutes"] == 45
 
 
 # ---------------------------------------------------------------------------

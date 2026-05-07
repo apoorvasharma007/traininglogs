@@ -16,6 +16,7 @@ TEST_DB_URL = os.environ.get(
 MINIMAL_MD = """\
 # Training Log
 - Date: 2099-06-15
+- Program: Test Program
 - Phase: 9
 - Week: 1
 - Deload: No
@@ -170,6 +171,7 @@ def test_convert_lbs_to_kg_leaves_non_weight_fields():
 LBS_MD = """\
 # Training Log
 - Date: 2099-06-16
+- Program: Test Program
 - Phase: 9
 - Week: 1
 - Deload: No
@@ -239,6 +241,7 @@ def test_process_lbs_json_has_weight_unit_field(lbs_md_file, conn, tmp_path):
 ACTIVITY_MD = """\
 # Training Log
 - Date: 2099-07-01
+- Program: Test Program
 - Phase: 9
 - Week: 1
 - Deload: No
@@ -307,11 +310,65 @@ def test_activity_exercise_type_stored_in_db(activity_md_file, conn, tmp_path):
     assert row[0] == "activity"
 
 
+# --- standalone session (no program/phase/week) ---
+
+STANDALONE_MD = """\
+# Training Log
+- Date: 2099-08-01
+- Duration: 45 min
+
+## Exercise 1
+**Name:** Pull-up
+**Goal:** 0 kg x 3 sets x 8-10 reps
+### Working Sets
+1. 0 x 8 RPE 8 good
+2. 0 x 7 RPE 8.5 good
+"""
+
+
+@pytest.fixture
+def standalone_md_file(tmp_path) -> Path:
+    f = tmp_path / "standalone.md"
+    f.write_text(STANDALONE_MD)
+    return f
+
+
+def test_standalone_session_inserts_to_db(standalone_md_file, conn, tmp_path):
+    standalone_id = _session_id(standalone_md_file, "2099-08-01")
+    process_md_file(standalone_md_file, conn, inputs_root=standalone_md_file.parent, output_dir=tmp_path)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT session_id, program, phase, week FROM sessions WHERE session_id = %s",
+            (standalone_id,),
+        )
+        row = cur.fetchone()
+
+    assert row is not None
+    assert row[0] == standalone_id
+    assert row[1] is None
+    assert row[2] is None
+    assert row[3] is None
+
+
+def test_standalone_session_json_goes_to_sessions_dir(standalone_md_file, conn, tmp_path):
+    session = process_md_file(standalone_md_file, conn, inputs_root=standalone_md_file.parent, output_dir=tmp_path)
+
+    expected_path = tmp_path / "sessions" / f"{session.session_id}.json"
+    assert expected_path.exists()
+
+    data = json.loads(expected_path.read_text())
+    assert data["program"] is None
+    assert data["phase"] is None
+    assert data["week"] is None
+
+
 # --- unilateral set integration tests ---
 
 UNILATERAL_MD = """\
 # Training Log
 - Date: 2099-07-02
+- Program: Test Program
 - Phase: 9
 - Week: 1
 - Deload: No
