@@ -1,15 +1,17 @@
 """Regenerate all historical JSON files using the current processor pipeline.
 
-Safety-isolated: writes to output_training_logs_json_v2/ and inserts into the
-traininglogs_validation DB — never touches the live output dir or prod/test DBs.
+Safety-isolated: writes to a fresh output directory, never overwrites the live
+output_training_logs_json/. After reviewing output, swap directories manually.
 
 Usage:
-    python scripts/regen_historical.py [--overwrite] [--db-url URL] [--output-dir DIR]
+    REGEN_DATABASE_URL=<url> python scripts/regen_historical.py [--overwrite] [--output-dir DIR]
 
-Run docker compose up -d db_validation before running this script.
-After reviewing output, sign off manually before swapping dirs:
+Requires a running isolated target DB — never point this at the prod or test DB.
+See .claude/regen-historical.md for the full workflow and sign-off steps.
+
+After a successful run, review the output then swap:
     mv output_training_logs_json output_training_logs_json_old
-    mv output_training_logs_json_v2 output_training_logs_json
+    mv <output-dir> output_training_logs_json
 """
 import argparse
 import os
@@ -24,29 +26,25 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert import insert_session
 from traininglogs.processor.processor import process_md_file
 
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json_v2"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json_regen"
 INPUT_DIR = PROJECT_ROOT / "inputs"
-
-VALIDATION_DB_URL = (
-    os.environ.get("VALIDATION_DATABASE_URL")
-    or "postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation"
-)
 
 
 def main() -> None:
+    regen_url = os.environ.get("REGEN_DATABASE_URL", "")
+    if not regen_url:
+        print("ERROR: REGEN_DATABASE_URL is not set.")
+        print("Set it to the URL of an isolated target DB (not prod, not test).")
+        print("Example: postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(description="Regenerate historical JSON files.")
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Truncate the validation DB before running (safe to re-run from scratch).",
-    )
-    parser.add_argument(
-        "--db-url",
-        default=VALIDATION_DB_URL,
-        help="Validation DB URL (default: VALIDATION_DATABASE_URL env var or port 5434).",
+        help="Truncate the target DB before running (safe to re-run from scratch).",
     )
     parser.add_argument(
         "--output-dir",
@@ -59,14 +57,14 @@ def main() -> None:
     output_dir: Path = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    conn = get_connection(args.db_url)
+    conn = get_connection(regen_url)
     apply_schema(conn)
 
     if args.overwrite:
         with conn.cursor() as cur:
             cur.execute("TRUNCATE TABLE sessions CASCADE")
         conn.commit()
-        print("Truncated validation DB (cascaded to all child tables).")
+        print("Truncated target DB (cascaded to all child tables).")
 
     md_files = sorted(INPUT_DIR.rglob("*.md"))
     if not md_files:
@@ -85,9 +83,6 @@ def main() -> None:
             process_md_file(md_path, conn, output_dir=output_dir)
             processed += 1
         except SystemExit as e:
-            # process_md_file raises SystemExit on session_id collision.
-            # In the validation run this is a skip — the session was already
-            # inserted on a previous run (or --overwrite wasn't passed).
             print(f"  SKIPPED (collision): {rel}")
             print(f"    {e}\n")
             skipped += 1
@@ -100,8 +95,8 @@ def main() -> None:
 
     print("\n" + "=" * 60)
     print(f"  Processed : {processed}")
-    print(f"  Skipped   : {skipped}  (session_id already in validation DB)")
-    print(f"  Failed    : {failed}   (parse or model error)")
+    print(f"  Skipped   : {skipped}  (session_id already in target DB — use --overwrite to reset)")
+    print(f"  Failed    : {failed}")
     print("=" * 60)
 
     if failed:
@@ -110,8 +105,8 @@ def main() -> None:
 
     print(f"\nJSON written to: {output_dir}")
     print("Review the output, then sign off by swapping directories:")
-    print("  mv output_training_logs_json output_training_logs_json_old")
-    print("  mv output_training_logs_json_v2 output_training_logs_json")
+    print(f"  mv output_training_logs_json output_training_logs_json_old")
+    print(f"  mv {output_dir.name} output_training_logs_json")
 
 
 if __name__ == "__main__":

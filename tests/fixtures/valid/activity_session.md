@@ -1,5 +1,5 @@
 # Training Log
-- Date: 2099-07-01
+- Date: 3000-07-01
 - Phase: 9
 - Week: 1
 - Deload: No

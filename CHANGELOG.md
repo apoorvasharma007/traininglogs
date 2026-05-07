@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 - `inputs/` directory layout: `inputs/programs/<slug>/phase_N/week_N/` for program sessions,
   `inputs/sessions/` for standalone workouts.
-- `test_inputs/` with three canonical fixture files: `strength_session.md`,
+- `tests/fixtures/` with three canonical fixture files: `strength_session.md`,
   `activity_session.md`, `unilateral_session.md`.
 - `scripts/migrate_inputs.py` — copies existing files from `input_training_logs_md/` into
   the new `inputs/` structure. Supports `--dry-run` and `--overwrite`. Safe to re-run.
