@@ -10,11 +10,7 @@ Capture happens offline during the workout (draft saved locally in a PWA). Proce
 
 ## Active plans
 
-| Plan | Status |
-|---|---|
-| [`docs/plans/refactor-plan.md`](docs/plans/refactor-plan.md) | Drop dataclass bridge — **complete**, merged to dev. |
-
-Check `▶ Resume here` at the bottom of each plan file before picking up work.
+No active plans. Completed plans are archived in `archived/`.
 
 ---
 

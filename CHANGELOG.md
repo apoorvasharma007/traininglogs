@@ -7,226 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### `refactor/drop-dataclass-bridge` — 2026-05-07
+## [2.0.0] - 2026-05-07
 
-#### Removed
-- `models_dataclass.py` (832 lines) — the legacy parallel dataclass model layer is gone.
-- `processor.py` bridge: `_to_primitive()`, `is_dataclass` import, the `working_sets→sets`
-  rename loop, `set_type` injection, and `exercise_type` inference.
-- Dead `session_id` computation in `DeepTrainingParser.build_training_session()` (was always
-  overwritten by the processor's path-based scheme).
+### Added
 
-#### Changed
-- `parse.py` now returns plain dicts shaped directly for `TrainingSession.model_validate()`.
-  One model layer, no translation step.
-- `processor.py` pipeline: parse → inject `session_id` → lbs conversion → `model_validate()`.
-
----
-
-### `fix/parser-goal-warmup-formats` — 2026-05-07
-
-#### Fixed
-- `processor.py` bridge: `Goal.rest_minutes` (dataclass) was not mapped to `Goal.rest`
-  (Pydantic `Rest` object) — `goal_rest_min` was silently stored as NULL in the DB for
-  every session. Now correctly mapped to `{"minutes": X}` before Pydantic validation.
-- Input files: 24 `upper_strength_foundation_block.md` files had `13.6 kg x 3 sets x 10 reps`
-  (single rep count, no range) which the parser rejected. Fixed to `10-12 reps`.
-- Input files: 3 `upper_strength_foundation_block.md` files (phase_3/week_2/3/4) had
-  `100+ kg x 2 sets x 8-10 reps` — `+` suffix not valid in goal weight. Removed.
-- Input files: phase_2/week_1 warmup lines `1. 32 kg x 10` and `2. 66 kg x 4` had explicit
-  `kg` unit which the warmup parser does not expect. Removed units.
-- Input files: phase_3/week_11 warmup line `3. 25` was a bare number with no weight/reps
-  structure. Removed.
-- Regenerated all 121 session JSON files with path-based session IDs (replacing old
-  `YYYY-MM-DD_focus_N` scheme).
-
-### `fix/parser-error-handling` — 2026-05-07
-
-#### Fixed
-- `_parse_working_set_line`: was silently returning `None` on malformed lines; now raises
-  `ValueError` with the offending line. Type annotation corrected to `Union[WorkingSet, dict]`
-  (unilateral sets return a dict by design; the processor bridge depends on this).
-- `_parse_warmup_set_line`: was silently returning `None` on malformed lines; now raises
-  `ValueError`. Return type corrected to `WarmupSet`.
-- `_parse_goal`: was silently returning `None` when the goal string was present but didn't
-  match the expected pattern; now raises `ValueError`. Absent goal (`None`/empty) still
-  returns `None` correctly.
-- `build_training_session`: accessing `int(meta.get("phase"))` / `int(meta.get("week"))` /
-  `re.findall(…, meta.get("duration"))` crashed with unhelpful `TypeError`/`IndexError` when
-  those metadata fields were missing. Now raises `ValueError` with a named-field message before
-  the `int()` conversion.
-
-#### Added
-- `tests/test_parse.py` — 15 unit tests covering the fixed error paths and key happy paths
-  for `_parse_goal`, `_parse_warmup_set_line`, `_parse_working_set_line`, and
-  `build_training_session`.
-
----
-
-### `feature/inputs-restructure` (Wave TL-2) — 2026-05-07
-
-#### Added
-- `inputs/` directory layout: `inputs/programs/<slug>/phase_N/week_N/` for program sessions,
-  `inputs/sessions/` for standalone workouts.
+- `inputs/` directory layout: `inputs/programs/<slug>/phase_N/week_N/` for program
+  sessions; `inputs/sessions/` for standalone workouts not tied to a program.
 - `tests/fixtures/` with three canonical fixture files: `strength_session.md`,
   `activity_session.md`, `unilateral_session.md`.
-- `scripts/migrate_inputs.py` — copies existing files from `input_training_logs_md/` into
-  the new `inputs/` structure. Supports `--dry-run` and `--overwrite`. Safe to re-run.
-- `traininglogs validate <file>` subcommand — parse + validate a single session file,
-  print a model summary, exit non-zero on failure. No DB write.
+- `traininglogs validate <file>` subcommand — parses and validates a session file,
+  prints a model summary, exits non-zero on failure. No DB write.
+- `ActivitySet` model and `### Activity Sets` markdown header. Supports any
+  combination of `duration_seconds`, `distance_meters`, `heart_rate_bpm`.
+- Unilateral rep support on `StrengthSet` via `left`/`right` keywords; partial
+  reps (`left 8 + 1`) map to `{full, partial}` per side.
+- `Rest(BaseModel)` with `minutes` and `seconds` fields; validators reject both
+  being set simultaneously.
+- `AnySet` discriminated union (`StrengthSet | ActivitySet`) on `set_type`.
+- `weight_unit: Literal["kg", "lbs"] = "kg"` on `TrainingSession`; lbs→kg
+  conversion runs at parse time.
+- `exercise_type TEXT NOT NULL DEFAULT 'strength'` on `exercises` table.
+- `set_type`, `duration_seconds`, `distance_meters`, `heart_rate_bpm`,
+  `left_reps_full`, `left_reps_partial`, `right_reps_full`, `right_reps_partial`,
+  `rest_seconds` columns on `working_sets` table.
+- `weight_unit TEXT NOT NULL DEFAULT 'kg'` on `sessions` table.
+- 15 unit tests in `tests/test_parse.py` covering error paths and happy paths for
+  `_parse_goal`, `_parse_warmup_set_line`, `_parse_working_set_line`, and
+  `build_training_session`.
 
-#### Changed
-- **Session ID scheme** — changed from `date_focus_userid` to
-  `YYYY-MM-DD-<first 6 chars of SHA256(path relative to inputs_root)>`.
-  Deterministic: same file path → same ID. Unique across same-day sessions with different
-  file names.
-- `traininglogs log` now accepts a positional `<file>` or `<dir>` argument, or
-  `--program <name> --phase N --week N` to resolve to
-  `inputs/programs/<slug>/phase_N/week_N/`. Old `--phase`/`--week` required args removed.
-  `--dry-run`, `--no-commit`, `--publish`, `--pr`, `--message` unchanged.
-- `processor.process_md_file()` accepts an `inputs_root` parameter (defaults to
-  `inputs/`) used for session ID computation.
-- `processor.main()` updated to accept positional `target` (file or dir) or
-  `--program/--phase/--week` in place of old required `--phase`/`--week`.
+### Changed
 
-### `chore/historical-data-regen` — done (2026-05-07)
+- **Session ID scheme** — `YYYY-MM-DD_focus_N` replaced by
+  `YYYY-MM-DD-<sha256[:6] of path relative to inputs/>`. Deterministic: same file
+  path always produces the same ID.
+- `traininglogs log` accepts a positional `<file>` or `<dir>`, or
+  `--program <slug> --phase N --week N` to resolve to
+  `inputs/programs/<slug>/phase_N/week_N/`. Old `--phase`/`--week` required args
+  removed.
+- `parse.py` now returns plain dicts shaped directly for `model_validate()`. No
+  intermediate dataclass layer.
+- `processor.py` pipeline: parse → inject `session_id` → lbs conversion →
+  `model_validate()`. No bridge step.
+- `Exercise.working_sets` renamed to `sets`. API response key `working_sets`
+  renamed to `sets`.
+- `Goal.rest_minutes` replaced by `rest: Optional[Rest]`.
+- Module renames: `models_v2`→`models`, `insert_v2`→`insert`,
+  `processor_v2`→`processor`. Script renames: `regen_v2`→`regen_historical`,
+  `compare_v2`→`compare_sessions`, `import_json_to_db_v2`→`import_sessions_to_db`.
+- `inputs/` replaces `input_training_logs_md/` as the working inputs directory.
+  121 historical session files migrated.
+- All 121 historical JSON snapshots regenerated with the new pipeline (path-based
+  session IDs, `sets` key, `set_type` discriminator, `Rest` goal field).
 
-- Regenerated all 121 historical JSON files using the current `processor_v2.py` pipeline.
-  Output verified against originals via `scripts/compare_v2.py`: 0 suspicious diffs,
-  5356 expected structural changes (key rename `working_sets→sets`, `set_type`/`exercise_type`
-  discriminators added, `current_goal.rest_minutes→rest`, `weight_unit` stamped, `None`
-  warmup-parse entries cleaned).
-- Added `db_validation` service to `docker-compose.yml` (port 5434, isolated from prod/test).
-- Added `scripts/regen_v2.py` and `scripts/compare_v2.py`.
-- Removed all `pytest.mark.skip` markers gated on this branch.
-- Updated query/import test fixtures to use new schema shape (`sets` key, `set_type`
-  discriminator, `Rest` model for `current_goal.rest`).
-- **Test suite**: 132 passing, 0 skipped.
+### Fixed
 
-### Data model flexibility + activity support — 2026-05-06
+- `_parse_working_set_line`, `_parse_warmup_set_line`, `_parse_goal`,
+  `build_training_session` — silently returned `None` on malformed input; now raise
+  `ValueError` with the offending content.
+- `processor.py`: `Goal.rest_minutes` was not mapped to `Goal.rest` — `goal_rest_min`
+  was stored as NULL for every session.
+- 27 input files with invalid formats corrected: single rep count (`10 reps` instead
+  of `10-12 reps`), `+` suffix on goal weights, explicit `kg` unit in warmup lines,
+  bare-number warmup line.
+- `fetch.py`: `get_sessions()` and `get_session()` now select all new columns;
+  result key renamed `working_sets`→`sets`.
 
-- **Model refactor** (`models/models_v2.py`) — `WorkingSet` refactored into
-  `StrengthSet` and `ActivitySet` subclasses with a `Rest` model; `AnySet`
-  discriminated union on `set_type`; `UnilateralReps` added to `StrengthSet`;
-  `Goal` fields made Optional with `distance_meters` and `target_duration_seconds`
-  added; all program/phase/week/focus fields made Optional on `TrainingSession`;
-  `weight_unit: Literal["kg", "lbs"] = "kg"` added to `TrainingSession`.
-  See design decisions below for full field-level detail.
-- **DB migration** (additive, no destructive changes) — `working_sets` gains
-  `set_type`, `duration_seconds`, `distance_meters`, `heart_rate_bpm`,
-  unilateral rep columns, and `rest_seconds`; `sessions` gains `weight_unit`;
-  `exercises` gains `exercise_type`.
-- **insert_v2.py** — updated to write all new columns.
-- **Processor lbs conversion** (`processor_v2.py`) — detects `- Unit: lbs` in
-  markdown metadata, recursively converts every `weight_kg` field in the
-  primitive dict via `_convert_lbs_to_kg()`, sets `weight_unit = "lbs"` on the
-  session before DB insert. Parser goal regex extended to accept `lbs`/`lb`.
-- **Test suite** — 112 passing, 17 skipped (skips require `chore/historical-data-regen`).
+### Removed
 
-#### Done — parser activity + unilateral support (`feature/parser-activity-unilateral`)
+- `models_dataclass.py` — legacy parallel dataclass layer.
+- Old `--phase`/`--week` as standalone required args (replaced by the
+  `--program/--phase/--week` combination or a positional target).
+- `docs/architecture.md` — content subsumed by `docs/design.html`.
 
-Markdown syntax (finalised 2026-05-06):
+### Validation rules in effect
 
-- `### Working Sets` header → exercise is `strength` (existing, unchanged)
-- `### Activity Sets` header → exercise is `activity` (new); no `**Type:**` field needed
-- Activity set line format: `1. 20 min 2.5 km HR 145`
-  - `<N> min` or `<N> sec` → `duration_seconds`
-  - `<N.N> km` or `<N> m` → `distance_meters`
-  - `HR <N>` → `heart_rate_bpm`
-  - All tokens optional; any combination is valid
-- Unilateral strength set format: `1. 30 x left 8 + 1, right 9 + 1 RPE 8.5 good`
-  - Side keyword: `left`/`L`/`left:` or `right`/`R`/`right:` (case-insensitive)
-  - Either side can come first; comma separates them; whitespace ignored
-  - Partial reps: `left 8 + 1` → `{full: 8, partial: 1}`
-  - RPE is a property of the whole set (shared for both sides)
-  - Bilateral sets continue to use existing format (no change)
-- Goal line stays bilateral-only for now (`**Goal:** 80 kg x 3 sets x 8-10 reps`)
-- Bodyweight exercises: use `0` as weight value
-
-Changes shipped:
-1. `parser/extract.py` — recognizes `### Activity Sets`, collects into `activity_sets`
-   list, sets `exercise_type = "activity"` on the exercise dict.
-2. `parser/parse.py` — new `_parse_activity_set_line()` for `ActivitySet` objects;
-   `_parse_working_set_line()` extended with unilateral keyword regex;
-   `_parse_exercise()` routes by `exercise_type`.
-3. `processor/processor_v2.py` — bridge step after `_to_primitive()` renames
-   `working_sets` → `sets` in each exercise dict and injects `set_type` discriminator.
-   This also fixed a pre-existing bug where `Exercise.sets` was always `None` in the
-   validated model (working sets were silently dropped on every insert).
-4. `tests/test_processor_v2.py` — integration tests for activity sessions and
-   unilateral strength sets, all hitting the real test DB.
-- **Test suite** — 115 passing, 17 skipped (skips require `chore/historical-data-regen`).
-
-#### Done — `feature/fetch-activity-support`
-
-- **fetch.py** — `get_sessions()` selects `weight_unit`; `get_session()` selects
-  `weight_unit`, `exercise_type`, and all new `working_sets` columns (`set_type`,
-  unilateral rep cols, `rest_seconds`, `duration_seconds`, `distance_meters`,
-  `heart_rate_bpm`); result key renamed `working_sets` → `sets` to match
-  `Exercise.sets` in the model.
-- **test_api.py SESSION_A** — fixture updated to new model shape: `sets` key,
-  `set_type: "strength"` discriminator, `rest: {minutes: 3}` Goal field.
-- **3 API tests unskipped** — `test_session_detail_returns_full_structure`,
-  `test_exercise_history_returns_sets_in_order`, `test_exercise_history_case_insensitive`.
-- **Test suite** — 118 passing, 14 skipped (remaining skips need `chore/historical-data-regen`).
-
-#### Safely deferred
-- Lbs duplicate column in DB + dashboard unit toggle.
-- `queries.py` `set_type = 'strength'` filter — NULL arithmetic protects strength
-  metrics from activity set contamination for now.
-- Superset / circuit support (sets linked across exercises).
-- Sport/martial-arts session type (BJJ, Muay Thai).
-- Dashboard generalization (timeline view, program metadata display) — Wave 6.
+- `failure_technique` is only valid on sets where `rpe == 10`.
+- Exercise `number` fields must be sequential starting at 1.
+- `week` must be between 1 and `program_length_weeks` (when program context is present).
+- RPE must be a whole or half step between 1 and 10.
+- `rest.minutes` must be 0–15; `rest.seconds` must be 0–900; both cannot be set simultaneously.
+- Required string fields reject empty or whitespace-only values.
 
 ---
-
-### Design decisions (reference)
-
-#### `TrainingSession`
-- Make `program`, `program_author`, `program_length_weeks`, `phase`, `week`,
-  `is_deload_week`, `focus`, `session_duration_minutes` all `Optional` — enables
-  ad-hoc workouts that don't belong to a program.
-- Add `weight_unit: Literal["kg", "lbs"] = "kg"` at session level. Lbs is
-  converted to kg at parse/input time; only kg is stored. Future: duplicate
-  column + dashboard toggle (deferred).
-
-#### `WorkingSet` — inheritance refactor
-- Refactor `WorkingSet` into a base class carrying only shared fields:
-  `number`, `rpe`, `rest: Optional[Rest]`, `notes`.
-- Add `Rest(BaseModel)` with `minutes: Optional[int]` and
-  `seconds: Optional[int]`. Validators: `minutes` 0–15, `seconds` 0–900,
-  and a model validator that rejects both being set simultaneously.
-- Add `StrengthSet(WorkingSet)` — carries `weight_kg`, `rep_count`,
-  `unilateral_rep_count`, `rep_quality_assessment`, `failure_technique`.
-- Add `ActivitySet(WorkingSet)` — carries `duration_seconds`, `distance_meters`,
-  `heart_rate_bpm`. Covers running, cardio, drills.
-- Add `AnySet` discriminated union (`StrengthSet | ActivitySet`) on `set_type`.
-- Add `UnilateralReps(BaseModel)` with `left: Optional[RepCount]`,
-  `right: Optional[RepCount]`.
-
-#### `Exercise`
-- `working_sets: List[WorkingSet]` → `sets: Optional[List[AnySet]]`.
-- Add `exercise_type: Literal["strength", "activity"] = "strength"`.
-- `WarmupSet` stays as a separate field.
-
-#### `Goal`
-- `weight_kg`, `sets`, `rep_range` → `Optional`.
-- `rest_minutes: Optional[int]` → `rest: Optional[Rest]`.
-- Add `distance_meters: Optional[float]`, `target_duration_seconds: Optional[int]`.
-
-#### DB migration (additive, no destructive changes)
-- `working_sets`: add `set_type TEXT NOT NULL DEFAULT 'strength'`,
-  `duration_seconds INT`, `distance_meters NUMERIC`, `heart_rate_bpm INT`,
-  `left_reps_full INT`, `left_reps_partial INT`, `right_reps_full INT`,
-  `right_reps_partial INT`; add `rest_seconds INT` alongside existing
-  `rest_minutes`.
-- `sessions`: add `weight_unit TEXT NOT NULL DEFAULT 'kg'`.
-- `exercises`: add `exercise_type TEXT NOT NULL DEFAULT 'strength'`.
 
 ## [1.0.0] - 2026-05-05
 
-Initial tagged release. Seed entry — describes the system as it stands at v1.0.0
-rather than reconstructing pre-1.0 history.
+Initial tagged release. Seed entry — describes the system as it stands at v1.0.0.
 
 ### Added
 
@@ -235,7 +101,7 @@ rather than reconstructing pre-1.0 history.
   `Goal`, `RepRange`, `RepCount`, and a `FailureTechnique` discriminated union
   covering myo-reps, lengthened-partials, static holds, and drop sets.
 - **Markdown parser** (`parser/extract.py`, `parser/parse.py`) — rule-based,
-  deterministic, no LLM in the hot path. Bridges to Pydantic via the processor.
+  deterministic, no LLM in the hot path.
 - **Processor CLI** (`processor/processor.py`) — DB-first, JSON-second.
   Errors on `session_id` collision rather than silently overwriting.
 - **PostgreSQL storage** with four tables: `sessions`, `exercises`,
@@ -255,11 +121,8 @@ rather than reconstructing pre-1.0 history.
   markdown, inserts to DB, writes JSON snapshots, commits, rebuilds the
   dashboard, and (with `--publish`) pushes the dashboard to the website repo.
 - **Test suite** — real Postgres test DB via Docker (no DB mocks), pytest.
-- **CI** — GitHub Actions runs the test suite on push and PR, and on tag-worthy
-  pushes to `main` cuts a release and syncs the app version stamped in
-  `docs/design.html`.
-- **Technical design doc** at `docs/design.html` — single-page hand-written
-  HTML, source of truth for the system's shape.
+- **CI** — GitHub Actions runs the test suite on push and PR.
+- **Technical design doc** at `docs/design.html`.
 
 ### Validation rules in effect
 
@@ -270,13 +133,6 @@ rather than reconstructing pre-1.0 history.
 - `rest_minutes` and `actual_rest_minutes` must be between 0 and 15.
 - Required string fields reject empty or whitespace-only values.
 
-### Notes
-
-- 121 historical sessions imported into the DB via
-  `scripts/import_sessions_to_db.py` (idempotent, supports `--overwrite`).
-- v1 dataclass models consolidated into `models/models_dataclass.py` — still
-  used by `parser/parse.py` as an intermediate representation before the
-  Pydantic bridge.
-
-[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/apoorvasharma007/traininglogs/releases/tag/v1.0.0

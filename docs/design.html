@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">1.0.0</span> · 2026-05-06</div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-07</div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -204,7 +204,7 @@
                                        FastAPI
                                        (REST)</div>
   <p>Each step is a boundary. Markdown is what I write. Pydantic is what the rest of the system trusts. Postgres is the source of truth for everything queryable. The API and the dashboard both read from Postgres; nothing writes back through them.</p>
-  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based and will be replaced by an LLM-driven capture flow ("Track B"); the Pydantic model and the database schema have stayed largely the same through that planning.</p>
+  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based. An LLM-driven capture flow is planned to replace it ("Track B" below); the Pydantic model and the database schema are the stable contract between stages.</p>
 </section>
 
 <section>
@@ -254,7 +254,7 @@
     <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.exercise_type</code>; <code>working_sets.set_type</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
-  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision (same date, same focus, already in the DB) raises <code>SystemExit</code> rather than silently overwriting. Fix the date in the markdown and re-run.</p>
+  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
 </section>
 
 <section>
@@ -308,8 +308,8 @@
 
 <section>
   <h2 id="versioning">Versioning</h2>
-  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields, written into the JSON snapshot and the DB row. A re-parse can be detected by comparing the version stamped on a snapshot to the current model version. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format).</p>
-  <p>There are no migrations yet. The schema is small enough that <code>CREATE TABLE IF NOT EXISTS</code> in <code>db/schema.sql</code> has been sufficient. When the first breaking schema change lands, this section will grow a paragraph about how migrations are run.</p>
+  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in both the JSON snapshot and the DB row. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
+  <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> runs it on startup. Breaking migrations will be documented here when they land.</p>
 </section>
 
 <section>
@@ -323,7 +323,7 @@
 </section>
 
 <footer>
-  Last updated 2026-05-06 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+  Last updated 2026-05-07 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
 </footer>
 
 </main>
