@@ -17,7 +17,6 @@ from traininglogs.api.schemas import (
 
 load_dotenv()
 
-API_KEY = os.environ.get("API_KEY", "")
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "").split(",")
 
 _pool: SimpleConnectionPool | None = None
@@ -41,13 +40,14 @@ def _db():
 
 
 def _auth(x_api_key: Annotated[str, Header()] = ""):
-    if API_KEY and x_api_key != API_KEY:
+    api_key = os.environ.get("API_KEY", "")
+    if api_key and x_api_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not API_KEY:
+    if not os.environ.get("API_KEY"):
         print(
             "ERROR: API_KEY is not set. Set it in .env before starting the server.",
             file=sys.stderr,
