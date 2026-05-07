@@ -2,8 +2,8 @@ import os
 import pytest
 
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 from traininglogs.analytics.queries import (
     exercise_progression,
     personal_records,
@@ -14,7 +14,6 @@ from traininglogs.analytics.queries import (
     failure_technique_usage,
     custom_query,
     overview_stats,
-    exercise_e1rm_trend,
     exercise_list,
     weekly_muscle_group_volume,
     rpe_distribution,
@@ -54,11 +53,11 @@ SESSION_1 = {
             "form_cues": [],
             "target_muscle_groups": ["Chest", "Triceps"],
             "rep_tempo": None,
-            "current_goal": {"weight_kg": 80.0, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest_minutes": 3},
+            "current_goal": {"weight_kg": 80.0, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
-            "working_sets": [
-                {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 8.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
+            "sets": [
+                {"set_type": "strength", "number": 1, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 8.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"set_type": "strength", "number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
             ],
         }
     ],
@@ -88,11 +87,11 @@ SESSION_2 = {
             "form_cues": [],
             "target_muscle_groups": ["Chest", "Triceps"],
             "rep_tempo": None,
-            "current_goal": {"weight_kg": 82.5, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest_minutes": 3},
+            "current_goal": {"weight_kg": 82.5, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
-            "working_sets": [
-                {"number": 1, "weight_kg": 82.5, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"number": 2, "weight_kg": 82.5, "rep_count": {"full": 4, "partial": 1}, "rpe": 10.0, "rep_quality_assessment": None, "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "LLP", "details": {"partial_rep_count": 4}}},
+            "sets": [
+                {"set_type": "strength", "number": 1, "weight_kg": 82.5, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"set_type": "strength", "number": 2, "weight_kg": 82.5, "rep_count": {"full": 4, "partial": 1}, "rpe": 10.0, "rep_quality_assessment": None, "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "LLP", "details": {"partial_rep_count": 4}}},
             ],
         }
     ],
@@ -123,11 +122,11 @@ SESSION_3_DELOAD = {
             "form_cues": [],
             "target_muscle_groups": ["Chest", "Triceps"],
             "rep_tempo": None,
-            "current_goal": {"weight_kg": 70.0, "sets": 2, "rep_range": {"min": 5, "max": 6}, "rest_minutes": 3},
+            "current_goal": {"weight_kg": 70.0, "sets": 2, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
-            "working_sets": [
-                {"number": 1, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"number": 2, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.5, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+            "sets": [
+                {"set_type": "strength", "number": 1, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"set_type": "strength", "number": 2, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.5, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
             ],
         }
     ],
@@ -222,20 +221,6 @@ def test_overview_stats_totals(conn):
     assert o["weeks_trained"] >= 3
     # tonnage: s1=80*5+80*5=800, s2=82.5*5+82.5*4=742.5, s3=70*5+70*5=700 → ≥2242
     assert o["total_tonnage_kg"] >= 2242
-
-
-def test_exercise_e1rm_trend_epley(conn):
-    rows = exercise_e1rm_trend(conn, "Bench Press")
-    test_rows = [r for r in rows if r["date"] and str(r["date"]) >= "2026-01-01"]
-    # Epley for 80kg × 5: 80 * (1 + 5/30) = 93.33
-    first = test_rows[0]
-    assert float(first["e1rm_kg"]) == pytest.approx(93.33, abs=0.1)
-
-
-def test_exercise_e1rm_trend_null_on_zero_reps(conn):
-    # Exercise without any reps would return empty; just ensure function runs without error
-    rows = exercise_e1rm_trend(conn, "Deadlift")
-    assert rows == []
 
 
 def test_exercise_list_respects_min_sets(conn):

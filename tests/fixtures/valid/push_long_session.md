@@ -1,0 +1,166 @@
+# Training Log
+
+- Date: 3000-01-10
+- Program: Test Program
+- Phase: 3
+- Week: 11
+- Deload: No
+- Focus: Push Hypertrophy
+- Duration: 177 min 
+
+## Exercise 1
+
+**Name:** Barbell Bench Press
+**Goal:** 75 kg x 3 sets x 8-10 reps
+**Rest:** 5 min  
+
+### Warmup
+1. 40 x feel
+2. 60 x feel
+3. 70 x feel
+### Warmup Notes
+Pyramid warmup figure
+
+### Working Sets
+1. 80 x 8 RPE 10 perfect
+2. 80 x 8 RPE 10 perfect  
+3. 80 x 8 RPE 10 perfect
+4. 80 x 8+2 RPE 10 perfect
+
+### Notes
+Whatever reason strength has dropped by few reps on this, is the high volume overall fatigue to blame?
+
+### Cues
+- Legs engaged  
+- Core braced and back settled  
+- Breathe per rep  
+
+## Exercise 2
+**Name:** Seated DB Shoulder Press
+**Goal:** 22.5 kg x 3 sets x 10-12 reps
+**Rest:** 3 min 
+
+### Warmup
+
+
+### Warmup Notes
+Don't use heavy weights preserve strength for working sets.
+
+### Working Sets
+1. 22.5 x 8 RPE 10 perfect 
+2. 22.5 x 8 RPE 10 perfect 
+3. 22.5 x 6+2 RPE 10 good
+
+### Notes
+Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect.
+
+### Cues
+- Seat upright 
+- Full rom  
+
+## Exercise 3
+
+**Name:** Bottom Half Seated Cable Flye
+**Goal:** 13.6 kg x 3 sets x 12-15 reps
+**Rest:** 2 min 
+
+### Working Sets
+1. 13.6 x 15 RPE 10 good
+2. 13.6 x 12 RPE 10 good
+3. 13.6 x 10 RPE 10 perfect
+
+### Notes
+Only squeeze from chest, no pushing from wrist or forearm.
+
+### Cues
+- Take a wider path when coming up  
+- Constant tension on pecs
+
+## Exercise 4
+
+**Name:** High Cable Lateral Raise
+**Goal:** 9.1 kg x 3 sets x 12-15 reps 
+**Rest:** 2 min 
+
+### Working Sets
+1. 9.1 x 12 RPE 10 good
+2. 9.1 x 12 RPE 10 good
+3. 9.1 x 12 RPE 10 failure:myo(3,3,3) good 
+
+### Notes
+Right is stronger.
+
+### Cues
+- Annihilate the delt with controlled tempo  
+- Initiate with squeezing delts  
+
+## Exercise 5
+
+**Name:** EZ Bar Skull Crusher
+**Goal:** 40 kg x 3 sets x 12-15 reps 
+**Rest:** 2 min 
+
+### Working Sets
+1. 30 x 14+1 RPE 10 good
+2. 30 x 12 RPE 10 good
+3. 30 x 10+2 RPE 10 perfect
+
+### Cues
+- Pause for a second at the bottom
+- Control the negative
+
+## Exercise 6
+
+**Name:** Tricep Pressdown Bar
+**Goal:** 20.4 kg x 3 sets x 15-20 reps 
+
+### Working Sets
+1. 20.4 x 12 RPE 10 perfect 
+2. 20.4 x 10 RPE 10 perfect
+3. 20.4 x 10 RPE 10 failure:myo(4,4,4) perfect
+
+### Cues
+- Squeeze tricep to move weight
+
+## Exercise 7
+
+**Name:** Ab Wheel Rollout
+**Goal:** 0 kg x 2 sets x 10-20 reps  
+
+### Working Sets
+1. 0 x 6
+2. 0 x 6 RPE 10 
+3. 0 x 6 RPE 10 
+
+### Cues
+- Start standing up and go as far as possible.
+
+## Exercise 8
+
+**Name:** Wrist Flexion DB Curl
+**Goal:** 12.5 kg x 3 sets x 12-15 reps
+
+### Working Sets
+1. 15 x 12 RPE 9 bad
+2. 12.5 x 15 RPE 10 good 
+3. 12.5 x 15 RPE 10 good
+
+## Exercise 9
+
+**Name:** Wrist Extension DB Curl
+**Goal:** 7.5 kg x 2 sets x 10-15 reps
+
+### Working Sets
+1. 7.5 x 12 RPE 10 good
+2. 7.5 x 12 RPE 10 good
+3. 7.5 x 12 RPE 10 good
+
+## Exercise 10
+
+**Name:** Pronated Grip Curl
+**Goal:** 25 kg x 2 sets x 8-10 reps
+
+### Working Sets
+1. 25 x 12 RPE 9.5 bad
+2. 20 x 12 RPE 10 good
+3. 20 x 12 RPE 10 good

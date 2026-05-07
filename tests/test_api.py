@@ -4,8 +4,8 @@ from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert_v2 import insert_session
-from traininglogs.models.models_v2 import TrainingSession
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -43,19 +43,19 @@ SESSION_A = {
                 "weight_kg": 80.0,
                 "sets": 3,
                 "rep_range": {"min": 5, "max": 6},
-                "rest_minutes": 3,
+                "rest": {"minutes": 3},
             },
             "warmup_sets": [
                 {"number": 1, "weight_kg": 60.0, "rep_count": 5, "notes": None}
             ],
-            "working_sets": [
+            "sets": [
                 {
+                    "set_type": "strength",
                     "number": 1,
                     "weight_kg": 80.0,
                     "rep_count": {"full": 5, "partial": 0},
                     "rpe": 8.0,
                     "rep_quality_assessment": "good",
-                    "actual_rest_minutes": None,
                     "notes": None,
                     "failure_technique": None,
                 },
@@ -139,7 +139,7 @@ def test_session_detail_returns_full_structure(client):
     assert len(body["exercises"]) == 1
     exercise = body["exercises"][0]
     assert exercise["name"] == "Bench Press"
-    assert len(exercise["working_sets"]) == 1
+    assert len(exercise["sets"]) == 1
     assert len(exercise["warmup_sets"]) == 1
 
 

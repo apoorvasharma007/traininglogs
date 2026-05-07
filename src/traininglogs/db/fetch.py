@@ -29,7 +29,8 @@ def get_sessions(
     with conn.cursor() as cur:
         cur.execute(
             f"""
-            SELECT session_id, date, program, phase, week, focus, duration_minutes, is_deload_week
+            SELECT session_id, date, program, phase, week, focus, duration_minutes,
+                   is_deload_week, weight_unit
             FROM sessions
             {where}
             ORDER BY date DESC
@@ -47,7 +48,8 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
         cur.execute(
             """
             SELECT session_id, date, program, program_author, program_length_weeks,
-                   phase, week, is_deload_week, focus, duration_minutes, user_id, user_name
+                   phase, week, is_deload_week, focus, duration_minutes, weight_unit,
+                   user_id, user_name
             FROM sessions WHERE session_id = %s
             """,
             (session_id,),
@@ -59,8 +61,9 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
 
         cur.execute(
             """
-            SELECT id, number, name, notes, warmup_notes, form_cues,
+            SELECT id, number, name, exercise_type, notes, warmup_notes, form_cues,
                    goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
+                   goal_rest_seconds, goal_distance_meters, goal_target_duration_sec,
                    target_muscle_groups, rep_tempo
             FROM exercises WHERE session_id = %s ORDER BY number
             """,
@@ -73,13 +76,16 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
 
             cur.execute(
                 """
-                SELECT number, weight_kg, reps_full, reps_partial, rpe,
-                       rep_quality, rest_minutes, notes, failure_technique
+                SELECT number, set_type, weight_kg, reps_full, reps_partial,
+                       left_reps_full, left_reps_partial, right_reps_full, right_reps_partial,
+                       rpe, rep_quality, rest_minutes, rest_seconds,
+                       duration_seconds, distance_meters, heart_rate_bpm,
+                       notes, failure_technique
                 FROM working_sets WHERE exercise_id = %s ORDER BY number
                 """,
                 (exercise_id,),
             )
-            exercise["working_sets"] = [
+            exercise["sets"] = [
                 dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()
             ]
 

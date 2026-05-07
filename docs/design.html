@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">1.0.0</span> · 2026-05-05</div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-07</div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -204,28 +204,33 @@
                                        FastAPI
                                        (REST)</div>
   <p>Each step is a boundary. Markdown is what I write. Pydantic is what the rest of the system trusts. Postgres is the source of truth for everything queryable. The API and the dashboard both read from Postgres; nothing writes back through them.</p>
-  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based and will be replaced by an LLM-driven capture flow ("Track B"); the Pydantic model and the database schema have stayed largely the same through that planning.</p>
+  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based. An LLM-driven capture flow is planned to replace it ("Track B" below); the Pydantic model and the database schema are the stable contract between stages.</p>
 </section>
 
 <section>
   <h2 id="data">The data model</h2>
-  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>working sets</strong> and optionally <strong>warmup sets</strong>. A working set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
+  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>sets</strong> (strength or activity) and optionally <strong>warmup sets</strong>. A strength set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
   <pre><code>TrainingSession
 ├── session_id, date, program, phase, week, focus
-├── is_deload_week, session_duration_minutes
+├── is_deload_week, session_duration_minutes, weight_unit
 └── exercises[]
-    ├── number, name, target_muscle_groups, rep_tempo
+    ├── number, name, target_muscle_groups, rep_tempo, exercise_type
     ├── current_goal           (weight, sets, rep_range, rest)
     ├── warmup_sets[]          (number, weight_kg, rep_count)
-    └── working_sets[]
-        ├── number, weight_kg, rep_count {full, partial}
-        ├── rpe?, rep_quality?, actual_rest_minutes?
-        └── failure_technique?  (discriminated union)
-            ├── MyoReps    → mini_sets[]
-            ├── LLP        → partial_rep_count
-            ├── Static     → hold_duration_seconds
-            └── DropSet    → drop_sets[]</code></pre>
-  <p>Working sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
+    └── sets[]                 (discriminated union on set_type)
+        ├── StrengthSet        (set_type = "strength")
+        │   ├── number, weight_kg, rep_count {full, partial}
+        │   ├── unilateral_rep_count?  {left: {full, partial}, right: {full, partial}}
+        │   ├── rpe?, rep_quality?
+        │   └── failure_technique?  (discriminated union)
+        │       ├── MyoReps    → mini_sets[]
+        │       ├── LLP        → partial_rep_count
+        │       ├── Static     → hold_duration_seconds
+        │       └── DropSet    → drop_sets[]
+        └── ActivitySet        (set_type = "activity")
+            ├── number, rpe?
+            ├── duration_seconds?, distance_meters?, heart_rate_bpm?</code></pre>
+  <p>Sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
   <p>A few invariants the model enforces:</p>
   <ul class="body">
     <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
@@ -237,7 +242,7 @@
 
 <section>
   <h2 id="parser">The parser</h2>
-  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into the legacy dataclass shape. The processor then bridges the dataclass into a Pydantic <code>TrainingSession</code> via <code>model_validate()</code> — that's where validation actually fires.</p>
+  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into a plain dict shaped directly for Pydantic. The processor injects the <code>session_id</code>, runs lbs→kg conversion if needed, then calls <code>TrainingSession.model_validate()</code> — that's where validation fires. One model layer, no translation step.</p>
   <p>The parser is rule-based. There is no LLM in the hot path. This is a deliberate choice: parsing must be deterministic and free, and my markdown is regular enough that rules win.</p>
   <div class="callout">An LLM-assisted capture flow ("Track B") is planned: a PWA captures free-form notes during the workout, and Claude maps the draft to <code>TrainingSession</code> after the fact, with a clarification loop for anything ambiguous. It will replace the rule parser, not live alongside it.</div>
 </section>
@@ -246,10 +251,10 @@
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>.</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.exercise_type</code>; <code>working_sets.set_type</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
-  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision (same date, same focus, already in the DB) raises <code>SystemExit</code> rather than silently overwriting. Fix the date in the markdown and re-run.</p>
+  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
 </section>
 
 <section>
@@ -268,43 +273,42 @@
 
 <section>
   <h2 id="dashboard">The dashboard</h2>
-  <p>The dashboard is a single static HTML file: serif type, cream paper, vermilion accent. It reads like a printed almanac of the training year, not a SaaS chart wall. Nine sections, in a fixed order:</p>
+  <p>The dashboard is a single static HTML file rebuilt from the database by <code>scripts/build_dashboard.py</code> and written to <code>docs/index.html</code>. Clean white background, Inter for body text, JetBrains Mono for labels and numbers. Six sections:</p>
   <table>
-    <thead><tr><th>§</th><th>Title</th><th>Purpose</th></tr></thead>
+    <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td>I</td><td>The Numbers, so far</td><td>Tonnage · weeks · sessions · last lift</td></tr>
-      <tr><td>II</td><td>The Shape of the Year</td><td>Weekly tonnage, deloads in red</td></tr>
-      <tr><td>III</td><td>One Lift, Over Time</td><td>e1RM trend per exercise (Epley)</td></tr>
-      <tr><td>IV</td><td>Volume, by Muscle</td><td>Weekly sets per muscle group</td></tr>
-      <tr><td>V</td><td>Intensity, Distilled</td><td>RPE histogram + within-phase fatigue</td></tr>
-      <tr><td>VI</td><td>Does the Deload Work?</td><td>Pre/during/post deload comparison</td></tr>
-      <tr><td>VII</td><td>Stimulus vs Fatigue</td><td>RPE vs tonnage-per-set scatter</td></tr>
-      <tr><td>VIII</td><td>Personal Bests</td><td>Heaviest set per exercise</td></tr>
-      <tr><td>IX</td><td>Techniques Employed</td><td>Myo-reps, LLP, static, drop sets</td></tr>
+      <tr><td>Overview</td><td>Total sessions · current plan · current phase · last session date</td></tr>
+      <tr><td>Session Timeline</td><td>Sessions grouped by ISO week; color-coded by focus; links to source files on GitHub</td></tr>
+      <tr><td>Strength Progression</td><td>Top weight per day per exercise (actual kg, not e1RM); goal weight as a faded dashed red line; set-level note shown in side panel</td></tr>
+      <tr><td>Weekly Load</td><td>Total kg moved per phase/week; deload weeks in red</td></tr>
+      <tr><td>Personal Bests</td><td>Heaviest set per highlight exercise — weight, reps, date</td></tr>
+      <tr><td>Program</td><td>Auto-discovered from <code>inputs/programs/*/program.md</code>; alias read from YAML frontmatter</td></tr>
     </tbody>
   </table>
   <p>The data flow at build time:</p>
-  <div class="diagram">PostgreSQL  →  analytics/queries.py  →  cli/dashboard.py  →  docs/index.html
-                  (11 SQL queries)       (renders HTML +
+  <div class="diagram">PostgreSQL  →  analytics/queries.py  →  scripts/build_dashboard.py  →  docs/index.html
+                  (6 SQL queries)        (renders HTML +
                                           inline JSON)</div>
-  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>cli/dashboard.py</code> writes to <code>docs/index.html</code> in the repo. <code>traininglogs log --publish</code> separately stages, commits, and pushes the equivalent file in the website repo at <code>website/static/training-almanac/index.html</code>, which a GitHub Action then deploys.</p>
+  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>traininglogs log --publish</code> stages, commits, and pushes the file to the website repo, where a GitHub Action deploys it.</p>
 
   <h3>Typography and palette</h3>
-  <p>The almanac feel is held together by a small, deliberate set of typographic choices. Display and headings use Fraunces (variable, opsz 144, SOFT 0; italic for emphasis in red). Body and editorial notes use Newsreader (italic, drop cap on the first letter). Numbers and labels use JetBrains Mono with tabular figures.</p>
-  <p>Colours: background <code>#F1E9D6</code> (aged cream paper) with an SVG grain overlay; ink <code>#1A1410</code> (warm near-black); accent <code>#C83C29</code> (vermilion) for the current phase marker, deload bars, and emphasis; muted <code>#8A7F6E</code> for secondary text.</p>
+  <p>Inter for body text; JetBrains Mono for labels, numbers, and monospace elements. Background <code>#ffffff</code>; ink <code>#111827</code>; accent <code>#dc2626</code> (red) for emphasis, deload bars, and the current-phase hero stat; muted <code>#6b7280</code> for secondary text.</p>
+
+  <h3>Program auto-discovery</h3>
+  <p>Each program lives at <code>inputs/programs/&lt;slug&gt;/program.md</code>. The file must have a YAML frontmatter block at the top with an <code>alias</code> field (e.g. <code>alias: Strength &amp; Hypertrophy</code>). <code>build_dashboard.py</code> scans all matching paths at build time and renders a link for each. No code change is needed to add a new program — drop the directory and file, set the alias, rebuild.</p>
 
   <h3>Rules of the road</h3>
   <ul>
-    <li>The nine-section order is the story arc. Don't reorder or drop sections without an explicit reason.</li>
-    <li>Iterate one section at a time. The dashboard is dense; cross-section changes compound.</li>
-    <li>Always regenerate against the real DB before judging what looks right. Synthetic preview data lies.</li>
+    <li>Never hand-edit <code>docs/index.html</code> — it is fully regenerated on every build.</li>
+    <li>Always rebuild against the real DB before judging output. Synthetic data lies.</li>
+    <li>e1RM (Epley formula) is intentionally absent — the chart plots actual top-set weight. Do not reintroduce it.</li>
   </ul>
 </section>
 
 <section>
   <h2 id="versioning">Versioning</h2>
-  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields, written into the JSON snapshot and the DB row. A re-parse can be detected by comparing the version stamped on a snapshot to the current model version. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format).</p>
-  <p>There are no migrations yet. The schema is small enough that <code>CREATE TABLE IF NOT EXISTS</code> in <code>db/schema.sql</code> has been sufficient. When the first breaking schema change lands, this section will grow a paragraph about how migrations are run.</p>
+  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in both the JSON snapshot and the DB row. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
+  <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> is run explicitly by migration/import scripts (not automatically on app startup). Breaking migrations will be documented here when they land.</p>
 </section>
 
 <section>
@@ -318,7 +322,7 @@
 </section>
 
 <footer>
-  Last updated 2026-05-05 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+  Last updated 2026-05-07 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
 </footer>
 
 </main>
