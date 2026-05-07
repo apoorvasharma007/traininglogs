@@ -75,5 +75,11 @@ Spot-check (10 randomly selected `.md` files):
 
 ## ▶ Resume here
 
-All steps complete. Both branches squash-merged to dev. Suite green at 163 passing.
+All steps complete. `chore/dead-weight-cleanup` squash-merged to dev. Suite green at 163 passing.
+
+Dead weight removed:
+- `apply_schema` call + import gone from `log.py`
+- `load_dotenv()` + `apply_schema` import gone from `processor.py`; `load_dotenv()` moved before `DATABASE_URL` check in `log.py`
+- `repopulate_db.py --regen` guard now uses positive check (5434 or traininglogs_regen in URL)
+
 Next: Supabase provisioning and cloud deployment wave.
