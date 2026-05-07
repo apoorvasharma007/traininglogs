@@ -32,6 +32,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   session IDs are correctly path-derived (SHA256 of full relative path) rather
   than filename-only.
 
+- `parse.py`: working set lines with unit-annotated weights (`30 kg x 6`)
+  now parse correctly; unit is stripped, value stored as kg.
+- `parse.py`: rep count is now optional on working set lines — failure sets
+  that log weight and RPE without a rep count are valid (`57 x RPE 10 failure:llp(8)`).
+- Two corrupt input lines corrected (user-approved):
+  `phase_2/week_11/lower_strength`: RPE 13 → RPE 10;
+  `phase_2/week_6/push_hypertrophy`: `2. 13.6` → `2. 13.6 x 12`.
+- `schema.sql`: `created_at TIMESTAMPTZ DEFAULT now()` added to sessions;
+  `idx_exercises_session_id` and `idx_working_sets_exercise_id` indexes added.
+- `api/app.py`: `CORSMiddleware` (driven by `ALLOWED_ORIGINS` env var);
+  `SimpleConnectionPool` replaces per-request connections; `apply_schema`
+  removed from lifespan; Pydantic response models on all routes.
+- `api/schemas.py`: `SessionSummary`, `SessionDetail`, `ExerciseOut`,
+  `WorkingSetOut`, `WarmupSetOut`, `ExerciseHistoryRow`.
+- `scripts/repopulate_db.py`: `--regen` flag uses `REGEN_DATABASE_URL`
+  (port 5434 staging DB) with safety guards against cross-target accidents.
+- `scripts/validate_regen.py`: strict exact-count validation plus 10-file
+  spot-check (live parse vs DB) before any prod repopulate.
+- `docker-compose.yml`: `db_regen` service at port 5434.
+- `.claude/db-migration.md`: full regen process documented with step-by-step
+  commands and the explicit prod-approval rule.
+
 ### Added
 
 - `tests/fixtures/valid/standalone_session.md` — canonical fixture for a
