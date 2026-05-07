@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `validate.py`: imported deleted `_to_primitive` and `is_dataclass`; ran the
+  old bridge loop inline. Replaced with the current pipeline (mirrors
+  `process_md_file` minus DB/JSON steps).
+- `parse.py`: `program`, `phase`, `week`, `duration` are now Optional — absent
+  program context fields return `None` (standalone sessions). Hardcoded program
+  name and author defaults removed.
+- `processor.py`: JSON output path crashed for standalone sessions (`TypeError`
+  on `None` program/phase/week). Now routes to `output_dir/sessions/` when
+  program context is absent.
+- `parse.py`: silent `0 x 0` fallback in `_parse_working_set_line` removed;
+  now raises `ValueError` like all other malformed-line paths.
+
+### Added
+
+- `tests/fixtures/valid/standalone_session.md` — canonical fixture for a
+  session with no program context.
+- `tests/test_validate.py` — 7 tests covering `traininglogs validate` against
+  valid and invalid fixtures.
+
+---
+
 ## [2.0.0] - 2026-05-07
 
 ### Added
