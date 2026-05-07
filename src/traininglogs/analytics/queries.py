@@ -225,11 +225,8 @@ def overview_stats(conn: Connection) -> dict:
         return dict(zip(cols, row)) if row else {}
 
 
-def exercise_e1rm_trend(conn: Connection, exercise_name: str) -> list[dict]:
-    """
-    Epley 1-rep-max estimate per working set over time: weight * (1 + reps/30).
-    Lets you see true strength progression independent of rep-scheme changes.
-    """
+def exercise_sets_trend(conn: Connection, exercise_name: str) -> list[dict]:
+    """Working sets for an exercise over time — actual weight, reps, RPE, and notes."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -244,11 +241,7 @@ def exercise_e1rm_trend(conn: Connection, exercise_name: str) -> list[dict]:
                 ws.reps_partial,
                 ws.rpe,
                 ws.rep_quality,
-                CASE
-                    WHEN ws.weight_kg IS NULL OR ws.reps_full IS NULL OR ws.reps_full = 0
-                        THEN NULL
-                    ELSE ROUND((ws.weight_kg * (1 + ws.reps_full::numeric / 30))::numeric, 2)
-                END AS e1rm_kg
+                ws.notes
             FROM working_sets ws
             JOIN exercises e ON e.id = ws.exercise_id
             JOIN sessions s  ON s.session_id = e.session_id
