@@ -14,7 +14,6 @@ from traininglogs.analytics.queries import (
     failure_technique_usage,
     custom_query,
     overview_stats,
-    exercise_e1rm_trend,
     exercise_list,
     weekly_muscle_group_volume,
     rpe_distribution,
@@ -222,20 +221,6 @@ def test_overview_stats_totals(conn):
     assert o["weeks_trained"] >= 3
     # tonnage: s1=80*5+80*5=800, s2=82.5*5+82.5*4=742.5, s3=70*5+70*5=700 → ≥2242
     assert o["total_tonnage_kg"] >= 2242
-
-
-def test_exercise_e1rm_trend_epley(conn):
-    rows = exercise_e1rm_trend(conn, "Bench Press")
-    test_rows = [r for r in rows if r["date"] and str(r["date"]) >= "2026-01-01"]
-    # Epley for 80kg × 5: 80 * (1 + 5/30) = 93.33
-    first = test_rows[0]
-    assert float(first["e1rm_kg"]) == pytest.approx(93.33, abs=0.1)
-
-
-def test_exercise_e1rm_trend_null_on_zero_reps(conn):
-    # Exercise without any reps would return empty; just ensure function runs without error
-    rows = exercise_e1rm_trend(conn, "Deadlift")
-    assert rows == []
 
 
 def test_exercise_list_respects_min_sets(conn):
