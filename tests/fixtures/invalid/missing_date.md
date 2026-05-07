@@ -1,4 +1,5 @@
 # Training Log
+- Program: Test Program
 - Phase: 3
 - Week: 1
 - Deload: No

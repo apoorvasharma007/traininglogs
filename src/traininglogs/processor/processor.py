@@ -5,6 +5,7 @@ On session_id collision the process errors — fix the date in the markdown and 
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -24,6 +25,37 @@ LBS_TO_KG = 0.453592
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 INPUTS_DIR = PROJECT_ROOT / "inputs"
 OUTPUT_DIR = PROJECT_ROOT / "output_training_logs_json"
+
+_PHASE_RE = re.compile(r"^phase[_\s]?(\d+)$", re.IGNORECASE)
+_WEEK_RE  = re.compile(r"^week[_\s]?(\d+)$",  re.IGNORECASE)
+
+
+def _derive_program_context(md_path: Path, inputs_root: Path) -> dict:
+    """Infer program/phase/week from directory structure when not in file metadata.
+
+    Expects: inputs_root/programs/<slug>/phase_N/week_N/<file>.md
+    Returns a dict with only the fields that could be derived (may be empty).
+    """
+    try:
+        rel = md_path.relative_to(inputs_root)
+    except ValueError:
+        return {}
+
+    parts = rel.parts  # e.g. ('programs', 'slug', 'phase_3', 'week_11', 'file.md')
+    if len(parts) < 5 or parts[0] != "programs":
+        return {}
+
+    slug = parts[1]
+    phase_m = _PHASE_RE.match(parts[2])
+    week_m  = _WEEK_RE.match(parts[3])
+    if not phase_m or not week_m:
+        return {}
+
+    return {
+        "program": slug,
+        "phase":   int(phase_m.group(1)),
+        "week":    int(week_m.group(1)),
+    }
 
 
 def compute_session_id(md_path: Path, inputs_root: Path, date_str: str) -> str:
@@ -67,13 +99,20 @@ def process_md_file(
     deep_parser = DeepTrainingParser(intermediate)
     session_dict = deep_parser.build_training_session()
 
+    # Enrich with path-derived program context for any fields the file omitted.
+    # Explicit metadata in the file always wins; path is the fallback.
+    _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
+    path_ctx = _derive_program_context(md_path, _inputs_root)
+    for key, value in path_ctx.items():
+        if session_dict.get(key) is None:
+            session_dict[key] = value
+
     weight_unit = intermediate["metadata"].get("unit", "kg").lower()
     if weight_unit == "lbs":
         session_dict = _convert_lbs_to_kg(session_dict)
         session_dict["weight_unit"] = "lbs"
 
     date_str = intermediate["metadata"].get("date", session_dict.get("date", ""))
-    _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
     session_dict["session_id"] = compute_session_id(md_path, _inputs_root, date_str)
 
     session = TrainingSession.model_validate(session_dict)

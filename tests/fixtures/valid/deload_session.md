@@ -1,5 +1,6 @@
 # Training Log
 - Date: 3000-01-12
+- Program: Test Program
 - Phase: 2
 - Week: 1
 - Deload: Yes

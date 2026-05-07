@@ -19,14 +19,11 @@ class DeepTrainingParser:
 
         deload_raw = meta.get("deload")
         if deload_raw is None or str(deload_raw).strip() == "":
-            is_deload_week = "false"
+            is_deload_week = False
         else:
             is_deload_week = str(deload_raw).strip().lower() in ("yes", "true", "1")
 
-        phase_raw = meta.get("phase")
-        week_raw = meta.get("week")
         duration_raw = meta.get("duration")
-
         duration_minutes: Optional[int] = None
         if duration_raw:
             duration_nums = re.findall(r"\d+", str(duration_raw))
@@ -34,7 +31,24 @@ class DeepTrainingParser:
                 raise ValueError(f"Cannot parse duration value: {duration_raw!r}")
             duration_minutes = int(duration_nums[0])
 
+        program = meta.get("program") or None
         program_length_raw = meta.get("program length weeks")
+
+        # phase and week are co-dependent signals of a program session.
+        # If either is present, both are required. If neither is present, standalone.
+        # program name is independent optional metadata (may come from path derivation).
+        phase_raw = meta.get("phase")
+        week_raw = meta.get("week")
+        if phase_raw is not None or week_raw is not None:
+            if phase_raw is None:
+                raise ValueError("Program session has 'week' but is missing 'phase'")
+            if week_raw is None:
+                raise ValueError("Program session has 'phase' but is missing 'week'")
+            phase: Optional[int] = int(phase_raw)
+            week: Optional[int] = int(week_raw)
+        else:
+            phase = None
+            week = None
 
         return {
             "data_model_version": "0.0.1",
@@ -42,11 +56,11 @@ class DeepTrainingParser:
             "user_id": str(meta.get("user_id", "7")),
             "user_name": meta.get("name", "Apoorva Sharma"),
             "date": meta.get("date"),
-            "program": meta.get("program") or None,
+            "program": program,
             "program_author": meta.get("author") or None,
             "program_length_weeks": int(program_length_raw) if program_length_raw else None,
-            "phase": int(phase_raw) if phase_raw is not None else None,
-            "week": int(week_raw) if week_raw is not None else None,
+            "phase": phase,
+            "week": week,
             "is_deload_week": is_deload_week,
             "focus": meta.get("focus"),
             "exercises": exercises,

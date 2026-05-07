@@ -1,5 +1,6 @@
 # Training Log
 - Date: 3000-07-02
+- Program: Test Program
 - Phase: 9
 - Week: 1
 - Deload: No

@@ -32,6 +32,7 @@ against `dev` with multiple feature branches.
 | [`.claude/regen-historical.md`](.claude/regen-historical.md) | Before any schema, parser, or session-ID change that affects existing data |
 | [`.claude/db-migration.md`](.claude/db-migration.md) | Before adding columns, changing schema, or cutting over to a new DB |
 | [`.claude/testing-guide.md`](.claude/testing-guide.md) | Before writing tests or doing E2E validation for a new feature |
+| [`.claude/migration-plan.md`](.claude/migration-plan.md) | 2.0 migration tracking doc — all phases complete; contains E2E test protocol |
 
 ---
 

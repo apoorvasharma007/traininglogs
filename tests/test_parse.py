@@ -26,17 +26,19 @@ def _base_session(**overrides) -> dict:
 # build_training_session — missing required metadata fields
 # ---------------------------------------------------------------------------
 class TestBuildTrainingSessionOptionalFields:
-    def test_missing_phase_returns_none(self):
+    def test_week_without_phase_raises(self):
+        # week alone in metadata is malformed — phase is required alongside it
         s = _base_session()
         del s["metadata"]["phase"]
-        result = DeepTrainingParser(s).build_training_session()
-        assert result["phase"] is None
+        with pytest.raises(ValueError, match="phase"):
+            DeepTrainingParser(s).build_training_session()
 
-    def test_missing_week_returns_none(self):
+    def test_phase_without_week_raises(self):
+        # phase alone in metadata is malformed — week is required alongside it
         s = _base_session()
         del s["metadata"]["week"]
-        result = DeepTrainingParser(s).build_training_session()
-        assert result["week"] is None
+        with pytest.raises(ValueError, match="week"):
+            DeepTrainingParser(s).build_training_session()
 
     def test_missing_duration_returns_none(self):
         s = _base_session()
@@ -64,6 +66,56 @@ class TestBuildTrainingSessionOptionalFields:
         assert result["week"] is None
         assert result["program"] is None
         assert result["session_duration_minutes"] == 45
+
+    def test_phase_alone_raises(self):
+        # phase without week → malformed program session
+        s = {
+            "metadata": {"date": "2099-08-01", "phase": "3"},
+            "exercises": [],
+        }
+        with pytest.raises(ValueError, match="week"):
+            DeepTrainingParser(s).build_training_session()
+
+    def test_week_alone_raises(self):
+        # week without phase → malformed program session
+        s = {
+            "metadata": {"date": "2099-08-01", "week": "1"},
+            "exercises": [],
+        }
+        with pytest.raises(ValueError, match="phase"):
+            DeepTrainingParser(s).build_training_session()
+
+    def test_program_session_missing_phase_raises(self):
+        s = {
+            "metadata": {"date": "2099-08-01", "program": "Test Program", "week": "1"},
+            "exercises": [],
+        }
+        with pytest.raises(ValueError, match="phase"):
+            DeepTrainingParser(s).build_training_session()
+
+    def test_program_session_missing_week_raises(self):
+        s = {
+            "metadata": {"date": "2099-08-01", "program": "Test Program", "phase": "1"},
+            "exercises": [],
+        }
+        with pytest.raises(ValueError, match="week"):
+            DeepTrainingParser(s).build_training_session()
+
+    def test_program_session_with_phase_and_week_builds(self):
+        s = {
+            "metadata": {
+                "date": "2099-08-01",
+                "program": "Test Program",
+                "phase": "2",
+                "week": "4",
+                "duration": "60 min",
+            },
+            "exercises": [],
+        }
+        result = DeepTrainingParser(s).build_training_session()
+        assert result["program"] == "Test Program"
+        assert result["phase"] == 2
+        assert result["week"] == 4
 
 
 # ---------------------------------------------------------------------------

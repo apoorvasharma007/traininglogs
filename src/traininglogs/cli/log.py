@@ -105,7 +105,7 @@ def _resolve_targets(
     week: Optional[int],
 ) -> list[Path]:
     if target:
-        p = Path(target)
+        p = Path(target).resolve()
         if p.is_file():
             return [p]
         if p.is_dir():

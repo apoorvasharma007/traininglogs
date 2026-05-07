@@ -15,14 +15,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("file", help="Path to a .md training log file")
     args = parser.parse_args(argv)
 
-    md_path = Path(args.file)
+    md_path = Path(args.file).resolve()
     if not md_path.is_file():
         print(f"✗ Not a file: {md_path}")
         return 1
 
     from traininglogs.parser.extract import TrainingMarkdownParser
     from traininglogs.parser.parse import DeepTrainingParser
-    from traininglogs.processor.processor import _convert_lbs_to_kg, compute_session_id, INPUTS_DIR
+    from traininglogs.processor.processor import (
+        _convert_lbs_to_kg, _derive_program_context, compute_session_id, INPUTS_DIR,
+    )
     from traininglogs.models.models import TrainingSession
     from pydantic import ValidationError
 
@@ -34,6 +36,11 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         deep_parser = DeepTrainingParser(intermediate)
         session_dict = deep_parser.build_training_session()
+
+        path_ctx = _derive_program_context(md_path, INPUTS_DIR)
+        for key, value in path_ctx.items():
+            if session_dict.get(key) is None:
+                session_dict[key] = value
 
         weight_unit = intermediate["metadata"].get("unit", "kg").lower()
         if weight_unit == "lbs":
