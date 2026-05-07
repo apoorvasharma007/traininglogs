@@ -82,4 +82,47 @@ Dead weight removed:
 - `load_dotenv()` + `apply_schema` import gone from `processor.py`; `load_dotenv()` moved before `DATABASE_URL` check in `log.py`
 - `repopulate_db.py --regen` guard now uses positive check (5434 or traininglogs_regen in URL)
 
-Next: Supabase provisioning and cloud deployment wave.
+Next: Supabase + cloud deployment wave.
+
+## Cloud Deployment Wave
+
+### Secrets
+
+| Secret | Where set |
+|---|---|
+| `DATABASE_URL` | Supabase connection string (session-mode pooler, port 5432) |
+| `API_KEY` | `openssl rand -hex 32` — set in Railway/Fly dashboard + local `.env` |
+| `ALLOWED_ORIGINS` | Dashboard domain — set in Railway/Fly dashboard |
+| `SUPABASE_JWT_SECRET` | Later, when adding Supabase Auth |
+
+Locally: `.env` (gitignored). Prod: env vars in Railway/Fly dashboard. CI: GitHub Actions repo secrets.
+
+### Manual steps (user does these)
+
+1. Create Supabase account at supabase.com → new project → copy connection string from `Settings → Database → Connection string (URI)` — use **Session mode pooler** (port 5432, not 6543)
+2. Paste into local `.env` as `DATABASE_URL`
+3. Create Railway or Fly.io account (Railway simpler; Fly more control — both free tier)
+4. Generate API key: `openssl rand -hex 32`
+
+### Step 1 — Schema + data on Supabase
+
+- [ ] User pastes Supabase `DATABASE_URL` into `.env`
+- [ ] Run `scripts/repopulate_db.py` against Supabase (normal mode, not --regen)
+- [ ] Verify counts: 121 sessions, 1009 exercises, 2469 working_sets, 647 warmup_sets
+
+### Step 2 — Deploy FastAPI to Railway/Fly.io
+
+- [ ] Write `Dockerfile` (or `railway.toml` / `fly.toml`)
+- [ ] Set env vars in Railway/Fly dashboard: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`
+- [ ] Deploy and smoke-test `GET /sessions` with `X-Api-Key` header
+
+### Step 3 — Wire dashboard to cloud API
+
+- [ ] Update dashboard JS to point at Railway/Fly URL instead of localhost
+- [ ] Rebuild and publish dashboard
+
+### Step 4 — Auth (later)
+
+- [ ] Add `users` table + `user_id` FK on sessions
+- [ ] RLS policies on Supabase
+- [ ] JWT validation in FastAPI `_auth` dependency using `SUPABASE_JWT_SECRET`
