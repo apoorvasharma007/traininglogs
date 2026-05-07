@@ -1,7 +1,6 @@
 """Tests for DeepTrainingParser error handling and parse correctness."""
 import pytest
 from traininglogs.parser.parse import DeepTrainingParser
-from traininglogs.models.models_dataclass import WorkingSet, WarmupSet, Goal
 
 
 # ---------------------------------------------------------------------------
@@ -66,12 +65,11 @@ class TestParseGoal:
 
     def test_valid_goal(self):
         g = self._parser()._parse_goal("80 kg x 3 sets x 8-10 reps", "3 min")
-        assert isinstance(g, Goal)
-        assert g.weight_kg == 80.0
-        assert g.sets == 3
-        assert g.rep_range.min == 8
-        assert g.rep_range.max == 10
-        assert g.rest_minutes == 3
+        assert isinstance(g, dict)
+        assert g["weight_kg"] == 80.0
+        assert g["sets"] == 3
+        assert g["rep_range"] == {"min": 8, "max": 10}
+        assert g["rest"] == {"minutes": 3}
 
     def test_unparseable_goal_raises(self):
         with pytest.raises(ValueError, match="Cannot parse goal"):
@@ -87,10 +85,10 @@ class TestParseWarmupSetLine:
 
     def test_valid_warmup_set(self):
         ws = self._parser()._parse_warmup_set_line("1. 40 x 10 - feeling good")
-        assert isinstance(ws, WarmupSet)
-        assert ws.number == 1
-        assert ws.weight_kg == 40.0
-        assert ws.rep_count == 10
+        assert isinstance(ws, dict)
+        assert ws["number"] == 1
+        assert ws["weight_kg"] == 40.0
+        assert ws["rep_count"] == 10
 
     def test_invalid_line_raises(self):
         with pytest.raises(ValueError, match="Cannot parse warmup set"):
@@ -98,8 +96,8 @@ class TestParseWarmupSetLine:
 
     def test_feel_set_parses(self):
         ws = self._parser()._parse_warmup_set_line("2. 60 x feel")
-        assert isinstance(ws, WarmupSet)
-        assert ws.rep_count is None
+        assert isinstance(ws, dict)
+        assert ws["rep_count"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -113,19 +111,19 @@ class TestParseWorkingSetLine:
         with pytest.raises(ValueError, match="Cannot parse working set"):
             self._parser()._parse_working_set_line("not a set line")
 
-    def test_standard_set_returns_workingset(self):
+    def test_standard_set_returns_dict(self):
         ws = self._parser()._parse_working_set_line("1. 80 x 9 RPE 8 good")
-        assert isinstance(ws, WorkingSet)
-        assert ws.number == 1
-        assert ws.weight_kg == 80.0
-        assert ws.rep_count.full == 9
-        assert ws.rpe == 8.0
+        assert isinstance(ws, dict)
+        assert ws["set_type"] == "strength"
+        assert ws["number"] == 1
+        assert ws["weight_kg"] == 80.0
+        assert ws["rep_count"] == {"full": 9, "partial": 0}
+        assert ws["rpe"] == 8.0
 
     def test_partial_rep_set(self):
         ws = self._parser()._parse_working_set_line("2. 80 x 7 + 2 RPE 9.5 bad")
-        assert isinstance(ws, WorkingSet)
-        assert ws.rep_count.full == 7
-        assert ws.rep_count.partial == 2
+        assert isinstance(ws, dict)
+        assert ws["rep_count"] == {"full": 7, "partial": 2}
 
     def test_unilateral_set_returns_dict(self):
         result = self._parser()._parse_working_set_line(

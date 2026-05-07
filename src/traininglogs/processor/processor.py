@@ -6,8 +6,6 @@ import hashlib
 import json
 import os
 import sys
-from dataclasses import is_dataclass
-from enum import Enum
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -49,18 +47,6 @@ def _convert_lbs_to_kg(obj):
     return obj
 
 
-def _to_primitive(o):
-    if isinstance(o, Enum):
-        return o.value
-    if is_dataclass(o):
-        return {k: _to_primitive(getattr(o, k)) for k in o.__dataclass_fields__}
-    if isinstance(o, list):
-        return [_to_primitive(i) for i in o]
-    if isinstance(o, dict):
-        return {k: _to_primitive(v) for k, v in o.items()}
-    return o
-
-
 def process_md_file(
     md_path: Path,
     conn,
@@ -79,45 +65,18 @@ def process_md_file(
     intermediate = base_parser.parse()
 
     deep_parser = DeepTrainingParser(intermediate)
-    session_obj = deep_parser.build_training_session()
-
-    # Bridge: dataclass → Pydantic (parser still returns old dataclass models)
-    primitive_dict = _to_primitive(session_obj)
-
-    # Rename working_sets → sets (old field name → new) and inject set_type discriminator.
-    # Also infer exercise_type from set contents so activity exercises are tagged correctly.
-    for ex in primitive_dict.get("exercises", []):
-        if "working_sets" in ex:
-            raw_sets = ex.pop("working_sets") or []
-            has_activity = False
-            for s in raw_sets:
-                if isinstance(s, dict):
-                    if "set_type" not in s:
-                        s["set_type"] = "strength"
-                    elif s.get("set_type") == "activity":
-                        has_activity = True
-            ex["sets"] = raw_sets
-            if has_activity:
-                ex["exercise_type"] = "activity"
-
-        # Map dataclass Goal.rest_minutes → Pydantic Goal.rest: {minutes: X}
-        goal = ex.get("current_goal")
-        if isinstance(goal, dict):
-            rest_min = goal.pop("rest_minutes", None)
-            if rest_min is not None:
-                goal["rest"] = {"minutes": rest_min}
+    session_dict = deep_parser.build_training_session()
 
     weight_unit = intermediate["metadata"].get("unit", "kg").lower()
     if weight_unit == "lbs":
-        primitive_dict = _convert_lbs_to_kg(primitive_dict)
-        primitive_dict["weight_unit"] = "lbs"
+        session_dict = _convert_lbs_to_kg(session_dict)
+        session_dict["weight_unit"] = "lbs"
 
-    # Override session_id with the path-based deterministic scheme.
-    date_str = intermediate["metadata"].get("date", primitive_dict.get("date", ""))
+    date_str = intermediate["metadata"].get("date", session_dict.get("date", ""))
     _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
-    primitive_dict["session_id"] = compute_session_id(md_path, _inputs_root, date_str)
+    session_dict["session_id"] = compute_session_id(md_path, _inputs_root, date_str)
 
-    session = TrainingSession.model_validate(primitive_dict)
+    session = TrainingSession.model_validate(session_dict)
 
     # DB insert first — a collision means the input date is wrong, not a silent skip
     if not insert_session(conn, session):
@@ -149,5 +108,3 @@ def process_md_file(
 
     print(f">>> JSON written to: {output_path}\n")
     return session
-
-

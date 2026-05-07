@@ -1,22 +1,17 @@
-import re, uuid
-from typing import Dict, Any, Optional, List, Union
-from dataclasses import is_dataclass
-from traininglogs.models.models_dataclass import (
-    TrainingSession, Exercise, WarmupSet, WorkingSet, Goal, RepCount, RepRange,
-    FailureTechnique, FailureTechniqueType, MyoRepDetails, LLPDetails, StaticDetails, RepQualityAssessment, MyoRep,
-    DropSet, DropSetDetails
-)
+import re
+from typing import Any, Dict, List, Optional
 
 
 class DeepTrainingParser:
     """
-    Convert intermediate dict (from TrainingMarkdownParser) into dataclass instances.
+    Convert intermediate dict (from TrainingMarkdownParser) into a plain dict
+    shaped directly for TrainingSession.model_validate().
     """
 
     def __init__(self, parsed: Dict[str, Any]):
         self.parsed = parsed
 
-    def build_training_session(self) -> TrainingSession:
+    def build_training_session(self) -> Dict[str, Any]:
         meta = self.parsed.get("metadata", {})
         exercises = []
         for i, ex in enumerate(self.parsed.get("exercises", []), start=1):
@@ -27,26 +22,6 @@ class DeepTrainingParser:
             is_deload_week = "false"
         else:
             is_deload_week = str(deload_raw).strip().lower() in ("yes", "true", "1")
-
-        ## THIS IS WHERE WE ARE SETTING UP THE DEFAULTS FOR TRAINING OBJECT FOR NOW..
-        ## TODO: WE WIL MOVE THIS INFO OUT TO ITS OWN MODULE LATER, A MODULE FOR DEFAULT VALUES.
-
-        # build a deterministic session id from date + focus + user_id (fallback to uuid if not enough info)
-        user_id_val = str(meta.get("user_id", "7"))
-        date_val = meta.get("date", "")
-        focus_val = meta.get("focus", "")
-
-        def _clean(s: Optional[str]) -> str:
-            if not s:
-                return ""
-                # keep only alphanumerics, dash and underscore; collapse spaces to dash; lowercase
-            return re.sub(r"[^A-Za-z0-9_-]+", "-", str(s).strip()).strip("-").lower()
-
-        combined_parts = [p for p in (_clean(date_val), _clean(focus_val), user_id_val) if p]
-        if combined_parts:
-            session_id = "_".join(combined_parts)
-        else:
-            session_id = str(uuid.uuid4())
 
         phase_raw = meta.get("phase")
         week_raw = meta.get("week")
@@ -61,65 +36,79 @@ class DeepTrainingParser:
         if not duration_nums:
             raise ValueError(f"Cannot parse duration value: {duration_raw!r}")
 
-        return TrainingSession(
-            data_model_version="0.0.1",
-            data_model_type="TrainingSession",
-            session_id=session_id,
-            user_id=user_id_val,
-            user_name=meta.get("name", "Apoorva Sharma"),
-            date=meta.get("date"),
-            program=meta.get("program", "BODYBUILDING TRANSFORMATION SYSTEM"),
-            program_author=meta.get("author", "Jeff Nippard"),
-            program_length_weeks=int(meta.get("program length weeks", 12)),
-            phase=int(phase_raw),
-            week=int(week_raw),
-            is_deload_week=is_deload_week,
-            focus=meta.get("focus"),
-            exercises=exercises,
-            session_duration_minutes=int(duration_nums[0])
-        )
+        return {
+            "data_model_version": "0.0.1",
+            "data_model_type": "TrainingSession",
+            "user_id": str(meta.get("user_id", "7")),
+            "user_name": meta.get("name", "Apoorva Sharma"),
+            "date": meta.get("date"),
+            "program": meta.get("program", "BODYBUILDING TRANSFORMATION SYSTEM"),
+            "program_author": meta.get("author", "Jeff Nippard"),
+            "program_length_weeks": int(meta.get("program length weeks", 12)),
+            "phase": int(phase_raw),
+            "week": int(week_raw),
+            "is_deload_week": is_deload_week,
+            "focus": meta.get("focus"),
+            "exercises": exercises,
+            "session_duration_minutes": int(duration_nums[0]),
+        }
 
-    def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Exercise:
+    def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Dict[str, Any]:
         name = ex.get("name", f"Exercise {idx}")
-        muscles = self._split_csv(ex.get("muscles"))
-        tempo = ex.get("tempo")
-        goal = self._parse_goal(ex.get("goal"), ex.get("rest"))
         exercise_type = ex.get("exercise_type", "strength")
 
         warmup_sets = [self._parse_warmup_set_line(l) for l in ex.get("warmup_sets", [])]
 
         if exercise_type == "activity":
-            working_sets = [
+            sets = [
                 s for s in (self._parse_activity_set_line(l) for l in ex.get("activity_sets", []))
                 if s is not None
             ]
         else:
-            working_sets = [self._parse_working_set_line(l) for l in ex.get("working_sets", [])]
+            sets = [self._parse_working_set_line(l) for l in ex.get("working_sets", [])]
 
-        return Exercise(
-            number=idx,
-            name=name,
-            working_sets=working_sets,
-            target_muscle_groups=muscles,
-            rep_tempo=tempo,
-            current_goal=goal,
-            warmup_sets=warmup_sets if warmup_sets else None,
-            notes=ex.get("notes"),
-            warmup_notes=ex.get("warmup_notes"),
-            form_cues=ex.get("cues")
-        )
+        result: Dict[str, Any] = {
+            "number": idx,
+            "name": name,
+            "exercise_type": exercise_type,
+            "sets": sets,
+        }
+        goal = self._parse_goal(ex.get("goal"), ex.get("rest"))
+        if goal is not None:
+            result["current_goal"] = goal
+        muscles = self._split_csv(ex.get("muscles"))
+        if muscles:
+            result["target_muscle_groups"] = muscles
+        if ex.get("tempo"):
+            result["rep_tempo"] = ex["tempo"]
+        if warmup_sets:
+            result["warmup_sets"] = warmup_sets
+        if ex.get("notes"):
+            result["notes"] = ex["notes"]
+        if ex.get("warmup_notes"):
+            result["warmup_notes"] = ex["warmup_notes"]
+        if ex.get("cues"):
+            result["form_cues"] = ex["cues"]
+        return result
 
-    def _parse_goal(self, goal_str: Optional[str], rest_str: Optional[str]) -> Optional[Goal]:
+    def _parse_goal(self, goal_str: Optional[str], rest_str: Optional[str]) -> Optional[Dict[str, Any]]:
         if not goal_str:
             return None
         m = re.search(r"([\d.]+)\s*(?:kg|lbs?)\s*x\s*(\d+)\s*sets?\s*x\s*(\d+)-(\d+)\s*reps?", goal_str, re.IGNORECASE)
         if not m:
             raise ValueError(f"Cannot parse goal string: {goal_str!r}")
         weight, sets, rmin, rmax = m.groups()
-        rest = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else None
-        return Goal(weight_kg=float(weight), sets=int(sets), rep_range=RepRange(min=int(rmin), max=int(rmax)), rest_minutes=rest)
+        rest_min = int(re.findall(r"\d+", rest_str)[0]) if rest_str and re.findall(r"\d+", rest_str) else None
+        result: Dict[str, Any] = {
+            "weight_kg": float(weight),
+            "sets": int(sets),
+            "rep_range": {"min": int(rmin), "max": int(rmax)},
+        }
+        if rest_min is not None:
+            result["rest"] = {"minutes": rest_min}
+        return result
 
-    def _parse_warmup_set_line(self, line: str) -> WarmupSet:
+    def _parse_warmup_set_line(self, line: str) -> Dict[str, Any]:
         m = re.match(r"^\s*(\d+)\.\s*([\d.]+)\s*x\s*([\w+-]+)?\s*-?\s*(.*)$", line)
         if not m:
             raise ValueError(f"Cannot parse warmup set line: {line!r}")
@@ -128,9 +117,12 @@ class DeepTrainingParser:
         if reps and reps.lower() not in ("feel", ""):
             nm = re.match(r"(\d+)", reps)
             reps_val = int(nm.group(1)) if nm else None
-        return WarmupSet(number=int(num), weight_kg=float(weight), rep_count=reps_val, notes=note.strip() if note else None)
+        result: Dict[str, Any] = {"number": int(num), "weight_kg": float(weight), "rep_count": reps_val}
+        if note and note.strip():
+            result["notes"] = note.strip()
+        return result
 
-    def _parse_activity_set_line(self, line: str) -> Optional[dict]:
+    def _parse_activity_set_line(self, line: str) -> Optional[Dict[str, Any]]:
         m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
         if not m_num:
             return None
@@ -159,31 +151,25 @@ class DeepTrainingParser:
 
         return result
 
-    def _parse_working_set_line(self, line: str) -> Union[WorkingSet, dict]:
+    def _parse_working_set_line(self, line: str) -> Dict[str, Any]:
         m_num = re.match(r"^\s*(\d+)\.\s*(.*)$", line)
         if not m_num:
             raise ValueError(f"Cannot parse working set line: {line!r}")
         set_num = int(m_num.group(1))
         rest_of = m_num.group(2).strip()
 
-        # note split (after " - ")
         note = None
         if " - " in rest_of:
             core_part, note = rest_of.split(" - ", 1)
         else:
             core_part = rest_of
 
-        # failure extraction
         failure = None
         f_match = re.search(r"failure:\s*([a-zA-Z_]+)\s*\(\s*([^)]+)\s*\)", line, re.IGNORECASE)
         if f_match:
             failure = self._parse_failure(f_match.group(1), f_match.group(2))
 
         # unilateral format: weight x (left|L):? full [+ partial], (right|R):? full [+ partial]
-        # sides can appear in either order; comma separates them; spaces around +/: ignored
-        # e.g. "30 x left: 8 + 1, right: 9 + 1 RPE 8.5 good"
-        #      "30 x R 9, L 8 RPE 8 good"
-        _side = r"(?:left|right|[lr])\s*:?\s*(\d+)\s*(?:\+\s*(\d+))?"
         uni_re = re.compile(
             r"([\d.]+)\s*x\s*((?:left|right|[lr])\s*:?\s*\d+(?:\s*\+\s*\d+)?)"
             r"\s*,\s*((?:left|right|[lr])\s*:?\s*\d+(?:\s*\+\s*\d+)?)"
@@ -194,8 +180,7 @@ class DeepTrainingParser:
         if um:
             weight_s, side_a_s, side_b_s, rpe_s, quality_s = um.groups()
 
-            def _parse_side(s: str) -> tuple[str, int, int]:
-                """Return (side_name, full, partial) from a side token."""
+            def _parse_side(s: str) -> tuple:
                 m = re.match(
                     r"(left|right|[lr])\s*:?\s*(\d+)\s*(?:\+\s*(\d+))?",
                     s.strip(), re.IGNORECASE,
@@ -207,12 +192,9 @@ class DeepTrainingParser:
             s_a = _parse_side(side_a_s)
             s_b = _parse_side(side_b_s)
             sides = {s_a[0]: (s_a[1], s_a[2]), s_b[0]: (s_b[1], s_b[2])}
-
-            rpe = float(rpe_s) if rpe_s else None
-            quality = self._parse_quality(quality_s)
             left = sides.get("left")
             right = sides.get("right")
-            return {
+            result: Dict[str, Any] = {
                 "set_type": "strength",
                 "number": set_num,
                 "weight_kg": float(weight_s),
@@ -220,10 +202,15 @@ class DeepTrainingParser:
                     "left":  {"full": left[0],  "partial": left[1]}  if left  else None,
                     "right": {"full": right[0], "partial": right[1]} if right else None,
                 },
-                "rpe": rpe,
-                "rep_quality_assessment": quality.value if quality else None,
-                "notes": note,
             }
+            if rpe_s:
+                result["rpe"] = float(rpe_s)
+            quality = self._parse_quality(quality_s)
+            if quality:
+                result["rep_quality_assessment"] = quality
+            if note:
+                result["notes"] = note
+            return result
 
         # core parse: weight x reps [+ partial] [RPE n.n] [quality]
         core_re = re.compile(
@@ -234,82 +221,89 @@ class DeepTrainingParser:
         if not cm:
             simple = re.search(r"([\d.]+)\s*x\s*(\d+)", core_part)
             if not simple:
-                return WorkingSet(number=set_num, weight_kg=0.0, rep_count=RepCount(full=0))
-            weight = float(simple.group(1)); full = int(simple.group(2))
-            return WorkingSet(number=set_num, weight_kg=weight, rep_count=RepCount(full=full), notes=note, failure_technique=failure)
+                return {"set_type": "strength", "number": set_num, "weight_kg": 0.0, "rep_count": {"full": 0, "partial": 0}}
+            weight = float(simple.group(1))
+            full = int(simple.group(2))
+            result = {"set_type": "strength", "number": set_num, "weight_kg": weight, "rep_count": {"full": full, "partial": 0}}
+            if note:
+                result["notes"] = note
+            if failure:
+                result["failure_technique"] = failure
+            return result
 
         weight_s, full_s, partial_s, rpe_s, quality_s = cm.groups()
-        weight = float(weight_s)
-        full = int(full_s)
-        partial = int(partial_s) if partial_s else 0
-        rpe = float(rpe_s) if rpe_s else None
+        result = {
+            "set_type": "strength",
+            "number": set_num,
+            "weight_kg": float(weight_s),
+            "rep_count": {"full": int(full_s), "partial": int(partial_s) if partial_s else 0},
+        }
+        if rpe_s:
+            result["rpe"] = float(rpe_s)
         quality = self._parse_quality(quality_s)
+        if quality:
+            result["rep_quality_assessment"] = quality
+        if note:
+            result["notes"] = note
+        if failure:
+            result["failure_technique"] = failure
+        return result
 
-        return WorkingSet(
-            number=set_num,
-            weight_kg=weight,
-            rep_count=RepCount(full=full, partial=partial),
-            rpe=rpe,
-            rep_quality_assessment=quality,
-            notes=note,
-            failure_technique=failure
-        )
-
-    def _parse_failure(self, kind: str, inner: str) -> FailureTechnique:
+    def _parse_failure(self, kind: str, inner: str) -> Dict[str, Any]:
         k = kind.lower()
         if k in ("myo", "myo_reps", "myoreps"):
             parts = [p.strip() for p in re.split(r",\s*", inner) if p.strip()]
-            mini_sets = []
+            mini_sets: List[Dict[str, Any]] = []
             for i, p in enumerate(parts, start=1):
                 pm = re.match(r"(\d+)\+?(\d+)?", p)
                 if pm:
                     full = int(pm.group(1))
                     partial = int(pm.group(2)) if pm.group(2) else 0
                 else:
-                    full = int(re.findall(r"\d+", p)[0]); partial = 0
-                # create MyoRep instances (snake_case) so MyoRepDetails normalizes correctly
-                mini_sets.append(MyoRep(number=i, rep_count=RepCount(full=full, partial=partial)))
-            return FailureTechnique(technique_type=FailureTechniqueType.MYO_REPS, details=MyoRepDetails(mini_sets=mini_sets))
+                    full = int(re.findall(r"\d+", p)[0])
+                    partial = 0
+                mini_sets.append({"number": i, "rep_count": {"full": full, "partial": partial}})
+            return {"technique_type": "MyoReps", "details": {"mini_sets": mini_sets}}
 
         if k in ("llp",):
             n = int(re.findall(r"\d+", inner)[0])
-            return FailureTechnique(technique_type=FailureTechniqueType.LLP, details=LLPDetails(partial_rep_count=n))
+            return {"technique_type": "LLP", "details": {"partial_rep_count": n}}
 
-        # Support the new keyword 'statichold' used in the markdown template.
-        # Keep 'static' and a couple of common variants for backward compatibility.
         if k in ("static", "statichold", "static_hold", "static-hold"):
             s = int(re.findall(r"\d+", inner)[0])
-            return FailureTechnique(technique_type=FailureTechniqueType.STATIC, details=StaticDetails(hold_duration_seconds=s))
+            return {"technique_type": "StaticHold", "details": {"hold_duration_seconds": s}}
 
         if k in ("dropset", "drop_set", "drop-set"):
-            # parse entries like: 90 x 8, 85 x 5, 75 x 6 + 1
             parts = [p.strip() for p in re.split(r",\s*", inner) if p.strip()]
-            drop_sets = []
+            drop_sets: List[Dict[str, Any]] = []
             for i, p in enumerate(parts, start=1):
                 m = re.match(r"([\d.]+)\s*x\s*(\d+)(?:\s*\+\s*(\d+))?", p)
                 if not m:
-                    # fallback: try to extract numbers
                     nums = re.findall(r"[\d.]+", p)
                     if len(nums) >= 2:
-                        weight = float(nums[0]); full = int(nums[1]); partial = int(nums[2]) if len(nums) > 2 else 0
+                        weight = float(nums[0])
+                        full = int(nums[1])
+                        partial = int(nums[2]) if len(nums) > 2 else 0
                     else:
                         raise ValueError(f"Invalid dropset entry: {p}")
                 else:
-                    weight = float(m.group(1)); full = int(m.group(2)); partial = int(m.group(3)) if m.group(3) else 0
-                drop_sets.append(DropSet(number=i, weight_kg=weight, rep_count=RepCount(full=full, partial=partial)))
-            return FailureTechnique(technique_type=FailureTechniqueType.DROP_SET, details=DropSetDetails(drop_sets=drop_sets))
+                    weight = float(m.group(1))
+                    full = int(m.group(2))
+                    partial = int(m.group(3)) if m.group(3) else 0
+                drop_sets.append({"number": i, "weight_kg": weight, "rep_count": {"full": full, "partial": partial}})
+            return {"technique_type": "DropSet", "details": {"drop_sets": drop_sets}}
 
         raise ValueError(f"Unknown failure technique: {kind}")
 
-    def _parse_quality(self, q):
+    def _parse_quality(self, q: Optional[str]) -> Optional[str]:
         if not q:
             return None
-        try:
-            return RepQualityAssessment(q.lower())
-        except Exception:
-            return None
+        q = q.lower()
+        if q in ("good", "bad", "perfect", "learning"):
+            return q
+        return None
 
-    def _split_csv(self, s):
+    def _split_csv(self, s: Optional[str]) -> Optional[List[str]]:
         if not s:
             return None
         return [x.strip() for x in s.split(",") if x.strip()]

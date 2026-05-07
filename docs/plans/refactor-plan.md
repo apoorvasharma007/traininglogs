@@ -52,10 +52,10 @@ Specific changes in `parse.py`:
 - Replace `isinstance(g, Goal)` → assert dict.
 - No test deleted. Same scenarios, same assertions — just dict not dataclass.
 
-- [ ] Branch cut
-- [ ] Code changed
-- [ ] Tests updated (all 147 pass)
-- [ ] Squash-merged to base
+- [x] Branch cut
+- [x] Code changed
+- [x] Tests updated (all 147 pass)
+- [x] Squash-merged to base
 
 ---
 
@@ -74,10 +74,10 @@ Remove: `_to_primitive()`, `is_dataclass` import, bridge loop, the bridge commen
 **Tests:** run suite — verify 147/0. No test changes expected (processor tests,
 if any, test the full `process_md_file` pipeline which is behaviour-stable).
 
-- [ ] Branch cut
-- [ ] Code changed
-- [ ] Tests pass (147/0)
-- [ ] Squash-merged to base
+- [x] Branch cut
+- [x] Code changed
+- [x] Tests pass (147/0)
+- [x] Squash-merged to base
 
 ---
 
@@ -92,10 +92,10 @@ Expected: no output.
 
 **Tests:** suite must be 147/0. Any `ImportError` or `NameError` will surface here.
 
-- [ ] Branch cut
-- [ ] File deleted, imports cleaned
-- [ ] Tests pass (147/0)
-- [ ] Squash-merged to base
+- [x] Branch cut
+- [x] File deleted, imports cleaned
+- [x] Tests pass (147/0)
+- [x] Squash-merged to base
 
 ---
 
@@ -107,27 +107,21 @@ Expected: no output.
 - `CHANGELOG.md`: add entry under `[Unreleased]`.
 - `CLAUDE.md`: remove any reference to the bridge or dataclass intermediate repr.
 
-- [ ] Branch cut
-- [ ] docs/design.html updated
-- [ ] CHANGELOG.md updated
-- [ ] CLAUDE.md updated
-- [ ] Squash-merged to base
+- [x] Branch cut
+- [x] docs/design.html updated
+- [x] CHANGELOG.md updated
+- [x] CLAUDE.md updated
+- [x] Squash-merged to base
 
 ---
 
 ### Final
 
-- [ ] Full suite green on base branch (147/0)
-- [ ] Base branch squash-merged to `dev`
-- [ ] `migration-plan.md` resume pointer updated
+- [x] Full suite green on base branch (147/0)
+- [x] Base branch squash-merged to `dev`
 
 ---
 
 ## ▶ Resume here
 
-**Not started. Cut base branch first:**
-```bash
-git checkout dev
-git checkout -b refactor/drop-dataclass-bridge
-```
-Then start Step 1.
+**Complete.** All steps done, merged to `dev` on 2026-05-07.

@@ -242,7 +242,7 @@
 
 <section>
   <h2 id="parser">The parser</h2>
-  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into the legacy dataclass shape. The processor then bridges the dataclass into a Pydantic <code>TrainingSession</code> via <code>model_validate()</code> — that's where validation actually fires.</p>
+  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into a plain dict shaped directly for Pydantic. The processor injects the <code>session_id</code>, runs lbs→kg conversion if needed, then calls <code>TrainingSession.model_validate()</code> — that's where validation fires. One model layer, no translation step.</p>
   <p>The parser is rule-based. There is no LLM in the hot path. This is a deliberate choice: parsing must be deterministic and free, and my markdown is regular enough that rules win.</p>
   <div class="callout">An LLM-assisted capture flow ("Track B") is planned: a PWA captures free-form notes during the workout, and Claude maps the draft to <code>TrainingSession</code> after the fact, with a clarification loop for anything ambiguous. It will replace the rule parser, not live alongside it.</div>
 </section>

@@ -12,9 +12,17 @@ Capture happens offline during the workout (draft saved locally in a PWA). Proce
 
 | Plan | Status |
 |---|---|
-| [`docs/plans/refactor-plan.md`](docs/plans/refactor-plan.md) | Drop dataclass bridge — not started. |
+| [`docs/plans/refactor-plan.md`](docs/plans/refactor-plan.md) | Drop dataclass bridge — **complete**, merged to dev. |
 
 Check `▶ Resume here` at the bottom of each plan file before picking up work.
+
+---
+
+## Deferred design decisions
+
+**Exercise type inference (input UX)**
+
+Currently the user must write `exercise_type: activity` explicitly in the markdown, and the parser routes to the right set parser based on it. Deferred decision: infer the exercise/set type from the content of the set line itself (e.g. `min`, `km`, `HR` signals → ActivitySet; `kg x reps` → StrengthSet) so the user never has to specify a type. LLM-assisted classification and an exercise registry are also options. Keep `exercise_type` as an explicit override escape hatch. Revisit when touching the input format or parser next.
 
 ---
 

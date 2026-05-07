@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `refactor/drop-dataclass-bridge` — 2026-05-07
+
+#### Removed
+- `models_dataclass.py` (832 lines) — the legacy parallel dataclass model layer is gone.
+- `processor.py` bridge: `_to_primitive()`, `is_dataclass` import, the `working_sets→sets`
+  rename loop, `set_type` injection, and `exercise_type` inference.
+- Dead `session_id` computation in `DeepTrainingParser.build_training_session()` (was always
+  overwritten by the processor's path-based scheme).
+
+#### Changed
+- `parse.py` now returns plain dicts shaped directly for `TrainingSession.model_validate()`.
+  One model layer, no translation step.
+- `processor.py` pipeline: parse → inject `session_id` → lbs conversion → `model_validate()`.
+
+---
+
 ### `fix/parser-goal-warmup-formats` — 2026-05-07
 
 #### Fixed
