@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   program context is absent.
 - `parse.py`: silent `0 x 0` fallback in `_parse_working_set_line` removed;
   now raises `ValueError` like all other malformed-line paths.
+- `parse.py`: program-context trigger changed from program-presence to
+  phase/week-presence — real input files have no `- Program:` line; phase and
+  week are the co-dependent signals that mark a session as program-affiliated.
+  Either alone is malformed and raises `ValueError`.
+- `processor.py`, `validate.py`: `_derive_program_context()` added — infers
+  `program`, `phase`, and `week` from the `inputs/programs/<slug>/phase_N/week_N/`
+  directory structure and injects them when file metadata omits them. Program
+  name in file metadata still wins if present.
+- `validate.py`, `log.py`: `Path.resolve()` applied to user-supplied paths so
+  session IDs are correctly path-derived (SHA256 of full relative path) rather
+  than filename-only.
 
 ### Added
 
