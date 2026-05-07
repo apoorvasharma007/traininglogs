@@ -273,43 +273,42 @@
 
 <section>
   <h2 id="dashboard">The dashboard</h2>
-  <p>The dashboard is a single static HTML file: serif type, cream paper, vermilion accent. It reads like a printed almanac of the training year, not a SaaS chart wall. Nine sections, in a fixed order:</p>
+  <p>The dashboard is a single static HTML file rebuilt from the database by <code>scripts/build_dashboard.py</code> and written to <code>docs/index.html</code>. Clean white background, Inter for body text, JetBrains Mono for labels and numbers. Six sections:</p>
   <table>
-    <thead><tr><th>§</th><th>Title</th><th>Purpose</th></tr></thead>
+    <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td>I</td><td>The Numbers, so far</td><td>Tonnage · weeks · sessions · last lift</td></tr>
-      <tr><td>II</td><td>The Shape of the Year</td><td>Weekly tonnage, deloads in red</td></tr>
-      <tr><td>III</td><td>One Lift, Over Time</td><td>e1RM trend per exercise (Epley)</td></tr>
-      <tr><td>IV</td><td>Volume, by Muscle</td><td>Weekly sets per muscle group</td></tr>
-      <tr><td>V</td><td>Intensity, Distilled</td><td>RPE histogram + within-phase fatigue</td></tr>
-      <tr><td>VI</td><td>Does the Deload Work?</td><td>Pre/during/post deload comparison</td></tr>
-      <tr><td>VII</td><td>Stimulus vs Fatigue</td><td>RPE vs tonnage-per-set scatter</td></tr>
-      <tr><td>VIII</td><td>Personal Bests</td><td>Heaviest set per exercise</td></tr>
-      <tr><td>IX</td><td>Techniques Employed</td><td>Myo-reps, LLP, static, drop sets</td></tr>
+      <tr><td>Overview</td><td>Total sessions · current plan · current phase · last session date</td></tr>
+      <tr><td>Session Timeline</td><td>Sessions grouped by ISO week; color-coded by focus; links to source files on GitHub</td></tr>
+      <tr><td>Strength Progression</td><td>Top weight per day per exercise (actual kg, not e1RM); goal weight as a faded dashed red line; set-level note shown in side panel</td></tr>
+      <tr><td>Weekly Load</td><td>Total kg moved per phase/week; deload weeks in red</td></tr>
+      <tr><td>Personal Bests</td><td>Heaviest set per highlight exercise — weight, reps, date</td></tr>
+      <tr><td>Program</td><td>Auto-discovered from <code>inputs/programs/*/program.md</code>; alias read from YAML frontmatter</td></tr>
     </tbody>
   </table>
   <p>The data flow at build time:</p>
-  <div class="diagram">PostgreSQL  →  analytics/queries.py  →  cli/dashboard.py  →  docs/index.html
-                  (11 SQL queries)       (renders HTML +
+  <div class="diagram">PostgreSQL  →  analytics/queries.py  →  scripts/build_dashboard.py  →  docs/index.html
+                  (6 SQL queries)        (renders HTML +
                                           inline JSON)</div>
-  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>cli/dashboard.py</code> writes to <code>docs/index.html</code> in the repo. <code>traininglogs log --publish</code> separately stages, commits, and pushes the equivalent file in the website repo at <code>website/static/training-almanac/index.html</code>, which a GitHub Action then deploys.</p>
+  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>traininglogs log --publish</code> stages, commits, and pushes the file to the website repo, where a GitHub Action deploys it.</p>
 
   <h3>Typography and palette</h3>
-  <p>The almanac feel is held together by a small, deliberate set of typographic choices. Display and headings use Fraunces (variable, opsz 144, SOFT 0; italic for emphasis in red). Body and editorial notes use Newsreader (italic, drop cap on the first letter). Numbers and labels use JetBrains Mono with tabular figures.</p>
-  <p>Colours: background <code>#F1E9D6</code> (aged cream paper) with an SVG grain overlay; ink <code>#1A1410</code> (warm near-black); accent <code>#C83C29</code> (vermilion) for the current phase marker, deload bars, and emphasis; muted <code>#8A7F6E</code> for secondary text.</p>
+  <p>Inter for body text; JetBrains Mono for labels, numbers, and monospace elements. Background <code>#ffffff</code>; ink <code>#111827</code>; accent <code>#dc2626</code> (red) for emphasis, deload bars, and the current-phase hero stat; muted <code>#6b7280</code> for secondary text.</p>
+
+  <h3>Program auto-discovery</h3>
+  <p>Each program lives at <code>inputs/programs/&lt;slug&gt;/program.md</code>. The file must have a YAML frontmatter block at the top with an <code>alias</code> field (e.g. <code>alias: Strength &amp; Hypertrophy</code>). <code>build_dashboard.py</code> scans all matching paths at build time and renders a link for each. No code change is needed to add a new program — drop the directory and file, set the alias, rebuild.</p>
 
   <h3>Rules of the road</h3>
   <ul>
-    <li>The nine-section order is the story arc. Don't reorder or drop sections without an explicit reason.</li>
-    <li>Iterate one section at a time. The dashboard is dense; cross-section changes compound.</li>
-    <li>Always regenerate against the real DB before judging what looks right. Synthetic preview data lies.</li>
+    <li>Never hand-edit <code>docs/index.html</code> — it is fully regenerated on every build.</li>
+    <li>Always rebuild against the real DB before judging output. Synthetic data lies.</li>
+    <li>e1RM (Epley formula) is intentionally absent — the chart plots actual top-set weight. Do not reintroduce it.</li>
   </ul>
 </section>
 
 <section>
   <h2 id="versioning">Versioning</h2>
   <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in both the JSON snapshot and the DB row. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
-  <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> runs it on startup. Breaking migrations will be documented here when they land.</p>
+  <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> is run explicitly by migration/import scripts (not automatically on app startup). Breaking migrations will be documented here when they land.</p>
 </section>
 
 <section>

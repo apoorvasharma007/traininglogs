@@ -7,72 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Removed
-
-- `apply_schema` removed from `traininglogs log` — schema is never auto-applied at
-  runtime; migrations are explicit. Dead `apply_schema` import removed from
-  `processor.py` (was imported but never called).
-- `load_dotenv()` removed from `processor.py` top level — library modules must not
-  have side effects. Moved to the correct call site in `log.py`, now runs before
-  the `DATABASE_URL` check (fixing a latent bug where `.env` variables were not
-  loaded when that check ran).
-- `repopulate_db.py --regen` safety guard changed from a negative check
-  (`"5432" in url and "5434" not in url`) to a positive check — URL must contain
-  `5434` or `traininglogs_regen`; this was blocking Supabase cloud URLs.
-
-### Fixed
-
-- `validate.py`: imported deleted `_to_primitive` and `is_dataclass`; ran the
-  old bridge loop inline. Replaced with the current pipeline (mirrors
-  `process_md_file` minus DB/JSON steps).
-- `parse.py`: `program`, `phase`, `week`, `duration` are now Optional — absent
-  program context fields return `None` (standalone sessions). Hardcoded program
-  name and author defaults removed.
-- `processor.py`: JSON output path crashed for standalone sessions (`TypeError`
-  on `None` program/phase/week). Now routes to `output_dir/sessions/` when
-  program context is absent.
-- `parse.py`: silent `0 x 0` fallback in `_parse_working_set_line` removed;
-  now raises `ValueError` like all other malformed-line paths.
-- `parse.py`: program-context trigger changed from program-presence to
-  phase/week-presence — real input files have no `- Program:` line; phase and
-  week are the co-dependent signals that mark a session as program-affiliated.
-  Either alone is malformed and raises `ValueError`.
-- `processor.py`, `validate.py`: `_derive_program_context()` added — infers
-  `program`, `phase`, and `week` from the `inputs/programs/<slug>/phase_N/week_N/`
-  directory structure and injects them when file metadata omits them. Program
-  name in file metadata still wins if present.
-- `validate.py`, `log.py`: `Path.resolve()` applied to user-supplied paths so
-  session IDs are correctly path-derived (SHA256 of full relative path) rather
-  than filename-only.
-
-- `parse.py`: working set lines with unit-annotated weights (`30 kg x 6`)
-  now parse correctly; unit is stripped, value stored as kg.
-- `parse.py`: rep count is now optional on working set lines — failure sets
-  that log weight and RPE without a rep count are valid (`57 x RPE 10 failure:llp(8)`).
-- Two corrupt input lines corrected (user-approved):
-  `phase_2/week_11/lower_strength`: RPE 13 → RPE 10;
-  `phase_2/week_6/push_hypertrophy`: `2. 13.6` → `2. 13.6 x 12`.
-- `schema.sql`: `created_at TIMESTAMPTZ DEFAULT now()` added to sessions;
-  `idx_exercises_session_id` and `idx_working_sets_exercise_id` indexes added.
-- `api/app.py`: `CORSMiddleware` (driven by `ALLOWED_ORIGINS` env var);
-  `SimpleConnectionPool` replaces per-request connections; `apply_schema`
-  removed from lifespan; Pydantic response models on all routes.
-- `api/schemas.py`: `SessionSummary`, `SessionDetail`, `ExerciseOut`,
-  `WorkingSetOut`, `WarmupSetOut`, `ExerciseHistoryRow`.
-- `scripts/repopulate_db.py`: `--regen` flag uses `REGEN_DATABASE_URL`
-  (port 5434 staging DB) with safety guards against cross-target accidents.
-- `scripts/validate_regen.py`: strict exact-count validation plus 10-file
-  spot-check (live parse vs DB) before any prod repopulate.
-- `docker-compose.yml`: `db_regen` service at port 5434.
-- `.claude/db-migration.md`: full regen process documented with step-by-step
-  commands and the explicit prod-approval rule.
-
-### Added
-
-- `tests/fixtures/valid/standalone_session.md` — canonical fixture for a
-  session with no program context.
-- `tests/test_validate.py` — 7 tests covering `traininglogs validate` against
-  valid and invalid fixtures.
+No unreleased changes yet.
 
 ---
 
@@ -103,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 15 unit tests in `tests/test_parse.py` covering error paths and happy paths for
   `_parse_goal`, `_parse_warmup_set_line`, `_parse_working_set_line`, and
   `build_training_session`.
+- `tests/fixtures/valid/standalone_session.md` — canonical fixture for a
+  session with no program context.
+- `tests/test_validate.py` — 7 tests covering `traininglogs validate` against
+  valid and invalid fixtures.
+- `api/schemas.py`: `SessionSummary`, `SessionDetail`, `ExerciseOut`,
+  `WorkingSetOut`, `WarmupSetOut`, `ExerciseHistoryRow`.
 
 ### Changed
 
@@ -127,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   121 historical session files migrated.
 - All 121 historical JSON snapshots regenerated with the new pipeline (path-based
   session IDs, `sets` key, `set_type` discriminator, `Rest` goal field).
+- Dashboard visual/design refresh: six-section layout, cleaner white theme,
+  Inter + JetBrains Mono typography, and program auto-discovery docs aligned with
+  `scripts/build_dashboard.py` and `docs/index.html` generation flow.
 
 ### Fixed
 
@@ -140,6 +84,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bare-number warmup line.
 - `fetch.py`: `get_sessions()` and `get_session()` now select all new columns;
   result key renamed `working_sets`→`sets`.
+- `validate.py`: imported deleted `_to_primitive` and `is_dataclass`; replaced
+  old bridge loop with the current pipeline (mirrors `process_md_file` minus
+  DB/JSON steps).
+- `parse.py`: `program`, `phase`, `week`, `duration` are now Optional — absent
+  program context fields return `None` (standalone sessions). Hardcoded program
+  name and author defaults removed.
+- `processor.py`: JSON output path crashed for standalone sessions (`TypeError`
+  on `None` program/phase/week). Now routes to `output_dir/sessions/` when
+  program context is absent.
+- `parse.py`: silent `0 x 0` fallback in `_parse_working_set_line` removed;
+  now raises `ValueError` like all other malformed-line paths.
+- `parse.py`: program-context trigger changed from program-presence to
+  phase/week-presence — real input files have no `- Program:` line; phase and
+  week are the co-dependent signals that mark a session as program-affiliated.
+  Either alone is malformed and raises `ValueError`.
+- `processor.py`, `validate.py`: `_derive_program_context()` added — infers
+  `program`, `phase`, and `week` from the `inputs/programs/<slug>/phase_N/week_N/`
+  directory structure and injects them when file metadata omits them. Program
+  name in file metadata still wins if present.
+- `validate.py`, `log.py`: `Path.resolve()` applied to user-supplied paths so
+  session IDs are correctly path-derived (SHA256 of full relative path) rather
+  than filename-only.
+- `parse.py`: working set lines with unit-annotated weights (`30 kg x 6`)
+  now parse correctly; unit is stripped, value stored as kg.
+- `parse.py`: rep count is now optional on working set lines — failure sets
+  that log weight and RPE without a rep count are valid (`57 x RPE 10 failure:llp(8)`).
+- Two corrupt input lines corrected (user-approved):
+  `phase_2/week_11/lower_strength`: RPE 13 → RPE 10;
+  `phase_2/week_6/push_hypertrophy`: `2. 13.6` → `2. 13.6 x 12`.
+- `schema.sql`: `created_at TIMESTAMPTZ DEFAULT now()` added to sessions;
+  `idx_exercises_session_id` and `idx_working_sets_exercise_id` indexes added.
+- `api/app.py`: `CORSMiddleware` (driven by `ALLOWED_ORIGINS` env var);
+  `SimpleConnectionPool` replaces per-request connections; `apply_schema`
+  removed from lifespan; Pydantic response models on all routes.
+- `scripts/repopulate_db.py`: `--regen` flag uses `REGEN_DATABASE_URL`
+  (port 5434 staging DB) with safety guards against cross-target accidents.
+- `scripts/validate_regen.py`: strict exact-count validation plus 10-file
+  spot-check (live parse vs DB) before any prod repopulate.
+- `docker-compose.yml`: `db_regen` service at port 5434.
+- `.claude/db-migration.md`: full regen process documented with step-by-step
+  commands and the explicit prod-approval rule.
 
 ### Removed
 
@@ -147,6 +132,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Old `--phase`/`--week` as standalone required args (replaced by the
   `--program/--phase/--week` combination or a positional target).
 - `docs/architecture.md` — content subsumed by `docs/design.html`.
+- `apply_schema` removed from `traininglogs log` — schema is never auto-applied at
+  runtime; migrations are explicit. Dead `apply_schema` import removed from
+  `processor.py` (was imported but never called).
+- `load_dotenv()` removed from `processor.py` top level — library modules must not
+  have side effects. Moved to the correct call site in `log.py`, now runs before
+  the `DATABASE_URL` check (fixing a latent bug where `.env` variables were not
+  loaded when that check ran).
+- `repopulate_db.py --regen` safety guard changed from a negative check
+  (`"5432" in url and "5434" not in url`) to a positive check — URL must contain
+  `5434` or `traininglogs_regen`; this was blocking Supabase cloud URLs.
 
 ### Validation rules in effect
 
