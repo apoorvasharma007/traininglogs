@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `apply_schema` removed from `traininglogs log` — schema is never auto-applied at
+  runtime; migrations are explicit. Dead `apply_schema` import removed from
+  `processor.py` (was imported but never called).
+- `load_dotenv()` removed from `processor.py` top level — library modules must not
+  have side effects. Moved to the correct call site in `log.py`, now runs before
+  the `DATABASE_URL` check (fixing a latent bug where `.env` variables were not
+  loaded when that check ran).
+- `repopulate_db.py --regen` safety guard changed from a negative check
+  (`"5432" in url and "5434" not in url`) to a positive check — URL must contain
+  `5434` or `traininglogs_regen`; this was blocking Supabase cloud URLs.
+
 ### Fixed
 
 - `validate.py`: imported deleted `_to_primitive` and `is_dataclass`; ran the

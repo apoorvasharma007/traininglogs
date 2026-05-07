@@ -9,13 +9,9 @@ import re
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from traininglogs.parser.extract import TrainingMarkdownParser
 from traininglogs.parser.parse import DeepTrainingParser
-from traininglogs.db.db import get_connection, apply_schema
+from traininglogs.db.db import get_connection
 from traininglogs.db.insert import insert_session
 from traininglogs.models.models import TrainingSession
 

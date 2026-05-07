@@ -168,6 +168,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     for f in md_files:
         print(f"  {f}")
 
+    from dotenv import load_dotenv
+    load_dotenv()
+
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         print(
@@ -181,14 +184,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"[DRY-RUN] Would process {len(md_files)} file(s)")
         return 0
 
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    from traininglogs.db.db import get_connection, apply_schema
+    from traininglogs.db.db import get_connection
     from traininglogs.processor.processor import process_md_file
 
     conn = get_connection()
-    apply_schema(conn)
     try:
         for md_path in md_files:
             process_md_file(md_path, conn)

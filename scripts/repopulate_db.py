@@ -49,8 +49,8 @@ def main() -> None:
         if "traininglogs_test" in db_url or "5433" in db_url:
             print("ERROR: REGEN_DATABASE_URL looks like the test DB. Refusing.")
             sys.exit(1)
-        if "5432" in db_url and "5434" not in db_url:
-            print("ERROR: REGEN_DATABASE_URL looks like the prod DB (port 5432).")
+        if "5434" not in db_url and "traininglogs_regen" not in db_url:
+            print("ERROR: REGEN_DATABASE_URL must target the regen DB (port 5434 or traininglogs_regen).")
             print("Use --regen only with the db_regen service at port 5434.")
             sys.exit(1)
     else:
