@@ -75,14 +75,22 @@ Spot-check (10 randomly selected `.md` files):
 
 ## ▶ Resume here
 
-All steps complete. `chore/dead-weight-cleanup` squash-merged to dev. Suite green at 163 passing.
+**Cloud Deployment Wave — Step 1 complete (2026-05-07).**
 
-Dead weight removed:
-- `apply_schema` call + import gone from `log.py`
-- `load_dotenv()` + `apply_schema` import gone from `processor.py`; `load_dotenv()` moved before `DATABASE_URL` check in `log.py`
-- `repopulate_db.py --regen` guard now uses positive check (5434 or traininglogs_regen in URL)
+Supabase project created. Schema applied via `scripts/apply_schema_supabase.py`. All 121 sessions
+populated and verified (1009 exercises, 2469 working_sets, 647 warmup_sets — exact baseline match).
+All work on branch `feature/supabase-cloud`. Do NOT merge to `dev` until API is deployed and
+dashboard loads real data from Supabase.
 
-Next: Supabase + cloud deployment wave.
+Next session: Step 2 — Deploy FastAPI to Railway or Fly.io.
+- Write `Dockerfile` (or `railway.toml` / `fly.toml`)
+- Set env vars in hosting dashboard: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`
+- Deploy and smoke-test `GET /sessions` with `X-Api-Key` header
+
+Helper scripts added this session (on `feature/supabase-cloud`):
+- `scripts/test_supabase_connection.py` — connection smoke test
+- `scripts/test_supabase_counts.py` — row count verification
+- `scripts/apply_schema_supabase.py` — one-time schema apply
 
 ## Cloud Deployment Wave
 
@@ -106,20 +114,26 @@ Locally: `.env` (gitignored). Prod: env vars in Railway/Fly dashboard. CI: GitHu
 
 ### Step 1 — Schema + data on Supabase
 
-- [ ] User pastes Supabase `DATABASE_URL` into `.env`
-- [ ] Run `scripts/repopulate_db.py` against Supabase (normal mode, not --regen)
-- [ ] Verify counts: 121 sessions, 1009 exercises, 2469 working_sets, 647 warmup_sets
+- [x] User pastes Supabase `DATABASE_URL` into `.env`
+- [x] Run `scripts/repopulate_db.py` against Supabase (normal mode, not --regen)
+- [x] Verify counts: 121 sessions, 1009 exercises, 2469 working_sets, 647 warmup_sets
 
-### Step 2 — Deploy FastAPI to Railway/Fly.io
+### Step 2 — Deploy FastAPI to Fly.io
 
-- [ ] Write `Dockerfile` (or `railway.toml` / `fly.toml`)
-- [ ] Set env vars in Railway/Fly dashboard: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`
-- [ ] Deploy and smoke-test `GET /sessions` with `X-Api-Key` header
+- [x] Write `Dockerfile` + `fly.toml`
+- [x] Set env vars in Fly dashboard: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`
+- [x] Deploy and smoke-test `GET /sessions` with `X-Api-Key` header — live at https://traininglogs-api.fly.dev
 
-### Step 3 — Wire dashboard to cloud API
+### Step 3 — Wire CLI to Supabase + local mirror
 
-- [ ] Update dashboard JS to point at Railway/Fly URL instead of localhost
-- [ ] Rebuild and publish dashboard
+- [x] `DATABASE_URL` → Supabase (primary, always written)
+- [x] `LOCAL_DATABASE_URL` → local Postgres (optional mirror for API dev; skipped silently if not reachable)
+- [x] JSON output unchanged — written after Supabase insert succeeds
+- [x] Dashboard stays static (build-time data fetch from Supabase via `build_dashboard.py`)
+- [x] Smoke-tested: collision detection working, local DB mirror connected
+
+Note: dashboard does not call the Fly.io API — it remains a static build. The API is deployed
+and ready for a future dynamic dashboard or mobile client.
 
 ### Step 4 — Auth (later)
 

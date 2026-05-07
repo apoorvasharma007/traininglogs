@@ -173,10 +173,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
-        print(
-            "\n✗ DATABASE_URL is not set.\n"
-            "Start Postgres with 'docker compose up -d' and set DATABASE_URL in .env"
-        )
+        print("\n✗ DATABASE_URL is not set. Add your Supabase connection string to .env")
         return 1
 
     print("\n[2] Running parser...")
@@ -184,18 +181,41 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"[DRY-RUN] Would process {len(md_files)} file(s)")
         return 0
 
+    import psycopg2
     from traininglogs.db.db import get_connection
+    from traininglogs.db.insert import insert_session
     from traininglogs.processor.processor import process_md_file
 
     conn = get_connection()
+
+    local_conn = None
+    local_url = os.environ.get("LOCAL_DATABASE_URL")
+    if local_url:
+        try:
+            local_conn = psycopg2.connect(local_url)
+            print("[local db] connected")
+        except psycopg2.OperationalError:
+            print("[local db] not reachable, skipping")
+
     try:
         for md_path in md_files:
-            process_md_file(md_path, conn)
+            session = process_md_file(md_path, conn)
+            if local_conn:
+                try:
+                    inserted = insert_session(local_conn, session)
+                    if inserted:
+                        print(f"[local db] inserted {session.session_id}")
+                    else:
+                        print(f"[local db] {session.session_id} already exists, skipping")
+                except Exception as e:
+                    print(f"[local db] insert failed: {e}")
     except SystemExit as e:
         print(str(e))
         return 1
     finally:
         conn.close()
+        if local_conn:
+            local_conn.close()
 
     print("✓ Parser completed")
 
