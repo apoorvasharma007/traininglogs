@@ -19,7 +19,7 @@
 ### Working Sets
 1. 57 x 12 RPE 9 perfect - first rep was partial and didnt count it 
 2. 57 x 13 RPE 10 good - first rep is the bottleneck, it was partial but then we get in the groove
-3. 57 x RPE 13 perfect failure:llp(8) - really good reps, im impressed by todays form
+3. 57 x RPE 10 perfect failure:llp(8) - really good reps, im impressed by todays form
   
 ### Notes
 At 57 i have to use my hands and the rest of me more to get reps in but 50 is quite easy to isolate hamstrings. Keep pushing at 57 until they start to get easier. first rep is sometimes the bottleneck, it was partial but then we get in the groove. 

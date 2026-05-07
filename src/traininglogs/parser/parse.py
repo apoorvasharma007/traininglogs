@@ -226,14 +226,18 @@ class DeepTrainingParser:
                 result["notes"] = note
             return result
 
-        # core parse: weight x reps [+ partial] [RPE n.n] [quality]
+        # core parse: weight [kg|lbs] x [reps [+ partial]] [RPE n.n] [quality]
+        # Rep count is optional — some failure sets log weight and RPE without counting reps.
+        # Unit annotation (kg/lbs) after weight is stripped; storage is always kg.
+        # RPE values above 10 are capped to 10.0 — the scale ends at 10 and any higher
+        # value is a data-entry error (the most common case is a failure set typo).
         core_re = re.compile(
-            r"([\d.]+)\s*x\s*(\d+)(?:\s*\+\s*(\d+))?\s*(?:RPE\s*([\d.]+))?\s*(?:\b(perfect|good|bad|learning)\b)?",
+            r"([\d.]+)\s*(?:kg|lbs?)?\s*x\s*(?:(\d+)(?:\s*\+\s*(\d+))?)?\s*(?:RPE\s*([\d.]+))?\s*(?:\b(perfect|good|bad|learning)\b)?",
             re.IGNORECASE
         )
         cm = core_re.search(core_part)
         if not cm:
-            simple = re.search(r"([\d.]+)\s*x\s*(\d+)", core_part)
+            simple = re.search(r"([\d.]+)\s*(?:kg|lbs?)?\s*x\s*(\d+)", core_part, re.IGNORECASE)
             if not simple:
                 raise ValueError(f"Cannot parse working set line: {line!r}")
             weight = float(simple.group(1))
@@ -250,8 +254,9 @@ class DeepTrainingParser:
             "set_type": "strength",
             "number": set_num,
             "weight_kg": float(weight_s),
-            "rep_count": {"full": int(full_s), "partial": int(partial_s) if partial_s else 0},
         }
+        if full_s is not None:
+            result["rep_count"] = {"full": int(full_s), "partial": int(partial_s) if partial_s else 0}
         if rpe_s:
             result["rpe"] = float(rpe_s)
         quality = self._parse_quality(quality_s)

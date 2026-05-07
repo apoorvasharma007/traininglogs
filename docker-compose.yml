@@ -21,6 +21,18 @@ services:
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
 
+  db_regen:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: traininglogs_regen
+      POSTGRES_USER: traininglogs
+      POSTGRES_PASSWORD: traininglogs
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_regen_data:/var/lib/postgresql/data
+
 volumes:
   postgres_validation_data:
   postgres_test_data:
+  postgres_regen_data:

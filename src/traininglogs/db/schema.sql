@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     weight_unit          TEXT NOT NULL DEFAULT 'kg',
     user_id              TEXT,
     user_name            TEXT,
-    source_file          TEXT
+    source_file          TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS exercises (
@@ -67,3 +68,6 @@ CREATE TABLE IF NOT EXISTS warmup_sets (
     rep_count   INT,
     notes       TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_exercises_session_id     ON exercises(session_id);
+CREATE INDEX IF NOT EXISTS idx_working_sets_exercise_id ON working_sets(exercise_id);

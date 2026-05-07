@@ -51,7 +51,7 @@ Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect consideri
 **Rest:** 2 min 
 ### Working Sets
 1. 13.6 x 12 
-2. 13.6 
+2. 13.6 x 12 
 ### Notes
 Only squeeze from chest, no pushing from wrist or forearm. Avoid flipping over. 
 ### Cues
