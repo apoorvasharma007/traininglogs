@@ -36,10 +36,10 @@ Regen is always a **separate branch** (`chore/historical-data-regen`), never bun
 
 ```bash
 # Start isolated target DB (adjust docker-compose.yml to add a service if needed)
-docker compose up -d db_validation
+docker compose up -d db_migration
 
 # Run regen (writes to output_training_logs_json_regen/ by default)
-REGEN_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation \
+REGEN_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration \
   .venv/bin/python scripts/regen_historical.py --overwrite
 
 # After reviewing output, swap directories

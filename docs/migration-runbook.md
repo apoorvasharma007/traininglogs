@@ -29,7 +29,7 @@ Before starting:
 
 Capture old counts:
 ```bash
-docker exec traininglogs-db-1 psql -U traininglogs -d traininglogs_validation \
+docker exec traininglogs-db-1 psql -U traininglogs -d traininglogs \
   -c "SELECT COUNT(*) FROM sessions;" \
   -c "SELECT COUNT(*) FROM exercises;" \
   -c "SELECT COUNT(*) FROM working_sets;"

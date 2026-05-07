@@ -51,11 +51,11 @@ computed (field values, session ID scheme, output shape). Read `.claude/regen-hi
 before running.
 
 ```bash
-# Requires a running validation DB and REGEN_DATABASE_URL set
-REGEN_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation \
+# Requires an isolated target DB and REGEN_DATABASE_URL set
+REGEN_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration \
   .venv/bin/python scripts/regen_historical.py
 
-# With --overwrite: truncates the validation DB first (safe for re-runs from scratch)
+# With --overwrite: truncates the target DB first (safe for re-runs from scratch)
 REGEN_DATABASE_URL=... .venv/bin/python scripts/regen_historical.py --overwrite
 
 # Custom output directory
@@ -71,18 +71,17 @@ mv output_training_logs_json_regen output_training_logs_json
 
 ---
 
-## repopulate_validation_db.py
+## repopulate_db.py
 
-**Purpose:** Truncate the validation DB and repopulate it by processing all `.md` files
-in `inputs/` from scratch. Used when you need the validation DB to reflect the current
-pipeline state (e.g., after a processor change, to prepare for E2E validation).
+**Purpose:** Truncate the prod DB and repopulate it by processing all `.md` files
+in `inputs/` from scratch. Used when you need the prod DB to reflect the current
+pipeline state (e.g., after a processor change).
 
-**Safety guard:** refuses to run if `DATABASE_URL` does not look like the validation DB
-(must contain port 5434 or "validation").
+**Safety guard:** refuses to run if `DATABASE_URL` looks like the test DB (port 5433
+or contains `traininglogs_test`).
 
 ```bash
-DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation \
-  .venv/bin/python scripts/repopulate_validation_db.py
+.venv/bin/python scripts/repopulate_db.py
 ```
 
 Also writes updated JSON to `output_training_logs_json/`. Use `regen_historical.py`

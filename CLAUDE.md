@@ -186,8 +186,7 @@ See `scripts/README.md` for full details on each script.
 # See .claude/regen-historical.md before running
 REGEN_DATABASE_URL=<validation-db-url> .venv/bin/python scripts/regen_historical.py
 
-# Truncate and repopulate the validation DB from current .md inputs
-# Must point DATABASE_URL at the validation DB (port 5434) — script refuses to run on prod
-DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation \
-  .venv/bin/python scripts/repopulate_validation_db.py
+# Truncate and repopulate the prod DB from current .md inputs
+# Script refuses to run if DATABASE_URL looks like the test DB
+.venv/bin/python scripts/repopulate_db.py
 ```

@@ -1,21 +1,21 @@
 # DB migration strategy
 
-## When you need a validation DB
+## When you need a migration DB
 
 Not every schema change needs a full migration. Use this judgement:
 
 - **Additive column with a safe default** (e.g. `ADD COLUMN weight_unit TEXT DEFAULT 'kg'`): can apply via ALTER TABLE in-place. Still verify counts after.
-- **New columns + historical data reimport** (e.g. adding `set_type`, `exercise_type`, unilateral columns): use a validation DB + full reimport from JSON.
-- **Session ID scheme change**: always use a validation DB. Old IDs can't be compared directly.
-- **Any destructive change** (rename/drop column, change type): validation DB + reimport, no exceptions.
+- **New columns + historical data reimport** (e.g. adding `set_type`, `exercise_type`, unilateral columns): use a migration DB + full reimport from JSON.
+- **Session ID scheme change**: always use a migration DB. Old IDs can't be compared directly.
+- **Any destructive change** (rename/drop column, change type): migration DB + reimport, no exceptions.
 
-Rule of thumb: if you'd need to re-run `regen_historical.py` for the change, you need a validation DB.
+Rule of thumb: if you'd need to re-run `regen_historical.py` for the change, you need a migration DB.
 
 ## Process (high-level)
 
 1. **Never touch the prod DB during migration.** Keep it running as the reference.
-2. Add a `db_validation` service to `docker-compose.yml` on a new port (e.g. 5434). New volume.
-3. Start the new DB: `docker compose up -d db_validation`
+2. Add a `db_migration` service to `docker-compose.yml` on a new port (e.g. 5435). New volume.
+3. Start the new DB: `docker compose up -d db_migration`
 4. Run `scripts/import_sessions_to_db.py --overwrite` against the new DB URL. This calls `apply_schema()` first (creates all tables with current schema), then imports all JSON from `output_training_logs_json/`.
 5. Verify schema: `\d sessions`, `\d working_sets`, `\d exercises` — confirm new columns are present.
 6. Verify row counts match expectations (capture old DB counts before starting).
@@ -38,31 +38,31 @@ Rule of thumb: if you'd need to re-run `regen_historical.py` for the change, you
 - **Compare on date, not session_id.** IDs may change between migrations. Core values (weights, reps, exercise names, set counts) must match.
 - **Column mismatches between old/new are expected** when adding new columns. Only value mismatches matter.
 - **docker-compose.yml cleanup is a separate commit** after cutover is verified stable. Don't bundle cleanup with cutover.
-- **Old volume is the safety net.** Delete it only when you're confident. The command is: `docker volume rm traininglogs_postgres_data` — but check the volume name with `docker volume ls` first.
-- When feature branches are merged to `dev` over time, the validation DB accumulates schema fragments. A fresh reimport from JSON is always cleaner than patching in-place.
+- **Old volume is the safety net.** Delete it only when you're confident. Check the volume name with `docker volume ls` first — the command is irreversible.
+- When feature branches are merged to `dev` over time, the migration DB accumulates schema fragments. A fresh reimport from JSON is always cleaner than patching in-place.
 
 ## Commands
 
 ```bash
-# Start validation DB (after adding service to docker-compose.yml)
-docker compose up -d db_validation
+# Start migration DB (after adding service to docker-compose.yml)
+docker compose up -d db_migration
 
-# Import all JSON into validation DB
-DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation \
+# Import all JSON into migration DB
+DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration \
   .venv/bin/python scripts/import_sessions_to_db.py --overwrite
 
 # Verify schema
-docker exec traininglogs-db_validation-1 psql -U traininglogs -d traininglogs_validation \
+docker exec traininglogs-db_migration-1 psql -U traininglogs -d traininglogs_migration \
   -c "\d sessions" -c "\d exercises" -c "\d working_sets"
 
 # Verify row counts
-docker exec traininglogs-db_validation-1 psql -U traininglogs -d traininglogs_validation \
+docker exec traininglogs-db_migration-1 psql -U traininglogs -d traininglogs_migration \
   -c "SELECT COUNT(*) FROM sessions;" \
   -c "SELECT COUNT(*) FROM exercises;" \
   -c "SELECT COUNT(*) FROM working_sets;"
 
 # Cutover
-# Edit .env: change DATABASE_URL port from old to new
+# Edit .env: change DATABASE_URL to point at the migration DB's port
 # Then verify tests still pass
 .venv/bin/pytest tests/ -q
 ```

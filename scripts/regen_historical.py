@@ -37,7 +37,7 @@ def main() -> None:
     if not regen_url:
         print("ERROR: REGEN_DATABASE_URL is not set.")
         print("Set it to the URL of an isolated target DB (not prod, not test).")
-        print("Example: postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_validation")
+        print("Example: postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Regenerate historical JSON files.")
