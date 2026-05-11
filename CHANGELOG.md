@@ -44,6 +44,17 @@ No unreleased changes yet.
   valid and invalid fixtures.
 - `api/schemas.py`: `SessionSummary`, `SessionDetail`, `ExerciseOut`,
   `WorkingSetOut`, `WarmupSetOut`, `ExerciseHistoryRow`.
+- Supabase cloud DB as primary database. `DATABASE_URL` targets Supabase; schema
+  applied and all 121 historical sessions populated.
+- Fly.io deployment for the FastAPI. `Dockerfile` and `fly.toml` added; API live
+  at https://traininglogs-api.fly.dev.
+- Optional local Postgres mirror: CLI writes to `LOCAL_DATABASE_URL` when set and
+  reachable, skips silently if not.
+- `scripts/apply_schema_supabase.py` — one-shot schema migration helper for Supabase.
+- `.env.example` updated to document `DATABASE_URL` (Supabase) and
+  `LOCAL_DATABASE_URL` (optional local mirror).
+- `inputs/programs/bodybuilding_transformation_system/program.md` — program metadata
+  file consumed by the dashboard for display.
 
 ### Changed
 
@@ -71,6 +82,10 @@ No unreleased changes yet.
 - Dashboard visual/design refresh: six-section layout, cleaner white theme,
   Inter + JetBrains Mono typography, and program auto-discovery docs aligned with
   `scripts/build_dashboard.py` and `docs/index.html` generation flow.
+- Dashboard (`scripts/build_dashboard.py`, `docs/index.html`): e1RM section dropped;
+  programs now auto-discovered from `inputs/programs/`; overview layout streamlined.
+- `docs/design.html`: updated to reflect Supabase primary DB, dual-write CLI behavior,
+  Fly.io API deployment, and dashboard auto-discovery of programs.
 
 ### Fixed
 
@@ -125,6 +140,10 @@ No unreleased changes yet.
 - `docker-compose.yml`: `db_regen` service at port 5434.
 - `.claude/db-migration.md`: full regen process documented with step-by-step
   commands and the explicit prod-approval rule.
+- `api/app.py`: `API_KEY` was read at module import time — test env overrides applied
+  after import had no effect. Now read at call time.
+- CI workflow: `docs/**` path was missing from push/PR triggers — edits to
+  `docs/design.html` did not trigger CI runs.
 
 ### Removed
 
@@ -142,6 +161,8 @@ No unreleased changes yet.
 - `repopulate_db.py --regen` safety guard changed from a negative check
   (`"5432" in url and "5434" not in url`) to a positive check — URL must contain
   `5434` or `traininglogs_regen`; this was blocking Supabase cloud URLs.
+- Unused `exercise_e1rm_trend` tests removed from `test_queries.py` (query and
+  dashboard section were both dropped).
 
 ### Validation rules in effect
 
