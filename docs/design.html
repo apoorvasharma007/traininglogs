@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-07</div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-11</div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -198,13 +198,14 @@
 <section>
   <h2 id="shape">The shape of the system</h2>
   <p>Five things, in order:</p>
-  <div class="diagram">markdown  →  parser  →  Pydantic  →  PostgreSQL  →  dashboard
-  files       (rules)    models       (truth)       (HTML)
-                                          ↓
-                                       FastAPI
-                                       (REST)</div>
+  <div class="diagram">markdown  →  parser (--parser rules)  ──┐
+  files                                    ├→  Pydantic  →  PostgreSQL  →  dashboard
+free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (HTML)
+  drafts      └─ ConfirmationCard                           ↓
+                  (confirm / correct)                    FastAPI
+                                                         (REST)</div>
   <p>Each step is a boundary. Markdown is what I write. Pydantic is what the rest of the system trusts. Postgres is the source of truth for everything queryable. The API and the dashboard both read from Postgres; nothing writes back through them.</p>
-  <p>This separation means I can rewrite any one stage without disturbing the others. The parser is currently rule-based. An LLM-driven capture flow is planned to replace it ("Track B" below); the Pydantic model and the database schema are the stable contract between stages.</p>
+  <p>This separation means I can rewrite any one stage without disturbing the others. The Pydantic model and the database schema are the stable contract between stages — everything upstream of Pydantic can change without touching storage or the API. The rule-based parser remains available via <code>--parser rules</code>; the default path is the AI agent.</p>
 </section>
 
 <section>
@@ -243,8 +244,7 @@
 <section>
   <h2 id="parser">The parser</h2>
   <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into a plain dict shaped directly for Pydantic. The processor injects the <code>session_id</code>, runs lbs→kg conversion if needed, then calls <code>TrainingSession.model_validate()</code> — that's where validation fires. One model layer, no translation step.</p>
-  <p>The parser is rule-based. There is no LLM in the hot path. This is a deliberate choice: parsing must be deterministic and free, and my markdown is regular enough that rules win.</p>
-  <div class="callout">An LLM-assisted capture flow ("Track B") is planned: a PWA captures free-form notes during the workout, and Claude maps the draft to <code>TrainingSession</code> after the fact, with a clarification loop for anything ambiguous. It will replace the rule parser, not live alongside it.</div>
+  <p>The rule-based parser is deterministic, free to run, and has full test coverage against historical sessions. It stays available via <code>--parser rules</code> for debugging, offline use, and regression comparison. The default path is the AI agent described in the next section.</p>
 </section>
 
 <section>
@@ -312,17 +312,77 @@
 </section>
 
 <section>
+  <h2 id="ai-capture">Track B — AI capture</h2>
+  <p>The default parsing path. Instead of a structured markdown format, the user writes freely — during or after the workout — and the agent maps the draft to <code>TrainingSession</code>. Data correctness is the top priority: nothing is written to the database until the user confirms the agent's interpretation.</p>
+
+  <h3>The flow</h3>
+  <div class="diagram">free-text .md
+      ↓
+  agent/llm_parser.py          LLM call: free text → TrainingSession dict
+      │                                          + uncertain_fields[]
+      ↓
+  agent/card.py                build ConfirmationCard from dict
+      │                        mark uncertain fields with ?
+      ↓
+  agent/renderer.py            TerminalRenderer (rich) prints card
+      │
+      ↓
+  user: "y" or correction text
+      │
+      ├── "y"  →  TrainingSession.model_validate()  →  DB write
+      │
+      └── correction  →  agent/patcher.py  →  LLM patches dict
+                             ↓
+                         re-render card  →  back to user prompt</div>
+  <p><code>TrainingSession.model_validate()</code> always runs on the final dict regardless of path. The LLM produces input to Pydantic, never a bypass around it.</p>
+
+  <h3>ConfirmationCard architecture</h3>
+  <p>The card is a tree of dataclasses defined in <code>agent/card.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
+  <pre><code>ConfirmationCard
+  SessionHeader       date · focus · duration · program / phase / week
+  ExerciseCard[]
+    ExerciseHeader    number · name · goal (plain English)
+    WarmupRow[]       weight · reps
+    WorkingSetRow[]   weight · reps · RPE · quality · failure (plain English)
+    NotePreview       first ~40 chars of note + "…" if truncated</code></pre>
+  <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (dot-path format, e.g. <code>"exercises[1].sets[0].weight_kg"</code>). The renderer marks those positions with <code>?</code>. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
+  <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
+
+  <h3>Correction loop</h3>
+  <p>After the card is printed, the user sees a single consistent prompt: <code>Confirm, or say what's wrong:</code>. Any input other than <code>y</code> / <code>yes</code> is treated as a natural-language correction. The patcher sends the current dict and the correction to the LLM, which returns the updated dict. The card is rebuilt and re-rendered. This repeats until the user confirms.</p>
+  <p>The correction model receives the full current <code>TrainingSession</code> dict as context, so it can apply relative corrections ("second exercise, not the first") without the user specifying field paths.</p>
+
+  <h3>LLM call design</h3>
+  <table>
+    <thead><tr><th>Call</th><th>Model</th><th>Input</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td>Parse</td><td>claude-haiku-4-5</td><td>raw session text + schema description</td><td><code>TrainingSession</code> dict + <code>uncertain_fields[]</code></td></tr>
+      <tr><td>Patch</td><td>claude-haiku-4-5</td><td>current dict + user correction text</td><td>updated <code>TrainingSession</code> dict</td></tr>
+    </tbody>
+  </table>
+  <p>Both calls use structured output (JSON mode). The schema passed to the LLM is derived from the Pydantic models — single source of truth, no duplication. Failure techniques are described in natural language in the prompt and mapped back to the discriminated union types by the LLM.</p>
+
+  <h3>CLI interface</h3>
+  <pre><code># AI parser (default) — free-text input, confirmation card
+traininglogs log draft.md
+
+# Rule-based parser — structured markdown, no confirmation card
+traininglogs log session.md --parser rules</code></pre>
+  <p>All existing flags (<code>--dry-run</code>, <code>--no-commit</code>, <code>--publish</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical.</p>
+</section>
+
+<section>
   <h2 id="next">What's next</h2>
   <ul class="body">
-    <li><strong>Track B — AI capture.</strong> A PWA captures free-form workout notes offline. On reconnect, Claude (Haiku 4.5) maps the draft to <code>TrainingSession</code>, asks clarifying questions if the mapping is incomplete, confirms the parsed summary with me, and only then writes to the DB. Replaces the rule parser.</li>
-    <li><strong>Cloud sync.</strong> Supabase as a remote replica of the local Postgres. Writing locally remains the source of truth; the cloud copy exists so the dashboard build and the API can run from anywhere.</li>
-    <li><strong>Programs.</strong> A layer above sessions: a training plan describes intended sessions (exercise, target sets, target weight), and logged sessions reconcile against the plan. This is where "did I follow the program?" becomes a query.</li>
+    <li><strong>Track B — AI capture</strong> is in active development. The design is locked (see section above); implementation is in progress on <code>feature/ai-parser</code>.</li>
+    <li><strong>Dashboard deploy.</strong> Publish <code>docs/index.html</code> from the website homepage tech section (Wave 6 polish).</li>
+    <li><strong>PWA capture.</strong> Offline draft capture on mobile, synced on reconnect. Feeds directly into the AI agent flow.</li>
   </ul>
   <p>Each of these will get its own section here when it lands. This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
 </section>
 
 <footer>
-  Last updated 2026-05-07 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+  Last updated 2026-05-11 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
 </footer>
 
 </main>
@@ -338,6 +398,7 @@
     <li><a href="#api">The API</a></li>
     <li><a href="#dashboard">The dashboard</a></li>
     <li><a href="#versioning">Versioning</a></li>
+    <li><a href="#ai-capture">Track B — AI capture</a></li>
     <li><a href="#next">What's next</a></li>
   </ul>
 </aside>
