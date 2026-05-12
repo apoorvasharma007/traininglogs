@@ -1,0 +1,229 @@
+"""
+LLM parser unit tests. The AnthropicProvider is never instantiated here —
+all tests inject a stub ExtractionProvider so no API calls are made.
+"""
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+import pytest
+from pydantic import ValidationError
+
+from traininglogs.agent.llm_parser import (
+    LLMParserError,
+    TrainingLogLLMExtract,
+    parse,
+)
+from traininglogs.models.models import Exercise, StrengthSet, RepCount
+
+
+# --- stub providers ---
+
+class StubProvider:
+    """Returns a fixed dict on every call."""
+
+    def __init__(self, raw: dict) -> None:
+        self._raw = raw
+
+    def extract(self, text: str, tool_schema: dict) -> dict:
+        return self._raw
+
+
+class FailThenSucceedProvider:
+    """Raises LLMParserError on the first N calls, then returns a valid dict."""
+
+    def __init__(self, raw: dict, fail_times: int = 1) -> None:
+        self._raw = raw
+        self._fail_times = fail_times
+        self._calls = 0
+
+    def extract(self, text: str, tool_schema: dict) -> dict:
+        self._calls += 1
+        if self._calls <= self._fail_times:
+            raise LLMParserError("simulated provider failure")
+        return self._raw
+
+
+class AlwaysFailProvider:
+    def extract(self, text: str, tool_schema: dict) -> dict:
+        raise LLMParserError("always fails")
+
+
+# --- fixtures ---
+
+VALID_STRENGTH_RAW: dict[str, Any] = {
+    "date": "2026-05-12",
+    "program": "Test Program",
+    "phase": 3,
+    "week": 11,
+    "focus": "Lower Strength",
+    "session_duration_minutes": 150,
+    "exercises": [
+        {
+            "number": 1,
+            "name": "Seated Leg Hamstring Curl",
+            "exercise_type": "strength",
+            "current_goal": {
+                "weight_kg": 63.0,
+                "sets": 3,
+                "rep_range": {"min": 10, "max": 12},
+                "rest": {"minutes": 2},
+            },
+            "warmup_sets": [
+                {"number": 1, "weight_kg": 29.0, "notes": "feel"},
+                {"number": 2, "weight_kg": 57.0, "notes": "feel"},
+            ],
+            "sets": [
+                {
+                    "set_type": "strength",
+                    "number": 1,
+                    "weight_kg": 63.0,
+                    "rep_count": {"full": 12, "partial": 0},
+                    "rpe": 10.0,
+                    "rep_quality_assessment": "good",
+                },
+                {
+                    "set_type": "strength",
+                    "number": 2,
+                    "weight_kg": 63.0,
+                    "rep_count": {"full": 12, "partial": 0},
+                    "rpe": 10.0,
+                    "rep_quality_assessment": "good",
+                },
+                {
+                    "set_type": "strength",
+                    "number": 3,
+                    "weight_kg": 63.0,
+                    "rep_count": {"full": 11, "partial": 0},
+                    "rpe": 10.0,
+                    "rep_quality_assessment": "good",
+                    "failure_technique": {
+                        "technique_type": "LLP",
+                        "details": {"partial_rep_count": 10},
+                    },
+                },
+            ],
+        }
+    ],
+    "uncertain_fields": [],
+}
+
+
+# --- TrainingLogLLMExtract model ---
+
+class TestTrainingLogLLMExtract:
+    def test_valid_construction(self) -> None:
+        extract = TrainingLogLLMExtract.model_validate(VALID_STRENGTH_RAW)
+        assert extract.date == "2026-05-12"
+        assert extract.program == "Test Program"
+        assert len(extract.exercises) == 1
+        assert extract.uncertain_fields == []
+
+    def test_uncertain_fields_populated(self) -> None:
+        raw = dict(VALID_STRENGTH_RAW)
+        raw["uncertain_fields"] = ["exercises.0.sets.1.rpe"]
+        extract = TrainingLogLLMExtract.model_validate(raw)
+        assert "exercises.0.sets.1.rpe" in extract.uncertain_fields
+
+    def test_optional_fields_default_none(self) -> None:
+        minimal = {
+            "date": "2026-05-12",
+            "exercises": [{"number": 1, "name": "Plank", "exercise_type": "strength"}],
+        }
+        extract = TrainingLogLLMExtract.model_validate(minimal)
+        assert extract.program is None
+        assert extract.phase is None
+        assert extract.week is None
+        assert extract.is_deload_week is None
+        assert extract.focus is None
+        assert extract.session_duration_minutes is None
+
+    def test_invalid_date_raises(self) -> None:
+        raw = dict(VALID_STRENGTH_RAW, date="not-a-date")
+        with pytest.raises(ValidationError):
+            TrainingLogLLMExtract.model_validate(raw)
+
+    def test_exercises_validated_by_existing_model(self) -> None:
+        raw = dict(VALID_STRENGTH_RAW)
+        raw["exercises"] = [{"number": 0, "name": "Squat"}]  # number=0 is invalid
+        with pytest.raises(ValidationError):
+            TrainingLogLLMExtract.model_validate(raw)
+
+    def test_model_json_schema_contains_exercise_defs(self) -> None:
+        schema = TrainingLogLLMExtract.model_json_schema()
+        schema_str = str(schema)
+        assert "exercises" in schema_str
+        assert "date" in schema_str
+
+    def test_activity_set_accepted(self) -> None:
+        raw = {
+            "date": "2026-05-12",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Row",
+                    "exercise_type": "activity",
+                    "sets": [
+                        {
+                            "set_type": "activity",
+                            "number": 1,
+                            "duration_seconds": 1800,
+                            "distance_meters": 5000.0,
+                            "heart_rate_bpm": 155,
+                        }
+                    ],
+                }
+            ],
+        }
+        extract = TrainingLogLLMExtract.model_validate(raw)
+        assert extract.exercises[0].sets[0].set_type == "activity"
+
+
+# --- parse() ---
+
+class TestParse:
+    def test_happy_path(self) -> None:
+        extract = parse("some workout text", provider=StubProvider(VALID_STRENGTH_RAW))
+        assert extract.date == "2026-05-12"
+        assert len(extract.exercises) == 1
+
+    def test_provider_receives_text_and_schema(self) -> None:
+        calls: list[tuple[str, dict]] = []
+
+        class CapturingProvider:
+            def extract(self, text: str, tool_schema: dict) -> dict:
+                calls.append((text, tool_schema))
+                return VALID_STRENGTH_RAW
+
+        parse("my workout", provider=CapturingProvider())
+        assert len(calls) == 1
+        assert calls[0][0] == "my workout"
+        assert isinstance(calls[0][1], dict)
+        assert "exercises" in str(calls[0][1])
+
+    def test_provider_error_raises_llm_parser_error(self) -> None:
+        with pytest.raises(LLMParserError):
+            parse("text", provider=AlwaysFailProvider())
+
+    def test_invalid_raw_dict_raises_llm_parser_error(self) -> None:
+        bad_raw = {"date": "2026-05-12", "exercises": [{"number": 0, "name": "Squat"}]}
+        with pytest.raises(LLMParserError):
+            parse("text", provider=StubProvider(bad_raw))
+
+    def test_uncertain_fields_preserved(self) -> None:
+        raw = dict(VALID_STRENGTH_RAW, uncertain_fields=["exercises.0.sets.0.rpe"])
+        extract = parse("text", provider=StubProvider(raw))
+        assert "exercises.0.sets.0.rpe" in extract.uncertain_fields
+
+    def test_default_provider_is_anthropic(self) -> None:
+        # Just verify AnthropicProvider is used when none supplied.
+        # Don't call .extract() — just check the type.
+        from traininglogs.agent.llm_parser import AnthropicProvider
+        with patch("traininglogs.agent.llm_parser.AnthropicProvider") as mock_cls:
+            mock_provider = MagicMock()
+            mock_provider.extract.return_value = VALID_STRENGTH_RAW
+            mock_cls.return_value = mock_provider
+            result = parse("text")
+            mock_cls.assert_called_once()
+            assert result.date == "2026-05-12"
