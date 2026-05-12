@@ -6,8 +6,9 @@ and insert cleanly) and `invalid/` (should fail at a specific stage with a known
 All dates use year 3000 to guarantee no collision with real historical session IDs.
 
 Automated tests (`pytest tests/`) do not import these files — they use inline `tmp_path`
-fixtures. These files are for `traininglogs validate` and `traininglogs log --dry-run`
-workflows. See `.claude/testing-guide.md` for the full E2E protocol.
+fixtures. These files are for `traininglogs validate` (no DB write) and
+`traininglogs log --no-commit` (DB write, no git) E2E workflows.
+See `.claude/testing-guide.md` for the full E2E protocol.
 
 ---
 

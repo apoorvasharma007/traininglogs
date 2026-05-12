@@ -48,25 +48,19 @@ with real session IDs. See `tests/fixtures/README.md` for the full table.
 exercises it. For valid: copy from a real input in `inputs/programs/`, change the date to
 `3000-MM-DD`. For invalid: create a minimal file that triggers the specific failure.
 Automated tests use `tmp_path` inline fixtures — these files are for `traininglogs validate`
-and `--dry-run` E2E workflows only.
+and `traininglogs log --no-commit` E2E workflows only.
 
 ## E2E protocol for a new feature
 
-Run through all four stages in order. Do not skip any.
+Run through all three stages in order. Do not skip any.
 
-**Stage 1 — Validate (no DB write)**
+**Stage 1 — Validate (no DB write, no git)**
 ```bash
 traininglogs validate tests/fixtures/valid/<relevant_fixture>.md
 # Expected: model summary printed, exit 0
 ```
 
-**Stage 2 — Dry run (no DB write, full pipeline)**
-```bash
-traininglogs log tests/fixtures/valid/<relevant_fixture>.md --dry-run
-# Expected: parsed session printed, no DB changes
-```
-
-**Stage 3 — Real insert (no git commit)**
+**Stage 2 — Real insert (no git commit)**
 ```bash
 traininglogs log tests/fixtures/valid/<relevant_fixture>.md --no-commit
 # Then verify in DB:
@@ -75,7 +69,7 @@ docker exec traininglogs-db-1 psql -U traininglogs -d traininglogs \
 ```
 Check that the new fields you added are populated correctly.
 
-**Stage 4 — API + dashboard**
+**Stage 3 — API + dashboard**
 ```bash
 # Start API
 DATABASE_URL=... .venv/bin/uvicorn traininglogs.api.app:app --reload

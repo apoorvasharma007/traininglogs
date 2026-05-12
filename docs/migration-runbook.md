@@ -95,12 +95,8 @@ docker exec traininglogs-db_migration-1 psql -U traininglogs -d traininglogs_mig
 ## Step 4 — E2E validation on the target DB
 
 ```bash
-# Validate a fixture file
+# Validate a fixture file (no DB write, no git)
 traininglogs validate tests/fixtures/valid/strength_session.md
-
-# Dry run
-DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration \
-  traininglogs log tests/fixtures/valid/strength_session.md --dry-run
 
 # Real insert (no commit) — check that new fields populate correctly
 DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5435/traininglogs_migration \

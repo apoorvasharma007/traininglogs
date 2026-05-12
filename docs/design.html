@@ -368,7 +368,7 @@ traininglogs log draft.md
 
 # Rule-based parser — structured markdown, no confirmation card
 traininglogs log session.md --parser rules</code></pre>
-  <p>All existing flags (<code>--dry-run</code>, <code>--no-commit</code>, <code>--publish</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical.</p>
+  <p>All log flags (<code>--no-commit</code>, <code>--publish</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical. Use <code>traininglogs validate</code> to test parsing with no DB or git side effects.</p>
 </section>
 
 <section>

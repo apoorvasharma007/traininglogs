@@ -128,9 +128,8 @@ Use this when adding new schema columns and importing from the existing JSON out
 5. Verify schema: `\d sessions`, `\d working_sets`, `\d exercises` — confirm new columns are present.
 6. Verify row counts match expectations (capture old DB counts before starting).
 7. E2E validation on the new DB:
-   - `traininglogs validate tests/fixtures/strength_session.md`
-   - `traininglogs log tests/fixtures/strength_session.md --dry-run`
-   - `traininglogs log tests/fixtures/strength_session.md --no-commit` + verify in DB
+   - `traininglogs validate tests/fixtures/valid/strength_session.md`
+   - `traininglogs log tests/fixtures/valid/strength_session.md --no-commit` + verify in DB
    - API smoke test: `GET /sessions`, `GET /sessions/{id}`, `GET /exercises/{name}/history`
    - Dashboard rebuild: `scripts/build_dashboard.py`, open `docs/index.html` in browser
 8. Side-by-side comparison: write/run a script that joins both DBs on **date** (not session_id) and compares weights, reps, exercise names. Session IDs may differ — that's expected. Value mismatches are blockers.

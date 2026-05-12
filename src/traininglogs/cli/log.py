@@ -11,11 +11,8 @@ WEBSITE_ROOT = PROJECT_ROOT.parent / "website"
 INPUTS_DIR = PROJECT_ROOT / "inputs"
 
 
-def _rebuild_dashboard(dry_run: bool) -> None:
+def _rebuild_dashboard() -> None:
     print("\n[rebuilding dashboard...]")
-    if dry_run:
-        print("[DRY-RUN] Would rebuild dashboard")
-        return
     from traininglogs.cli.dashboard import main as dashboard_main
     try:
         dashboard_main()
@@ -24,13 +21,9 @@ def _rebuild_dashboard(dry_run: bool) -> None:
         print(f"⚠  Dashboard build failed: {e}")
 
 
-def _publish_dashboard(dry_run: bool) -> None:
+def _publish_dashboard() -> None:
     print("\n[publishing dashboard to website...]")
     dashboard_file = WEBSITE_ROOT / "static" / "training-almanac" / "index.html"
-
-    if dry_run:
-        print("[DRY-RUN] Would commit and push dashboard to website repo")
-        return
 
     if not WEBSITE_ROOT.exists():
         print(f"⊘ Website repo not found at {WEBSITE_ROOT}, skipping publish")
@@ -141,22 +134,24 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     parser = argparse.ArgumentParser(
         prog="traininglogs log",
-        description="Process training logs, commit changes, and optionally publish dashboard.",
+        description=(
+            "Parse a training log, insert into DB, commit, and optionally publish the dashboard. "
+            "To preview parsing without any DB or git side effects, use 'traininglogs validate' instead."
+        ),
     )
     parser.add_argument("target", nargs="?", help="Path to a .md file or directory of .md files")
     parser.add_argument("--program", help="Program name (with --phase and --week)")
     parser.add_argument("--phase", type=int, help="Phase number (used with --program)")
     parser.add_argument("--week", type=int, help="Week number (used with --program)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would happen without making changes")
-    parser.add_argument("--no-commit", action="store_true", help="Skip git commit step")
+    parser.add_argument("--no-commit", action="store_true", help="Insert to DB but skip the git commit")
     parser.add_argument("--pr", action="store_true", help="Create a pull request after committing")
     parser.add_argument("--message", default="", help="Custom commit message")
-    parser.add_argument("--publish", action="store_true", help="Push updated dashboard to website")
+    parser.add_argument("--publish", action="store_true", help="Push updated dashboard to website after committing")
     parser.add_argument(
         "--parser",
         choices=["ai", "rules"],
         default="ai",
-        help="Parser to use: 'ai' (default) or 'rules' (rule-based).",
+        help="Parser backend: 'ai' (default, LLM-based) or 'rules' (deterministic rule-based).",
     )
 
     args = parser.parse_args(argv)
@@ -167,7 +162,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     print("TRAINING LOG WORKFLOW")
     print("=" * 60)
 
-    if not args.dry_run and not _ensure_feature_branch():
+    if not _ensure_feature_branch():
         return 1
 
     print(f"\n[1] Found {len(md_files)} file(s) to process")
@@ -183,10 +178,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 1
 
     print("\n[2] Running parser...")
-    if args.dry_run:
-        print(f"[DRY-RUN] Would process {len(md_files)} file(s)")
-        return 0
-
     import psycopg2
     from traininglogs.db.db import get_connection
     from traininglogs.db.insert import insert_session
@@ -262,9 +253,9 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if args.no_commit:
         print("\n[3] Skipping git commit (--no-commit)")
-        _rebuild_dashboard(args.dry_run)
+        _rebuild_dashboard()
         if args.publish:
-            _publish_dashboard(args.dry_run)
+            _publish_dashboard()
         return 0
 
     print("\n[3] Staging and committing changes...")
@@ -301,10 +292,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         print("\n[4] Skipped PR creation (use --pr to enable)")
 
-    _rebuild_dashboard(args.dry_run)
+    _rebuild_dashboard()
 
     if args.publish:
-        _publish_dashboard(args.dry_run)
+        _publish_dashboard()
     else:
         print("\n[5] Skipped website publish (pass --publish to deploy)")
 

@@ -98,7 +98,7 @@ main  ←  stable, releases cut from here
 
 1. **Unit tests first.** Model, validation, and pure-logic changes get unit tests before any pipeline code is touched. Run them green before proceeding to the next phase.
 2. **Integration tests second.** Parser, processor, and DB insert changes get integration tests against a real test DB (Docker). Never mock the DB.
-3. **E2E last.** Manual validation using `traininglogs validate`, `--dry-run`, and `--no-commit` against files in `tests/fixtures/` before opening a PR. See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full protocol.
+3. **E2E last.** Manual validation using `traininglogs validate` (no DB write) and `traininglogs log --no-commit` (DB write, no git) against files in `tests/fixtures/` before opening a PR. See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full protocol.
 
 ### Breaking changes
 
@@ -164,7 +164,6 @@ traininglogs validate inputs/programs/<slug>/phase_N/week_N/<session>.md
 traininglogs validate tests/fixtures/strength_session.md   # quick smoke test
 
 # Flags (work with any invocation form)
-traininglogs log <target> --dry-run       # full pipeline preview, no DB write
 traininglogs log <target> --no-commit     # insert to DB, skip git commit
 traininglogs log <target> --publish       # insert, commit, push dashboard to website
 traininglogs log <target> --pr            # insert, commit, open a PR
