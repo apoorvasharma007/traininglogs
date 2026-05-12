@@ -3,8 +3,8 @@ import io
 import pytest
 from rich.console import Console
 
-from traininglogs.agent.card import (
-    ConfirmationCard,
+from traininglogs.agent.validation_card_data import (
+    UserValidationCard,
     ExerciseCard,
     ExerciseHeader,
     GoalSummary,
@@ -16,7 +16,7 @@ from traininglogs.agent.card import (
 from traininglogs.agent.renderer import TerminalRenderer, _fmt_goal, _fmt_working_set, _mark
 
 
-def _capture(card: ConfirmationCard) -> str:
+def _capture(card: UserValidationCard) -> str:
     buf = io.StringIO()
     console = Console(file=buf, no_color=True, highlight=False, width=120)
     renderer = TerminalRenderer(console=console)
@@ -27,8 +27,8 @@ def _capture(card: ConfirmationCard) -> str:
 def _minimal_card(
     date: str = "2026-05-12",
     exercises: list[ExerciseCard] | None = None,
-) -> ConfirmationCard:
-    return ConfirmationCard(
+) -> UserValidationCard:
+    return UserValidationCard(
         session_header=SessionHeader(date=date),
         exercises=exercises or [],
     )
@@ -135,14 +135,14 @@ class TestTerminalRendererSessionHeader:
         assert "2026-05-12" in out
 
     def test_focus_present(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12", focus="Lower Strength"),
         )
         out = _capture(card)
         assert "Lower Strength" in out
 
     def test_program_phase_week_formatted(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(
                 date="2026-05-12",
                 program="Test Program",
@@ -154,14 +154,14 @@ class TestTerminalRendererSessionHeader:
         assert "Test Program P3W11" in out
 
     def test_duration_present(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12", duration_minutes=90),
         )
         out = _capture(card)
         assert "90 min" in out
 
     def test_uncertain_date_marked(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(
                 date="2026-05-12",
                 uncertain_fields=frozenset({"date"}),
@@ -176,9 +176,9 @@ class TestTerminalRendererSessionHeader:
 
 
 class TestTerminalRendererExercise:
-    def _card_with_exercise(self, **kwargs) -> ConfirmationCard:
+    def _card_with_exercise(self, **kwargs) -> UserValidationCard:
         header = ExerciseHeader(number=1, name="Squat", **kwargs)
-        return ConfirmationCard(
+        return UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[ExerciseCard(header=header)],
         )
@@ -212,7 +212,7 @@ class TestTerminalRendererExercise:
 
 class TestTerminalRendererWarmup:
     def test_warmup_section_label(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -227,7 +227,7 @@ class TestTerminalRendererWarmup:
         assert "feel" in out
 
     def test_no_warmup_section_when_empty(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[ExerciseCard(header=ExerciseHeader(number=1, name="Bench"))],
         )
@@ -235,7 +235,7 @@ class TestTerminalRendererWarmup:
         assert "Warmup:" not in out
 
     def test_warmup_rep_count_shown(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -248,7 +248,7 @@ class TestTerminalRendererWarmup:
         assert "× 10" in out
 
     def test_uncertain_warmup_weight_marked(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -264,8 +264,8 @@ class TestTerminalRendererWarmup:
 
 
 class TestTerminalRendererWorkingSets:
-    def _card_with_sets(self, rows: list[WorkingSetRow]) -> ConfirmationCard:
-        return ConfirmationCard(
+    def _card_with_sets(self, rows: list[WorkingSetRow]) -> UserValidationCard:
+        return UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -322,7 +322,7 @@ class TestTerminalRendererWorkingSets:
 
 class TestTerminalRendererNotes:
     def test_note_preview_shown(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -336,7 +336,7 @@ class TestTerminalRendererNotes:
         assert "Keep elbows close" in out
 
     def test_warmup_note_preview_shown(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -351,7 +351,7 @@ class TestTerminalRendererNotes:
 
     def test_truncated_note_shown_with_ellipsis(self) -> None:
         long_note = "a" * 100
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(date="2026-05-12"),
             exercises=[
                 ExerciseCard(
@@ -366,7 +366,7 @@ class TestTerminalRendererNotes:
 
 class TestTerminalRendererFullCard:
     def test_full_strength_session(self) -> None:
-        card = ConfirmationCard(
+        card = UserValidationCard(
             session_header=SessionHeader(
                 date="2026-05-12",
                 program="Test Program",

@@ -1,7 +1,7 @@
 import pytest
 
-from traininglogs.agent.card import (
-    ConfirmationCard,
+from traininglogs.agent.validation_card_data import (
+    UserValidationCard,
     ExerciseCard,
     ExerciseHeader,
     GoalSummary,
@@ -237,12 +237,12 @@ class TestExerciseCard:
         assert "elbows" in card.note_preview.display
 
 
-# --- ConfirmationCard ---
+# --- UserValidationCard ---
 
-class TestConfirmationCard:
+class TestUserValidationCard:
     def test_empty_exercises(self) -> None:
         header = SessionHeader(date="2026-05-12")
-        card = ConfirmationCard(session_header=header)
+        card = UserValidationCard(session_header=header)
         assert card.exercises == []
 
     def test_full_card(self) -> None:
@@ -280,7 +280,7 @@ class TestConfirmationCard:
             warmup_rows=warmup_rows,
             working_set_rows=working_set_rows,
         )
-        card = ConfirmationCard(session_header=session_header, exercises=[exercise_card])
+        card = UserValidationCard(session_header=session_header, exercises=[exercise_card])
 
         assert card.session_header.date == "2026-05-12"
         assert card.session_header.focus == "Lower Strength"

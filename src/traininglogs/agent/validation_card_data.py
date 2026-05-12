@@ -85,6 +85,6 @@ class ExerciseCard:
 
 
 @dataclass
-class ConfirmationCard:
+class UserValidationCard:
     session_header: SessionHeader
     exercises: list[ExerciseCard] = field(default_factory=list)

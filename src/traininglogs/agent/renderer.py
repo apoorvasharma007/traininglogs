@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from rich.console import Console
 
-from traininglogs.agent.card import (
-    ConfirmationCard,
+from traininglogs.agent.validation_card_data import (
+    UserValidationCard,
     ExerciseCard,
     ExerciseHeader,
     GoalSummary,
@@ -86,7 +86,7 @@ class TerminalRenderer:
     def __init__(self, console: Console | None = None) -> None:
         self.console = console or Console()
 
-    def render(self, card: ConfirmationCard) -> None:
+    def render(self, card: UserValidationCard) -> None:
         self._render_session_header(card.session_header)
         for exercise_card in card.exercises:
             self.console.print()
