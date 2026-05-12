@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+
+- `agent/validation_card_builder.py`: `ValidationCardBuilder` — converts a
+  `TrainingLogLLMExtract` into a `UserValidationCard` dataclass tree. Resolves
+  `uncertain_fields` dot-paths (e.g. `"exercises.0.sets.1.rpe"`) to per-component
+  `frozenset[str]` fields on `SessionHeader`, `ExerciseHeader`, `WarmupRow`, and
+  `WorkingSetRow`. Formats rep strings (`"8"`, `"8+2"`, `"10L / 9R"`), failure
+  technique summaries, and goal summaries.
+- `agent/llm_extract_validator.py`: `LLMExtractValidator` — applies a user's
+  freeform correction to a `TrainingLogLLMExtract` via the `ExtractionProvider`
+  interface, then re-validates with Pydantic. Raises `LLMParserError` on permanent
+  failure.
+- `agent/llm_orchestrator.py`: `LLMOrchestrator` — full AI-parser flow: parse text
+  → build card → render → stdin correction loop → re-render → repeat until user
+  confirms → return validated `TrainingLogLLMExtract`. Injectable `input_fn` and
+  `renderer` for testing.
 
 ---
 
