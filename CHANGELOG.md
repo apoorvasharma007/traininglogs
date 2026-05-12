@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `--parser ai|rules` flag on `traininglogs validate` and `traininglogs log`.
+  `--parser ai` (default) runs the `LLMOrchestrator` confirmation loop before
+  writing to the DB. `--parser rules` runs the existing deterministic pipeline.
+- `processor.build_session_from_extract()` — converts a confirmed
+  `TrainingLogLLMExtract` into a `TrainingSession`, injecting system fields
+  (`session_id`, `user_id`, `user_name`, `data_model_version`,
+  `data_model_type`) and path-derived program context.
+
 - `agent/validation_card_builder.py`: `ValidationCardBuilder` — converts a
   `TrainingLogLLMExtract` into a `UserValidationCard` dataclass tree. Resolves
   `uncertain_fields` dot-paths (e.g. `"exercises.0.sets.1.rpe"`) to per-component

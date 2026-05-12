@@ -2,6 +2,8 @@
 Processor: DATABASE_URL required, DB insert first, JSON write second.
 On session_id collision the process errors — fix the date in the markdown and re-run.
 """
+from __future__ import annotations
+
 import hashlib
 import json
 import os
@@ -62,6 +64,39 @@ def compute_session_id(md_path: Path, inputs_root: Path, date_str: str) -> str:
         rel = Path(md_path.name)
     h = hashlib.sha256(str(rel).encode()).hexdigest()[:6]
     return f"{date_str}-{h}"
+
+
+_DEFAULT_USER_ID = "7"
+_DEFAULT_USER_NAME = "Apoorva Sharma"
+_DEFAULT_DATA_MODEL_VERSION = "0.0.1"
+_DEFAULT_DATA_MODEL_TYPE = "TrainingSession"
+
+
+def build_session_from_extract(
+    extract: "TrainingLogLLMExtract",  # noqa: F821 — avoid circular at module level
+    md_path: Path,
+    inputs_root: Path | None = None,
+) -> TrainingSession:
+    """Convert a confirmed TrainingLogLLMExtract to a TrainingSession.
+
+    Injects system fields (session_id, user_id, user_name, data_model_version,
+    data_model_type) that the LLM extract does not produce.
+    """
+    _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
+    session_dict = extract.model_dump(mode="python", exclude={"uncertain_fields"})
+
+    path_ctx = _derive_program_context(md_path, _inputs_root)
+    for key, value in path_ctx.items():
+        if session_dict.get(key) is None:
+            session_dict[key] = value
+
+    session_dict["session_id"] = compute_session_id(md_path, _inputs_root, extract.date)
+    session_dict["user_id"] = _DEFAULT_USER_ID
+    session_dict["user_name"] = _DEFAULT_USER_NAME
+    session_dict["data_model_version"] = _DEFAULT_DATA_MODEL_VERSION
+    session_dict["data_model_type"] = _DEFAULT_DATA_MODEL_TYPE
+
+    return TrainingSession.model_validate(session_dict)
 
 
 def _convert_lbs_to_kg(obj):

@@ -1,8 +1,21 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Optional
+
+
+def _print_session_summary(session) -> None:
+    print(f"✓ Valid — {session.session_id}")
+    print(f"  date:     {session.date}")
+    print(f"  program:  {session.program}")
+    print(f"  phase:    {session.phase}  week: {session.week}")
+    print(f"  focus:    {session.focus}")
+    print(f"  duration: {session.session_duration_minutes} min")
+    print(f"  exercises: {len(session.exercises)}")
+    for i, ex in enumerate(session.exercises, 1):
+        n_sets = len(ex.sets) if ex.sets else 0
+        ex_type = ex.exercise_type.value if hasattr(ex.exercise_type, "value") else ex.exercise_type
+        print(f"    {i}. {ex.name}  ({ex_type}, {n_sets} sets)")
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -13,6 +26,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         description="Parse and validate a training log. Prints a model summary. No DB write.",
     )
     parser.add_argument("file", help="Path to a .md training log file")
+    parser.add_argument(
+        "--parser",
+        choices=["ai", "rules"],
+        default="ai",
+        help="Parser to use: 'ai' (default) or 'rules' (rule-based).",
+    )
     args = parser.parse_args(argv)
 
     md_path = Path(args.file).resolve()
@@ -20,13 +39,46 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"✗ Not a file: {md_path}")
         return 1
 
+    if args.parser == "ai":
+        return _validate_ai(md_path)
+    return _validate_rules(md_path)
+
+
+def _validate_ai(md_path: Path) -> int:
+    from pydantic import ValidationError
+
+    from traininglogs.agent.llm_orchestrator import LLMOrchestrator
+    from traininglogs.processor.processor import INPUTS_DIR, build_session_from_extract
+
+    md_text = md_path.read_text(encoding="utf-8")
+
+    try:
+        orchestrator = LLMOrchestrator()
+        extract = orchestrator.run(md_text)
+        session = build_session_from_extract(extract, md_path, INPUTS_DIR)
+    except ValidationError as e:
+        print(f"✗ Validation failed:\n{e}")
+        return 1
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        return 1
+
+    _print_session_summary(session)
+    return 0
+
+
+def _validate_rules(md_path: Path) -> int:
+    from pydantic import ValidationError
+
     from traininglogs.parser.extract import TrainingMarkdownParser
     from traininglogs.parser.parse import DeepTrainingParser
     from traininglogs.processor.processor import (
-        _convert_lbs_to_kg, _derive_program_context, compute_session_id, INPUTS_DIR,
+        INPUTS_DIR,
+        _convert_lbs_to_kg,
+        _derive_program_context,
+        compute_session_id,
     )
     from traininglogs.models.models import TrainingSession
-    from pydantic import ValidationError
 
     md_text = md_path.read_text(encoding="utf-8")
 
@@ -59,18 +111,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"✗ Parse error: {e}")
         return 1
 
-    print(f"✓ Valid — {session.session_id}")
-    print(f"  date:     {session.date}")
-    print(f"  program:  {session.program}")
-    print(f"  phase:    {session.phase}  week: {session.week}")
-    print(f"  focus:    {session.focus}")
-    print(f"  duration: {session.session_duration_minutes} min")
-    print(f"  exercises: {len(session.exercises)}")
-    for i, ex in enumerate(session.exercises, 1):
-        n_sets = len(ex.sets) if ex.sets else 0
-        ex_type = ex.exercise_type.value if hasattr(ex.exercise_type, "value") else ex.exercise_type
-        print(f"    {i}. {ex.name}  ({ex_type}, {n_sets} sets)")
-
+    _print_session_summary(session)
     return 0
 
 
