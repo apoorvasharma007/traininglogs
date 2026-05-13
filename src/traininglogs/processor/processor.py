@@ -114,7 +114,7 @@ def process_md_file(
     md_path: Path,
     conn,
     inputs_root: Path | None = None,
-    output_dir: Path = OUTPUT_DIR,
+    output_dir: Path | None = OUTPUT_DIR,
 ) -> TrainingSession:
     """Parse a markdown file, insert to DB, then write JSON.
 
@@ -170,14 +170,15 @@ def process_md_file(
     print(f">>> Inserted into DB: {session.session_id}\n")
 
     # JSON write second — only after the DB confirms this is a new session
-    if session.program and session.phase is not None and session.week is not None:
-        week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
-    else:
-        week_dir = output_dir / "sessions"
-    week_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir is not None:
+        if session.program and session.phase is not None and session.week is not None:
+            week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
+        else:
+            week_dir = output_dir / "sessions"
+        week_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = week_dir / f"{session.session_id}.json"
-    output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
+        output_path = week_dir / f"{session.session_id}.json"
+        output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
 
-    print(f">>> JSON written to: {output_path}\n")
+        print(f">>> JSON written to: {output_path}\n")
     return session
