@@ -127,18 +127,17 @@ Design decisions are recorded in `docs/design.html`.
 
 ## ▶ Resume here
 
-**Step 5 complete on `chore/validate-v3-local`. Next: squash-merge to `dev`, then proceed to Step 6.**
+**Step 5 complete and merged to `dev`. Next: Step 6 (cloud validation on Supabase).**
 
-Suite on `dev`: 337 passed, 0 skipped, 0 failed.
+`dev` state: 337 passed, 0 skipped, 0 failed.
 
-**Next action:**
+Step 5 artifacts on `dev`:
+- `scripts/validate_v3_local.py` — full value comparison, validation DB vs local mirror
+- `scripts/repopulate_db.py` — `--no-json` flag added; `program.md` excluded from glob
+- `src/traininglogs/processor/processor.py` — `output_dir=None` skips JSON write
 
-```bash
-cd /Users/apoorvasharma/Projects/traininglogs
-git checkout dev
-git merge --squash chore/validate-v3-local
-git commit -m "chore: Step 5 local validation — v3 vs v2 full comparison passes"
-.venv/bin/pytest tests/ -q
-```
+**Next action:** cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy.
 
-Then proceed to Step 6 (full cloud validation on Supabase). Strategy TBD at start of Step 6.
+Step 6 strategy TBD — decide at session start:
+- Separate Supabase DB vs separate tables in existing Supabase project?
+- Likely: separate schema or temp tables to avoid touching live data.
