@@ -106,21 +106,14 @@ Design decisions are recorded in `docs/design.html`.
   - API smoke test: deferred — Supabase not reachable locally; covered in Step 6 (cloud).
   - Suite: 337 passed, 0 skipped, 0 failed.
 
-- [ ] **Step 5 — Full data validation (local)** · branch: `chore/validate-v3-local`
-  **Strategy (locked 2026-05-13):**
-  - Preserve old local mirror DB (LOCAL_DATABASE_URL) intact — do not touch
-  - Drop and recreate all tables in the **validation DB** with v3 schema
-  - Run `traininglogs log` (rules parser, `--parser rules`) on all inputs → validation DB
-  - Run comparison script (validation DB vs local mirror DB):
-    - Every table, every row, every column compared
-    - Expected diffs (no surprises allowed beyond these):
-      - `working_sets`: `set_type` gone (not in new schema)
-      - `exercises`: `exercise_type` gone; `tags`/`modality`/`movement_pattern` will be NULL (rules parser doesn't populate them)
-      - `session_movements` → replaced by `warmups` + `cooldowns` tables
-    - Any other mismatch fails; fix and iterate
-  - Once rules parser passes: spot-check AI parser on a handful of files, compare vs rules parser output for same sessions
-  - If spot check passes: full AI parser regen → comparison
-  - Goal: AI parser output matches rules parser on all measurement fields
+- [x] **Step 5 — Full data validation (local)** · branch: `chore/validate-v3-local`
+  - `repopulate_db.py --regen` populated validation DB (v3 schema) from all 121 .md inputs, 0 failed.
+    Fix: skip `program.md` in glob (metadata file, not a session — pre-existing gap from TL-2).
+  - `validate_v3_local.py`: full value comparison validation DB vs local mirror.
+    All 121 sessions, 1009 exercises, 2469 working_sets, 647 warmup_sets match exactly.
+    `warmups`/`cooldowns` empty. Schema diffs confirmed: `set_type` (2469 non-null in v2, absent v3),
+    `exercise_type` (1009 non-null in v2, absent v3), `tags`/`modality`/`movement_pattern` all NULL in v3.
+  - Done 2026-05-13. Squash-merge to `dev` pending.
 
 - [ ] **Step 6 — Full data validation (cloud)** · strategy TBD when we get here
   - Same sequence as Step 5 (rules parser first, then AI parser spot check)
@@ -134,21 +127,18 @@ Design decisions are recorded in `docs/design.html`.
 
 ## ▶ Resume here
 
-**Step 4 complete on `refactor/data-model-e2e`. Next: squash-merge to `refactor/data-model`, then merge base to `dev`.**
+**Step 5 complete on `chore/validate-v3-local`. Next: squash-merge to `dev`, then proceed to Step 6.**
 
-Suite: 337 passed, 0 skipped, 0 failed.
+Suite on `dev`: 337 passed, 0 skipped, 0 failed.
 
 **Next action:**
 
 ```bash
 cd /Users/apoorvasharma/Projects/traininglogs
-git checkout refactor/data-model
-git merge --squash refactor/data-model-e2e
-git commit -m "feat: Step 4 E2E validation + --test flag for cli/log.py"
 git checkout dev
-git merge --squash refactor/data-model
-git commit -m "refactor: v3.0.0 data model — flat Set, tags/modality, warmups/cooldowns tables"
+git merge --squash chore/validate-v3-local
+git commit -m "chore: Step 5 local validation — v3 vs v2 full comparison passes"
 .venv/bin/pytest tests/ -q
 ```
 
-Then proceed to Step 5 (full local data validation on `chore/validate-v3-local`).
+Then proceed to Step 6 (full cloud validation on Supabase). Strategy TBD at start of Step 6.

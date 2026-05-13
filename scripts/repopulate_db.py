@@ -74,7 +74,7 @@ def main() -> None:
     conn.commit()
     print("Truncated.\n")
 
-    md_files = sorted(INPUTS_DIR.rglob("*.md"))
+    md_files = sorted(f for f in INPUTS_DIR.rglob("*.md") if f.name != "program.md")
     print(f"Found {len(md_files)} .md files under {INPUTS_DIR}\n")
 
     inserted = 0
