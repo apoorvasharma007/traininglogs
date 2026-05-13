@@ -106,14 +106,18 @@ Design decisions are recorded in `docs/design.html`.
   - API smoke test: deferred — Supabase not reachable locally; covered in Step 6 (cloud).
   - Suite: 337 passed, 0 skipped, 0 failed.
 
-- [x] **Step 5 — Full data validation (local)** · branch: `chore/validate-v3-local`
+- [x] **Step 5 — Full data validation (local)** · branch: `chore/validate-v3-local` → merged to `dev` (commit `9b62a9f`)
   - `repopulate_db.py --regen` populated validation DB (v3 schema) from all 121 .md inputs, 0 failed.
     Fix: skip `program.md` in glob (metadata file, not a session — pre-existing gap from TL-2).
   - `validate_v3_local.py`: full value comparison validation DB vs local mirror.
     All 121 sessions, 1009 exercises, 2469 working_sets, 647 warmup_sets match exactly.
     `warmups`/`cooldowns` empty. Schema diffs confirmed: `set_type` (2469 non-null in v2, absent v3),
     `exercise_type` (1009 non-null in v2, absent v3), `tags`/`modality`/`movement_pattern` all NULL in v3.
-  - Done 2026-05-13. Squash-merge to `dev` pending.
+  - **AI parser spot-check (2026-05-13):** live interactive test with `--parser groq` on `tests/fixtures/test_session_asif.md`.
+    Confirmation card showed: Phase 1, Week 1, 101 min, 13 warmup movements, 6 exercises, 6 cooldown movements. Groq tool-calling fixed (was sending JSON mode). SYSTEM_PROMPT improved: explicit extraction rules for focus, session_duration_minutes, phase/week, is_deload_week, warmup_sets rep_count as int, modality as single string.
+  - Card architecture updated: `SessionMovementSection` + `MovementRow` added to `validation_card_data.py`; `TerminalRenderer` renders warmup/cooldown sections. Phase/week shown unconditionally (not nested under program).
+  - Design issues deferred (to design session before Step 6): (a) session-level `notes`/remarks field in `TrainingLogLLMExtract`; (b) RPE in remarks blocks vs inline; (c) unknown user fields that don't map to schema (e.g. "Movement:" keyword collision).
+  - Suite: 337 passed, 0 skipped, 0 failed.
 
 - [ ] **Step 6 — Full data validation (cloud)** · strategy TBD when we get here
   - Same sequence as Step 5 (rules parser first, then AI parser spot check)
@@ -127,17 +131,20 @@ Design decisions are recorded in `docs/design.html`.
 
 ## ▶ Resume here
 
-**Step 5 complete and merged to `dev`. Next: Step 6 (cloud validation on Supabase).**
+**Step 5 complete (rules parser + AI parser spot-check on one file). Next: design session then Step 6.**
 
-`dev` state: 337 passed, 0 skipped, 0 failed.
+`dev` state: 337 passed, 0 skipped, 0 failed. Commit: `9b62a9f`.
 
-Step 5 artifacts on `dev`:
-- `scripts/validate_v3_local.py` — full value comparison, validation DB vs local mirror
-- `scripts/repopulate_db.py` — `--no-json` flag added; `program.md` excluded from glob
-- `src/traininglogs/processor/processor.py` — `output_dir=None` skips JSON write
+**Before proceeding to Step 6**, hold a short design session on:
+1. Session-level `notes`/remarks field — free-text blocks that don't map to any exercise (e.g. "Session notes: felt sluggish"). Should these be a top-level `notes: str` on `TrainingLogLLMExtract` and `TrainingSession`? Or dropped?
+2. RPE in remarks blocks — Groq sometimes puts RPE in a remarks/notes block rather than inline. SYSTEM_PROMPT needs to handle this.
+3. Unknown user fields — "Movement:" keyword in inputs means something specific to the user (exercise focus/modality) but clashes with no reserved keyword. LLM needs guidance to not confuse program name with focus.
 
-**Next action:** cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy.
+**Optional: test second fixture before Step 6:**
+```
+.venv/bin/traininglogs validate --parser groq tests/fixtures/phase3_week12_upper_strength.md
+```
 
-Step 6 strategy TBD — decide at session start:
+**Then cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy:**
 - Separate Supabase DB vs separate tables in existing Supabase project?
 - Likely: separate schema or temp tables to avoid touching live data.
