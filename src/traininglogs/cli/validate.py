@@ -28,9 +28,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("file", help="Path to a .md training log file")
     parser.add_argument(
         "--parser",
-        choices=["ai", "rules"],
+        choices=["ai", "rules", "groq"],
         default="ai",
-        help="Parser to use: 'ai' (default) or 'rules' (rule-based).",
+        help="Parser to use: 'ai' (Anthropic, default), 'groq' (free), or 'rules' (rule-based).",
     )
     args = parser.parse_args(argv)
 
@@ -41,12 +41,16 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if args.parser == "ai":
         return _validate_ai(md_path)
+    if args.parser == "groq":
+        return _validate_groq(md_path)
     return _validate_rules(md_path)
 
 
 def _validate_ai(md_path: Path) -> int:
+    from dotenv import load_dotenv
     from pydantic import ValidationError
 
+    load_dotenv()
     from traininglogs.agent.llm_orchestrator import LLMOrchestrator
     from traininglogs.processor.processor import INPUTS_DIR, build_session_from_extract
 
@@ -54,6 +58,33 @@ def _validate_ai(md_path: Path) -> int:
 
     try:
         orchestrator = LLMOrchestrator()
+        extract = orchestrator.run(md_text)
+        session = build_session_from_extract(extract, md_path, INPUTS_DIR)
+    except ValidationError as e:
+        print(f"✗ Validation failed:\n{e}")
+        return 1
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        return 1
+
+    _print_session_summary(session)
+    return 0
+
+
+def _validate_groq(md_path: Path) -> int:
+    from dotenv import load_dotenv
+    from pydantic import ValidationError
+
+    load_dotenv()
+    from traininglogs.agent.llm_parser import GroqProvider
+    from traininglogs.agent.llm_orchestrator import LLMOrchestrator
+    from traininglogs.processor.processor import INPUTS_DIR, build_session_from_extract
+
+    md_text = md_path.read_text(encoding="utf-8")
+
+    try:
+        provider = GroqProvider()
+        orchestrator = LLMOrchestrator(parser_provider=provider, correction_provider=provider)
         extract = orchestrator.run(md_text)
         session = build_session_from_extract(extract, md_path, INPUTS_DIR)
     except ValidationError as e:

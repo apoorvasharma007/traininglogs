@@ -122,6 +122,57 @@ class AnthropicProvider:
         )
 
 
+DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+
+
+class GroqProvider:
+    def __init__(self, model: str = DEFAULT_GROQ_MODEL) -> None:
+        import groq
+
+        self.model = model
+        self._client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+    def extract(self, text: str, tool_schema: dict) -> dict:
+        import json
+
+        system = (
+            SYSTEM_PROMPT
+            + "\n\nRespond with a single JSON object matching this schema:\n"
+            + json.dumps(tool_schema, indent=2)
+        )
+        messages: list[dict] = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": text},
+        ]
+        last_error: str = ""
+
+        for attempt in range(_MAX_RETRIES + 1):
+            if attempt > 0:
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        f"The extracted data failed validation:\n{last_error}\n"
+                        "Please fix and respond with a corrected JSON object."
+                    ),
+                })
+
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                response_format={"type": "json_object"},
+            )
+
+            content = response.choices[0].message.content or ""
+            try:
+                return json.loads(content)
+            except Exception as exc:
+                last_error = str(exc)
+
+        raise LLMParserError(
+            f"Groq extraction failed after {_MAX_RETRIES + 1} attempts. Last error: {last_error}"
+        )
+
+
 def parse(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
     provider = provider or AnthropicProvider()
     tool_schema = TrainingLogLLMExtract.model_json_schema()

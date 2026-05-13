@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-11</div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">2.0.0</span> · 2026-05-12 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -210,28 +210,35 @@ free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (H
 
 <section>
   <h2 id="data">The data model</h2>
-  <p>A <strong>session</strong> is one workout on one day. A session has many <strong>exercises</strong>. An exercise has <strong>sets</strong> (strength or activity) and optionally <strong>warmup sets</strong>. A strength set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
+  <p>A <strong>session</strong> is one workout on one day. A session has three ordered groups of <strong>exercises</strong>: an optional warmup, the main work, and an optional cooldown. All three use the same Exercise model — the grouping is the only distinction. An exercise has <strong>sets</strong> and optionally <strong>warmup sets</strong>. A set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
   <pre><code>TrainingSession
 ├── session_id, date, program, phase, week, focus
 ├── is_deload_week, session_duration_minutes, weight_unit
-└── exercises[]
-    ├── number, name, target_muscle_groups, rep_tempo, exercise_type
-    ├── current_goal           (weight, sets, rep_range, rest)
-    ├── warmup_sets[]          (number, weight_kg, rep_count)
-    └── sets[]                 (discriminated union on set_type)
-        ├── StrengthSet        (set_type = "strength")
-        │   ├── number, weight_kg, rep_count {full, partial}
-        │   ├── unilateral_rep_count?  {left: {full, partial}, right: {full, partial}}
-        │   ├── rpe?, rep_quality?
-        │   └── failure_technique?  (discriminated union)
-        │       ├── MyoReps    → mini_sets[]
-        │       ├── LLP        → partial_rep_count
-        │       ├── Static     → hold_duration_seconds
-        │       └── DropSet    → drop_sets[]
-        └── ActivitySet        (set_type = "activity")
-            ├── number, rpe?
-            ├── duration_seconds?, distance_meters?, heart_rate_bpm?</code></pre>
-  <p>Sets are first-class; warmups are lower-resolution because I rarely care about them later. RPE is optional because I don't always log it. The model is permissive at the edges and strict in the middle — exactly the parts I query.</p>
+├── warmup[]               (same Exercise model, sets optional)
+├── exercises[]
+└── cooldown[]             (same Exercise model, sets optional)
+
+Exercise
+├── number, name
+├── tags[]                 free-text classification: ["strength"], ["cardio"],
+│                          ["mobility"], ["skill", "jiu-jitsu"], etc.
+├── modality               free-text: "barbell", "bodyweight", "gi", "pool", etc.
+├── target_muscle_groups[]
+├── rep_tempo, current_goal, notes, form_cues
+├── warmup_sets[]          (number, weight_kg, rep_count)
+└── sets[]
+    └── Set                (one flat model — all measurement fields optional)
+        ├── number, rpe?, rest?, notes?
+        ├── weight_kg?, rep_count {full, partial}?
+        ├── unilateral_rep_count?  {left: {full, partial}, right: {full, partial}}
+        ├── duration_seconds?, distance_meters?, heart_rate_bpm?
+        └── failure_technique?  (discriminated union on technique_type)
+            ├── MyoReps    → mini_sets[]
+            ├── LLP        → partial_rep_count
+            ├── Static     → hold_duration_seconds
+            └── DropSet    → drop_sets[]</code></pre>
+  <p>Sets are a single flat model. A set that has both <code>weight_kg</code> and <code>duration_seconds</code> is valid — this covers timed strength work (e.g. max reps in 60s with load). There is no <code>set_type</code> discriminator; the fields present describe the set. Exercise classification uses free-text <code>tags</code> and <code>modality</code> rather than a fixed enum — adding a new sport or training style requires no code change.</p>
+  <p>Sets are first-class; warmup sets are lower-resolution because they rarely need to be queried later. RPE is optional because it is not always logged. The model is permissive at the edges and strict in the middle — exactly the parts that get queried.</p>
   <p>A few invariants the model enforces:</p>
   <ul class="body">
     <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
@@ -251,7 +258,7 @@ free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (H
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> — its shape matches the discriminated union in the Pydantic model, with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.exercise_type</code>; <code>working_sets.set_type</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>).</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set.</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
@@ -360,7 +367,7 @@ free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (H
       <tr><td>Patch</td><td>claude-haiku-4-5</td><td>current dict + user correction text</td><td>updated <code>TrainingSession</code> dict</td></tr>
     </tbody>
   </table>
-  <p>Both calls use structured output (JSON mode). The schema passed to the LLM is derived from the Pydantic models — single source of truth, no duplication. Failure techniques are described in natural language in the prompt and mapped back to the discriminated union types by the LLM.</p>
+  <p>Both calls use structured output (JSON mode). The schema passed to the LLM is derived from the Pydantic models — single source of truth, no duplication. Failure techniques are described in natural language in the prompt and mapped back to their structured types by the LLM.</p>
 
   <h3>CLI interface</h3>
   <pre><code># AI parser (default) — free-text input, confirmation card
@@ -382,7 +389,7 @@ traininglogs log session.md --parser rules</code></pre>
 </section>
 
 <footer>
-  Last updated 2026-05-11 · <a href="https://github.com/apoorvasharma007/traininglogs">github.com/apoorvasharma007/traininglogs</a>
+  Last updated 2026-05-12
 </footer>
 
 </main>
