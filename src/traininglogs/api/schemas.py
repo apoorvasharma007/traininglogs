@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -18,6 +18,14 @@ class SessionSummary(BaseModel):
     weight_unit: str
 
 
+class MovementOut(BaseModel):
+    number: int
+    name: str
+    reps: Optional[int]
+    duration_seconds: Optional[int]
+    notes: Optional[str]
+
+
 class WarmupSetOut(BaseModel):
     number: int
     weight_kg: Optional[float]
@@ -27,7 +35,6 @@ class WarmupSetOut(BaseModel):
 
 class WorkingSetOut(BaseModel):
     number: int
-    set_type: str
     weight_kg: Optional[float]
     reps_full: Optional[int]
     reps_partial: Optional[int]
@@ -49,7 +56,9 @@ class WorkingSetOut(BaseModel):
 class ExerciseOut(BaseModel):
     number: int
     name: str
-    exercise_type: str
+    tags: Optional[list[str]]
+    modality: Optional[str]
+    movement_pattern: Optional[list[str]]
     notes: Optional[str]
     warmup_notes: Optional[str]
     form_cues: Optional[list[str]]
@@ -81,6 +90,9 @@ class SessionDetail(BaseModel):
     weight_unit: str
     user_id: Optional[str]
     user_name: Optional[str]
+    source_file: Optional[str]
+    warmup: list[MovementOut] = []
+    cooldown: list[MovementOut] = []
     exercises: list[ExerciseOut] = []
 
 

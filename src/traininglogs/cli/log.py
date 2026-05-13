@@ -153,6 +153,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         default="ai",
         help="Parser backend: 'ai' (default, LLM-based) or 'rules' (deterministic rule-based).",
     )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Write to TEST_DATABASE_URL only; skip the local mirror. For E2E validation.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -172,10 +177,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     from dotenv import load_dotenv
     load_dotenv()
 
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        print("\n✗ DATABASE_URL is not set. Add your Supabase connection string to .env")
-        return 1
+    if args.test:
+        database_url = os.environ.get("TEST_DATABASE_URL")
+        if not database_url:
+            print("\n✗ TEST_DATABASE_URL is not set in .env")
+            return 1
+    else:
+        database_url = os.environ.get("DATABASE_URL")
+        if not database_url:
+            print("\n✗ DATABASE_URL is not set. Add your Supabase connection string to .env")
+            return 1
 
     print("\n[2] Running parser...")
     import psycopg2
@@ -187,11 +198,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         process_md_file,
     )
 
-    conn = get_connection()
+    conn = get_connection(database_url)
 
     local_conn = None
     local_url = os.environ.get("LOCAL_DATABASE_URL")
-    if local_url:
+    if local_url and not args.test:
         try:
             local_conn = psycopg2.connect(local_url)
             print("[local db] connected")

@@ -37,29 +37,18 @@ Design decisions are recorded in `docs/design.html`.
 
 ## Steps
 
-- [ ] **Step 1 — Pydantic models + LLM extract model** · branch: `refactor/data-model/pydantic-models`
-  - Drop `StrengthSet`, `ActivitySet`, `AnySet` from `models/models.py`
-  - Create flat `Set(BaseModel)`: inherits all fields from both (weight_kg, rep_count,
-    unilateral_rep_count, rep_quality_assessment, failure_technique, duration_seconds,
-    distance_meters, heart_rate_bpm); all optional; validators from both classes preserved
-  - `Exercise`: drop `exercise_type`, add `tags: Optional[List[str]] = None`,
-    `modality: Optional[str] = None`
-  - `TrainingSession`: add `warmup: Optional[List[Exercise]] = None`,
-    `cooldown: Optional[List[Exercise]] = None`
-  - Update `models/__init__.py` exports
-  - `agent/llm_parser.py`: update `TrainingLogLLMExtract` to match flat `Set` (no `set_type`,
-    no `exercise_type`; add `tags`, `modality`); update `SYSTEM_PROMPT` (remove `set_type` rule,
-    add tags/modality extraction rules, fix phase-as-integer rule); update `GroqProvider` JSON
-    addendum to drop `set_type` requirement
-  - Update `tests/test_models.py`: replace StrengthSet/ActivitySet/AnySet tests with flat Set
-    tests; add tests for tags, modality, warmup, cooldown
-  - Update `tests/test_agent_llm_parser.py` fixtures to remove `set_type`/`exercise_type`
-  - Gate 1: `pytest tests/test_models.py tests/test_agent_llm_parser.py` green (no DB needed)
-  - Gate 2: `traininglogs validate inputs/sessions/test_session_asif.txt --parser groq` passes
-    and shows a correct confirmation card — this proves the parser improvement before any
-    downstream changes are made
+- [x] **Step 1 — Pydantic models + LLM extract model** · branch: `refactor/data-model-pydantic-models`
+  - WorkingSet: flat model replacing StrengthSet/ActivitySet; all measurement fields optional
+  - Exercise: drop exercise_type; add tags (NASM/NSCA), modality, movement_pattern (List[str])
+  - SessionWarmup, SessionCooldown: new models (number, name, reps, duration_seconds, notes)
+  - TrainingSession: add warmup/cooldown; sequential numbering validated per-group
+  - TrainingLogLLMExtract: add warmup/cooldown; SYSTEM_PROMPT updated
+  - Downstream steps (insert.py, validation_card_builder.py, etc.) import-stub only
+  - Affected tests marked skip with unblock reason; test_models.py rewritten parametrized
+  - Gate 1: 114 passing. Gate 2 (Groq E2E) deferred — run after Step 2 when full pipeline works
+  - Squash-merged to refactor/data-model · 2026-05-13
 
-- [ ] **Step 2 — DB schema, insert, fetch, API** · branch: `refactor/data-model/db-and-api`
+- [x] **Step 2 — DB schema, insert, fetch, API** · branch: `refactor/data-model-db-and-api`
   - `db/schema.sql`: drop `set_type` column from `working_sets`; drop `exercise_type` column
     from `exercises`; add `tags TEXT[]`, `modality TEXT`, `exercise_group TEXT NOT NULL DEFAULT 'main'`
     to `exercises`
@@ -72,7 +61,33 @@ Design decisions are recorded in `docs/design.html`.
   - Update `tests/test_db.py`, `tests/test_queries.py`, `tests/test_processor.py`, `tests/test_api.py`
   - Gate: `pytest tests/` green with Docker running (integration tests need DB)
 
-- [ ] **Step 3 — Card builder, rules parser, CLI** · branch: `refactor/data-model/parser-and-card`
+- [x] **Pre-Step 3 — Schema column audit** · Done 2026-05-13
+
+  DB audit ran against live test DB. Findings:
+
+  **Fixed:** `exercise_group TEXT` was still in the live test DB but absent from `schema.sql`.
+  Dropped via `ALTER TABLE exercises DROP COLUMN exercise_group` (no code references remained).
+
+  **Clean — no action needed:**
+  - `sessions`: all 14 data columns map 1:1 to `TrainingSession` fields. `created_at` is a DB-side
+    default (correct). `source_file` exposed (see below).
+  - `exercises`: all remaining columns (`tags`, `modality`, `movement_pattern`, goal_*, `form_cues`,
+    `target_muscle_groups`, `rep_tempo`, `warmup_notes`, `notes`) map correctly.
+  - `working_sets`: bilateral rep columns (`reps_full`, `reps_partial`) and unilateral columns
+    (`left/right_reps_full/partial`) are intentionally mutually exclusive. `rest_minutes` /
+    `rest_seconds` correctly map from `Rest` model (validator enforces only one is set).
+  - `warmup_sets`: all 5 columns map to `WarmupSet` fields.
+
+  **Resolved:** `sessions.source_file` — decided to expose. Added to `get_session` SELECT in
+  `fetch.py` and added `source_file: Optional[str]` to `SessionDetail` in `api/schemas.py`.
+  Committed to `refactor/data-model` (commit `6f17e3a`). Suite: 282 passed, 55 skipped, 0 failed.
+
+  **Schema rename (2026-05-13):** `session_movements` (single table with `movement_group` discriminator)
+  split into two explicit tables: `warmups` and `cooldowns`. `movement_group` column dropped.
+  `SessionMovementOut` → `MovementOut` in `api/schemas.py`. Updated: `schema.sql`, `insert.py`,
+  `fetch.py`, `api/schemas.py`, `test_db.py`. Suite: 282 passed, 55 skipped, 0 failed.
+
+- [x] **Step 3 — Card builder, rules parser, CLI** · branch: `refactor/data-model-parser-and-card`
   - `agent/validation_card_builder.py`: remove `isinstance(s, StrengthSet)` / `_activity_row`
     branching; one unified row builder for flat `Set`
   - `cli/validate.py`: update `_print_session_summary` (no `exercise_type`)
@@ -83,29 +98,57 @@ Design decisions are recorded in `docs/design.html`.
     `tests/test_agent_llm_orchestrator.py`, `tests/test_cli_ai_parser.py`, `tests/test_parse.py`
   - Gate: `pytest tests/` fully green
 
-- [ ] **Step 4 — E2E validation** · branch: `refactor/data-model/e2e`
-  - Run `traininglogs validate tests/fixtures/strength_session.md --parser ai`
-  - Run `traininglogs validate tests/fixtures/strength_session.md --parser groq`
-  - Run `traininglogs validate tests/fixtures/strength_session.md --parser rules`
-  - Run `traininglogs log tests/fixtures/strength_session.md --no-commit`
-  - API smoke test: `GET /sessions`, `GET /sessions/{id}`, `GET /exercises/{name}/history`
-  - All pass → merge base branch to `dev`
+- [x] **Step 4 — E2E validation** · branch: `refactor/data-model-e2e`
+  - `traininglogs validate` — all 3 fixture types (strength, activity, unilateral) → exit 0. Done.
+  - `traininglogs log --test --no-commit --parser rules` — all 3 fixtures inserted cleanly into
+    test DB. No local mirror write. Done.
+  - Added `--test` flag to `cli/log.py`: routes to TEST_DATABASE_URL, skips LOCAL_DATABASE_URL.
+  - API smoke test: deferred — Supabase not reachable locally; covered in Step 6 (cloud).
+  - Suite: 337 passed, 0 skipped, 0 failed.
 
-- [ ] **Step 5 — Historical data regen** · branch: `chore/historical-data-regen`
-  - Separate branch, cut after base branch is on `dev` and suite is green
-  - Follow `regen-historical.md` process exactly
-  - Regen to fresh output dir; validate side-by-side; get explicit approval before swapping
+- [ ] **Step 5 — Full data validation (local)** · branch: `chore/validate-v3-local`
+  **Strategy (locked 2026-05-13):**
+  - Preserve old local mirror DB (LOCAL_DATABASE_URL) intact — do not touch
+  - Drop and recreate all tables in the **validation DB** with v3 schema
+  - Run `traininglogs log` (rules parser, `--parser rules`) on all inputs → validation DB
+  - Run comparison script (validation DB vs local mirror DB):
+    - Every table, every row, every column compared
+    - Expected diffs (no surprises allowed beyond these):
+      - `working_sets`: `set_type` gone (not in new schema)
+      - `exercises`: `exercise_type` gone; `tags`/`modality`/`movement_pattern` will be NULL (rules parser doesn't populate them)
+      - `session_movements` → replaced by `warmups` + `cooldowns` tables
+    - Any other mismatch fails; fix and iterate
+  - Once rules parser passes: spot-check AI parser on a handful of files, compare vs rules parser output for same sessions
+  - If spot check passes: full AI parser regen → comparison
+  - Goal: AI parser output matches rules parser on all measurement fields
+
+- [ ] **Step 6 — Full data validation (cloud)** · strategy TBD when we get here
+  - Same sequence as Step 5 (rules parser first, then AI parser spot check)
+  - Separate DB vs separate tables in Supabase: decide at the time
+  - Once validated: purge old data; keep new
+
+- [ ] **Step 7 — JSON comparison**
+  - Keep a copy of current `output_training_logs_json/` before any regen
+  - Compare regenerated JSON files against the copy after cloud is validated
+  - This is last — JSON tends to get overwritten
 
 ## ▶ Resume here
 
-**Not started.** Cut `refactor/data-model` base branch from `dev`, then start Step 1.
+**Step 4 complete on `refactor/data-model-e2e`. Next: squash-merge to `refactor/data-model`, then merge base to `dev`.**
+
+Suite: 337 passed, 0 skipped, 0 failed.
+
+**Next action:**
 
 ```bash
 cd /Users/apoorvasharma/Projects/traininglogs
+git checkout refactor/data-model
+git merge --squash refactor/data-model-e2e
+git commit -m "feat: Step 4 E2E validation + --test flag for cli/log.py"
 git checkout dev
-git checkout -b refactor/data-model
-git checkout -b refactor/data-model/pydantic-models
+git merge --squash refactor/data-model
+git commit -m "refactor: v3.0.0 data model — flat Set, tags/modality, warmups/cooldowns tables"
+.venv/bin/pytest tests/ -q
 ```
 
-First file to touch: `src/traininglogs/models/models.py` — drop `StrengthSet`, `ActivitySet`,
-`AnySet`; rename/reshape `WorkingSet` into the flat `Set`.
+Then proceed to Step 5 (full local data validation on `chore/validate-v3-local`).

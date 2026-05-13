@@ -15,7 +15,7 @@ from traininglogs.agent.llm_parser import (
     TrainingLogLLMExtract,
     parse,
 )
-from traininglogs.models.models import Exercise, StrengthSet, RepCount
+from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
 
 # --- stub providers ---
@@ -63,7 +63,9 @@ VALID_STRENGTH_RAW: dict[str, Any] = {
         {
             "number": 1,
             "name": "Seated Leg Hamstring Curl",
-            "exercise_type": "strength",
+            "tags": ["muscle_growth"],
+            "modality": "machine",
+            "movement_pattern": ["hip_hinge"],
             "current_goal": {
                 "weight_kg": 63.0,
                 "sets": 3,
@@ -76,7 +78,6 @@ VALID_STRENGTH_RAW: dict[str, Any] = {
             ],
             "sets": [
                 {
-                    "set_type": "strength",
                     "number": 1,
                     "weight_kg": 63.0,
                     "rep_count": {"full": 12, "partial": 0},
@@ -84,7 +85,6 @@ VALID_STRENGTH_RAW: dict[str, Any] = {
                     "rep_quality_assessment": "good",
                 },
                 {
-                    "set_type": "strength",
                     "number": 2,
                     "weight_kg": 63.0,
                     "rep_count": {"full": 12, "partial": 0},
@@ -92,7 +92,6 @@ VALID_STRENGTH_RAW: dict[str, Any] = {
                     "rep_quality_assessment": "good",
                 },
                 {
-                    "set_type": "strength",
                     "number": 3,
                     "weight_kg": 63.0,
                     "rep_count": {"full": 11, "partial": 0},
@@ -129,7 +128,7 @@ class TestTrainingLogLLMExtract:
     def test_optional_fields_default_none(self) -> None:
         minimal = {
             "date": "2026-05-12",
-            "exercises": [{"number": 1, "name": "Plank", "exercise_type": "strength"}],
+            "exercises": [{"number": 1, "name": "Plank"}],
         }
         extract = TrainingLogLLMExtract.model_validate(minimal)
         assert extract.program is None
@@ -138,6 +137,8 @@ class TestTrainingLogLLMExtract:
         assert extract.is_deload_week is None
         assert extract.focus is None
         assert extract.session_duration_minutes is None
+        assert extract.warmup is None
+        assert extract.cooldown is None
 
     def test_invalid_date_raises(self) -> None:
         raw = dict(VALID_STRENGTH_RAW, date="not-a-date")
@@ -156,17 +157,17 @@ class TestTrainingLogLLMExtract:
         assert "exercises" in schema_str
         assert "date" in schema_str
 
-    def test_activity_set_accepted(self) -> None:
+    def test_cardio_set_accepted(self) -> None:
         raw = {
             "date": "2026-05-12",
             "exercises": [
                 {
                     "number": 1,
                     "name": "Row",
-                    "exercise_type": "activity",
+                    "tags": ["cardiorespiratory"],
+                    "modality": "machine",
                     "sets": [
                         {
-                            "set_type": "activity",
                             "number": 1,
                             "duration_seconds": 1800,
                             "distance_meters": 5000.0,
@@ -177,7 +178,10 @@ class TestTrainingLogLLMExtract:
             ],
         }
         extract = TrainingLogLLMExtract.model_validate(raw)
-        assert extract.exercises[0].sets[0].set_type == "activity"
+        s = extract.exercises[0].sets[0]
+        assert s.duration_seconds == 1800
+        assert s.distance_meters == 5000.0
+        assert s.heart_rate_bpm == 155
 
 
 # --- parse() ---

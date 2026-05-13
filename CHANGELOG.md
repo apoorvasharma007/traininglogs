@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (v3.0.0 data model — Step 1 complete, Steps 2–5 in progress)
+
+- `WorkingSet`: flat model replacing `StrengthSet`/`ActivitySet`/`AnySet` discriminated union.
+  All measurement fields optional (`weight_kg`, `rep_count`, `unilateral_rep_count`,
+  `duration_seconds`, `distance_meters`, `heart_rate_bpm`). Mixed sets (e.g. timed strength work
+  with both `weight_kg` and `duration_seconds`) are valid.
+- `SessionWarmup`, `SessionCooldown`: new lightweight models (`number`, `name`, `reps`,
+  `duration_seconds`, `notes`) for warmup and cooldown phases. Stored in a separate
+  `session_movements` table (not mixed into `exercises`).
+- `TrainingSession.warmup`, `TrainingSession.cooldown`: `Optional[List[SessionWarmup/Cooldown]]`.
+  Sequential numbering validated per-group independently (warmup, exercises, cooldown each start at 1).
+- `Exercise.tags: Optional[List[str]]` — NASM OPT / NSCA-based vocabulary:
+  `absolute_strength`, `muscle_growth`, `muscle_endurance`, `explosive_power`,
+  `core_stabilization`, `balance_control`, `passive_flexibility`, `active_mobility`,
+  `cardiorespiratory`, `saq`, `sport_specific`.
+- `Exercise.modality: Optional[str]` — free-text equipment/modality descriptor
+  (e.g. `"barbell"`, `"bodyweight"`, `"cable"`).
+- `Exercise.movement_pattern: Optional[List[str]]` — list to support compound patterns;
+  vocabulary: `squat`, `hip_hinge`, `push`, `pull`, `lunge`, `carry`, `rotation`.
+- `TrainingLogLLMExtract`: `warmup` and `cooldown` fields added; `SYSTEM_PROMPT` updated with
+  NASM/NSCA tag rules and warmup/cooldown extraction guidance.
+- `GroqProvider`: free Groq API alternative to Anthropic for local testing; uses JSON mode.
+  Selectable via `--parser groq`.
+
+### Removed (v3.0.0 data model)
+
+- `StrengthSet`, `ActivitySet`, `AnySet` — replaced by flat `WorkingSet`.
+- `Exercise.exercise_type` — replaced by `tags` + `modality`.
+- `set_type` discriminator field — no longer emitted by the LLM or stored anywhere.
+
+---
+
 ### Added
 
 - `--parser ai|rules` flag on `traininglogs validate` and `traininglogs log`.

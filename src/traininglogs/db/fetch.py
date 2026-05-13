@@ -49,7 +49,7 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
             """
             SELECT session_id, date, program, program_author, program_length_weeks,
                    phase, week, is_deload_week, focus, duration_minutes, weight_unit,
-                   user_id, user_name
+                   user_id, user_name, source_file
             FROM sessions WHERE session_id = %s
             """,
             (session_id,),
@@ -60,8 +60,23 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
         session = dict(zip([d[0] for d in cur.description], row))
 
         cur.execute(
+            "SELECT number, name, reps, duration_seconds, notes "
+            "FROM warmups WHERE session_id = %s ORDER BY number",
+            (session_id,),
+        )
+        session["warmup"] = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
+
+        cur.execute(
+            "SELECT number, name, reps, duration_seconds, notes "
+            "FROM cooldowns WHERE session_id = %s ORDER BY number",
+            (session_id,),
+        )
+        session["cooldown"] = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
+
+        cur.execute(
             """
-            SELECT id, number, name, exercise_type, notes, warmup_notes, form_cues,
+            SELECT id, number, name, tags, modality, movement_pattern,
+                   notes, warmup_notes, form_cues,
                    goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
                    goal_rest_seconds, goal_distance_meters, goal_target_duration_sec,
                    target_muscle_groups, rep_tempo
@@ -76,7 +91,7 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
 
             cur.execute(
                 """
-                SELECT number, set_type, weight_kg, reps_full, reps_partial,
+                SELECT number, weight_kg, reps_full, reps_partial,
                        left_reps_full, left_reps_partial, right_reps_full, right_reps_partial,
                        rpe, rep_quality, rest_minutes, rest_seconds,
                        duration_seconds, distance_meters, heart_rate_bpm,

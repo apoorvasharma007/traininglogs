@@ -12,7 +12,6 @@ from traininglogs.agent.validation_card_data import (
     WorkingSetRow,
 )
 from traininglogs.models.models import (
-    ActivitySet,
     DropSetTechnique,
     Exercise,
     Goal,
@@ -20,8 +19,8 @@ from traininglogs.models.models import (
     MyoRepsTechnique,
     RepCount,
     StaticTechnique,
-    StrengthSet,
     UnilateralReps,
+    WorkingSet,
 )
 
 _SESSION_FIELDS = frozenset(
@@ -68,7 +67,7 @@ class ValidationCardBuilder:
             if path.startswith(ex_prefix):
                 remainder = path[len(ex_prefix):]
                 parts = remainder.split(".")
-                if len(parts) == 1 and parts[0] in {"name", "exercise_type"}:
+                if len(parts) == 1 and parts[0] == "name":
                     header_uf.add(parts[0])
 
         return ExerciseCard(
@@ -123,10 +122,7 @@ class ValidationCardBuilder:
         rows = []
         for s_idx, s in enumerate(ex.sets):
             uf = self._set_uncertain(uncertain, ex_idx, "sets", s_idx)
-            if isinstance(s, StrengthSet):
-                rows.append(self._strength_row(s, uf))
-            else:
-                rows.append(self._activity_row(s, uf))  # type: ignore[arg-type]
+            rows.append(self._working_set_row(s, uf))
         return rows
 
     def _set_uncertain(
@@ -135,7 +131,7 @@ class ValidationCardBuilder:
         prefix = f"exercises.{ex_idx}.{set_key}.{set_idx}."
         return {path[len(prefix):].split(".")[0] for path in uncertain if path.startswith(prefix)}
 
-    def _strength_row(self, s: StrengthSet, uf: set[str]) -> WorkingSetRow:
+    def _working_set_row(self, s: WorkingSet, uf: set[str]) -> WorkingSetRow:
         return WorkingSetRow(
             number=s.number,
             weight_kg=s.weight_kg,
@@ -143,17 +139,9 @@ class ValidationCardBuilder:
             rpe=s.rpe,
             quality=s.rep_quality_assessment.value if s.rep_quality_assessment else None,
             failure_technique=self._fmt_failure(s.failure_technique) if s.failure_technique else None,
-            notes=s.notes,
-            uncertain_fields=frozenset(uf),
-        )
-
-    def _activity_row(self, s: ActivitySet, uf: set[str]) -> WorkingSetRow:
-        return WorkingSetRow(
-            number=s.number,
             duration_seconds=s.duration_seconds,
             distance_meters=s.distance_meters,
             heart_rate_bpm=s.heart_rate_bpm,
-            rpe=s.rpe,
             notes=s.notes,
             uncertain_fields=frozenset(uf),
         )

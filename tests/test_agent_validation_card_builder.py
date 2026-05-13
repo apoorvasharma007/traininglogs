@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+
 from traininglogs.agent.llm_parser import TrainingLogLLMExtract
 from traininglogs.agent.validation_card_builder import ValidationCardBuilder
 from traininglogs.agent.validation_card_data import UserValidationCard

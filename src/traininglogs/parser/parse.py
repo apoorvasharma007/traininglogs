@@ -69,13 +69,12 @@ class DeepTrainingParser:
 
     def _parse_exercise(self, ex: Dict[str, Any], idx: int) -> Dict[str, Any]:
         name = ex.get("name", f"Exercise {idx}")
-        exercise_type = ex.get("exercise_type", "strength")
 
         warmup_sets = [self._parse_warmup_set_line(l) for l in ex.get("warmup_sets", [])]
 
-        if exercise_type == "activity":
+        if ex.get("activity_sets"):
             sets = [
-                s for s in (self._parse_activity_set_line(l) for l in ex.get("activity_sets", []))
+                s for s in (self._parse_activity_set_line(l) for l in ex["activity_sets"])
                 if s is not None
             ]
         else:
@@ -84,7 +83,6 @@ class DeepTrainingParser:
         result: Dict[str, Any] = {
             "number": idx,
             "name": name,
-            "exercise_type": exercise_type,
             "sets": sets,
         }
         goal = self._parse_goal(ex.get("goal"), ex.get("rest"))
@@ -143,7 +141,7 @@ class DeepTrainingParser:
         set_num = int(m_num.group(1))
         rest_of = m_num.group(2).strip()
 
-        result: Dict[str, Any] = {"set_type": "activity", "number": set_num}
+        result: Dict[str, Any] = {"number": set_num}
 
         min_m = re.search(r"(\d+)\s*min\b", rest_of, re.IGNORECASE)
         sec_m = re.search(r"(\d+)\s*sec\b", rest_of, re.IGNORECASE)
@@ -209,7 +207,6 @@ class DeepTrainingParser:
             left = sides.get("left")
             right = sides.get("right")
             result: Dict[str, Any] = {
-                "set_type": "strength",
                 "number": set_num,
                 "weight_kg": float(weight_s),
                 "unilateral_rep_count": {
@@ -242,7 +239,7 @@ class DeepTrainingParser:
                 raise ValueError(f"Cannot parse working set line: {line!r}")
             weight = float(simple.group(1))
             full = int(simple.group(2))
-            result = {"set_type": "strength", "number": set_num, "weight_kg": weight, "rep_count": {"full": full, "partial": 0}}
+            result = {"number": set_num, "weight_kg": weight, "rep_count": {"full": full, "partial": 0}}
             if note:
                 result["notes"] = note
             if failure:
@@ -251,7 +248,6 @@ class DeepTrainingParser:
 
         weight_s, full_s, partial_s, rpe_s, quality_s = cm.groups()
         result = {
-            "set_type": "strength",
             "number": set_num,
             "weight_kg": float(weight_s),
         }

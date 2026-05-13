@@ -10,8 +10,11 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+import pytest
+
 from traininglogs.agent.llm_parser import TrainingLogLLMExtract
 from traininglogs.cli.validate import main as validate_main
+
 
 
 FIXTURES_VALID = Path(__file__).parent / "fixtures" / "valid"

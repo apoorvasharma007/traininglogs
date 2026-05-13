@@ -8,7 +8,7 @@ from typing import List, Optional, Protocol, runtime_checkable
 import anthropic
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-from traininglogs.models.models import Exercise
+from traininglogs.models.models import Exercise, SessionCooldown, SessionWarmup
 
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 _TOOL_NAME = "extract_workout"
@@ -20,16 +20,28 @@ Extract the workout data from the user's session text into the extract_workout t
 
 Rules:
 - date: YYYY-MM-DD format.
-- exercises: preserve the order from the text. Each exercise has a sequential number starting at 1.
-- set_type: use "strength" for weight/rep sets; use "activity" for cardio/distance/time sets.
+- warmup: movements in a warmup section at the start of the session. Each has a sequential number \
+starting at 1, a name, and optionally reps (integer), duration_seconds (integer), or notes.
+- exercises: the main working exercises. Preserve order. Each exercise has a sequential number \
+starting at 1.
+- cooldown: movements in a cooldown section at the end of the session. Same shape as warmup.
+- tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
+"muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
+"passive_flexibility", "active_mobility", "cardiorespiratory", "saq", "sport_specific". \
+Omit if unclear.
+- modality: free-text equipment type, e.g. "barbell", "dumbbell", "cable", "machine", \
+"bodyweight", "bands", "kettlebell", "pool". Omit if unclear.
+- movement_pattern: list one or more of: "squat", "hip_hinge", "push", "pull", "lunge", \
+"carry", "rotation". Omit if unclear.
 - weight_kg: always in kilograms. If the user wrote lbs, convert.
 - rpe: must be 1.0–10.0 in whole or half steps (e.g. 8, 8.5). Omit if not stated.
 - rep_count: {full: N, partial: M} where partial defaults to 0. "8+1" means full=8, partial=1.
-- failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", or "DropSet".
+- failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", \
+or "DropSet".
 - unilateral sets: use unilateral_rep_count with left/right RepCount objects instead of rep_count.
-- warmup sets: number field starts at 1. Use notes="feel" if the user wrote "feel".
-- uncertain_fields: list any dot-path field you are not confident about, e.g. "exercises.0.sets.1.rpe".
-  Only list fields you actually extracted (not fields you left null).
+- warmup_sets (per exercise): number field starts at 1. Use notes="feel" if the user wrote "feel".
+- uncertain_fields: list any dot-path field you are not confident about, e.g. \
+"exercises.0.sets.1.rpe". Only list fields you actually extracted (not fields you left null).
 - Omit fields you cannot determine — do not guess beyond what is written."""
 
 
@@ -41,7 +53,9 @@ class TrainingLogLLMExtract(BaseModel):
     is_deload_week: Optional[bool] = None
     focus: Optional[str] = None
     session_duration_minutes: Optional[int] = None
+    warmup: Optional[List[SessionWarmup]] = None
     exercises: List[Exercise]
+    cooldown: Optional[List[SessionCooldown]] = None
     uncertain_fields: List[str] = Field(default_factory=list)
 
     @field_validator("date")

@@ -14,8 +14,7 @@ def _print_session_summary(session) -> None:
     print(f"  exercises: {len(session.exercises)}")
     for i, ex in enumerate(session.exercises, 1):
         n_sets = len(ex.sets) if ex.sets else 0
-        ex_type = ex.exercise_type.value if hasattr(ex.exercise_type, "value") else ex.exercise_type
-        print(f"    {i}. {ex.name}  ({ex_type}, {n_sets} sets)")
+        print(f"    {i}. {ex.name}  ({n_sets} sets)")
 
 
 def main(argv: Optional[list[str]] = None) -> int:

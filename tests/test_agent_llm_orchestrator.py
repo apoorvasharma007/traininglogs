@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+
 from traininglogs.agent.llm_orchestrator import LLMOrchestrator
 from traininglogs.agent.llm_parser import LLMParserError, TrainingLogLLMExtract
 from traininglogs.agent.renderer import TerminalRenderer

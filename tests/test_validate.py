@@ -1,6 +1,8 @@
+import pytest
 from pathlib import Path
 
 from traininglogs.cli.validate import main
+
 
 FIXTURES_VALID = Path(__file__).parent / "fixtures" / "valid"
 FIXTURES_INVALID = Path(__file__).parent / "fixtures" / "invalid"

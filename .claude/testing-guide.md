@@ -62,10 +62,11 @@ traininglogs validate tests/fixtures/valid/<relevant_fixture>.md
 
 **Stage 2 — Real insert (no git commit)**
 ```bash
-traininglogs log tests/fixtures/valid/<relevant_fixture>.md --no-commit
-# Then verify in DB:
-docker exec traininglogs-db-1 psql -U traininglogs -d traininglogs \
-  -c "SELECT session_id, date, weight_unit FROM sessions ORDER BY date DESC LIMIT 3;"
+traininglogs log tests/fixtures/valid/<relevant_fixture>.md --test --no-commit
+# --test routes to TEST_DATABASE_URL only; never touches LOCAL_DATABASE_URL.
+# Then verify in test DB:
+docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test \
+  -c "SELECT session_id, date, weight_unit FROM sessions WHERE date > '2999-01-01' ORDER BY date DESC LIMIT 3;"
 ```
 Check that the new fields you added are populated correctly.
 

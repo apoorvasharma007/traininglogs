@@ -1,5 +1,7 @@
 import os
 import pytest
+
+
 from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
@@ -50,7 +52,6 @@ SESSION_A = {
             ],
             "sets": [
                 {
-                    "set_type": "strength",
                     "number": 1,
                     "weight_kg": 80.0,
                     "rep_count": {"full": 5, "partial": 0},

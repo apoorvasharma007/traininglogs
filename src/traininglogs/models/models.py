@@ -260,6 +260,14 @@ class WorkingSet(BaseModel):
     rpe: Optional[float] = None
     rest: Optional[Rest] = None
     notes: Optional[str] = None
+    weight_kg: Optional[float] = None
+    rep_count: Optional[RepCount] = None
+    unilateral_rep_count: Optional[UnilateralReps] = None
+    rep_quality_assessment: Optional[RepQualityAssessment] = None
+    failure_technique: Optional[FailureTechnique] = None
+    duration_seconds: Optional[int] = None
+    distance_meters: Optional[float] = None
+    heart_rate_bpm: Optional[int] = None
 
     @field_validator("number")
     @classmethod
@@ -275,34 +283,12 @@ class WorkingSet(BaseModel):
             _validate_rpe(v)
         return v
 
-
-class StrengthSet(WorkingSet):
-    set_type: Literal["strength"] = "strength"
-    weight_kg: Optional[float] = None
-    rep_count: Optional[RepCount] = None
-    unilateral_rep_count: Optional[UnilateralReps] = None
-    rep_quality_assessment: Optional[RepQualityAssessment] = None
-    failure_technique: Optional[FailureTechnique] = None
-
     @field_validator("weight_kg")
     @classmethod
     def weight_non_negative(cls, v: Optional[float]) -> Optional[float]:
         if v is not None and v < 0:
             raise ValueError("Weight must be positive or zero for bodyweight")
         return v
-
-    @model_validator(mode="after")
-    def failure_technique_requires_rpe_10(self) -> StrengthSet:
-        if self.failure_technique is not None and (self.rpe is None or self.rpe != 10):
-            raise ValueError("Failure technique can only be used with RPE 10 sets")
-        return self
-
-
-class ActivitySet(WorkingSet):
-    set_type: Literal["activity"] = "activity"
-    duration_seconds: Optional[int] = None
-    distance_meters: Optional[float] = None
-    heart_rate_bpm: Optional[int] = None
 
     @field_validator("duration_seconds")
     @classmethod
@@ -325,18 +311,92 @@ class ActivitySet(WorkingSet):
             raise ValueError("heart_rate_bpm must be positive")
         return v
 
+    @model_validator(mode="after")
+    def failure_technique_requires_rpe_10(self) -> WorkingSet:
+        if self.failure_technique is not None and (self.rpe is None or self.rpe != 10):
+            raise ValueError("Failure technique can only be used with RPE 10 sets")
+        return self
 
-AnySet = Annotated[
-    Union[StrengthSet, ActivitySet],
-    Field(discriminator="set_type"),
-]
+
+class SessionWarmup(BaseModel):
+    number: int
+    name: str
+    reps: Optional[int] = None
+    duration_seconds: Optional[int] = None
+    notes: Optional[str] = None
+
+    @field_validator("number")
+    @classmethod
+    def number_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("number must be positive")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("name cannot be empty")
+        return v
+
+    @field_validator("reps")
+    @classmethod
+    def reps_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("reps must be positive")
+        return v
+
+    @field_validator("duration_seconds")
+    @classmethod
+    def duration_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("duration_seconds must be positive")
+        return v
+
+
+class SessionCooldown(BaseModel):
+    number: int
+    name: str
+    reps: Optional[int] = None
+    duration_seconds: Optional[int] = None
+    notes: Optional[str] = None
+
+    @field_validator("number")
+    @classmethod
+    def number_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("number must be positive")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("name cannot be empty")
+        return v
+
+    @field_validator("reps")
+    @classmethod
+    def reps_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("reps must be positive")
+        return v
+
+    @field_validator("duration_seconds")
+    @classmethod
+    def duration_positive(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("duration_seconds must be positive")
+        return v
 
 
 class Exercise(BaseModel):
     number: int
     name: str
-    exercise_type: Literal["strength", "activity"] = "strength"
-    sets: Optional[List[AnySet]] = None
+    tags: Optional[List[str]] = None
+    modality: Optional[str] = None
+    movement_pattern: Optional[List[str]] = None
+    sets: Optional[List[WorkingSet]] = None
     target_muscle_groups: Optional[List[str]] = None
     rep_tempo: Optional[str] = None
     current_goal: Optional[Goal] = None
@@ -381,7 +441,9 @@ class TrainingSession(BaseModel):
     week: Optional[int] = None
     is_deload_week: Optional[bool] = None
     focus: Optional[str] = None
+    warmup: Optional[List[SessionWarmup]] = None
     exercises: List[Exercise]
+    cooldown: Optional[List[SessionCooldown]] = None
     session_duration_minutes: Optional[int] = None
     weight_unit: Literal["kg", "lbs"] = "kg"
 
@@ -432,6 +494,16 @@ class TrainingSession(BaseModel):
             if exercise.number != i + 1:
                 raise ValueError(
                     f"Exercise number must be sequential, expected {i + 1}, got {exercise.number}"
+                )
+        for i, movement in enumerate(self.warmup or []):
+            if movement.number != i + 1:
+                raise ValueError(
+                    f"Warmup number must be sequential, expected {i + 1}, got {movement.number}"
+                )
+        for i, movement in enumerate(self.cooldown or []):
+            if movement.number != i + 1:
+                raise ValueError(
+                    f"Cooldown number must be sequential, expected {i + 1}, got {movement.number}"
                 )
         return self
 
