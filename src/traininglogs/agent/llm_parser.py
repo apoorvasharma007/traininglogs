@@ -20,6 +20,12 @@ Extract the workout data from the user's session text into the extract_workout t
 
 Rules:
 - date: YYYY-MM-DD format.
+- focus: the session's training focus or movement type (e.g. "Upper Strength", "Bench", "Legs"). Extract from any "Focus:", "Movement:", "Muscle Group:", or session title field. Use the short label, not a long description.
+- session_duration_minutes: total session duration as an integer in minutes. Convert any format: "1hr 30min" → 90, "1hrs 41min" → 101, "1:30" → 90, "45min" → 45.
+- program: name of the training program if stated, else omit.
+- phase: integer phase number. Convert word ordinals: "One"→1, "Two"→2, "Three"→3, etc. Ignore any description after the number (e.g. "One - Volume/Base Building" → 1). Omit only if no phase is mentioned.
+- week: integer week number. Extract from any "Week:" field. Omit only if no week is mentioned.
+- is_deload_week: true only if explicitly stated as a deload week.
 - warmup: movements in a warmup section at the start of the session. Each has a sequential number \
 starting at 1, a name, and optionally reps (integer), duration_seconds (integer), or notes.
 - exercises: the main working exercises. Preserve order. Each exercise has a sequential number \
@@ -39,7 +45,8 @@ Omit if unclear.
 - failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", \
 or "DropSet".
 - unilateral sets: use unilateral_rep_count with left/right RepCount objects instead of rep_count.
-- warmup_sets (per exercise): number field starts at 1. Use notes="feel" if the user wrote "feel".
+- warmup_sets (per exercise): number field starts at 1. rep_count is a plain integer (e.g. 8), NOT an object — do not use {full, partial}. Use notes="feel" if the user wrote "feel".
+- modality: single string, not an array (e.g. "barbell", not ["barbell"]).
 - uncertain_fields: list any dot-path field you are not confident about, e.g. \
 "exercises.0.sets.1.rpe". Only list fields you actually extracted (not fields you left null).
 - Omit fields you cannot determine — do not guess beyond what is written."""
@@ -149,36 +156,52 @@ class GroqProvider:
     def extract(self, text: str, tool_schema: dict) -> dict:
         import json
 
-        system = (
-            SYSTEM_PROMPT
-            + "\n\nRespond with a single JSON object matching this schema:\n"
-            + json.dumps(tool_schema, indent=2)
-        )
         messages: list[dict] = [
-            {"role": "system", "content": system},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text},
         ]
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": _TOOL_NAME,
+                    "description": "Extract structured workout data from the session text.",
+                    "parameters": tool_schema,
+                },
+            }
+        ]
+        tool_choice = {"type": "function", "function": {"name": _TOOL_NAME}}
         last_error: str = ""
 
         for attempt in range(_MAX_RETRIES + 1):
             if attempt > 0:
-                messages.append({
-                    "role": "user",
-                    "content": (
-                        f"The extracted data failed validation:\n{last_error}\n"
-                        "Please fix and respond with a corrected JSON object."
-                    ),
-                })
+                messages += [
+                    {"role": "assistant", "content": _last_response_content},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"The extracted data failed validation:\n{last_error}\n"
+                            "Please fix the issues and call the tool again."
+                        ),
+                    },
+                ]
 
             response = self._client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                response_format={"type": "json_object"},
+                tools=tools,
+                tool_choice=tool_choice,
             )
 
-            content = response.choices[0].message.content or ""
+            _last_response_content = response.choices[0].message.content or ""
+            tool_calls = response.choices[0].message.tool_calls
+
+            if not tool_calls:
+                last_error = "No tool call in response."
+                continue
+
             try:
-                return json.loads(content)
+                return json.loads(tool_calls[0].function.arguments)
             except Exception as exc:
                 last_error = str(exc)
 

@@ -35,9 +35,25 @@ class SessionHeader:
     program: str | None = None
     phase: int | None = None
     week: int | None = None
+    is_deload_week: bool | None = None
     focus: str | None = None
     duration_minutes: int | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass
+class MovementRow:
+    number: int
+    name: str
+    reps: int | None = None
+    duration_seconds: int | None = None
+    notes: str | None = None
+
+
+@dataclass
+class SessionMovementSection:
+    title: str  # "Warmup" or "Cooldown"
+    movements: list[MovementRow] = field(default_factory=list)
 
 
 @dataclass
@@ -87,4 +103,6 @@ class ExerciseCard:
 @dataclass
 class UserValidationCard:
     session_header: SessionHeader
+    warmup_section: SessionMovementSection | None = None
     exercises: list[ExerciseCard] = field(default_factory=list)
+    cooldown_section: SessionMovementSection | None = None

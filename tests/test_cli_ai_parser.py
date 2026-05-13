@@ -62,8 +62,7 @@ class TestValidateAiParser:
         with patch(_PATCH_TARGET, return_value=_MINIMAL_EXTRACT):
             validate_main(["--parser", "ai", str(fixture)])
         out = capsys.readouterr().out
-        assert "Valid" in out
-        assert "2026-05-12" in out
+        assert "exercises" in out
         assert "Squat" in out
 
     def test_ai_is_default_parser(self, capsys) -> None:

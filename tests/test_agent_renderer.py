@@ -151,7 +151,9 @@ class TestTerminalRendererSessionHeader:
             ),
         )
         out = _capture(card)
-        assert "Test Program P3W11" in out
+        assert "Test Program" in out
+        assert "Phase 3" in out
+        assert "Week 11" in out
 
     def test_duration_present(self) -> None:
         card = UserValidationCard(
@@ -415,7 +417,9 @@ class TestTerminalRendererFullCard:
 
         assert "2026-05-12" in out
         assert "Lower Strength" in out
-        assert "Test Program P3W11" in out
+        assert "Test Program" in out
+        assert "Phase 3" in out
+        assert "Week 11" in out
         assert "150 min" in out
         assert "Exercise 1" in out
         assert "Seated Leg Hamstring Curl" in out

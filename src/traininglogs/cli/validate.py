@@ -5,16 +5,12 @@ from typing import Optional
 
 
 def _print_session_summary(session) -> None:
-    print(f"✓ Valid — {session.session_id}")
-    print(f"  date:     {session.date}")
-    print(f"  program:  {session.program}")
-    print(f"  phase:    {session.phase}  week: {session.week}")
-    print(f"  focus:    {session.focus}")
-    print(f"  duration: {session.session_duration_minutes} min")
-    print(f"  exercises: {len(session.exercises)}")
+    print(f"✓ {session.session_id}  —  {len(session.exercises)} exercises")
     for i, ex in enumerate(session.exercises, 1):
         n_sets = len(ex.sets) if ex.sets else 0
-        print(f"    {i}. {ex.name}  ({n_sets} sets)")
+        n_warmup = len(ex.warmup_sets) if ex.warmup_sets else 0
+        warmup_str = f"  {n_warmup} warmup" if n_warmup else ""
+        print(f"  {i}. {ex.name}  ({n_sets} sets{warmup_str})")
 
 
 def main(argv: Optional[list[str]] = None) -> int:

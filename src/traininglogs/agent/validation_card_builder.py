@@ -5,8 +5,10 @@ from traininglogs.agent.validation_card_data import (
     ExerciseCard,
     ExerciseHeader,
     GoalSummary,
+    MovementRow,
     NotePreview,
     SessionHeader,
+    SessionMovementSection,
     UserValidationCard,
     WarmupRow,
     WorkingSetRow,
@@ -24,7 +26,7 @@ from traininglogs.models.models import (
 )
 
 _SESSION_FIELDS = frozenset(
-    {"date", "focus", "program", "phase", "week", "session_duration_minutes"}
+    {"date", "focus", "program", "phase", "week", "is_deload_week", "session_duration_minutes"}
 )
 _SESSION_FIELD_RENAME = {"session_duration_minutes": "duration_minutes"}
 
@@ -34,10 +36,12 @@ class ValidationCardBuilder:
         uncertain = set(extract.uncertain_fields)
         return UserValidationCard(
             session_header=self._session_header(extract, uncertain),
+            warmup_section=self._movement_section("Warmup", extract.warmup),
             exercises=[
                 self._exercise_card(ex, idx, uncertain)
                 for idx, ex in enumerate(extract.exercises)
             ],
+            cooldown_section=self._movement_section("Cooldown", extract.cooldown),
         )
 
     def _session_header(
@@ -53,9 +57,27 @@ class ValidationCardBuilder:
             program=extract.program,
             phase=extract.phase,
             week=extract.week,
+            is_deload_week=extract.is_deload_week,
             focus=extract.focus,
             duration_minutes=extract.session_duration_minutes,
             uncertain_fields=frozenset(uf),
+        )
+
+    def _movement_section(self, title: str, movements) -> SessionMovementSection | None:
+        if not movements:
+            return None
+        return SessionMovementSection(
+            title=title,
+            movements=[
+                MovementRow(
+                    number=m.number,
+                    name=m.name,
+                    reps=m.reps,
+                    duration_seconds=m.duration_seconds,
+                    notes=m.notes,
+                )
+                for m in movements
+            ],
         )
 
     def _exercise_card(

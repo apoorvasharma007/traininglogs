@@ -7,8 +7,10 @@ from traininglogs.agent.validation_card_data import (
     ExerciseCard,
     ExerciseHeader,
     GoalSummary,
+    MovementRow,
     NotePreview,
     SessionHeader,
+    SessionMovementSection,
     WarmupRow,
     WorkingSetRow,
 )
@@ -88,9 +90,15 @@ class TerminalRenderer:
 
     def render(self, card: UserValidationCard) -> None:
         self._render_session_header(card.session_header)
+        if card.warmup_section:
+            self.console.print()
+            self._render_movement_section(card.warmup_section)
         for exercise_card in card.exercises:
             self.console.print()
             self._render_exercise_card(exercise_card)
+        if card.cooldown_section:
+            self.console.print()
+            self._render_movement_section(card.cooldown_section)
 
     def _render_session_header(self, header: SessionHeader) -> None:
         self.console.rule(style="dim")
@@ -99,17 +107,32 @@ class TerminalRenderer:
             parts.append(_mark(header.focus, "focus", header.uncertain_fields))
         if header.program:
             prog = header.program
-            if header.phase is not None:
-                prog += f" P{header.phase}"
-            if header.week is not None:
-                prog += f"W{header.week}"
+            if header.is_deload_week:
+                prog += " [dim](deload)[/dim]"
             parts.append(_mark(prog, "program", header.uncertain_fields))
+        if header.phase is not None:
+            parts.append(_mark(f"Phase {header.phase}", "phase", header.uncertain_fields))
+        if header.week is not None:
+            parts.append(_mark(f"Week {header.week}", "week", header.uncertain_fields))
         if header.duration_minutes is not None:
             parts.append(
                 _mark(f"{header.duration_minutes} min", "duration_minutes", header.uncertain_fields)
             )
         self.console.print("  " + "  |  ".join(parts), highlight=False)
         self.console.rule(style="dim")
+
+    def _render_movement_section(self, section: SessionMovementSection) -> None:
+        self.console.print(f"  [dim]{section.title}:[/dim]", highlight=False)
+        for m in section.movements:
+            parts: list[str] = [m.name]
+            if m.reps is not None:
+                parts.append(f"× {m.reps}")
+            if m.duration_seconds is not None:
+                mins, secs = divmod(m.duration_seconds, 60)
+                parts.append(f"{mins}:{secs:02d}")
+            if m.notes:
+                parts.append(f"[dim]({m.notes})[/dim]")
+            self.console.print(f"    {m.number}.  {'  '.join(parts)}", highlight=False)
 
     def _render_exercise_card(self, card: ExerciseCard) -> None:
         self._render_exercise_header(card.header)
