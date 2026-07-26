@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-05-13 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-05-15 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -193,6 +193,20 @@
   <p>I lift weights. I write down what I do, and later I want to answer questions: <em>am I getting stronger? am I hammering the same muscle group three days in a row? what was my squat doing six months ago? did the deload actually do anything?</em></p>
   <p>Spreadsheets work until they don't. Off-the-shelf apps assume a workout shape that isn't mine — they don't model myo-reps, partial reps, or the difference between a warmup set and a working set the way I think about them. The shape I want is: write the session the way I'd write it in a notebook, and have a system parse it into something strict enough to query and chart.</p>
   <p>That's traininglogs. It is small on purpose.</p>
+</section>
+
+<section>
+  <h2 id="vision">Vision</h2>
+  <p>traininglogs today is a post-workout pipeline: write a markdown file, parse it, store it. The direction it is heading is a live, in-workout agent that captures sets as they happen, on mobile, by voice or tap, with the same data fidelity. Three principles guide that evolution.</p>
+
+  <h3>Predict the row, don't capture it</h3>
+  <p>Most data in a workout is predictable. The program says set 2 of bench press should be 90&nbsp;kg × 8; the agent already knows that. The interaction should default to <em>confirmation</em>, not capture. A pre-filled row with one big tap to accept handles the majority of sets. Increment/decrement and inline edits cover small adjustments. Voice is reserved for the qualitative tax — RPE, partials, "left shoulder felt off", a drop set the program didn't predict, a new exercise added on the fly. The friction floor of an app used at 160&nbsp;bpm with sweaty hands is "tap to confirm"; anything more is a cost paid for richer data, and should be optional.</p>
+
+  <h3>The agent's job is to translate loose input into strong fields</h3>
+  <p>A user can say "8 plus 2 partials at 7 RPE, felt good" without thinking about schemas. The agent's job is to turn that sentence into <code>{reps_full: 8, reps_partial: 2, rpe: 7.0, rep_quality_assessment: "good"}</code>. Notes are the residue — they exist for the parts of a sentence that don't map to a typed field, not as a dumping ground. This principle keeps the data model strict where it matters (queryable, chartable, comparable across sessions and users) without forcing users to learn it.</p>
+
+  <h3>Rich primitives, loose context</h3>
+  <p>The numbers you want to do math on must be numbers. The words you want to read can be words. There is no in-between. Weight, reps, RPE, duration, distance, heart rate — strongly typed and validated. Tags, modality, form cues, notes — free text. When new sports or training styles are added, the test for each candidate field is: <em>would a user ever want to chart, filter, sum, or compare this?</em> Yes → typed column. No → notes. Most fitness apps fail at the extremes — either everything is structured (and the model breaks on the first unfamiliar workout) or everything is loose (and nothing is queryable). The sweet spot is rich primitives plus loose context, expanded conservatively as new modalities arrive.</p>
 </section>
 
 <section>
@@ -246,6 +260,7 @@ Exercise
     <li><code>week</code> must be between 1 and <code>program_length_weeks</code>.</li>
     <li>RPE is a whole or half step between 1 and 10.</li>
   </ul>
+  <p><strong>Home-movement conventions.</strong> Unprogrammed home and movement-skill training (calisthenics, juggling, reaction drills, shadow boxing, home kettlebell/dumbbell work) needed no model changes — only extraction conventions in the LLM <code>SYSTEM_PROMPT</code>, since the flat <code>Set</code> model already covers every shape involved. Skill-practice runs (juggling catches, drill attempt counts) map to <code>rep_count</code>; static holds and timed rounds map to <code>duration_seconds</code>; measured reaction times (milliseconds) are never numeric — they go in a set's <code>notes</code>. Sessions without a formal program default to <code>program = "home-movement"</code> with <code>phase</code>/<code>week</code> omitted, which the model already allows.</p>
 </section>
 
 <section>
@@ -389,7 +404,7 @@ traininglogs log session.md --parser rules</code></pre>
 </section>
 
 <footer>
-  Last updated 2026-05-13
+  Last updated 2026-07-19
 </footer>
 
 </main>
@@ -398,6 +413,7 @@ traininglogs log session.md --parser rules</code></pre>
   <h4>On this page</h4>
   <ul>
     <li><a href="#why">Why this exists</a></li>
+    <li><a href="#vision">Vision</a></li>
     <li><a href="#shape">The shape of the system</a></li>
     <li><a href="#data">The data model</a></li>
     <li><a href="#parser">The parser</a></li>

@@ -28,8 +28,7 @@ Rules:
 - is_deload_week: true only if explicitly stated as a deload week.
 - warmup: movements in a warmup section at the start of the session. Each has a sequential number \
 starting at 1, a name, and optionally reps (integer), duration_seconds (integer), or notes.
-- exercises: the main working exercises. Preserve order. Each exercise has a sequential number \
-starting at 1.
+- exercises: the main working exercises ONLY. Do NOT include warmup or cooldown sections as exercises — they must go in warmup/cooldown fields instead. Preserve order. Each exercise has a sequential number starting at 1.
 - cooldown: movements in a cooldown section at the end of the session. Same shape as warmup.
 - tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
 "muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
@@ -49,7 +48,26 @@ or "DropSet".
 - modality: single string, not an array (e.g. "barbell", not ["barbell"]).
 - uncertain_fields: list any dot-path field you are not confident about, e.g. \
 "exercises.0.sets.1.rpe". Only list fields you actually extracted (not fields you left null).
-- Omit fields you cannot determine — do not guess beyond what is written."""
+- Omit fields you cannot determine — do not guess beyond what is written.
+
+Home and movement-skill sessions (calisthenics, juggling, reaction drills, shadow \
+boxing, stretching, home kettlebell/dumbbell work):
+- If the text indicates an unprogrammed home or movement session and no formal \
+program name is given, set program to "home-movement" (phase and week stay omitted).
+- Skill-practice runs (e.g. juggling): each run or attempt is one set; the count \
+achieved (e.g. catches) is rep_count.full. "3 runs, best 38 catches" with only the \
+best stated → one set with full=38 and a note that it was the best of 3 runs.
+- Static holds (L-sit, tuck lever, planche leans, stretches held for time): each hold \
+is one set with duration_seconds. Do not use the StaticHold failure technique for \
+planned holds — it is only for holds performed at failure after an RPE 10 set.
+- Timed rounds (shadow boxing, conditioning rounds): each round is one set with \
+duration_seconds; include heart_rate_bpm if stated.
+- Reaction-time drills: each drill block is one set. If the block is described by a \
+count of attempts (e.g. "20 taps"), that count is rep_count.full — it is NOT a \
+duration. If the block is described by elapsed time (e.g. "60 second block"), that \
+is duration_seconds. Copy measured reaction times verbatim into that set's notes \
+(e.g. "avg 245ms, best 198ms"). Never put milliseconds into duration_seconds, \
+rep_count, or any numeric field."""
 
 
 class TrainingLogLLMExtract(BaseModel):

@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NASM/NSCA tag rules and warmup/cooldown extraction guidance.
 - `GroqProvider`: free Groq API alternative to Anthropic for local testing; uses JSON mode.
   Selectable via `--parser groq`.
+- Home-movement intake: `SYSTEM_PROMPT` conventions for unprogrammed home/movement-skill
+  sessions (calisthenics, juggling, reaction drills, shadow boxing, home kettlebell/dumbbell
+  work). No model changes — existing fields cover every case: skill-run counts (e.g. juggling
+  catches) map to `rep_count`, static holds and timed rounds map to `duration_seconds`,
+  reaction-time drills use `rep_count` for attempt counts with measured times (ms) in `notes`
+  (never in a numeric field), unprogrammed sessions default `program` to `"home-movement"`
+  with `phase`/`week` omitted. `inputs/programs/home-movement/program.md` added so the
+  dashboard picks it up as a program card. Exercise prompt fix bundled in: `exercises` now
+  explicitly excludes warmup/cooldown movements (previously ambiguous, occasionally
+  double-counted).
 
 ### Removed (v3.0.0 data model)
 
