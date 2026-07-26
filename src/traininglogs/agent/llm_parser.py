@@ -55,11 +55,11 @@ drills, shadow boxing, stretching, kettlebell/dumbbell work) — these apply to 
 exercise of these kinds, whether the session is part of a formal program (phase/ \
 week given as usual) or unprogrammed:
 - If a "Program:" field is stated, always use that instead of inferring. Otherwise, \
-only default program to "home-movement" when the session is truly unprogrammed — \
-no program name AND no phase/week given. If phase and/or week ARE given but no \
-program name is stated, leave program unset (omit it) rather than guessing \
-"home-movement" — a session with a phase/week is part of a real program whose name \
-just isn't in this text (it is usually known from context outside the file).
+if the session has no program name AND no phase/week, it is an ad-hoc session — \
+leave program, phase, and week all unset (do not invent a program name). If phase \
+and/or week ARE given but no program name is stated, also leave program unset — a \
+session with a phase/week is part of a real program whose name just isn't in this \
+text (it is usually known from context outside the file, e.g. the file's location).
 - Skill-practice runs (e.g. juggling): each run or attempt is one set; the count \
 achieved (e.g. catches) is rep_count.full. "3 runs, best 38 catches" with only the \
 best stated → one set with full=38 and a note that it was the best of 3 runs.
@@ -74,13 +74,17 @@ duration. If the block is described by elapsed time (e.g. "60 second block"), th
 is duration_seconds. Copy measured reaction times verbatim into that set's notes \
 (e.g. "avg 245ms, best 198ms"). Never put milliseconds into duration_seconds, \
 rep_count, or any numeric field.
-- Skill attempts at a specific move (e.g. muscle-up tries, a new transition): one \
-set per session block, rep_count.full = attempts that were completed cleanly, \
-rep_count.partial = attempts that were tried but not completed. "5 attempts, 2 \
-clean" → full=2, partial=3 (this mirrors how a normal working set uses partial for \
-a rep that didn't complete full range of motion — an unsuccessful skill attempt is \
-the calisthenics equivalent). Put form detail (which part failed, kip vs strict, \
-band-assisted) in notes."""
+- Skill attempts at a specific move (e.g. muscle-up tries, a new transition) are a \
+DIFFERENT thing from ordinary reps of an exercise (dips, pull-ups, push-ups) — only \
+use this rule when the text explicitly frames the set as attempts at a move, using \
+language like "attempts", "tries", or "X clean out of Y". One set per session \
+block: rep_count.full = attempts that were completed cleanly, rep_count.partial = \
+attempts that were tried but not completed. "5 attempts, 2 clean" → full=2, \
+partial=3. Put form detail (which part failed, kip vs strict, band-assisted) in \
+notes. Do NOT apply this to ordinary reps whose quality varied across the set (e.g. \
+"6 reps, depth dropped on the last two") — every completed rep of a normal exercise \
+is rep_count.full regardless of form quality; describe the quality drop-off in \
+notes only, never by moving reps into partial."""
 
 
 class TrainingLogLLMExtract(BaseModel):

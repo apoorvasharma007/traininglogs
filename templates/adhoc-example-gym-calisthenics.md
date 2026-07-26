@@ -1,7 +1,6 @@
-# Home Movement Log
+# Training Log
 
 - Date: 2026-07-19
-- Program: Home Movement
 - Focus: Rings + Muscle-Up Prep
 - Duration: 50 min
 

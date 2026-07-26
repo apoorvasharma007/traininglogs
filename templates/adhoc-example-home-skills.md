@@ -1,7 +1,6 @@
-# Home Movement Log
+# Training Log
 
 - Date: 2026-07-19
-- Program: Home Movement
 - Focus: Skills + Core
 - Duration: 55 min
 

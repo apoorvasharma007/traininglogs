@@ -36,16 +36,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changes — existing fields cover every case: skill-run counts (e.g. juggling catches)
   and skill-attempt counts (e.g. muscle-up tries) map to `rep_count` (attempts that
   complete cleanly are `full`, attempts that don't are `partial` — the same distinction
-  a normal working set already makes); static holds and timed rounds map to
-  `duration_seconds`; reaction-time drills use `rep_count` for attempt counts with
-  measured times (ms) in `notes`, never in a numeric field. Program defaulting: a truly
-  unprogrammed session (no program name, no phase/week) defaults `program` to
-  `"home-movement"`; a session with phase/week but no stated program name leaves
-  `program` unset rather than guessing, since it belongs to a real program whose name
-  lives outside the file text (usually the directory path). `inputs/programs/
-  home-movement/program.md` added so the dashboard picks up ad-hoc sessions as a
-  program card. Exercise prompt fix bundled in: `exercises` now explicitly excludes
-  warmup/cooldown movements (previously ambiguous, occasionally double-counted).
+  a normal working set already makes; ordinary reps with varying form quality stay
+  `full` regardless — only genuine attempt/clean phrasing triggers the split); static
+  holds and timed rounds map to `duration_seconds`; reaction-time drills use `rep_count`
+  for attempt counts with measured times (ms) in `notes`, never in a numeric field.
+  Ad-hoc sessions (no program, no phase/week) leave `program`/`phase`/`week` all unset —
+  no pseudo-program name is invented. `inputs/sessions/` is the documented location for
+  these (mirrors the pre-existing "standalone session" concept already covered by
+  `tests/test_processor.py`); `inputs/programs/` stays reserved for real structured
+  programs. A session with phase/week but no stated program name also leaves `program`
+  unset rather than guessing, since it belongs to a real program whose name lives
+  outside the file text (usually the directory path). Copy-pasteable templates in
+  `templates/`: `adhoc-template.md` + two worked examples (`adhoc-example-home-skills.md`,
+  `adhoc-example-gym-calisthenics.md`) for `inputs/sessions/`, and
+  `programmed-example-calisthenics-mixed.md` showing calisthenics mixed into a real
+  phase/week session using the existing gym-log format (no new template needed there).
+  Exercise prompt fix bundled in: `exercises` now explicitly excludes warmup/cooldown
+  movements (previously ambiguous, occasionally double-counted).
 
 ### Removed (v3.0.0 data model)
 
