@@ -167,6 +167,8 @@ class AnthropicProvider:
             response = self._client.messages.create(
                 model=self.model,
                 max_tokens=4096,
+                # Extraction, not creative writing — same input must produce the same fields.
+                temperature=0,
                 system=SYSTEM_PROMPT,
                 tools=[
                     {
@@ -247,6 +249,8 @@ class GroqProvider:
                 messages=messages,
                 tools=tools,
                 tool_choice=tool_choice,
+                # Extraction, not creative writing — same input must produce the same fields.
+                temperature=0,
             )
 
             _last_response_content = response.choices[0].message.content or ""

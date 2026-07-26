@@ -165,14 +165,29 @@ for Step 6.**
 
 `dev` state before this branch: 355 passed. On this branch: 370 passed, 0 skipped, 0 failed.
 
-Known follow-ups (non-blocking):
-- `inputs/sessions/test_session_asif.txt` is a real programmed session (Phase One, Week 1)
-  sitting in the ad-hoc `inputs/sessions/` directory — per the movement-skill reorg, it
-  belongs at `inputs/programs/<slug>/phase_1/week_1/` instead. Never logged to the DB. Apoorva
-  to decide: move + log for real, or leave as a spot-check artifact.
-- Groq applies remark-block RPE to the correct (last) set but doesn't reliably flag it in
-  `uncertain_fields`. Value is still visible/correctable in the card. Watch, don't chase —
-  same category as the earlier RPE over-propagation quirk.
+Resolved follow-ups:
+- `inputs/sessions/test_session_asif.txt` (real Phase One / Week 1 session, never logged)
+  moved out of the ad-hoc `inputs/sessions/` directory — relocated (dates bumped to year 3000)
+  to `tests/fixtures/valid/programmed_push_pull_session_with_remarks.md` as a permanent
+  regression fixture. It's the exact real file that grounded the design session above.
+
+Root-caused and fixed:
+- The "Groq doesn't reliably flag remark-derived RPE as uncertain" watch-item turned out to be
+  a symptom of something bigger: repeated live `--parser groq` runs against the same fixture
+  (`programmed_push_pull_session_with_remarks.md`) produced *materially different* extractions
+  each time — one run correctly extracted RPE onto the right set for every exercise, two other
+  runs silently dropped the remark entirely (no RPE, no notes) for the last 3 of 6 exercises.
+  Root cause: neither `AnthropicProvider` nor `GroqProvider` pinned a sampling `temperature`,
+  so identical input produced non-deterministic output on a task that should never be
+  creative. Confirmed `finish_reason: tool_calls` (not `length`) and full-length completions
+  via a standalone diagnostic call — ruled out token-limit truncation before concluding it was
+  temperature-driven variance. Fix: `temperature=0` added to both providers' API calls, plus
+  regression tests (`TestProviderTemperature` in `test_agent_llm_parser.py`) mocking each
+  client and asserting `temperature=0` is always passed.
+  **Pending**: live re-verification against the fixture blocked by Groq's free-tier daily
+  token quota (100k TPD), exhausted during this investigation — resets in ~1 hour. Re-run
+  `traininglogs validate --parser groq tests/fixtures/valid/programmed_push_pull_session_with_remarks.md`
+  a few times once quota resets and confirm consistent extraction before considering this closed.
 
 **Then cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy:**
 - Separate Supabase DB vs separate tables in existing Supabase project?

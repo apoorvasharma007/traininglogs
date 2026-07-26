@@ -240,6 +240,51 @@ class TestParse:
             assert result.date == "2026-05-12"
 
 
+class TestProviderTemperature:
+    """Extraction must be deterministic — the same input text should produce the same
+    fields every time. A non-zero sampling temperature is why the same free-prose file
+    extracted differently across repeated live Groq calls (some runs silently lost
+    exercise-level remarks that other runs correctly captured)."""
+
+    def test_anthropic_provider_pins_temperature_zero(self) -> None:
+        from traininglogs.agent.llm_parser import AnthropicProvider
+
+        with patch("traininglogs.agent.llm_parser.anthropic.Anthropic") as mock_cls:
+            mock_client = MagicMock()
+            tool_block = MagicMock()
+            tool_block.type = "tool_use"
+            tool_block.input = VALID_STRENGTH_RAW
+            mock_client.messages.create.return_value = MagicMock(content=[tool_block])
+            mock_cls.return_value = mock_client
+
+            provider = AnthropicProvider()
+            provider.extract("some text", TrainingLogLLMExtract.model_json_schema())
+
+            _, kwargs = mock_client.messages.create.call_args
+            assert kwargs["temperature"] == 0
+
+    def test_groq_provider_pins_temperature_zero(self) -> None:
+        import groq
+
+        from traininglogs.agent.llm_parser import GroqProvider
+
+        with patch.object(groq, "Groq") as mock_cls:
+            mock_client = MagicMock()
+            tool_call = MagicMock()
+            tool_call.function.arguments = "{}"
+            message = MagicMock(content="", tool_calls=[tool_call])
+            mock_client.chat.completions.create.return_value = MagicMock(
+                choices=[MagicMock(message=message)]
+            )
+            mock_cls.return_value = mock_client
+
+            provider = GroqProvider()
+            provider.extract("some text", TrainingLogLLMExtract.model_json_schema())
+
+            _, kwargs = mock_client.chat.completions.create.call_args
+            assert kwargs["temperature"] == 0
+
+
 class TestSystemPromptSessionNotesAndRemarks:
     """Guard the prompt text for the session-notes / remark-attachment / no-alias-list
     decisions (design session before v3.0.0 Step 6). If someone edits SYSTEM_PROMPT and

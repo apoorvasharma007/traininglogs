@@ -1,6 +1,6 @@
-Training Log | 2026-05-12
+Training Log | 3000-05-12
 
-- Date: 2026-05-11
+- Date: 3000-05-11
 - Phase: One - Volume/Base Building
 - Week: 1
 - Movement: Bench

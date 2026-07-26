@@ -70,6 +70,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ValidationCardBuilder`/`TerminalRenderer` updated: a session-level note preview renders
   right after the session header, same truncation behavior as exercise notes.
 
+### Fixed
+
+- `AnthropicProvider`/`GroqProvider` now pin `temperature=0` on every extraction call.
+  Neither pinned a temperature before, so identical input to `--parser groq` could produce
+  materially different extractions between calls — in one investigated case, two of three
+  repeated live calls on the same real session file silently dropped an exercise-level RPE
+  remark entirely (no value, no note) for the last 3 of 6 exercises, while the third call
+  extracted every one correctly. Ruled out token-limit truncation first (`finish_reason:
+  tool_calls`, not `length`) before concluding it was sampling-temperature variance on what
+  should be a deterministic extraction task.
+
 ### Removed (v3.0.0 data model)
 
 - `StrengthSet`, `ActivitySet`, `AnySet` — replaced by flat `WorkingSet`.
