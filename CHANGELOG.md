@@ -30,16 +30,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NASM/NSCA tag rules and warmup/cooldown extraction guidance.
 - `GroqProvider`: free Groq API alternative to Anthropic for local testing; uses JSON mode.
   Selectable via `--parser groq`.
-- Home-movement intake: `SYSTEM_PROMPT` conventions for unprogrammed home/movement-skill
-  sessions (calisthenics, juggling, reaction drills, shadow boxing, home kettlebell/dumbbell
-  work). No model changes — existing fields cover every case: skill-run counts (e.g. juggling
-  catches) map to `rep_count`, static holds and timed rounds map to `duration_seconds`,
-  reaction-time drills use `rep_count` for attempt counts with measured times (ms) in `notes`
-  (never in a numeric field), unprogrammed sessions default `program` to `"home-movement"`
-  with `phase`/`week` omitted. `inputs/programs/home-movement/program.md` added so the
-  dashboard picks it up as a program card. Exercise prompt fix bundled in: `exercises` now
-  explicitly excludes warmup/cooldown movements (previously ambiguous, occasionally
-  double-counted).
+- Movement-skill intake: `SYSTEM_PROMPT` conventions for calisthenics, gymnastics rings,
+  juggling, reaction drills, shadow boxing, and kettlebell/dumbbell work — usable both
+  ad-hoc (unprogrammed) and mixed into a real structured phase/week program. No model
+  changes — existing fields cover every case: skill-run counts (e.g. juggling catches)
+  and skill-attempt counts (e.g. muscle-up tries) map to `rep_count` (attempts that
+  complete cleanly are `full`, attempts that don't are `partial` — the same distinction
+  a normal working set already makes); static holds and timed rounds map to
+  `duration_seconds`; reaction-time drills use `rep_count` for attempt counts with
+  measured times (ms) in `notes`, never in a numeric field. Program defaulting: a truly
+  unprogrammed session (no program name, no phase/week) defaults `program` to
+  `"home-movement"`; a session with phase/week but no stated program name leaves
+  `program` unset rather than guessing, since it belongs to a real program whose name
+  lives outside the file text (usually the directory path). `inputs/programs/
+  home-movement/program.md` added so the dashboard picks up ad-hoc sessions as a
+  program card. Exercise prompt fix bundled in: `exercises` now explicitly excludes
+  warmup/cooldown movements (previously ambiguous, occasionally double-counted).
 
 ### Removed (v3.0.0 data model)
 

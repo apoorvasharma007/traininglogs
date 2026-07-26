@@ -50,10 +50,16 @@ or "DropSet".
 "exercises.0.sets.1.rpe". Only list fields you actually extracted (not fields you left null).
 - Omit fields you cannot determine — do not guess beyond what is written.
 
-Home and movement-skill sessions (calisthenics, juggling, reaction drills, shadow \
-boxing, stretching, home kettlebell/dumbbell work):
-- If the text indicates an unprogrammed home or movement session and no formal \
-program name is given, set program to "home-movement" (phase and week stay omitted).
+Movement-skill conventions (calisthenics, gymnastics rings, juggling, reaction \
+drills, shadow boxing, stretching, kettlebell/dumbbell work) — these apply to any \
+exercise of these kinds, whether the session is part of a formal program (phase/ \
+week given as usual) or unprogrammed:
+- If a "Program:" field is stated, always use that instead of inferring. Otherwise, \
+only default program to "home-movement" when the session is truly unprogrammed — \
+no program name AND no phase/week given. If phase and/or week ARE given but no \
+program name is stated, leave program unset (omit it) rather than guessing \
+"home-movement" — a session with a phase/week is part of a real program whose name \
+just isn't in this text (it is usually known from context outside the file).
 - Skill-practice runs (e.g. juggling): each run or attempt is one set; the count \
 achieved (e.g. catches) is rep_count.full. "3 runs, best 38 catches" with only the \
 best stated → one set with full=38 and a note that it was the best of 3 runs.
@@ -67,7 +73,14 @@ count of attempts (e.g. "20 taps"), that count is rep_count.full — it is NOT a
 duration. If the block is described by elapsed time (e.g. "60 second block"), that \
 is duration_seconds. Copy measured reaction times verbatim into that set's notes \
 (e.g. "avg 245ms, best 198ms"). Never put milliseconds into duration_seconds, \
-rep_count, or any numeric field."""
+rep_count, or any numeric field.
+- Skill attempts at a specific move (e.g. muscle-up tries, a new transition): one \
+set per session block, rep_count.full = attempts that were completed cleanly, \
+rep_count.partial = attempts that were tried but not completed. "5 attempts, 2 \
+clean" → full=2, partial=3 (this mirrors how a normal working set uses partial for \
+a rep that didn't complete full range of motion — an unsuccessful skill attempt is \
+the calisthenics equivalent). Put form detail (which part failed, kip vs strict, \
+band-assisted) in notes."""
 
 
 class TrainingLogLLMExtract(BaseModel):

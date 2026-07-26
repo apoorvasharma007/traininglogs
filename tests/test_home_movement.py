@@ -116,6 +116,50 @@ class TestHomeMovementSchemaFit:
         assert session.week is None
         assert session.session_id.startswith("2026-07-19-")
 
+    def test_skill_attempt_clean_vs_failed_maps_to_full_partial(self) -> None:
+        """Same convention as juggling/reaction, but for skill attempts (e.g.
+        muscle-up tries) where some attempts succeed and some don't — this
+        applies inside formal programs too, not just ad-hoc home-movement
+        sessions, since it's a per-exercise rule, not a program-level one."""
+        raw = dict(HOME_MOVEMENT_RAW)
+        raw["exercises"] = [
+            {
+                "number": 1,
+                "name": "Ring Muscle-Up Transition",
+                "modality": "rings",
+                "sets": [
+                    {"number": 1, "rep_count": {"full": 2, "partial": 3},
+                     "notes": "band-assisted"},
+                ],
+            }
+        ]
+        extract = TrainingLogLLMExtract.model_validate(raw)
+        skill_set = extract.exercises[0].sets[0]
+        assert skill_set.rep_count.full == 2
+        assert skill_set.rep_count.partial == 3
+        assert skill_set.rep_count.total_reps == 5
+
+    def test_movement_skill_exercise_valid_with_formal_phase_and_week(self) -> None:
+        """A calisthenics/rings exercise mixed into a real structured program
+        (phase/week given) must validate the same way as in an ad-hoc session —
+        these conventions are program-agnostic."""
+        raw = dict(HOME_MOVEMENT_RAW)
+        raw["program"] = None
+        raw["phase"] = 3
+        raw["week"] = 12
+        raw["exercises"] = [
+            {
+                "number": 1,
+                "name": "Ring Dips",
+                "modality": "rings",
+                "sets": [{"number": 1, "rep_count": {"full": 10, "partial": 0}}],
+            }
+        ]
+        extract = TrainingLogLLMExtract.model_validate(raw)
+        assert extract.phase == 3
+        assert extract.week == 12
+        assert extract.exercises[0].sets[0].rep_count.full == 10
+
 
 class TestParseWithHomeMovementFixture:
     def test_parse_returns_valid_extract(self) -> None:
@@ -146,3 +190,14 @@ class TestSystemPromptConventions:
     def test_prompt_defines_static_holds_as_duration(self) -> None:
         assert "Static holds" in SYSTEM_PROMPT
         assert "Do not use the StaticHold failure technique for planned holds" in SYSTEM_PROMPT
+
+    def test_prompt_defines_skill_attempt_full_partial_mapping(self) -> None:
+        assert "Skill attempts at a specific move" in SYSTEM_PROMPT
+        assert "rep_count.full = attempts that were completed cleanly" in SYSTEM_PROMPT
+        assert "rep_count.partial = attempts that were tried but not completed" in SYSTEM_PROMPT
+
+    def test_prompt_does_not_default_to_home_movement_when_phase_week_given(self) -> None:
+        """Regression guard: a session with phase/week but no explicit program name
+        is part of a real program whose name lives outside the file (usually the
+        directory path) — it must not get silently mislabeled home-movement."""
+        assert "leave program unset" in SYSTEM_PROMPT

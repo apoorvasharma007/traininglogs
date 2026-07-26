@@ -43,6 +43,42 @@ phase/week, `focus` names the day's domain; capture = free text via LLM extract.
        bumped to 2026-07-19)
 - [x] 7. Squash-merged to `dev` (`ed68648`), pushed to origin
 
+## Extension: templates + gym/calisthenics mix (2026-07-19, same day)
+
+Apoorva's real training includes calisthenics/gymnastics-rings work in three
+shapes: (1) gym sessions mixing calisthenics with normal weights inside a real
+phase/week program, (2) ad-hoc gym calisthenics/mobility/skill days, (3) ad-hoc
+home rings/calisthenics/skill days. Location does not determine program — only
+"is this part of a formal program" does, and that's already handled by
+phase/week. Initial approach mistakenly split by location (new "calisthenics"
+program vs "home-movement"); corrected after Apoorva's clarification, before
+anything was committed.
+
+- [x] 8. Copy-pasteable templates: `templates/home-movement-template.md` (blank,
+       format legend for 5 movement shapes) + `templates/home-movement-example.md`
+       (juggling/reaction/L-sit/shadow-boxing/KB flavor) — shipped `50bdd9c`.
+- [x] 9. Extended SYSTEM_PROMPT: skill-attempt convention (muscle-up-style tries —
+       clean completions → `rep_count.full`, failed tries → `rep_count.partial`,
+       mirroring how a normal working set already distinguishes full vs partial
+       reps). Fixed a real gap: sessions with `phase`/`week` but no stated program
+       name were at risk of being defaulted to `"home-movement"` — tightened so
+       `program` is left unset in that case instead (a phase/week session belongs
+       to a real program whose name lives in the file path, not the text).
+- [x] 10. `templates/home-movement-example-rings.md` — second ad-hoc worked
+        example (rings/muscle-up-prep flavor: support hold, false-grip hang,
+        muscle-up transition attempts, ring dips, weighted pull-up, hollow hold).
+        `templates/gym-mixed-calisthenics-example.md` — worked example of
+        calisthenics mixed into a real phase/week gym session (bench press, ring
+        dips, ring muscle-up transition, DB shoulder press) using Apoorva's
+        existing real gym-log format. Both validated end-to-end against the real
+        Groq parser.
+- [x] 11. Tests: added `test_skill_attempt_clean_vs_failed_maps_to_full_partial`,
+        `test_movement_skill_exercise_valid_with_formal_phase_and_week`, and 2
+        prompt-guard tests to `tests/test_home_movement.py` (16 tests total, up
+        from 9). CHANGELOG and `docs/design.html` conventions paragraph rewritten
+        to describe the corrected (location-agnostic) scope.
+- [x] 12. Full suite green, squash-merged to `dev`.
+
 ## Known follow-ups (not blockers, not done here)
 
 - **RPE over-propagation observed during E2E, not caused by this feature.** The
