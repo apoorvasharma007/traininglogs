@@ -20,7 +20,7 @@ Extract the workout data from the user's session text into the extract_workout t
 
 Rules:
 - date: YYYY-MM-DD format.
-- focus: the session's training focus or movement type (e.g. "Upper Strength", "Bench", "Legs"). Extract from any "Focus:", "Movement:", "Muscle Group:", or session title field. Use the short label, not a long description.
+- focus: the session's training focus or movement type (e.g. "Upper Strength", "Bench", "Legs"). Extract from any "Focus:", "Muscle Group:", or session title field. Use the short label, not a long description.
 - session_duration_minutes: total session duration as an integer in minutes. Convert any format: "1hr 30min" → 90, "1hrs 41min" → 101, "1:30" → 90, "45min" → 45.
 - program: name of the training program if stated, else omit.
 - phase: integer phase number. Convert word ordinals: "One"→1, "Two"→2, "Three"→3, etc. Ignore any description after the number (e.g. "One - Volume/Base Building" → 1). Omit only if no phase is mentioned.
@@ -40,15 +40,35 @@ Omit if unclear.
 "carry", "rotation". Omit if unclear.
 - weight_kg: always in kilograms. If the user wrote lbs, convert.
 - rpe: must be 1.0–10.0 in whole or half steps (e.g. 8, 8.5). Omit if not stated.
+- RPE stated once for a whole exercise rather than per set — e.g. a remarks block \
+after all of an exercise's sets reading "RPE: 6-7" — apply it to the LAST set of \
+that exercise only (take the upper bound if it's a range), and add that set's rpe \
+field to uncertain_fields. If the text explicitly names a different set ("set 3 \
+felt like an 8", "top set RPE 9"), apply it to that named set instead of the last \
+one. Never apply one exercise-level RPE value to every set in the exercise.
 - rep_count: {full: N, partial: M} where partial defaults to 0. "8+1" means full=8, partial=1.
 - failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", \
 or "DropSet".
 - unilateral sets: use unilateral_rep_count with left/right RepCount objects instead of rep_count.
 - warmup_sets (per exercise): number field starts at 1. rep_count is a plain integer (e.g. 8), NOT an object — do not use {full, partial}. Use notes="feel" if the user wrote "feel".
 - modality: single string, not an array (e.g. "barbell", not ["barbell"]).
+- notes (top-level, session): remarks that don't belong to any specific exercise, \
+warmup movement, or set — e.g. an observation made before the first exercise, or \
+about the session as a whole. Omit if there is nothing at this level.
 - uncertain_fields: list any dot-path field you are not confident about, e.g. \
 "exercises.0.sets.1.rpe". Only list fields you actually extracted (not fields you left null).
-- Omit fields you cannot determine — do not guess beyond what is written.
+- Never silently drop text you cannot map to a structured field. Attach it as a note \
+at the MOST SPECIFIC level it clearly belongs to: a set's notes if it's about one \
+set, an exercise's notes if it's about one exercise, a warmup/cooldown movement's \
+notes if it names that movement, or the top-level session notes only if nothing \
+more specific applies. Do not invent a new field, and do not maintain a running list \
+of every possible keyword a user might write (e.g. treat "Movement:" the same as any \
+other unmapped label) — if a labeled field doesn't match one of the fields described \
+above, its content is just text that needs a home in the nearest applicable notes \
+field, not a new schema concept.
+- Omit fields you cannot determine — do not guess a value beyond what is written. \
+This only applies to typed/numeric fields; free text you can't classify still goes \
+into the appropriate notes field per the rule above, it is never simply omitted.
 
 Movement-skill conventions (calisthenics, gymnastics rings, juggling, reaction \
 drills, shadow boxing, stretching, kettlebell/dumbbell work) — these apply to any \
@@ -98,6 +118,7 @@ class TrainingLogLLMExtract(BaseModel):
     warmup: Optional[List[SessionWarmup]] = None
     exercises: List[Exercise]
     cooldown: Optional[List[SessionCooldown]] = None
+    notes: Optional[str] = None
     uncertain_fields: List[str] = Field(default_factory=list)
 
     @field_validator("date")

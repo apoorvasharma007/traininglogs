@@ -106,3 +106,4 @@ class UserValidationCard:
     warmup_section: SessionMovementSection | None = None
     exercises: list[ExerciseCard] = field(default_factory=list)
     cooldown_section: SessionMovementSection | None = None
+    note_preview: NotePreview | None = None

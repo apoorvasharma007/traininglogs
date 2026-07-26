@@ -241,7 +241,8 @@ free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (H
 ├── weight_unit               "kg" (default) or "lbs" — lbs converted to kg at parse time
 ├── warmup = None            [SessionWarmup] — session-level warmup movements
 ├── exercises                [Exercise] — the main work, always at least one
-└── cooldown = None          [SessionCooldown] — session-level cooldown movements
+├── cooldown = None          [SessionCooldown] — session-level cooldown movements
+└── notes = None             remarks that don't belong to any specific exercise or set
 
 SessionWarmup / SessionCooldown   (identical shape, two separate models — not Exercise)
 ├── number, name
@@ -299,6 +300,7 @@ WorkingSet                    one flat model — every measurement field optiona
     <li>RPE is a whole or half step between 1 and 10.</li>
   </ul>
   <p><strong>Movement-skill conventions.</strong> Calisthenics, gymnastics rings, juggling, reaction drills, shadow boxing, and kettlebell/dumbbell work needed no model changes — only extraction conventions in the LLM <code>SYSTEM_PROMPT</code>, since the flat <code>Set</code> model already covers every shape involved, whether the session is ad-hoc or part of a real structured program. Skill-practice runs (juggling catches, drill attempt counts) and skill attempts (e.g. muscle-up tries) map to <code>rep_count</code> — for skill attempts specifically, clean completions are <code>full</code> and failed tries are <code>partial</code>, the same distinction an ordinary working set already makes (ordinary reps with varying form quality stay <code>full</code> — only explicit attempt/clean phrasing triggers the split). Static holds and timed rounds map to <code>duration_seconds</code>; measured reaction times (milliseconds) are never numeric — they go in a set's <code>notes</code>. Ad-hoc sessions (no program, no phase/week) leave <code>program</code>/<code>phase</code>/<code>week</code> all unset — no pseudo-program name is invented; these live at <code>inputs/sessions/</code>, mirroring the pre-existing "standalone session" concept. A session with phase/week but no stated program name also leaves <code>program</code> unset rather than guessing, since it belongs to a real program whose name is usually known from the file's directory path, not its text. <code>inputs/programs/</code> stays reserved for real structured programs.</p>
+  <p><strong>Remarks and unmapped text.</strong> Free-prose input often has remarks that don't map cleanly onto one field — an aside before the first exercise, an RPE stated once after a whole block of sets rather than per set. The rule: attach it as a note at the most specific level it's clearly tied to (a named set, then a named exercise or movement), and only fall back to the session-level <code>notes</code> field when nothing more specific applies. Nothing is silently dropped. A single RPE value stated once for a whole exercise defaults to the <em>last</em> set (upper bound if it's a range stated as text), flagged uncertain — never spread across every set in the exercise. An explicitly named set ("top set RPE 9") overrides the default. This replaces trying to maintain a growing dictionary of user-specific field aliases (e.g. a personal "Movement:" label): unmapped labels just fall through to the notes rule instead, since chasing every user's vocabulary doesn't scale and undermines the point of using an LLM for semantic understanding in the first place.</p>
 </section>
 
 <section>
@@ -311,7 +313,7 @@ WorkingSet                    one flat model — every measurement field optiona
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Six tables: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery); <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Six tables: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery), <code>sessions.notes</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
@@ -397,16 +399,19 @@ WorkingSet                    one flat model — every measurement field optiona
   <p><code>TrainingSession.model_validate()</code> always runs on the final dict regardless of path. The LLM produces input to Pydantic, never a bypass around it.</p>
 
   <h3>ConfirmationCard architecture</h3>
-  <p>The card is a tree of dataclasses defined in <code>agent/card.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
-  <pre><code>ConfirmationCard
-  SessionHeader       date · focus · duration · program / phase / week
+  <p>The card is a tree of dataclasses defined in <code>agent/validation_card_data.py</code>, built from a confirmed <code>TrainingLogLLMExtract</code> by <code>agent/validation_card_builder.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
+  <pre><code>UserValidationCard
+  SessionHeader              date · focus · duration · program / phase / week
+  NotePreview = None         session-level note, shown right after the header
+  SessionMovementSection[]   warmup / cooldown, each a MovementRow[]
   ExerciseCard[]
-    ExerciseHeader    number · name · goal (plain English)
-    WarmupRow[]       weight · reps
-    WorkingSetRow[]   weight · reps · RPE · quality · failure (plain English)
-    NotePreview       first ~40 chars of note + "…" if truncated</code></pre>
+    ExerciseHeader           number · name · goal (plain English)
+    WarmupRow[]               weight · reps
+    WorkingSetRow[]           weight · reps · RPE · quality · failure (plain English)
+    NotePreview = None        first ~40 chars of note + "…" if truncated
+    NotePreview = None        same, for the exercise's own warmup notes</code></pre>
   <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (dot-path format, e.g. <code>"exercises[1].sets[0].weight_kg"</code>). The renderer marks those positions with <code>?</code>. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
-  <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
+  <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes (session-level and exercise-level) are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
 
   <h3>Correction loop</h3>
   <p>After the card is printed, the user sees a single consistent prompt: <code>Confirm, or say what's wrong:</code>. Any input other than <code>y</code> / <code>yes</code> is treated as a natural-language correction. The patcher sends the current dict and the correction to the LLM, which returns the updated dict. The card is rebuilt and re-rendered. This repeats until the user confirms.</p>

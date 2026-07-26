@@ -30,8 +30,8 @@ def insert_session(conn: Connection, session: TrainingSession) -> bool:
             INSERT INTO sessions (
                 session_id, date, program, program_author, program_length_weeks,
                 phase, week, is_deload_week, focus, duration_minutes,
-                weight_unit, user_id, user_name
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                weight_unit, user_id, user_name, notes
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session.session_id,
@@ -47,6 +47,7 @@ def insert_session(conn: Connection, session: TrainingSession) -> bool:
                 session.weight_unit,
                 session.user_id,
                 session.user_name,
+                session.notes,
             ),
         )
 

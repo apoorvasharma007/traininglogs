@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `duration_seconds`, `distance_meters`, `heart_rate_bpm`). Mixed sets (e.g. timed strength work
   with both `weight_kg` and `duration_seconds`) are valid.
 - `SessionWarmup`, `SessionCooldown`: new lightweight models (`number`, `name`, `reps`,
-  `duration_seconds`, `notes`) for warmup and cooldown phases. Stored in a separate
-  `session_movements` table (not mixed into `exercises`).
+  `duration_seconds`, `notes`) for warmup and cooldown phases. Stored in their own
+  `warmups`/`cooldowns` tables (not mixed into `exercises`).
 - `TrainingSession.warmup`, `TrainingSession.cooldown`: `Optional[List[SessionWarmup/Cooldown]]`.
   Sequential numbering validated per-group independently (warmup, exercises, cooldown each start at 1).
 - `Exercise.tags: Optional[List[str]]` — NASM OPT / NSCA-based vocabulary:
@@ -53,6 +53,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   phase/week session using the existing gym-log format (no new template needed there).
   Exercise prompt fix bundled in: `exercises` now explicitly excludes warmup/cooldown
   movements (previously ambiguous, occasionally double-counted).
+- Session-level `notes: Optional[str]` on `TrainingSession` and `TrainingLogLLMExtract`
+  (+ `sessions.notes` column), for remarks that don't belong to any specific exercise or
+  set (e.g. an observation made before the first exercise). `SYSTEM_PROMPT` updated with a
+  general catch-all: any text that can't be mapped to a structured field is attached as a
+  note at the most specific level it clearly belongs to (a named set, a named exercise or
+  movement, falling back to the session-level `notes` only when nothing more specific
+  applies) — never silently dropped. RPE stated once for a whole exercise (a remarks block
+  after all its sets, rather than inline per set) now defaults to the *last* set only (upper
+  bound if a range), flagged `uncertain_fields`, with an explicitly named set overriding the
+  default — replaces the previous undefined behavior that could spread one RPE value across
+  every set in the exercise. Deliberately dropped `"Movement:"` as a `focus` alias rather
+  than maintaining a growing keyword-alias list — it appeared exactly once across all real
+  historical inputs and is redundant with the session's own exercise list; unmapped labels
+  now just fall through to the notes rule above instead of needing bespoke handling.
+  `ValidationCardBuilder`/`TerminalRenderer` updated: a session-level note preview renders
+  right after the session header, same truncation behavior as exercise notes.
 
 ### Removed (v3.0.0 data model)
 

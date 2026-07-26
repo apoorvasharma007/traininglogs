@@ -358,3 +358,13 @@ class TestNotePreview:
         extract = TrainingLogLLMExtract.model_validate(base)
         card = builder.build(extract)
         assert card.exercises[0].warmup_note_preview is not None
+
+    def test_session_note_preview_set(self) -> None:
+        extract = _make_extract({"notes": "Legs are sore, warmup ran long."})
+        card = builder.build(extract)
+        assert card.note_preview is not None
+        assert "Legs are sore" in card.note_preview.display
+
+    def test_no_session_note_when_absent(self) -> None:
+        card = builder.build(_make_extract())
+        assert card.note_preview is None

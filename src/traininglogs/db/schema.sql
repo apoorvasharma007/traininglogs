@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id              TEXT,
     user_name            TEXT,
     source_file          TEXT,
+    notes                TEXT,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

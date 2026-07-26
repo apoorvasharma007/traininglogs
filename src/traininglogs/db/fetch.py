@@ -49,7 +49,7 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
             """
             SELECT session_id, date, program, program_author, program_length_weeks,
                    phase, week, is_deload_week, focus, duration_minutes, weight_unit,
-                   user_id, user_name, source_file
+                   user_id, user_name, source_file, notes
             FROM sessions WHERE session_id = %s
             """,
             (session_id,),

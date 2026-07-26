@@ -11,6 +11,7 @@ import pytest
 from pydantic import ValidationError
 
 from traininglogs.agent.llm_parser import (
+    SYSTEM_PROMPT,
     LLMParserError,
     TrainingLogLLMExtract,
     parse,
@@ -139,6 +140,12 @@ class TestTrainingLogLLMExtract:
         assert extract.session_duration_minutes is None
         assert extract.warmup is None
         assert extract.cooldown is None
+        assert extract.notes is None
+
+    def test_notes_accepted(self) -> None:
+        raw = dict(VALID_STRENGTH_RAW, notes="Legs are sore, warmup ran long.")
+        extract = TrainingLogLLMExtract.model_validate(raw)
+        assert extract.notes == "Legs are sore, warmup ran long."
 
     def test_invalid_date_raises(self) -> None:
         raw = dict(VALID_STRENGTH_RAW, date="not-a-date")
@@ -231,3 +238,31 @@ class TestParse:
             result = parse("text")
             mock_cls.assert_called_once()
             assert result.date == "2026-05-12"
+
+
+class TestSystemPromptSessionNotesAndRemarks:
+    """Guard the prompt text for the session-notes / remark-attachment / no-alias-list
+    decisions (design session before v3.0.0 Step 6). If someone edits SYSTEM_PROMPT and
+    these vanish, real extraction will silently regress even though schema tests pass."""
+
+    def test_movement_is_no_longer_a_focus_alias(self) -> None:
+        assert '"Focus:", "Movement:", "Muscle Group:"' not in SYSTEM_PROMPT
+        assert '"Focus:", "Muscle Group:"' in SYSTEM_PROMPT
+
+    def test_prompt_never_maintains_a_keyword_alias_list(self) -> None:
+        assert "do not maintain a running list of every possible keyword" in SYSTEM_PROMPT
+        assert 'treat "Movement:" the same as any' in SYSTEM_PROMPT
+
+    def test_prompt_defines_top_level_session_notes_field(self) -> None:
+        assert "notes (top-level, session): remarks that don't belong to any specific exercise" in SYSTEM_PROMPT
+
+    def test_prompt_never_silently_drops_unmapped_text(self) -> None:
+        assert "Never silently drop text you cannot map to a structured field" in SYSTEM_PROMPT
+        assert "the MOST SPECIFIC level it clearly belongs to" in SYSTEM_PROMPT
+
+    def test_prompt_defines_remark_rpe_defaults_to_last_set(self) -> None:
+        assert "apply it to the LAST set of that exercise only" in SYSTEM_PROMPT
+        assert "Never apply one exercise-level RPE value to every set in the exercise" in SYSTEM_PROMPT
+
+    def test_prompt_lets_named_set_override_last_set_default(self) -> None:
+        assert "apply it to that named set instead of the last one" in SYSTEM_PROMPT

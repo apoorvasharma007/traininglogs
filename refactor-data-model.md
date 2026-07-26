@@ -119,6 +119,34 @@ Design decisions are recorded in `docs/design.html`.
   - Design issues deferred (to design session before Step 6): (a) session-level `notes`/remarks field in `TrainingLogLLMExtract`; (b) RPE in remarks blocks vs inline; (c) unknown user fields that don't map to schema (e.g. "Movement:" keyword collision).
   - Suite: 337 passed, 0 skipped, 0 failed.
 
+- [x] **Design session (resolved 2026-07-26)** · branch: `chore/session-notes-and-remarks`, grounded in the real
+  `inputs/sessions/test_session_asif.txt` spot-check file (still misplaced — see follow-ups).
+  - **(a) Session-level notes**: added `notes: Optional[str]` to `TrainingSession` and
+    `TrainingLogLLMExtract` (+ `sessions.notes` TEXT column). Every level already had its own
+    `notes` except the session; the design question was really attachment priority, not a new
+    field. Rule: attach unmapped text to the MOST SPECIFIC level it's clearly tied to (a named
+    set → that set's notes; a named exercise/movement → that item's notes); session-level
+    `notes` is the fallback only when nothing more specific applies. Confirmed live via
+    `--parser groq` on `tests/fixtures/valid/adhoc_remarks_and_session_notes.md`.
+  - **(b) RPE stated once per exercise (remarks block, not inline)**: defaults to the LAST set
+    of that exercise (upper bound if a range), flagged `uncertain_fields`; an explicitly named
+    set ("top set RPE 9") overrides the default. Never spread across all sets — this was the
+    exact shape of the earlier-observed Groq over-propagation bug. Confirmed live: 4 identical
+    Bench Press sets with one trailing "RPE: 7-8" remark → RPE landed only on set 4. Known gap:
+    Groq applied the value correctly but did not reliably add it to `uncertain_fields` — the
+    value is still visible and correctable in the confirmation card, just without the `?`
+    emphasis. Documented as a watch-item, not blocking (same category as the earlier RPE
+    over-propagation quirk).
+  - **(c) "Movement:" / unknown keywords**: dropped as a focus alias entirely (checked all real
+    historical inputs — it appears exactly once, and is fully redundant with the session's own
+    first exercise name). Decided NOT to maintain a growing alias dictionary in `SYSTEM_PROMPT`
+    — that reintroduces brittle keyword-matching into what's supposed to be semantic
+    understanding, and doesn't scale to other users' vocabulary. General rule instead: any
+    labeled field that isn't `focus`/`program`/etc. just has its content routed into the nearest
+    applicable notes field per rule (a) — no new field, no alias list, ever-growing per user.
+  - Suite: 370 passed, 0 skipped, 0 failed (was 355; +15 new tests across models, llm_parser,
+    validation_card_builder, renderer, db).
+
 - [ ] **Step 6 — Full data validation (cloud)** · strategy TBD when we get here
   - Same sequence as Step 5 (rules parser first, then AI parser spot check)
   - Separate DB vs separate tables in Supabase: decide at the time
@@ -131,20 +159,20 @@ Design decisions are recorded in `docs/design.html`.
 
 ## ▶ Resume here
 
-**Step 5 complete (rules parser + AI parser spot-check on one file). Next: design session then Step 6.**
+**Design session complete (2026-07-26), all 3 open questions resolved and implemented on
+`chore/session-notes-and-remarks`. Next: merge to `dev`, then cut `chore/validate-v3-cloud`
+for Step 6.**
 
-`dev` state: 337 passed, 0 skipped, 0 failed. Commit: `9b62a9f`.
+`dev` state before this branch: 355 passed. On this branch: 370 passed, 0 skipped, 0 failed.
 
-**Before proceeding to Step 6**, hold a short design session on:
-1. Session-level `notes`/remarks field — free-text blocks that don't map to any exercise (e.g. "Session notes: felt sluggish"). Should these be a top-level `notes: str` on `TrainingLogLLMExtract` and `TrainingSession`? Or dropped?
-2. RPE in remarks blocks — Groq sometimes puts RPE in a remarks/notes block rather than inline. SYSTEM_PROMPT needs to handle this.
-3. Unknown user fields — "Movement:" keyword in inputs means something specific to the user (exercise focus/modality) but clashes with no reserved keyword. LLM needs guidance to not confuse program name with focus.
-
-**Optional: test a second fixture before Step 6.** The orphaned fixtures used for Step 5
-spot-checks (`phase3_week12_upper_strength.md`, `test_session_asif.md`) were removed in a
-docs/cleanup pass — they lived outside the `tests/fixtures/valid|invalid` convention and were
-unused elsewhere. Recreate one from a real `inputs/programs/` file (dated `3000-MM-DD`, dropped
-into `tests/fixtures/valid/`) if a second spot-check fixture is wanted before Step 6.
+Known follow-ups (non-blocking):
+- `inputs/sessions/test_session_asif.txt` is a real programmed session (Phase One, Week 1)
+  sitting in the ad-hoc `inputs/sessions/` directory — per the movement-skill reorg, it
+  belongs at `inputs/programs/<slug>/phase_1/week_1/` instead. Never logged to the DB. Apoorva
+  to decide: move + log for real, or leave as a spot-check artifact.
+- Groq applies remark-block RPE to the correct (last) set but doesn't reliably flag it in
+  `uncertain_fields`. Value is still visible/correctable in the card. Watch, don't chase —
+  same category as the earlier RPE over-propagation quirk.
 
 **Then cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy:**
 - Separate Supabase DB vs separate tables in existing Supabase project?

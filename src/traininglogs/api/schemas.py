@@ -91,6 +91,7 @@ class SessionDetail(BaseModel):
     user_id: Optional[str]
     user_name: Optional[str]
     source_file: Optional[str]
+    notes: Optional[str] = None
     warmup: list[MovementOut] = []
     cooldown: list[MovementOut] = []
     exercises: list[ExerciseOut] = []

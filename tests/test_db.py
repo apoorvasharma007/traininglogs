@@ -308,6 +308,24 @@ def test_insert_session_weight_unit_lbs(conn):
         assert cur.fetchone()[0] == "lbs"
 
 
+def test_insert_session_notes(conn):
+    session = make_session()
+    session.notes = "Legs are sore, warmup ran long."
+    insert_session(conn, session)
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
+        assert cur.fetchone()[0] == "Legs are sore, warmup ran long."
+
+
+def test_insert_session_notes_null_by_default(conn):
+    insert_session(conn, make_session())
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
+        assert cur.fetchone()[0] is None
+
+
 def test_insert_exercise_with_goal(conn):
     insert_session(conn, make_session())
 

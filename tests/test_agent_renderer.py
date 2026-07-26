@@ -365,6 +365,20 @@ class TestTerminalRendererNotes:
         out = _capture(card)
         assert "..." in out
 
+    def test_session_note_preview_shown(self) -> None:
+        card = UserValidationCard(
+            session_header=SessionHeader(date="2026-05-12"),
+            note_preview=NotePreview("Legs are sore, warmup ran long."),
+        )
+        out = _capture(card)
+        assert "Session note:" in out
+        assert "Legs are sore" in out
+
+    def test_no_session_note_line_when_absent(self) -> None:
+        card = UserValidationCard(session_header=SessionHeader(date="2026-05-12"))
+        out = _capture(card)
+        assert "Session note:" not in out
+
 
 class TestTerminalRendererFullCard:
     def test_full_strength_session(self) -> None:

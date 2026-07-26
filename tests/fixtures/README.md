@@ -25,12 +25,14 @@ See `.claude/testing-guide.md` for the full E2E protocol.
 | `adhoc_movement_skills_session.md` | Ad-hoc, no program/phase/week — juggling (skill-run catches), reaction drill (attempt-count reps with ms in notes), L-sit holds (duration) |
 | `adhoc_calisthenics_rings_session.md` | Ad-hoc, no program/phase/week — ring support hold (duration), muscle-up transition attempts (full/partial clean-vs-failed), ring dips (plain reps despite varying quality — regression case for not misreading quality commentary as partial reps) |
 | `programmed_calisthenics_mixed_session.md` | Calisthenics mixed into a real phase/week program alongside normal weighted lifts — confirms movement-skill conventions and formal program extraction work together, AI-parser only (see note below) |
+| `adhoc_remarks_and_session_notes.md` | Free-prose remarks blocks: pre-exercise remarks with no named movement (→ session-level `notes`), an exercise-level RPE range stated once after 4 identical sets (→ last set only, not all four), and a remark naming a specific set ("Top set RPE 9") overriding the last-set default. AI-parser only. |
 
-**AI-parser only:** the three movement-skill fixtures above only work with `--parser ai` or
-`--parser groq` — the deterministic `rules` parser has no concept of skill-run counts, holds
-recorded as bare `Ns`, or attempt/clean phrasing, and will raise on them. See
-`src/traininglogs/agent/llm_parser.py`'s `SYSTEM_PROMPT` for the extraction conventions
-these fixtures exercise, and `movement-skill-plan.md` for the full design record.
+**AI-parser only:** the movement-skill and remarks/session-notes fixtures above only work
+with `--parser ai` or `--parser groq` — the deterministic `rules` parser has no concept of
+skill-run counts, holds recorded as bare `Ns`, attempt/clean phrasing, or remark-block
+attachment, and will raise on them. See `src/traininglogs/agent/llm_parser.py`'s
+`SYSTEM_PROMPT` for the extraction conventions these fixtures exercise, and
+`movement-skill-plan.md` / `refactor-data-model.md` for the full design record.
 
 When adding a new parser feature or session type, add a fixture here that exercises it.
 Copy from a real input in `inputs/programs/`, change the date to `3000-MM-DD`, and strip

@@ -90,6 +90,8 @@ class TerminalRenderer:
 
     def render(self, card: UserValidationCard) -> None:
         self._render_session_header(card.session_header)
+        if card.note_preview:
+            self._render_note("Session note", card.note_preview)
         if card.warmup_section:
             self.console.print()
             self._render_movement_section(card.warmup_section)

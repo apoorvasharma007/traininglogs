@@ -487,6 +487,13 @@ class TestTrainingSession:
     def test_weight_unit_defaults_to_kg(self) -> None:
         assert TrainingSession(**self._make()).weight_unit == "kg"
 
+    def test_notes_defaults_to_none(self) -> None:
+        assert TrainingSession(**self._make()).notes is None
+
+    def test_notes_accepted(self) -> None:
+        s = TrainingSession(**self._make(notes="Legs are sore, warmup ran long."))
+        assert s.notes == "Legs are sore, warmup ran long."
+
     def test_get_exercise_by_name_case_insensitive(self) -> None:
         s = TrainingSession(**self._make(exercises=[
             Exercise(number=1, name="Bench Press"),

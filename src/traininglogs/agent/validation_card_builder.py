@@ -42,6 +42,7 @@ class ValidationCardBuilder:
                 for idx, ex in enumerate(extract.exercises)
             ],
             cooldown_section=self._movement_section("Cooldown", extract.cooldown),
+            note_preview=NotePreview(extract.notes) if extract.notes else None,
         )
 
     def _session_header(

@@ -446,6 +446,7 @@ class TrainingSession(BaseModel):
     cooldown: Optional[List[SessionCooldown]] = None
     session_duration_minutes: Optional[int] = None
     weight_unit: Literal["kg", "lbs"] = "kg"
+    notes: Optional[str] = None
 
     @field_validator(
         "data_model_version", "data_model_type", "session_id", "user_id",
