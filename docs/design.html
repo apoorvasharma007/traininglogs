@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-05-15 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-07-26 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -192,7 +192,7 @@
   <h2 id="why">Why this exists</h2>
   <p>I lift weights. I write down what I do, and later I want to answer questions: <em>am I getting stronger? am I hammering the same muscle group three days in a row? what was my squat doing six months ago? did the deload actually do anything?</em></p>
   <p>Spreadsheets work until they don't. Off-the-shelf apps assume a workout shape that isn't mine — they don't model myo-reps, partial reps, or the difference between a warmup set and a working set the way I think about them. The shape I want is: write the session the way I'd write it in a notebook, and have a system parse it into something strict enough to query and chart.</p>
-  <p>That's traininglogs. It is small on purpose.</p>
+  <p>That's traininglogs. </p>
 </section>
 
 <section>
@@ -224,40 +224,78 @@ free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (H
 
 <section>
   <h2 id="data">The data model</h2>
-  <p>A <strong>session</strong> is one workout on one day. A session has three ordered groups of <strong>exercises</strong>: an optional warmup, the main work, and an optional cooldown. All three use the same Exercise model — the grouping is the only distinction. An exercise has <strong>sets</strong> and optionally <strong>warmup sets</strong>. A set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
+  <p>A <strong>session</strong> is one workout on one day. A session has three ordered groups of movements: an optional session-level warmup, the main work (<strong>exercises</strong>), and an optional session-level cooldown. Session warmup/cooldown movements are lightweight (name, reps or duration, notes) and use their own models — they are not exercises. An exercise has <strong>sets</strong> and, separately, its own optional <strong>warmup sets</strong> (e.g. ramp-up sets before a lift's working weight) — a different thing from the session-level warmup despite the shared name. A working set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
   <pre><code>TrainingSession
-├── session_id, date, program, phase, week, focus
-├── is_deload_week, session_duration_minutes, weight_unit
-├── warmup[]               (same Exercise model, sets optional)
-├── exercises[]
-└── cooldown[]             (same Exercise model, sets optional)
+├── data_model_version, data_model_type, session_id, user_id, user_name
+│                            system fields — injected by the processor, never user-supplied
+├── date                     YYYY-MM-DD
+├── program = None           real program name; stays unset for ad-hoc sessions (inputs/sessions/)
+├── program_author = None
+├── program_length_weeks = None
+│                            set for real programs — used to validate `week` below
+├── phase = None
+├── week = None              must be 1..program_length_weeks when both are set
+├── is_deload_week = None
+├── focus = None
+├── session_duration_minutes = None
+├── weight_unit               "kg" (default) or "lbs" — lbs converted to kg at parse time
+├── warmup = None            [SessionWarmup] — session-level warmup movements
+├── exercises                [Exercise] — the main work, always at least one
+└── cooldown = None          [SessionCooldown] — session-level cooldown movements
+
+SessionWarmup / SessionCooldown   (identical shape, two separate models — not Exercise)
+├── number, name
+├── reps = None
+├── duration_seconds = None
+└── notes = None
 
 Exercise
 ├── number, name
-├── tags[]                 free-text classification: ["strength"], ["cardio"],
-│                          ["mobility"], ["skill", "jiu-jitsu"], etc.
-├── modality               free-text: "barbell", "bodyweight", "gi", "pool", etc.
-├── target_muscle_groups[]
-├── rep_tempo, current_goal, notes, form_cues
-├── warmup_sets[]          (number, weight_kg, rep_count)
-└── sets[]
-    └── Set                (one flat model — all measurement fields optional)
-        ├── number, rpe?, rest?, notes?
-        ├── weight_kg?, rep_count {full, partial}?
-        ├── unilateral_rep_count?  {left: {full, partial}, right: {full, partial}}
-        ├── duration_seconds?, distance_meters?, heart_rate_bpm?
-        └── failure_technique?  (discriminated union on technique_type)
-            ├── MyoReps    → mini_sets[]
-            ├── LLP        → partial_rep_count
-            ├── Static     → hold_duration_seconds
-            └── DropSet    → drop_sets[]</code></pre>
-  <p>Sets are a single flat model. A set that has both <code>weight_kg</code> and <code>duration_seconds</code> is valid — this covers timed strength work (e.g. max reps in 60s with load). There is no <code>set_type</code> discriminator; the fields present describe the set. Exercise classification uses free-text <code>tags</code> and <code>modality</code> rather than a fixed enum — adding a new sport or training style requires no code change.</p>
-  <p>Sets are first-class; warmup sets are lower-resolution because they rarely need to be queried later. RPE is optional because it is not always logged. The model is permissive at the edges and strict in the middle — exactly the parts that get queried.</p>
+├── tags = None              free-text classification: ["strength"], ["cardio"],
+│                            ["mobility"], ["skill", "jiu-jitsu"], etc.
+├── modality = None          free-text equipment/style: "barbell", "bodyweight", "gi", "pool", etc.
+├── movement_pattern = None  list, supports compound patterns: squat, hip_hinge, push,
+│                            pull, lunge, carry, rotation
+├── target_muscle_groups = None
+├── rep_tempo = None
+├── current_goal = None      Goal — target weight/sets/rep range/rest for this exercise
+├── notes = None
+├── warmup_notes = None
+├── form_cues = None
+├── warmup_sets = None       [WarmupSet] — this exercise's own ramp-up sets, lower-resolution
+└── sets = None              [WorkingSet] — the sets that count
+
+WarmupSet
+├── number, weight_kg
+├── rep_count = None
+└── notes = None
+
+WorkingSet                    one flat model — every measurement field optional; the fields
+│                            present on a given set describe what kind of set it was
+├── number
+├── rpe = None                1–10, whole or half steps
+├── rest = None                {minutes, seconds} — never both set at once
+├── notes = None
+├── weight_kg = None
+├── rep_count = None          {full, partial}
+├── unilateral_rep_count = None   {left: {full, partial}, right: {full, partial}}
+├── rep_quality_assessment = None  good | bad | perfect | learning
+├── duration_seconds = None
+├── distance_meters = None
+├── heart_rate_bpm = None
+└── failure_technique = None   only valid when rpe == 10; discriminated union on technique_type
+    ├── MyoReps    → mini_sets[]        {number, rep_count}
+    ├── LLP        → partial_rep_count
+    ├── Static     → hold_duration_seconds
+    └── DropSet    → drop_sets[]        {number, weight_kg, rep_count}</code></pre>
+  <p class="callout">Fields marked <code>= None</code> are optional — absent means the value wasn't recorded for this session/exercise/set, not that it was zero.</p>
+  <p>A set that has both <code>weight_kg</code> and <code>duration_seconds</code> is valid — this covers timed strength work (e.g. max reps in 60s with load). There is no <code>set_type</code> discriminator; the fields present describe the set. Exercise classification uses free-text <code>tags</code> and <code>modality</code> rather than a fixed enum — adding a new sport or training style requires no code change.</p>
+  <p>Working sets are first-class; an exercise's own warmup sets are lower-resolution because they rarely need to be queried later. RPE is optional because it is not always logged. The model is permissive at the edges and strict in the middle — exactly the parts that get queried.</p>
   <p>A few invariants the model enforces:</p>
   <ul class="body">
     <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
-    <li>Exercise <code>number</code> fields must be sequential starting at 1.</li>
-    <li><code>week</code> must be between 1 and <code>program_length_weeks</code>.</li>
+    <li>Exercise <code>number</code> fields must be sequential starting at 1 — same rule for session-level warmup and cooldown movement numbers.</li>
+    <li><code>week</code> must be between 1 and <code>program_length_weeks</code> (when both are set).</li>
     <li>RPE is a whole or half step between 1 and 10.</li>
   </ul>
   <p><strong>Movement-skill conventions.</strong> Calisthenics, gymnastics rings, juggling, reaction drills, shadow boxing, and kettlebell/dumbbell work needed no model changes — only extraction conventions in the LLM <code>SYSTEM_PROMPT</code>, since the flat <code>Set</code> model already covers every shape involved, whether the session is ad-hoc or part of a real structured program. Skill-practice runs (juggling catches, drill attempt counts) and skill attempts (e.g. muscle-up tries) map to <code>rep_count</code> — for skill attempts specifically, clean completions are <code>full</code> and failed tries are <code>partial</code>, the same distinction an ordinary working set already makes (ordinary reps with varying form quality stay <code>full</code> — only explicit attempt/clean phrasing triggers the split). Static holds and timed rounds map to <code>duration_seconds</code>; measured reaction times (milliseconds) are never numeric — they go in a set's <code>notes</code>. Ad-hoc sessions (no program, no phase/week) leave <code>program</code>/<code>phase</code>/<code>week</code> all unset — no pseudo-program name is invented; these live at <code>inputs/sessions/</code>, mirroring the pre-existing "standalone session" concept. A session with phase/week but no stated program name also leaves <code>program</code> unset rather than guessing, since it belongs to a real program whose name is usually known from the file's directory path, not its text. <code>inputs/programs/</code> stays reserved for real structured programs.</p>
@@ -273,7 +311,7 @@ Exercise
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Four tables: <code>sessions</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set.</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Six tables: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery); <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
@@ -329,7 +367,7 @@ Exercise
 
 <section>
   <h2 id="versioning">Versioning</h2>
-  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in both the JSON snapshot and the DB row. Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
+  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in the JSON snapshot (not stored as DB columns — see Storage above). Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
   <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> is run explicitly by migration/import scripts (not automatically on app startup). Breaking migrations will be documented here when they land.</p>
 </section>
 
@@ -396,15 +434,13 @@ traininglogs log session.md --parser rules</code></pre>
 <section>
   <h2 id="next">What's next</h2>
   <ul class="body">
-    <li><strong>Track B — AI capture</strong> is in active development. The design is locked (see section above); implementation is in progress on <code>feature/ai-parser</code>.</li>
-    <li><strong>Dashboard deploy.</strong> Publish <code>docs/index.html</code> from the website homepage tech section (Wave 6 polish).</li>
-    <li><strong>PWA capture.</strong> Offline draft capture on mobile, synced on reconnect. Feeds directly into the AI agent flow.</li>
+    <li><strong>PWA capture.</strong> Offline draft capture on mobile, synced on reconnect. Feeds directly into the AI agent flow described above.</li>
   </ul>
-  <p>Each of these will get its own section here when it lands. This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
+  <p>This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
 </section>
 
 <footer>
-  Last updated 2026-07-19
+  Last updated 2026-07-26
 </footer>
 
 </main>

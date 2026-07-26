@@ -140,10 +140,11 @@ Design decisions are recorded in `docs/design.html`.
 2. RPE in remarks blocks — Groq sometimes puts RPE in a remarks/notes block rather than inline. SYSTEM_PROMPT needs to handle this.
 3. Unknown user fields — "Movement:" keyword in inputs means something specific to the user (exercise focus/modality) but clashes with no reserved keyword. LLM needs guidance to not confuse program name with focus.
 
-**Optional: test second fixture before Step 6:**
-```
-.venv/bin/traininglogs validate --parser groq tests/fixtures/phase3_week12_upper_strength.md
-```
+**Optional: test a second fixture before Step 6.** The orphaned fixtures used for Step 5
+spot-checks (`phase3_week12_upper_strength.md`, `test_session_asif.md`) were removed in a
+docs/cleanup pass — they lived outside the `tests/fixtures/valid|invalid` convention and were
+unused elsewhere. Recreate one from a real `inputs/programs/` file (dated `3000-MM-DD`, dropped
+into `tests/fixtures/valid/`) if a second spot-check fixture is wanted before Step 6.
 
 **Then cut `chore/validate-v3-cloud` from `dev` and design Step 6 strategy:**
 - Separate Supabase DB vs separate tables in existing Supabase project?

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added (v3.0.0 data model — Step 1 complete, Steps 2–5 in progress)
+### Added (v3.0.0 data model — Steps 1–5 complete, Step 6 (cloud validation) + Step 7 (JSON comparison) remaining)
 
 - `WorkingSet`: flat model replacing `StrengthSet`/`ActivitySet`/`AnySet` discriminated union.
   All measurement fields optional (`weight_kg`, `rep_count`, `unilateral_rep_count`,

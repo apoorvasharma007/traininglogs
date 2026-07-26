@@ -14,14 +14,6 @@ No active plans. Completed plans are archived in `archived/`.
 
 ---
 
-## Deferred design decisions
-
-**Exercise type inference (input UX)**
-
-Currently the user must write `exercise_type: activity` explicitly in the markdown, and the parser routes to the right set parser based on it. Deferred decision: infer the exercise/set type from the content of the set line itself (e.g. `min`, `km`, `HR` signals → ActivitySet; `kg x reps` → StrengthSet) so the user never has to specify a type. LLM-assisted classification and an exercise registry are also options. Keep `exercise_type` as an explicit override escape hatch. Revisit when touching the input format or parser next.
-
----
-
 ## Operational guides
 
 Read these before any significant development work. They capture lessons from building
@@ -119,7 +111,7 @@ main  ←  stable, releases cut from here
 
 ### Test fixtures
 
-- Sample session files live in `tests/fixtures/` — three canonical inputs covering strength, activity, and unilateral sessions. Use these for E2E validation.
+- Sample session files live in `tests/fixtures/valid/` and `tests/fixtures/invalid/`. See `tests/fixtures/README.md` for the full, current table — don't duplicate it here. Use these for E2E validation.
 - New feature tests create their own in-code fixtures or sample JSON using the new schema. Do not modify existing output JSON files during feature development.
 - Existing JSON in `output_training_logs_json/` is historical data — treated as read-only until `chore/historical-data-regen` runs.
 - DB tests use a real Postgres test DB via Docker Compose. Never mocks.
