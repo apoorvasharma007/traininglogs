@@ -165,7 +165,6 @@ traininglogs validate tests/fixtures/strength_session.md   # quick smoke test
 
 # Flags (work with any invocation form)
 traininglogs log <target> --no-commit     # insert to DB, skip git commit
-traininglogs log <target> --publish       # insert, commit, push dashboard to website
 traininglogs log <target> --pr            # insert, commit, open a PR
 
 # Start the API server

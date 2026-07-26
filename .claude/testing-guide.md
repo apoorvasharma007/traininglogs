@@ -90,7 +90,6 @@ open docs/index.html
 
 - Dashboard rendering quality and data accuracy
 - Multi-session batch processing (`traininglogs log <dir>`)
-- The `--publish` flag (pushes dashboard to the website repo)
 - Visual regression on the dashboard HTML
 
 ## When a schema change breaks existing tests

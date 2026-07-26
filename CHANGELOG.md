@@ -47,6 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Exercise.exercise_type` — replaced by `tags` + `modality`.
 - `set_type` discriminator field — no longer emitted by the LLM or stored anywhere.
 
+### Removed
+
+- `traininglogs log --publish` and `cli/log.py::_publish_dashboard()` — dead code.
+  It pushed a copy of the dashboard to `website/static/training-almanac/index.html`,
+  a path that predates the Wave 7 website restructure and that nothing writes to
+  anymore. The website now pulls `docs/index.html` directly from this repo at
+  deploy time instead, so publishing a copy is unnecessary. `--publish` was a
+  silent no-op before this removal. Docs (`README.md`, `CLAUDE.md`,
+  `.claude/testing-guide.md`, `docs/design.html`) updated to match.
+
 ---
 
 ### Added

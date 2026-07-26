@@ -45,8 +45,6 @@ traininglogs log inputs/programs/<slug>/phase_N/week_N/
 traininglogs log --program <name> --phase <n> --week <n>
 ```
 
-Add `--publish` to also push the updated dashboard to the website.
-
 **Validate a file without writing to the DB:**
 
 ```bash

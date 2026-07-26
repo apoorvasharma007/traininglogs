@@ -311,7 +311,7 @@ Exercise
   <div class="diagram">PostgreSQL  →  analytics/queries.py  →  scripts/build_dashboard.py  →  docs/index.html
                   (6 SQL queries)        (renders HTML +
                                           inline JSON)</div>
-  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. <code>traininglogs log --publish</code> stages, commits, and pushes the file to the website repo, where a GitHub Action deploys it.</p>
+  <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. It is committed to <code>docs/index.html</code> as part of the normal <code>traininglogs log</code> workflow, which publishes it two ways: GitHub Pages serves this repo's own <code>docs/</code> folder directly at <code>apoorvasharma007.github.io/traininglogs</code>; separately, the <a href="../../website">website</a>'s deploy workflow checks out this repo at build time and copies <code>docs/index.html</code> into the site at <code>apoorvasharma7.com/dashboard</code>. Neither requires an explicit push step from this repo beyond the normal commit — the website redeploy (automatic on its own pushes, or manual via <code>workflow_dispatch</code>) is what picks up the latest committed dashboard.</p>
 
   <h3>Typography and palette</h3>
   <p>Inter for body text; JetBrains Mono for labels, numbers, and monospace elements. Background <code>#ffffff</code>; ink <code>#111827</code>; accent <code>#dc2626</code> (red) for emphasis, deload bars, and the current-phase hero stat; muted <code>#6b7280</code> for secondary text.</p>
@@ -390,7 +390,7 @@ traininglogs log draft.md
 
 # Rule-based parser — structured markdown, no confirmation card
 traininglogs log session.md --parser rules</code></pre>
-  <p>All log flags (<code>--no-commit</code>, <code>--publish</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical. Use <code>traininglogs validate</code> to test parsing with no DB or git side effects.</p>
+  <p>All log flags (<code>--no-commit</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical. Use <code>traininglogs validate</code> to test parsing with no DB or git side effects.</p>
 </section>
 
 <section>

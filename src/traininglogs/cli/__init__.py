@@ -24,7 +24,6 @@ Commands:
                         --no-commit         Insert to DB but skip git commit
                         --message MSG       Custom commit message
                         --pr                Open a pull request after committing
-                        --publish           Push updated dashboard to website
 
 Decision guide:
   Want to test parsing without touching the DB?  →  traininglogs validate
