@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from pydantic import ValidationError
 
-from traininglogs.agent.llm_parser import (
-    ExtractionProvider,
-    LLMParserError,
-    TrainingLogLLMExtract,
-)
+from traininglogs.agent.providers import ExtractionProvider
+from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 
 
 class LLMExtractValidator:

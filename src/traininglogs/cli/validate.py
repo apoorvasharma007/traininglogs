@@ -71,7 +71,7 @@ def _validate_groq(md_path: Path) -> int:
     from pydantic import ValidationError
 
     load_dotenv()
-    from traininglogs.agent.llm_parser import GroqProvider
+    from traininglogs.agent.providers import GroqProvider
     from traininglogs.agent.llm_orchestrator import LLMOrchestrator
     from traininglogs.processor.processor import INPUTS_DIR, build_session_from_extract
 

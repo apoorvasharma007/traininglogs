@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from traininglogs.agent.llm_extract_validator import LLMExtractValidator
-from traininglogs.agent.llm_parser import LLMParserError, TrainingLogLLMExtract
+from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 
 
 _VALID_RAW: dict[str, Any] = {

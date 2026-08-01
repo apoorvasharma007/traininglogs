@@ -10,12 +10,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
-from traininglogs.agent.llm_parser import (
-    SYSTEM_PROMPT,
-    LLMParserError,
-    TrainingLogLLMExtract,
-    parse,
-)
+from traininglogs.agent.extraction import parse
+from traininglogs.agent.prompts import SYSTEM_PROMPT
+from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
 
@@ -230,8 +227,7 @@ class TestParse:
     def test_default_provider_is_anthropic(self) -> None:
         # Just verify AnthropicProvider is used when none supplied.
         # Don't call .extract() — just check the type.
-        from traininglogs.agent.llm_parser import AnthropicProvider
-        with patch("traininglogs.agent.llm_parser.AnthropicProvider") as mock_cls:
+        with patch("traininglogs.agent.extraction.AnthropicProvider") as mock_cls:
             mock_provider = MagicMock()
             mock_provider.extract.return_value = VALID_STRENGTH_RAW
             mock_cls.return_value = mock_provider
@@ -247,9 +243,9 @@ class TestProviderTemperature:
     exercise-level remarks that other runs correctly captured)."""
 
     def test_anthropic_provider_pins_temperature_zero(self) -> None:
-        from traininglogs.agent.llm_parser import AnthropicProvider
+        from traininglogs.agent.providers import AnthropicProvider
 
-        with patch("traininglogs.agent.llm_parser.anthropic.Anthropic") as mock_cls:
+        with patch("traininglogs.agent.providers.anthropic.Anthropic") as mock_cls:
             mock_client = MagicMock()
             tool_block = MagicMock()
             tool_block.type = "tool_use"
@@ -266,7 +262,7 @@ class TestProviderTemperature:
     def test_groq_provider_pins_temperature_zero(self) -> None:
         import groq
 
-        from traininglogs.agent.llm_parser import GroqProvider
+        from traininglogs.agent.providers import GroqProvider
 
         with patch.object(groq, "Groq") as mock_cls:
             mock_client = MagicMock()

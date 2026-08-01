@@ -15,7 +15,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from traininglogs.agent.llm_parser import SYSTEM_PROMPT, TrainingLogLLMExtract, parse
+from traininglogs.agent.extraction import parse
+from traininglogs.agent.prompts import SYSTEM_PROMPT
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.processor.processor import build_session_from_extract
 
 

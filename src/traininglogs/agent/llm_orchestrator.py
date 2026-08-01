@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from traininglogs.agent.extraction import parse
 from traininglogs.agent.llm_extract_validator import LLMExtractValidator
-from traininglogs.agent.llm_parser import (
-    ExtractionProvider,
-    TrainingLogLLMExtract,
-    parse,
-)
+from traininglogs.agent.providers import ExtractionProvider
 from traininglogs.agent.renderer import TerminalRenderer
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.agent.validation_card_builder import ValidationCardBuilder
 
 _CONFIRM_PROMPT = (
@@ -31,7 +29,7 @@ class LLMOrchestrator:
         self._builder = ValidationCardBuilder()
 
     def run(self, text: str) -> TrainingLogLLMExtract:
-        from traininglogs.agent.llm_parser import AnthropicProvider
+        from traininglogs.agent.providers import AnthropicProvider
 
         parser_provider = self._parser_provider or AnthropicProvider()
         correction_provider = self._correction_provider or parser_provider

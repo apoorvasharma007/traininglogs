@@ -9,7 +9,7 @@ import pytest
 
 
 from traininglogs.agent.llm_orchestrator import LLMOrchestrator
-from traininglogs.agent.llm_parser import LLMParserError, TrainingLogLLMExtract
+from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.agent.renderer import TerminalRenderer
 from rich.console import Console
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from traininglogs.agent.llm_parser import TrainingLogLLMExtract
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.agent.validation_card_data import (
     ExerciseCard,
     ExerciseHeader,
