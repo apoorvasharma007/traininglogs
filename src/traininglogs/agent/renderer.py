@@ -90,6 +90,8 @@ class TerminalRenderer:
 
     def render(self, card: UserValidationCard) -> None:
         self._render_session_header(card.session_header)
+        if card.warnings:
+            self._render_warnings(card.warnings)
         if card.note_preview:
             self._render_note("Session note", card.note_preview)
         if card.warmup_section:
@@ -123,6 +125,11 @@ class TerminalRenderer:
         self.console.print("  " + "  |  ".join(parts), highlight=False)
         self.console.rule(style="dim")
 
+    def _render_warnings(self, warnings: list[str]) -> None:
+        self.console.print()
+        for w in warnings:
+            self.console.print(f"  [bold yellow]⚠[/bold yellow]  {w}", highlight=False)
+
     def _render_movement_section(self, section: SessionMovementSection) -> None:
         self.console.print(f"  [dim]{section.title}:[/dim]", highlight=False)
         for m in section.movements:
@@ -138,6 +145,10 @@ class TerminalRenderer:
 
     def _render_exercise_card(self, card: ExerciseCard) -> None:
         self._render_exercise_header(card.header)
+        if card.header.failed:
+            if card.failure_reason:
+                self.console.print(f"    [red]{card.failure_reason}[/red]", highlight=False)
+            return
         if card.warmup_rows:
             self._render_warmup_rows(card.warmup_rows)
         self._render_working_set_rows(card.working_set_rows)
@@ -148,6 +159,13 @@ class TerminalRenderer:
 
     def _render_exercise_header(self, header: ExerciseHeader) -> None:
         name = _mark(header.name, "name", header.uncertain_fields)
+        if header.failed:
+            self.console.print(
+                f"  [bold red]Exercise {header.number}:[/bold red] {name}  "
+                "[bold red]⚠ EXTRACTION FAILED[/bold red]",
+                highlight=False,
+            )
+            return
         self.console.print(f"  [bold]Exercise {header.number}:[/bold] {name}", highlight=False)
         if header.goal:
             goal_str = _fmt_goal(header.goal)

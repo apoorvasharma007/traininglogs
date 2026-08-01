@@ -442,3 +442,66 @@ class TestTerminalRendererFullCard:
         assert "Exercise 2" in out
         assert "Smith Machine Static Lunge" in out
         assert "RPE 8.5" in out
+
+
+# --- warnings + failed exercise (Step 7 of the orchestration refactor) ---
+
+class TestTerminalRendererWarnings:
+    def test_warnings_are_rendered(self) -> None:
+        card = _minimal_card()
+        card.warnings = ["RPE 8.0 appears in the text but not in any extracted set."]
+        out = _capture(card)
+        assert "RPE 8.0 appears in the text but not in any extracted set." in out
+
+    def test_no_warnings_section_when_empty(self) -> None:
+        card = _minimal_card()
+        out = _capture(card)
+        assert "⚠" not in out
+
+    def test_multiple_warnings_all_rendered(self) -> None:
+        card = _minimal_card()
+        card.warnings = ["First warning.", "Second warning."]
+        out = _capture(card)
+        assert "First warning." in out
+        assert "Second warning." in out
+
+
+class TestTerminalRendererFailedExercise:
+    def test_failed_exercise_shows_failure_marker(self) -> None:
+        card = _minimal_card(
+            exercises=[
+                ExerciseCard(
+                    header=ExerciseHeader(number=2, name="Overhead Press", failed=True),
+                    failure_reason="Extraction failed for this exercise: LLM extraction failed.",
+                )
+            ],
+        )
+        out = _capture(card)
+        assert "Exercise 2" in out
+        assert "Overhead Press" in out
+        assert "EXTRACTION FAILED" in out
+        assert "LLM extraction failed" in out
+
+    def test_failed_exercise_does_not_render_empty_sets_section(self) -> None:
+        card = _minimal_card(
+            exercises=[
+                ExerciseCard(
+                    header=ExerciseHeader(number=1, name="Overhead Press", failed=True),
+                    failure_reason="Extraction failed for this exercise: boom.",
+                )
+            ],
+        )
+        out = _capture(card)
+        assert "Sets:" not in out
+
+    def test_successful_exercise_has_no_failure_marker(self) -> None:
+        card = _minimal_card(
+            exercises=[
+                ExerciseCard(
+                    header=ExerciseHeader(number=1, name="Bench Press"),
+                    working_set_rows=[WorkingSetRow(number=1, weight_kg=90.0, reps="8")],
+                )
+            ],
+        )
+        out = _capture(card)
+        assert "EXTRACTION FAILED" not in out

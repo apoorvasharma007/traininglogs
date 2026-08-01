@@ -89,6 +89,7 @@ class ExerciseHeader:
     name: str
     goal: GoalSummary | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
+    failed: bool = False
 
 
 @dataclass
@@ -98,6 +99,9 @@ class ExerciseCard:
     working_set_rows: list[WorkingSetRow] = field(default_factory=list)
     note_preview: NotePreview | None = None
     warmup_note_preview: NotePreview | None = None
+    # Full (untruncated) failure reason — only set when header.failed is True. Kept separate
+    # from note_preview, which truncates to NOTE_PREVIEW_CHARS and would hide the actual error.
+    failure_reason: str | None = None
 
 
 @dataclass
@@ -107,3 +111,7 @@ class UserValidationCard:
     exercises: list[ExerciseCard] = field(default_factory=list)
     cooldown_section: SessionMovementSection | None = None
     note_preview: NotePreview | None = None
+    # Drop-check findings and failed-worker notices (assemble()'s warnings list). Distinct
+    # from any exercise's uncertain_fields "?" marks — these mean "we think this is wrong,"
+    # not "we're unsure."
+    warnings: list[str] = field(default_factory=list)

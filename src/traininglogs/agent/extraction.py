@@ -102,11 +102,18 @@ def extract_exercise(
         ) from exc
 
 
+# Sentinel prefix identifying a placeholder Exercise's notes field. Owned here and read by
+# validation_card_builder.py to flag the exercise on the confirmation card — deliberately not
+# a new field on the Exercise model itself, since that model's blast radius (DB, API) extends
+# well beyond the AI-parser confirmation flow this refactor is scoped to.
+PLACEHOLDER_NOTE_PREFIX = "Extraction failed for this exercise:"
+
+
 def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
     return Exercise(
         number=position,
         name=name,
-        notes=f"Extraction failed for this exercise: {error}",
+        notes=f"{PLACEHOLDER_NOTE_PREFIX} {error}",
     )
 
 
