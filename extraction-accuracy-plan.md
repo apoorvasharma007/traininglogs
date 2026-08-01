@@ -207,9 +207,19 @@ this replaces that unconditional call with a branch, not a post-hoc reconciliati
 
 ## ▶ Resume here
 
-**Step 1 done.** Squash-merged into base branch `fix/extraction-accuracy` as commit `f063ef3`.
-Suite green: 380 passed, 0 failed, 0 skipped. Base branch not yet merged to `dev` — merges
-only after Step 2 (and Step 3, the actual merge step) are also done.
+**Correction:** `fix/extraction-accuracy` was initially cut from `dev`, which turned out not to
+have the split-extraction pipeline (`extraction.py`, `schemas.py`, `prompts.py`, `providers.py`)
+at all — that work lives on `refactor/split-extraction-token-cost` and hasn't merged to `dev`
+yet (Step 8.5 of `orchestration-refactor-plan.md` is still blocked). Since this plan's whole
+point is to wire into `assemble()`, rebased `fix/extraction-accuracy` onto
+`refactor/split-extraction-token-cost` instead (clean rebase — `dev` is a direct ancestor of
+that branch, no divergence, no conflicts). Both Step 1 commits carried over unchanged
+(`115e6f6`, `007e08f`). This means merging this plan's base branch to `dev` at the end (Step 3)
+has to happen *after* `refactor/split-extraction-token-cost` merges to `dev`, not before —
+noted so it isn't missed.
+
+**Step 1 done.** Suite green on the corrected base: 475 passed, 0 failed, 0 skipped (more tests
+than the original 380 since the orchestration test files are now actually present).
 
 Current branch: `fix/extraction-accuracy`. Working tree still has three untracked scripts
 (`scripts/measure_prefix_tokens.py`, `scripts/spot_check_ai_parser.py`,
