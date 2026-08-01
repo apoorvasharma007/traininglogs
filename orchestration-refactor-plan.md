@@ -94,9 +94,16 @@ one file-split in Step 1. No speculative abstraction.
       `TestSystemPromptSessionNotesAndRemarks`). Nothing wired up yet — that's Steps 4-5.
       Squash-merged to `refactor/split-extraction` · commit `5a22fd1` · 2026-08-01.
       Suite: 405 passed, 0 skipped, 0 failed.
-- [ ] **4. The three small-call functions.** `segment(text)`, `extract_shell(text)`,
-      `extract_exercise(text, position)` — each a pure function tested with a fake provider.
-      This is where decision 7 (self-contained workers) is enforced and tested.
+- [x] **4. The three small-call functions.** `segment(text) -> ExerciseSplit`,
+      `extract_shell(text) -> SessionShellExtract`, `extract_exercise(text, position) ->
+      ExerciseExtract` added to `extraction.py`, each wired to its Step 3 prompt/schema with
+      its own tool name/description constants. `extract_exercise()` builds its own prompt
+      ("Extract exercise number N" + full text) rather than depending on any other call having
+      run — decision 7 enforced by the function signature itself (only `text`/`position`/
+      `provider`) and tested directly (`test_self_contained_no_call_ordering_dependency`).
+      Not wired into anything yet — that's Step 5.
+      Squash-merged to `refactor/split-extraction` · commit `4ef81de` · 2026-08-01.
+      Suite: 418 passed, 0 skipped, 0 failed.
 - [ ] **5. The assembler.** Run splitter → shell → one worker per position (sequential) →
       glue into a `TrainingLogLLMExtract`. Failed worker becomes a flagged placeholder
       exercise. Integration test with a fake multi-exercise provider; add a regression test
