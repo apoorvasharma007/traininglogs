@@ -82,11 +82,18 @@ one file-split in Step 1. No speculative abstraction.
       Added `TestProviderParametrization` to lock in real pass-through (not just a rename).
       Squash-merged to `refactor/split-extraction` · commit `9c50992` · 2026-08-01.
       Suite: 374 passed, 0 skipped, 0 failed.
-- [ ] **3. Small schemas + focused prompts.** Add `SessionShellExtract` (everything except
-      `exercises`), `ExerciseExtract` (one `Exercise` + its own `uncertain_fields`), and a
-      splitter schema (ordered list of `{position, name}`). Write the three focused system
-      prompts (splitter / shell / worker — worker reuses the movement-skill conventions).
-      Unit tests: valid construction, each validator, `model_dump(mode="json")` round-trip.
+- [x] **3. Small schemas + focused prompts.** Added `SessionShellExtract`, `ExerciseExtract`,
+      `ExercisePosition`/`ExerciseSplit` to `schemas.py` (date validator factored into a shared
+      `_validate_date()` helper, matching the existing `_validate_rpe()` convention in
+      `models.py`). Added `SPLITTER_SYSTEM_PROMPT`, `SHELL_SYSTEM_PROMPT`,
+      `WORKER_SYSTEM_PROMPT` to `prompts.py` — worker reuses `MOVEMENT_SKILL_CONVENTIONS`
+      verbatim. `SYSTEM_PROMPT` itself left completely untouched (byte-for-byte verified) so
+      the monolithic path stays reachable for comparison, per Step 8.
+      New tests: `test_agent_schemas.py` (valid construction, each validator, JSON round-trip
+      per class), `test_agent_prompts.py` (structural guard tests, same spirit as the existing
+      `TestSystemPromptSessionNotesAndRemarks`). Nothing wired up yet — that's Steps 4-5.
+      Squash-merged to `refactor/split-extraction` · commit `5a22fd1` · 2026-08-01.
+      Suite: 405 passed, 0 skipped, 0 failed.
 - [ ] **4. The three small-call functions.** `segment(text)`, `extract_shell(text)`,
       `extract_exercise(text, position)` — each a pure function tested with a fake provider.
       This is where decision 7 (self-contained workers) is enforced and tested.
@@ -116,11 +123,11 @@ one file-split in Step 1. No speculative abstraction.
 
 ## ▶ Resume here
 
-Steps 0-2 done on `refactor/split-extraction` (commit `9c50992`), suite green (374 passed,
-0 skipped, 0 failed). Next: Step 3 — small schemas + focused prompts. Add
-`SessionShellExtract` (everything except `exercises`), `ExerciseExtract` (one `Exercise` + its
-own `uncertain_fields`), and a splitter schema (ordered list of `{position, name}`) to
-`schemas.py`; write the three focused system prompts (splitter/shell/worker — worker reuses the
-movement-skill conventions) in `prompts.py`. Unit tests: valid construction, each validator,
-`model_dump(mode="json")` round-trip. Cut `refactor/split-extraction-small-schemas` from
+Steps 0-3 done on `refactor/split-extraction` (commit `5a22fd1`), suite green (405 passed,
+0 skipped, 0 failed). Next: Step 4 — the three small-call functions: `segment(text)`,
+`extract_shell(text)`, `extract_exercise(text, position)` in `extraction.py`, each a pure
+function tested with a fake provider (reuse the `ExtractionProvider` protocol from
+`providers.py`, now parametrized per Step 2). This is where decision 7 (self-contained
+workers — `text (+ position) -> one Exercise`, no dependence on other workers' results) is
+enforced and tested. Cut `refactor/split-extraction-call-functions` from
 `refactor/split-extraction`.
