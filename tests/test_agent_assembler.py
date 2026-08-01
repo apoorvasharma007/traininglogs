@@ -3,7 +3,6 @@
 LLM calls."""
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Any
 
@@ -21,9 +20,14 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures" / "valid"
 
 
 class ScriptedProvider:
-    """Dispatches by tool_name (splitter/shell/worker); worker calls are further dispatched
-    by the position number embedded in the prompt text, since all three call kinds share the
-    same ExtractionProvider.extract() method."""
+    """Dispatches by tool_name (splitter/shell/worker). Worker calls are dispatched by call
+    order, not by the position number embedded in the prompt text: assemble() passes 1 (the
+    chunk-local position) for every successfully-isolated chunk, not the splitter's global
+    split_position — so every chunked worker call's prompt says "exercise number 1" no matter
+    which real exercise it's for, and parsing that number can't tell calls apart. assemble()
+    calls workers in split order, one per entry, so the Nth worker call always corresponds to
+    the Nth entry in split_raw["exercises"] — that ordering, not the prompt text, is what
+    identifies each call's split_position here."""
 
     def __init__(
         self,
@@ -34,6 +38,7 @@ class ScriptedProvider:
         self._split_raw = split_raw
         self._shell_raw = shell_raw
         self._exercise_raw_by_position = exercise_raw_by_position
+        self._worker_call_count = 0
         self.worker_calls: list[int] = []
         self.worker_texts: dict[int, str] = {}
 
@@ -45,12 +50,15 @@ class ScriptedProvider:
         if tool_name == SHELL_TOOL_NAME:
             return self._shell_raw
         if tool_name == WORKER_TOOL_NAME:
-            position = int(re.search(r"Extract exercise number (\d+)", text).group(1))
-            self.worker_calls.append(position)
-            self.worker_texts[position] = text
-            raw = self._exercise_raw_by_position.get(position)
+            # This is the Nth worker call overall -> it's for the Nth exercise in the split,
+            # by call order (see class docstring), not by anything in the prompt text.
+            split_position = self._split_raw["exercises"][self._worker_call_count]["position"]
+            self._worker_call_count += 1
+            self.worker_calls.append(split_position)
+            self.worker_texts[split_position] = text
+            raw = self._exercise_raw_by_position.get(split_position)
             if raw is None:
-                raise LLMParserError(f"no scripted response for position {position}")
+                raise LLMParserError(f"no scripted response for position {split_position}")
             return raw
         raise AssertionError(f"unexpected tool_name: {tool_name}")
 

@@ -1,7 +1,15 @@
-"""Unit tests for the deterministic pre-chunking helpers added to solve the "lost in the
-middle" position-drift/missing-sets problem found during live E2E testing (Step 8 of the
-orchestration refactor): _locate_anchor_lines and _chunk_exercises. Pure functions, no LLM or
-provider involved — same testing convention as audit()'s isolated tests."""
+"""Unit tests for the deterministic pre-chunking helpers added during Step 8 of the
+orchestration refactor: _locate_anchor_lines and _chunk_exercises. Pure functions, no LLM or
+provider involved — same testing convention as audit()'s isolated tests.
+
+Note: an earlier version of chunking used a positive CHUNK_TRAILING_OVERLAP_LINES "safety
+margin," which was root-caused (via external research + direct verification against real
+chunk output) to leak the next exercise's opening into the current chunk — producing a
+failure pattern that looked like an LLM reliability problem ("lost in the middle") but was
+actually a deterministic bug: a worker handed a 2-exercise chunk but told to extract the
+*global* split position would miscount and misfire. Fixed by zeroing the overlap and having
+assemble() pass position 1 (not the global position) whenever a chunk was successfully
+isolated. See test_no_leak_of_next_exercises_content_into_current_chunk below."""
 from __future__ import annotations
 
 from traininglogs.agent.extraction import _chunk_exercises, _locate_anchor_lines
@@ -60,16 +68,23 @@ class TestChunkExercises:
         assert "Overhead Press" in chunks[2]
         assert "40kg" in chunks[2]
 
-    def test_first_chunk_does_not_run_to_end_of_document(self) -> None:
+    def test_no_leak_of_next_exercises_content_into_current_chunk(self) -> None:
+        """Regression test for a real production bug: a chunk that leaks even a little of the
+        next exercise's opening (its name + first warmup line) makes that chunk look like it
+        contains two exercises. A worker handed such a chunk and told "extract exercise number
+        N" (the global split position) would count blocks in the leaked fragment and either
+        pick the wrong one, refuse (out of range), or return empty/garbage — exactly the
+        failure pattern that was misdiagnosed as an LLM reliability issue before this was
+        root-caused. A chunk must contain ONLY its own exercise's content, nothing more."""
         text = (
             "Bench Press\nSets:\n1. 80kg x 8\n\n"
             "Overhead Press\nWarmup:\n1. 20kg x 8\nSets:\n1. 40kg x 8\nRemarks:\nfelt good\n"
         )
         split = _split((1, "Bench Press", "Bench Press"), (2, "Overhead Press", "Overhead Press"))
         chunks = _chunk_exercises(text, split)
-        # A little trailing overlap into exercise 2 is expected and fine, but chunk 1 must not
-        # reach as far as exercise 2's own Sets: weight — that would defeat the point of chunking.
+        assert "Overhead Press" not in chunks[1]
         assert "40kg" not in chunks[1]
+        assert "20kg" not in chunks[1]
 
     def test_last_chunk_runs_to_end_of_document(self) -> None:
         text = "Bench Press\nSets:\n1. 80kg x 8\nRemarks:\nfelt good\n"
@@ -77,22 +92,18 @@ class TestChunkExercises:
         chunks = _chunk_exercises(text, split)
         assert "felt good" in chunks[1]
 
-    def test_trailing_overlap_included_but_bounded(self) -> None:
-        """A little overlap past the next exercise's anchor is fine (a trailing remark might
-        run a line or two past the boundary) — but the chunk must not run all the way through
-        a long stretch of unrelated content after it, or chunking wouldn't narrow anything.
-        Deliberately doesn't pin the exact overlap size — that's a tunable implementation
-        detail, not a behavior callers should depend on."""
-        source_lines = (
-            ["Bench Press", "Sets:", "1. 80kg x 8", "Overhead Press"]
-            + [f"unrelated tail line {i}" for i in range(20)]
+    def test_current_exercises_own_trailing_remarks_are_not_cut_off(self) -> None:
+        """The current exercise's own content (including trailing remarks) always sits before
+        the next exercise's anchor line, so a chunk needs no overlap margin to keep it intact —
+        zero overlap is correct, not merely tolerated."""
+        text = (
+            "Bench Press\nSets:\n1. 80kg x 8\nRemarks:\nfelt heavy but clean\n\n"
+            "Overhead Press\nSets:\n1. 40kg x 8\n"
         )
-        text = "\n".join(source_lines)
         split = _split((1, "Bench Press", "Bench Press"), (2, "Overhead Press", "Overhead Press"))
         chunks = _chunk_exercises(text, split)
-
-        assert "Overhead Press" in chunks[1]
-        assert "unrelated tail line 15" not in chunks[1]
+        assert "felt heavy but clean" in chunks[1]
+        assert "Overhead Press" not in chunks[1]
 
     def test_missing_anchor_omits_that_position_from_chunks(self) -> None:
         text = "Bench Press\nSets:\n1. 80kg x 8\n"
@@ -100,9 +111,3 @@ class TestChunkExercises:
         chunks = _chunk_exercises(text, split)
         assert 1 in chunks
         assert 2 not in chunks
-
-    def test_no_index_error_when_overlap_would_exceed_document_length(self) -> None:
-        text = "Bench Press\nSets:\n1. 80kg x 8\n\nSquat\nSets:\n1. 100kg x 5\n"
-        split = _split((1, "Bench Press", "Bench Press"), (2, "Squat", "Squat"))
-        chunks = _chunk_exercises(text, split)
-        assert "100kg" in chunks[2]

@@ -124,9 +124,16 @@ def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
     )
 
 
-# A few extra lines past the next exercise's anchor, kept in each chunk as a safety margin in
-# case a trailing remark runs slightly past where the next exercise's anchor line starts.
-CHUNK_TRAILING_OVERLAP_LINES = 3
+# Deliberately 0, not a safety margin. A chunk already runs up to (not including) the next
+# exercise's own anchor line, and by construction everything belonging to the current exercise
+# (its remarks included) appears before that line — so a positive value here only ever leaks
+# the start of the next exercise (its name + first warmup line) into the current chunk. That
+# leak was the root cause of a "lost in the middle"-looking failure that was actually a
+# deterministic bug: a worker handed a 2-exercise excerpt but told to extract "exercise number
+# N" (the global split position) would count blocks in the leaked fragment and misfire — see
+# assemble(), which now passes position 1 (not the global position) whenever a chunk was
+# successfully isolated, precisely because an isolated chunk contains exactly one exercise.
+CHUNK_TRAILING_OVERLAP_LINES = 0
 
 
 def _locate_anchor_lines(lines: list[str], split: ExerciseSplit) -> dict[int, int]:
@@ -250,16 +257,22 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
     warnings: list[str] = []
 
     for i, entry in enumerate(split.exercises):
-        worker_text = chunks.get(entry.position)
-        if worker_text is None:
+        chunk_text = chunks.get(entry.position)
+        if chunk_text is not None:
+            # An isolated chunk contains exactly this one exercise — position 1, not the
+            # global split position, which would only make sense against the full document.
+            worker_text = chunk_text
+            worker_position = 1
+        else:
             worker_text = text
+            worker_position = entry.position
             warnings.append(
                 f"Exercise {entry.position} ({entry.name}): could not isolate its text — "
                 "used the full document instead."
             )
 
         try:
-            worker_result = extract_exercise(worker_text, entry.position, provider=provider)
+            worker_result = extract_exercise(worker_text, worker_position, provider=provider)
         except LLMParserError as exc:
             exercises.append(_placeholder_exercise(entry.position, entry.name, str(exc)))
             warnings.append(
