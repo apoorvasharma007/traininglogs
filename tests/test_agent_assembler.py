@@ -167,6 +167,17 @@ class TestAssembleSixExerciseRegression:
         # Each exercise's trailing "RPE: N" (or "N-M") remark applies to its LAST set only,
         # per the design-session convention (upper bound taken for a range).
         rpe_by_position = {1: 7.0, 2: 7.0, 3: None, 4: 8.0, 5: 8.0, 6: 8.0}
+        # (warmup [(weight_kg, reps), ...], working sets [weight_kg, ...]) — mirrors the
+        # fixture's Warmup:/Sets: lines exactly, so the drop-check's weight-token scan finds
+        # every kg value it's looking for and the round trip produces zero warnings.
+        weights_by_position: dict[int, tuple[list[tuple[float, int]], list[float]]] = {
+            1: ([(20.0, 8), (40.0, 6), (60.0, 4), (80.0, 3)], [90.0, 90.0, 90.0, 90.0]),
+            2: ([(40.0, 4), (60.0, 4)], [80.0, 80.0, 80.0]),
+            3: ([(40.0, 5)], [60.0, 60.0, 60.0]),
+            4: ([(45.0, 5)], [100.0, 100.0, 100.0]),
+            5: ([], [10.0, 10.0, 10.0]),
+            6: ([(20.4, 5)], [36.3, 36.3, 36.3]),
+        }
 
         split_raw = {
             "exercises": [{"position": i + 1, "name": name} for i, name in enumerate(names)]
@@ -181,18 +192,22 @@ class TestAssembleSixExerciseRegression:
         }
         exercise_raw_by_position = {}
         for i, name in enumerate(names, start=1):
-            n_sets = 4 if i == 1 else 3
+            warmup, working_weights = weights_by_position[i]
             sets = [
-                {"number": j + 1, "weight_kg": 90.0, "rep_count": {"full": 8, "partial": 0}}
-                for j in range(n_sets)
+                {"number": j + 1, "weight_kg": w, "rep_count": {"full": 8, "partial": 0}}
+                for j, w in enumerate(working_weights)
             ]
             rpe = rpe_by_position[i]
             uncertain: list[str] = []
             if rpe is not None:
                 sets[-1]["rpe"] = rpe
-                uncertain.append(f"sets.{n_sets - 1}.rpe")
+                uncertain.append(f"sets.{len(sets) - 1}.rpe")
             exercise_raw_by_position[i] = _exercise_raw(i, name, uncertain_fields=uncertain)
             exercise_raw_by_position[i]["exercise"]["sets"] = sets
+            exercise_raw_by_position[i]["exercise"]["warmup_sets"] = [
+                {"number": j + 1, "weight_kg": w, "rep_count": reps}
+                for j, (w, reps) in enumerate(warmup)
+            ]
 
         provider = ScriptedProvider(split_raw, shell_raw, exercise_raw_by_position)
 
