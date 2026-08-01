@@ -56,13 +56,23 @@ one file-split in Step 1. No speculative abstraction.
 
 ## Steps
 
-- [ ] **0. Base branch + this plan.** Cut `refactor/split-extraction` from `dev`, commit this file.
-- [ ] **1. Split the file into cohesive modules** (pure move, no behavior change). Break
-      `llm_parser.py` into `schemas.py` (the extract models), `prompts.py` (system prompts),
-      `providers.py` (`ExtractionProvider` + Anthropic/Groq), and `extraction.py` (`parse()`
-      today; the new brains later). Update imports in `llm_orchestrator.py`, `processor.py`,
-      and the five test files. Suite stays green — this is the gate that proves the move was
-      clean before any new logic lands.
+- [x] **0. Base branch + this plan.** Cut `refactor/split-extraction` from `dev`, commit this file.
+      Done 2026-08-01, commit `3ce133c`.
+- [x] **1. Split the file into cohesive modules** (pure move, no behavior change). Broke
+      `llm_parser.py` into `schemas.py` (`TrainingLogLLMExtract`, `LLMParserError`),
+      `prompts.py` (`SYSTEM_PROMPT`), `providers.py` (`ExtractionProvider` +
+      `AnthropicProvider`/`GroqProvider`), and `extraction.py` (`parse()`). Updated imports in
+      `llm_orchestrator.py`, `llm_extract_validator.py`, `validation_card_builder.py`,
+      `cli/validate.py`, and six test files (including the two `unittest.mock.patch()` targets
+      in `test_agent_llm_parser.py`, which had to follow `AnthropicProvider`/`anthropic.Anthropic`
+      to their new module paths). `processor.py` did not import `llm_parser` — nothing to update
+      there. Also fixed a stale doc pointer in `tests/fixtures/README.md`.
+      Squash-merged to `refactor/split-extraction` · commit `63761c4` · 2026-08-01.
+      Suite: 372 passed, 0 skipped, 0 failed. E2E smoke-tested `traininglogs validate --parser
+      rules` against a real fixture; all new/renamed modules import cleanly.
+      Known pre-existing, out-of-scope breakage: untracked `scripts/spot_check_ai_parser.py`
+      still imports the deleted `llm_parser` module — left as-is per the standing decision that
+      it's unrelated to this thread (Apoorva to commit or discard it separately).
 - [ ] **2. Parametrize the providers** (no behavior change). Let `extract()` take the system
       prompt + tool name/description as arguments instead of the hardcoded module constants,
       so the same provider can serve the splitter, shell, and worker calls. Monolithic path
@@ -101,5 +111,8 @@ one file-split in Step 1. No speculative abstraction.
 
 ## ▶ Resume here
 
-Plan drafted and awaiting Apoorva's review. Nothing branched or coded yet. Next action once
-approved: execute Step 0 — cut `refactor/split-extraction` from `dev` and commit this file.
+Steps 0 and 1 done on `refactor/split-extraction` (commit `63761c4`), suite green (372 passed,
+0 skipped, 0 failed). Next: Step 2 — parametrize the providers (`extract()` takes system prompt
++ tool name/description as arguments instead of hardcoded module constants), still no behavior
+change, monolithic path keeps working. Cut `refactor/split-extraction-parametrize-providers`
+from `refactor/split-extraction`.
