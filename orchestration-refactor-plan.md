@@ -73,10 +73,15 @@ one file-split in Step 1. No speculative abstraction.
       Known pre-existing, out-of-scope breakage: untracked `scripts/spot_check_ai_parser.py`
       still imports the deleted `llm_parser` module — left as-is per the standing decision that
       it's unrelated to this thread (Apoorva to commit or discard it separately).
-- [ ] **2. Parametrize the providers** (no behavior change). Let `extract()` take the system
-      prompt + tool name/description as arguments instead of the hardcoded module constants,
-      so the same provider can serve the splitter, shell, and worker calls. Monolithic path
-      keeps working by passing today's prompt. Suite stays green.
+- [x] **2. Parametrize the providers** (no behavior change). `ExtractionProvider.extract()` now
+      takes `system_prompt`, `tool_name`, `tool_description` as arguments; `providers.py` no
+      longer hardcodes `SYSTEM_PROMPT`/`"extract_workout"`. New `TOOL_NAME`/`TOOL_DESCRIPTION`
+      constants in `extraction.py`; `llm_extract_validator.py` (the correction path, not called
+      out in the original blast-radius table but also a caller of `.extract()`) updated to pass
+      the same values through explicitly. Updated stub `extract()` signatures in 4 test files.
+      Added `TestProviderParametrization` to lock in real pass-through (not just a rename).
+      Squash-merged to `refactor/split-extraction` · commit `9c50992` · 2026-08-01.
+      Suite: 374 passed, 0 skipped, 0 failed.
 - [ ] **3. Small schemas + focused prompts.** Add `SessionShellExtract` (everything except
       `exercises`), `ExerciseExtract` (one `Exercise` + its own `uncertain_fields`), and a
       splitter schema (ordered list of `{position, name}`). Write the three focused system
@@ -111,8 +116,11 @@ one file-split in Step 1. No speculative abstraction.
 
 ## ▶ Resume here
 
-Steps 0 and 1 done on `refactor/split-extraction` (commit `63761c4`), suite green (372 passed,
-0 skipped, 0 failed). Next: Step 2 — parametrize the providers (`extract()` takes system prompt
-+ tool name/description as arguments instead of hardcoded module constants), still no behavior
-change, monolithic path keeps working. Cut `refactor/split-extraction-parametrize-providers`
-from `refactor/split-extraction`.
+Steps 0-2 done on `refactor/split-extraction` (commit `9c50992`), suite green (374 passed,
+0 skipped, 0 failed). Next: Step 3 — small schemas + focused prompts. Add
+`SessionShellExtract` (everything except `exercises`), `ExerciseExtract` (one `Exercise` + its
+own `uncertain_fields`), and a splitter schema (ordered list of `{position, name}`) to
+`schemas.py`; write the three focused system prompts (splitter/shell/worker — worker reuses the
+movement-skill conventions) in `prompts.py`. Unit tests: valid construction, each validator,
+`model_dump(mode="json")` round-trip. Cut `refactor/split-extraction-small-schemas` from
+`refactor/split-extraction`.
