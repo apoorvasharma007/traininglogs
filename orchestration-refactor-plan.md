@@ -226,6 +226,92 @@ one file-split in Step 1. No speculative abstraction.
       message, same mechanism as today's existing retry-on-our-own-validation-failure path.
       Revisit after chunking is verified live, since chunking may also reduce how often the
       model produces a malformed call in the first place (smaller, simpler input per call).
+- [ ] **8.5. DETOUR — per-call prefix cost.** *Step 8 is paused here, not abandoned. The live
+      E2E runs above cannot be repeated often enough to finish Step 8 without first fixing what
+      each call costs. Do this step, then return to Step 8 and re-run the live E2E.*
+
+      **The problem.** The split-call design trades one big call for N+2 small ones, and every
+      one of them re-sends its entire system prompt *and* its entire tool schema from scratch —
+      there is no continuation between calls on either provider's API. Measured on the current
+      branch (estimated at ~3.7 chars/token; to be confirmed with `count_tokens` in sub-step a):
+
+      | Call | System prompt | Tool schema | Prefix per call |
+      |---|---|---|---|
+      | Splitter | 1,320 ch | 1,018 ch | ~630 tok |
+      | Shell | 2,472 ch | 2,472 ch | ~1,340 tok |
+      | Worker | 7,298 ch | 8,374 ch | ~4,240 tok |
+
+      A 6-exercise session therefore spends ~27,400 tokens on *prefix alone* (630 + 1,340 +
+      4,240 × 6), before a single character of workout text. Against Groq's free-tier 100K
+      tokens/day cap for `llama-3.3-70b-versatile` that is ~3.6 sessions/day, which matches the
+      observed burn during runs 1-3 above.
+
+      **Two findings that reframe the problem:**
+
+      - **The tool schema is 53% of the worker prefix — larger than the prompt.** 8,374 ch of
+        serialized `ExerciseExtract.model_json_schema()` vs 7,298 ch of `WORKER_SYSTEM_PROMPT`.
+        Any cost work that looks only at prompt text is optimizing the smaller half. Note this
+        also means the flat-schema fix from run 1 and the pre-chunking work above both *added*
+        per-call prefix; that was the right call for accuracy, but it has a price.
+      - **Trimming prompt content is not on the table.** Every rule in `WORKER_SYSTEM_PROMPT`
+        was added to fix a specific extraction bug found in live testing (the `rep_count`
+        shape rule from run 3 is the clearest example). Cutting content to cut tokens would
+        reintroduce those bugs. The prefix has to stay and be paid for differently.
+
+      **Locked decision: prompt caching, not prompt trimming.** Both providers cache a repeated
+      prompt *prefix* across separate calls; the worker prefix is byte-identical across all N
+      worker calls, so calls 2..N can read it instead of re-sending it. Groq's caching is
+      automatic (50% discount, and cached tokens **do not count toward rate limits** — the part
+      that actually matters for the TPD cap); Anthropic's is explicit via `cache_control`.
+
+      **Rejected: hoisting a shared document into the cached prefix.** Considered ordering each
+      worker request as `[tools] → [system] → [document] → [per-exercise instruction]` so the
+      session text caches too. Does not apply — `_chunk_exercises()` (Step 8 above) already
+      gives each worker its *own isolated slice*, so there is no shared document across worker
+      calls to hoist. Recorded here so it isn't re-proposed later; it would only become relevant
+      if pre-chunking were ever reverted.
+
+      **Prefix-ordering audit — clean, no restructuring needed.** `providers.py` already sends
+      `tools` → `system` → `messages`; `WORKER_SYSTEM_PROMPT` and the tool schema are
+      byte-identical across workers; `_reask_message()` appends retries at the *end* so the
+      retry path doesn't disturb the prefix. The ~4,240-token block is cacheable as-is.
+
+      **Two things block caching from working at all:**
+
+      - `providers.py:66` passes `system=system_prompt` as a plain string. A string cannot carry
+        `cache_control` — it has to become a list of text blocks.
+      - `DEFAULT_ANTHROPIC_MODEL` (`providers.py:10`) is `claude-haiku-4-5`, whose **minimum
+        cacheable prefix is 4,096 tokens**. The worker prefix estimates at ~4,240 — over the line
+        by ~3%, which is inside the estimation error. Below-minimum prefixes fail **silently**
+        (`cache_creation_input_tokens: 0`, no error), so on Haiku 4.5 we would be one prompt edit
+        away from the cache switching itself off with no signal. Sonnet 5 (1,024 min) and Opus 5
+        (512 min) have real headroom; Groq's GPT-OSS models (128-1,024) clear it easily.
+
+      Sub-branch `refactor/split-extraction-token-cost` from `refactor/split-extraction`.
+
+      - [ ] **a. Measure.** Script reporting exact `count_tokens` for all three prefixes on the
+            target model, replacing the estimates in the table above. Settles the Haiku-4.5
+            4,096-token question with a number. **Spends API credits (one cheap call per
+            prefix) — confirm before running.**
+      - [ ] **b. Make the prefix cacheable.** `AnthropicProvider.extract` takes `system` as a
+            block list with `cache_control: {"type": "ephemeral"}`. Hoist the three
+            `model_json_schema()` calls (`extraction.py:42,57,72,92`) to module-level constants
+            so the schema is provably one stable object rather than regenerated per call.
+      - [ ] **c. Verify.** Assert `cache_read_input_tokens > 0` on workers 2..N against the real
+            6-exercise fixture, and log the per-session prefix total. This is the pass/fail gate
+            for the whole step — a silent cache miss must fail loudly here rather than in
+            production. **Spends API credits — confirm before running.**
+      - [ ] **d. Decide on the Groq path.** Groq caching currently covers only the GPT-OSS
+            models, **not** `llama-3.3-70b-versatile`. Moving the worker call to
+            `openai/gpt-oss-120b` would double the free-tier cap (200K vs 100K TPD) *and* take
+            the cached prefix off the meter entirely. Gated on a tool-calling reliability check
+            first — there are open reports of `gpt-oss-120b` on Groq mishandling `json_schema`
+            and emitting free-form text instead of a tool call, which is precisely the failure
+            class this whole refactor exists to eliminate. Do not adopt on cost grounds alone.
+
+      **Deferred until after this step, unchanged:** the retry-loop `BadRequestError` gap from
+      run 3 (see Step 8's deferred note). Order is deliberate — cheaper calls make the live
+      re-runs that would validate a retry fix affordable in the first place.
 - [ ] **9. Docs.** `CHANGELOG.md` `[Unreleased]` entry; update `docs/design.html` system-shape
       + data-flow section (bump eyebrow/footer date by hand).
 
@@ -239,12 +325,24 @@ one file-split in Step 1. No speculative abstraction.
 ## ▶ Resume here
 
 Steps 0-7 done on `refactor/split-extraction` (commit `ff871dd`), suite green (444 passed,
-0 skipped, 0 failed). All core split-extraction logic and its confirmation-card surfacing are
-built and tested with fake providers — no live LLM calls have been made yet.
+0 skipped, 0 failed). Step 8's orchestrator wiring is done on
+`refactor/split-extraction-wire-orchestrator` (suite: 449 passed); three live E2E runs have
+been made against Groq/llama-3.3-70b, and their findings plus the locked pre-chunking design
+are written up under Step 8 above. Pre-chunking itself is implemented (`_chunk_exercises`),
+but the live E2E has **not** been re-run against it.
 
-**Next: Step 8 — wire into the orchestrator + live E2E on the real 6-exercise fixture.**
-This step makes real Anthropic/Groq API calls (costs money, hits external services) and
-changes the AI-parser's default behavior (`assemble()` becomes the default instead of
-`parse()`). **Pause and confirm with Apoorva before running it** — same bar as any step that
-spends API credits or changes default runtime behavior. Cut
-`refactor/split-extraction-wire-orchestrator` from `refactor/split-extraction` once approved.
+**We are diverging here. Step 8 is paused mid-flight, not finished.**
+
+The live runs surfaced a cost problem that blocks finishing Step 8: each of the N+2 calls
+re-sends its full system prompt *and* tool schema, ~27,400 tokens of prefix per 6-exercise
+session, which is ~3.6 sessions/day against Groq's free-tier 100K TPD cap. We can't iterate
+on extraction accuracy at that burn rate.
+
+**Next: Step 8.5 — the per-call prefix cost detour.** Cut
+`refactor/split-extraction-token-cost` from `refactor/split-extraction`. Sub-steps a-d are
+written up under Step 8.5 above; **a and c spend API credits — confirm with Apoorva before
+running either**, same bar as Step 8 itself.
+
+**Then come back here.** Once 8.5 lands, return to Step 8 and re-run the live E2E on the real
+6-exercise fixture — now against pre-chunking *and* a cached prefix — before moving to Step 9.
+Step 8's own remaining exit criteria are unchanged.
