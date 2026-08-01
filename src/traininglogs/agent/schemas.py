@@ -32,6 +32,10 @@ class TrainingLogLLMExtract(BaseModel):
     cooldown: Optional[List[SessionCooldown]] = None
     notes: Optional[str] = None
     uncertain_fields: List[str] = Field(default_factory=list)
+    # Deterministic drop-check findings (exercise-count mismatch, orphaned RPE/weight-shaped
+    # tokens) — distinct from uncertain_fields, which is the LLM's own self-reported doubt
+    # about a field it did extract. A warning means "we think this is actually wrong."
+    warnings: List[str] = Field(default_factory=list)
 
     @field_validator("date")
     @classmethod

@@ -16,6 +16,7 @@ from traininglogs.agent.schemas import (
     SessionShellExtract,
     TrainingLogLLMExtract,
 )
+from traininglogs.models.models import Exercise
 
 TOOL_NAME = "extract_workout"
 TOOL_DESCRIPTION = "Extract structured workout data from the session text."
@@ -97,3 +98,56 @@ def extract_exercise(
         raise LLMParserError(
             f"Exercise {position} extraction did not pass validation:\n{exc}"
         ) from exc
+
+
+def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
+    return Exercise(
+        number=position,
+        name=name,
+        notes=f"Extraction failed for this exercise: {error}",
+    )
+
+
+def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
+    """Run the splitter, the session shell, and one worker call per exercise (sequential),
+    then glue the results into a TrainingLogLLMExtract. A worker that fails becomes a
+    flagged placeholder exercise plus a warning — never a crash or a silent gap."""
+    provider = provider or AnthropicProvider()
+
+    split = segment(text, provider=provider)
+    shell = extract_shell(text, provider=provider)
+
+    exercises: list[Exercise] = []
+    uncertain_fields: list[str] = list(shell.uncertain_fields)
+    warnings: list[str] = []
+
+    for i, entry in enumerate(split.exercises):
+        try:
+            worker_result = extract_exercise(text, entry.position, provider=provider)
+        except LLMParserError as exc:
+            exercises.append(_placeholder_exercise(entry.position, entry.name, str(exc)))
+            warnings.append(
+                f"Exercise {entry.position} ({entry.name}) failed to extract: {exc}"
+            )
+            continue
+
+        exercises.append(worker_result.exercise)
+        uncertain_fields.extend(
+            f"exercises.{i}.{path}" for path in worker_result.uncertain_fields
+        )
+
+    return TrainingLogLLMExtract(
+        date=shell.date,
+        program=shell.program,
+        phase=shell.phase,
+        week=shell.week,
+        is_deload_week=shell.is_deload_week,
+        focus=shell.focus,
+        session_duration_minutes=shell.session_duration_minutes,
+        warmup=shell.warmup,
+        exercises=exercises,
+        cooldown=shell.cooldown,
+        notes=shell.notes,
+        uncertain_fields=uncertain_fields,
+        warnings=warnings,
+    )
