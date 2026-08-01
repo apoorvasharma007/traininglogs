@@ -121,9 +121,16 @@ one file-split in Step 1. No speculative abstraction.
       survive the assembler.
       Squash-merged to `refactor/split-extraction` · commit `34b8738` · 2026-08-01.
       Suite: 423 passed, 0 skipped, 0 failed.
-- [ ] **6. Drop-check.** Deterministic audit: exercise-count match + orphaned RPE/weight-shaped
-      token scan → list of warnings. Unit-test the regex/audit in isolation (false-positive
-      and false-negative cases).
+- [x] **6. Drop-check.** `audit(text, split, exercises)` in `extraction.py`: exercise-count
+      match (defensive invariant) + orphaned RPE/weight-shaped token scan → list of warnings,
+      wired into `assemble()`. Weight scan is kg-only by design (lbs is unit-converted before
+      landing in `weight_kg`, so scanning for it would always false-positive); RPE ranges
+      check the upper bound to match the extraction convention. Updated the Step 5 regression
+      test's fake data to use the real fixture's actual weights (was a flat 90kg placeholder)
+      so the full `assemble()`+`audit()` round trip on it now produces zero warnings.
+      `test_agent_drop_check.py`: count-mismatch and token-scan true/false cases in isolation.
+      Squash-merged to `refactor/split-extraction` · commit `111c9af` · 2026-08-01.
+      Suite: 434 passed, 0 skipped, 0 failed.
 - [ ] **7. Card surfacing.** Show warnings and failed-exercise placeholders on the confirmation
       card. Update card builder + renderer + their tests.
 - [ ] **8. Wire into the orchestrator.** Make the assembler the AI-parser default; keep the
@@ -136,15 +143,19 @@ one file-split in Step 1. No speculative abstraction.
 
 - Where warnings live on `TrainingLogLLMExtract` — RESOLVED at Step 5: separate `warnings`
   field.
-- Exact regex set for RPE-shaped / weight-shaped tokens (step 6). Start narrow, grow from real
-  misses.
+- Exact regex set for RPE-shaped / weight-shaped tokens — RESOLVED at Step 6 (kg-only, narrow
+  by design). Grow the patterns later from real misses, not preemptively.
 
 ## ▶ Resume here
 
-Steps 0-5 done on `refactor/split-extraction` (commit `34b8738`), suite green (423 passed,
-0 skipped, 0 failed). Next: Step 6 — the drop-check. Deterministic audit function (no LLM):
-verify the number of extracted exercises matches the splitter's count, and scan the raw text
-for RPE-shaped and weight-shaped numbers that didn't land in any field — append findings to
-`assemble()`'s output `warnings` list. Unit-test the regex/audit in isolation (false-positive
-and false-negative cases) before wiring it into `assemble()`. Cut
-`refactor/split-extraction-drop-check` from `refactor/split-extraction`.
+Steps 0-6 done on `refactor/split-extraction` (commit `111c9af`), suite green (434 passed,
+0 skipped, 0 failed). All core split-extraction logic is now built and tested with fake
+providers — no live LLM calls have been made yet. Next: Step 7 — card surfacing. Show
+`warnings` and failed-exercise placeholders on the confirmation card: update
+`validation_card_builder.py` + `renderer.py` + their tests. Cut
+`refactor/split-extraction-card-surfacing` from `refactor/split-extraction`.
+
+**Note for Step 8** (wiring into the orchestrator + live E2E on the real 6-exercise fixture):
+that step makes real Anthropic/Groq API calls and changes the AI-parser's default behavior —
+pause and confirm with Apoorva before running it, same as any step that spends API credits or
+changes default runtime behavior.
