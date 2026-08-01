@@ -14,7 +14,6 @@ from traininglogs.agent.schemas import (
     ExerciseSplit,
     SessionShellExtract,
 )
-from traininglogs.models.models import Exercise
 
 
 class TestSessionShellExtract:
@@ -78,55 +77,68 @@ class TestExerciseExtract:
     }
 
     def test_valid_construction(self) -> None:
-        extract = ExerciseExtract(exercise=Exercise(**self._VALID_EXERCISE))
-        assert extract.exercise.name == "Bench Press"
+        extract = ExerciseExtract(**self._VALID_EXERCISE)
+        assert extract.name == "Bench Press"
         assert extract.uncertain_fields == []
 
     def test_uncertain_fields_populated(self) -> None:
-        extract = ExerciseExtract(
-            exercise=Exercise(**self._VALID_EXERCISE),
-            uncertain_fields=["sets.0.rpe"],
-        )
+        extract = ExerciseExtract(**self._VALID_EXERCISE, uncertain_fields=["sets.0.rpe"])
         assert "sets.0.rpe" in extract.uncertain_fields
 
-    def test_invalid_exercise_raises(self) -> None:
+    def test_invalid_exercise_field_raises(self) -> None:
         bad = dict(self._VALID_EXERCISE, number=0)
         with pytest.raises(ValidationError):
-            ExerciseExtract(exercise=Exercise(**bad))
+            ExerciseExtract(**bad)
 
     def test_json_round_trip(self) -> None:
-        extract = ExerciseExtract(
-            exercise=Exercise(**self._VALID_EXERCISE), uncertain_fields=["sets.0.rpe"]
-        )
+        extract = ExerciseExtract(**self._VALID_EXERCISE, uncertain_fields=["sets.0.rpe"])
         dumped = extract.model_dump(mode="json")
         restored = ExerciseExtract.model_validate(dumped)
         assert restored == extract
 
+    def test_schema_is_flat_not_nested(self) -> None:
+        """Regression guard for the live-testing finding: tool-calling models flatten a
+        single-nested-object schema regardless of prompt wording, so ExerciseExtract must
+        expose Exercise's fields directly rather than under an "exercise" wrapper key."""
+        schema = ExerciseExtract.model_json_schema()
+        assert "name" in schema["properties"]
+        assert "sets" in schema["properties"]
+        assert "exercise" not in schema["properties"]
+
 
 class TestExercisePosition:
     def test_valid_construction(self) -> None:
-        entry = ExercisePosition(position=1, name="Bench Press")
+        entry = ExercisePosition(position=1, name="Bench Press", anchor="Bench Press")
         assert entry.position == 1
         assert entry.name == "Bench Press"
+        assert entry.anchor == "Bench Press"
 
     def test_position_zero_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExercisePosition(position=0, name="Bench Press")
+            ExercisePosition(position=0, name="Bench Press", anchor="Bench Press")
 
     def test_position_negative_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExercisePosition(position=-1, name="Bench Press")
+            ExercisePosition(position=-1, name="Bench Press", anchor="Bench Press")
 
     def test_empty_name_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExercisePosition(position=1, name="")
+            ExercisePosition(position=1, name="", anchor="Bench Press")
 
     def test_whitespace_name_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExercisePosition(position=1, name="   ")
+            ExercisePosition(position=1, name="   ", anchor="Bench Press")
+
+    def test_empty_anchor_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            ExercisePosition(position=1, name="Bench Press", anchor="")
+
+    def test_whitespace_anchor_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            ExercisePosition(position=1, name="Bench Press", anchor="   ")
 
     def test_json_round_trip(self) -> None:
-        entry = ExercisePosition(position=2, name="Squat")
+        entry = ExercisePosition(position=2, name="Squat", anchor="Squat 4x8")
         dumped = entry.model_dump(mode="json")
         restored = ExercisePosition.model_validate(dumped)
         assert restored == entry
@@ -136,8 +148,8 @@ class TestExerciseSplit:
     def test_valid_construction(self) -> None:
         split = ExerciseSplit(
             exercises=[
-                ExercisePosition(position=1, name="Bench Press"),
-                ExercisePosition(position=2, name="Overhead Press"),
+                ExercisePosition(position=1, name="Bench Press", anchor="Bench Press"),
+                ExercisePosition(position=2, name="Overhead Press", anchor="Overhead Press"),
             ]
         )
         assert len(split.exercises) == 2
@@ -149,13 +161,13 @@ class TestExerciseSplit:
 
     def test_invalid_entry_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExerciseSplit(exercises=[{"position": 0, "name": "Bench Press"}])
+            ExerciseSplit(exercises=[{"position": 0, "name": "Bench Press", "anchor": "Bench Press"}])
 
     def test_json_round_trip(self) -> None:
         split = ExerciseSplit(
             exercises=[
-                ExercisePosition(position=1, name="Bench Press"),
-                ExercisePosition(position=2, name="Overhead Press"),
+                ExercisePosition(position=1, name="Bench Press", anchor="Bench Press"),
+                ExercisePosition(position=2, name="Overhead Press", anchor="Overhead Press"),
             ]
         )
         dumped = split.model_dump(mode="json")

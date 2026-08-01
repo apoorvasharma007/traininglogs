@@ -145,7 +145,15 @@ Rules:
 - position: sequential integer starting at 1, in the order the exercises appear in the text.
 - name: the exercise's name exactly as it appears (e.g. "Bench Press", not "bench press 3x8" \
 — strip set/rep/weight detail, keep the name only).
-- Do not extract sets, reps, weights, or any other detail — only the ordered list of names."""
+- anchor: copy, character for character, the exact line of the source text that begins this \
+exercise's section (usually the line with its name on it). Do NOT clean it up, fix casing, \
+fix spelling, or reformat it — copy it exactly as written, even if it looks messy. This is \
+used to locate the exercise in the original text by exact match, so a paraphrased or \
+corrected version will fail to match and this exercise's detail will be extracted less \
+reliably. If the exact same line appears more than once in the document (e.g. a repeated \
+exercise name), still just copy that line — do not try to disambiguate it yourself.
+- Do not extract sets, reps, weights, or any other detail — only the ordered list of names \
+and anchors."""
 
 
 SHELL_SYSTEM_PROMPT = """You are a structured data extractor for personal strength and conditioning training logs.
@@ -182,14 +190,30 @@ Only list fields you actually extracted (not fields you left null).
 
 WORKER_SYSTEM_PROMPT = """You are a structured data extractor for personal strength and conditioning training logs.
 
-You will be given the full text of a training session and a position number. Extract ONLY \
+You will be given a position number and an excerpt of a training session's text. Extract ONLY \
 the exercise at that position — identified by its position among the main working exercises \
 in the order they appear, not by name (names can repeat) — into the extract_exercise tool. \
 Ignore warmup and cooldown movements, and ignore every other exercise in the text.
 
+Most of the time the excerpt you are given already contains exactly one main working \
+exercise (its own Warmup/Sets/Remarks content, already isolated for you) — in that case, \
+just extract it directly; the position number is for your own bookkeeping and does not need \
+to be searched for. Occasionally the excerpt contains the full multi-exercise session \
+instead — in that case, count the main working exercise blocks from the top (each one starts \
+with the exercise's name on its own line, followed by that exercise's own Warmup/Sets/Remarks \
+content up until the next exercise's name or the session's overall Cooldown section) and \
+extract ONLY the block matching the position you were given — never content belonging to the \
+exercise immediately before or after it, and never content from a different exercise even if \
+it shares wording with this one's. Do NOT count the session's own top-level Warmup section \
+(the movements listed before the first exercise) as an exercise.
+
 Rules:
 - number: the position you were given.
 - name: the exercise's name.
+- sets: REQUIRED whenever this exercise has a "Sets:" section — extract every set listed \
+under it, each as a separate entry with a sequential number starting at 1. A "Sets:" \
+section with sets listed is never empty in the output; if you cannot find this exercise's \
+own Sets section, add "sets" to uncertain_fields rather than silently leaving it empty.
 - tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
 "muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
 "passive_flexibility", "active_mobility", "cardiorespiratory", "saq", "sport_specific". \
@@ -206,11 +230,15 @@ only (take the upper bound if it's a range), and add that set's rpe field to \
 uncertain_fields. If the text explicitly names a different set ("set 3 felt like an \
 8", "top set RPE 9"), apply it to that named set instead of the last one. Never apply \
 one exercise-level RPE value to every set in the exercise.
-- rep_count: {full: N, partial: M} where partial defaults to 0. "8+1" means full=8, partial=1.
+- rep_count (on a working set, inside "sets"): ALWAYS an object {full: N, partial: M} where \
+partial defaults to 0 — never a bare number, even when there is no partial rep ("8 reps" is \
+{full: 8, partial: 0}, not the number 8). "8+1" means full=8, partial=1.
 - failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", \
 or "DropSet".
 - unilateral sets: use unilateral_rep_count with left/right RepCount objects instead of rep_count.
-- warmup_sets (per exercise): number field starts at 1. rep_count is a plain integer (e.g. 8), NOT an object — do not use {full, partial}. Use notes="feel" if the user wrote "feel".
+- warmup_sets (per exercise) — a DIFFERENT field from "sets", with a DIFFERENT rep_count shape: \
+number field starts at 1; rep_count here is a plain integer (e.g. 8), NOT an object — do not \
+use {full, partial} for warmup_sets. Use notes="feel" if the user wrote "feel".
 - notes: remarks about this exercise that aren't specific to one set go in this exercise's \
 notes; remarks that clearly name one set go in that set's notes instead.
 - uncertain_fields: list any dot-path field (relative to this exercise, e.g. "sets.1.rpe") \

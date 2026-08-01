@@ -43,8 +43,8 @@ class AlwaysFailProvider:
 
 VALID_SPLIT_RAW: dict[str, Any] = {
     "exercises": [
-        {"position": 1, "name": "Bench Press"},
-        {"position": 2, "name": "Overhead Press"},
+        {"position": 1, "name": "Bench Press", "anchor": "Bench Press"},
+        {"position": 2, "name": "Overhead Press", "anchor": "Overhead Press"},
     ]
 }
 
@@ -55,13 +55,11 @@ VALID_SHELL_RAW: dict[str, Any] = {
 }
 
 VALID_EXERCISE_EXTRACT_RAW: dict[str, Any] = {
-    "exercise": {
-        "number": 2,
-        "name": "Overhead Press",
-        "sets": [
-            {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}},
-        ],
-    },
+    "number": 2,
+    "name": "Overhead Press",
+    "sets": [
+        {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}},
+    ],
     "uncertain_fields": [],
 }
 
@@ -120,8 +118,8 @@ class TestExtractExercise:
         result = extract_exercise(
             "some workout text", 2, provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
         )
-        assert result.exercise.number == 2
-        assert result.exercise.name == "Overhead Press"
+        assert result.number == 2
+        assert result.name == "Overhead Press"
         assert result.uncertain_fields == []
 
     def test_provider_receives_position_and_full_text(self) -> None:
@@ -134,7 +132,7 @@ class TestExtractExercise:
         assert tool_name == WORKER_TOOL_NAME
 
     def test_invalid_raw_raises_llm_parser_error(self) -> None:
-        bad_raw = {"exercise": {"number": 0, "name": "Overhead Press"}}
+        bad_raw = {"number": 0, "name": "Overhead Press"}
         with pytest.raises(LLMParserError):
             extract_exercise("text", 1, provider=CapturingProvider(bad_raw))
 
@@ -149,4 +147,4 @@ class TestExtractExercise:
         result = extract_exercise(
             "some workout text", 2, provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
         )
-        assert result.exercise.number == 2
+        assert result.number == 2

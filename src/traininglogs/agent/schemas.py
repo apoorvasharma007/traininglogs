@@ -65,19 +65,28 @@ class SessionShellExtract(BaseModel):
         return _validate_date(v)
 
 
-class ExerciseExtract(BaseModel):
-    """One worker call's result: a single Exercise plus the uncertain_fields that apply to
-    it. Dot-paths are relative to the exercise (e.g. "sets.1.rpe"), not the full session."""
+class ExerciseExtract(Exercise):
+    """One worker call's result: Exercise's own fields, flattened at the top level, plus
+    uncertain_fields. Deliberately NOT `exercise: Exercise` nested under a wrapper key — live
+    testing showed tool-calling models reliably flatten a single-nested-object schema
+    regardless of prompt wording (Groq/llama-3.3-70b did this on the first live run: it
+    produced every field correctly, just not wrapped). Matching that tendency is more robust
+    than fighting it with prompt engineering. Dot-paths in uncertain_fields are relative to
+    the exercise (e.g. "sets.1.rpe"), not the full session. extraction.assemble() converts
+    this back to a plain Exercise before it goes anywhere near the rest of the pipeline."""
 
-    exercise: Exercise
     uncertain_fields: List[str] = Field(default_factory=list)
 
 
 class ExercisePosition(BaseModel):
-    """One entry in the splitter's ordered exercise listing."""
+    """One entry in the splitter's ordered exercise listing. `anchor` is a verbatim quote used
+    to deterministically locate this exercise's text in the source document (see
+    extraction._chunk_exercises) — deliberately separate from `name`, which is the cleaned,
+    canonical label and is NOT guaranteed to appear literally in the source text."""
 
     position: int
     name: str
+    anchor: str
 
     @field_validator("position")
     @classmethod
@@ -91,6 +100,13 @@ class ExercisePosition(BaseModel):
     def name_not_empty(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Exercise name cannot be empty")
+        return v
+
+    @field_validator("anchor")
+    @classmethod
+    def anchor_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Anchor cannot be empty")
         return v
 
 

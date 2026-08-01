@@ -1,14 +1,25 @@
-"""Unit tests for LLMOrchestrator. No real LLM calls — stub providers and renderers."""
+"""Unit tests for LLMOrchestrator. No real LLM calls — stub providers and renderers.
+
+TestLLMOrchestrator below exercises the confirm/correct/render loop mechanics with
+use_monolithic_parser=True and a single-shape StubProvider — those mechanics (rendering,
+reading input, applying a correction, looping) don't depend on which extraction path produced
+the initial extract, so they're tested once against the simpler single-call shape.
+TestLLMOrchestratorDefaultsToSplitExtraction covers the actual default path (assemble()) and
+the flag/env escape hatch back to the monolithic path, per Step 8 of the orchestration
+refactor plan."""
 from __future__ import annotations
 
 import io
+import re
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 
-from traininglogs.agent.llm_orchestrator import LLMOrchestrator
+from traininglogs.agent.extraction import SEGMENT_TOOL_NAME, SHELL_TOOL_NAME, WORKER_TOOL_NAME
+from traininglogs.agent.extraction import TOOL_NAME as MONOLITHIC_TOOL_NAME
+from traininglogs.agent.llm_orchestrator import USE_MONOLITHIC_PARSER_ENV_VAR, LLMOrchestrator
 from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.agent.renderer import TerminalRenderer
 from rich.console import Console
@@ -78,6 +89,7 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=renderer,
             input_fn=lambda: "y",
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert isinstance(result, TrainingLogLLMExtract)
@@ -91,6 +103,7 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=renderer,
             input_fn=lambda: "yes",
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.date == "2026-05-12"
@@ -106,6 +119,7 @@ class TestLLMOrchestrator:
             correction_provider=correction_provider,
             renderer=renderer,
             input_fn=lambda: next(answers),
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.focus == "Lower"
@@ -122,6 +136,7 @@ class TestLLMOrchestrator:
             correction_provider=correction_provider,
             renderer=renderer,
             input_fn=lambda: next(answers),
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.focus == "Pull"
@@ -136,6 +151,7 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=mock_renderer,
             input_fn=lambda: next(answers),
+            use_monolithic_parser=True,
         )
         orch.run("session text")
         assert mock_renderer.render.call_count == 2
@@ -148,6 +164,7 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=renderer,
             input_fn=lambda: "y",
+            use_monolithic_parser=True,
         )
         with pytest.raises(LLMParserError, match="always fails"):
             orch.run("session text")
@@ -163,6 +180,7 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=mock_renderer,
             input_fn=lambda: next(answers),
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         # render called twice: once for initial, once after empty answer
@@ -180,8 +198,116 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=renderer,
             input_fn=lambda: "y",
+            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         output = buf.getvalue()
         assert "Bench Press" in output
         assert result.date == "2026-05-12"
+
+
+class ScriptedProvider:
+    """Dispatches by tool_name so one provider instance can serve the segment/shell/worker
+    calls assemble() makes, plus (via a separate correction_provider in real usage) the
+    monolithic-shaped correction tool."""
+
+    def __init__(
+        self,
+        split_raw: dict[str, Any],
+        shell_raw: dict[str, Any],
+        exercise_raw_by_position: dict[int, dict[str, Any]],
+    ) -> None:
+        self._split_raw = split_raw
+        self._shell_raw = shell_raw
+        self._exercise_raw_by_position = exercise_raw_by_position
+        self.tool_names_called: list[str] = []
+
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
+        self.tool_names_called.append(tool_name)
+        if tool_name == SEGMENT_TOOL_NAME:
+            return self._split_raw
+        if tool_name == SHELL_TOOL_NAME:
+            return self._shell_raw
+        if tool_name == WORKER_TOOL_NAME:
+            position = int(re.search(r"Extract exercise number (\d+)", text).group(1))
+            return self._exercise_raw_by_position[position]
+        raise AssertionError(f"unexpected tool_name: {tool_name}")
+
+
+_SPLIT_RAW: dict[str, Any] = {
+    "exercises": [{"position": 1, "name": "Bench Press", "anchor": "Bench Press"}]
+}
+_SHELL_RAW: dict[str, Any] = {"date": "2026-05-12", "focus": "Upper"}
+_EXERCISE_RAW_BY_POSITION: dict[int, dict[str, Any]] = {
+    1: {
+        "number": 1,
+        "name": "Bench Press",
+        "sets": [{"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}],
+        "uncertain_fields": [],
+    }
+}
+
+
+class TestLLMOrchestratorDefaultsToSplitExtraction:
+    def test_default_calls_segment_shell_and_worker_not_the_monolithic_tool(self) -> None:
+        provider = ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
+        renderer = _stub_renderer()
+        orch = LLMOrchestrator(
+            parser_provider=provider,
+            correction_provider=provider,
+            renderer=renderer,
+            input_fn=lambda: "y",
+        )
+        result = orch.run("session text")
+
+        assert result.date == "2026-05-12"
+        assert [e.name for e in result.exercises] == ["Bench Press"]
+        assert provider.tool_names_called == [SEGMENT_TOOL_NAME, SHELL_TOOL_NAME, WORKER_TOOL_NAME]
+        assert MONOLITHIC_TOOL_NAME not in provider.tool_names_called
+
+    def test_use_monolithic_parser_flag_switches_back(self) -> None:
+        provider = StubProvider(_BASE_RAW)
+        renderer = _stub_renderer()
+        orch = LLMOrchestrator(
+            parser_provider=provider,
+            correction_provider=provider,
+            renderer=renderer,
+            input_fn=lambda: "y",
+            use_monolithic_parser=True,
+        )
+        result = orch.run("session text")
+        assert result.date == "2026-05-12"
+
+    def test_env_var_switches_to_monolithic_parser_without_the_constructor_flag(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(USE_MONOLITHIC_PARSER_ENV_VAR, "1")
+        provider = StubProvider(_BASE_RAW)
+        renderer = _stub_renderer()
+        orch = LLMOrchestrator(
+            parser_provider=provider,
+            correction_provider=provider,
+            renderer=renderer,
+            input_fn=lambda: "y",
+        )
+        result = orch.run("session text")
+        assert result.date == "2026-05-12"
+
+    def test_correction_after_split_extraction_uses_the_monolithic_correction_tool(self) -> None:
+        """Corrections always go through LLMExtractValidator's single-call tool regardless of
+        which path produced the initial extract — a different provider (or the same one, in
+        real usage) can serve both shapes."""
+        parser_provider = ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
+        correction_provider = StubProvider(dict(_BASE_RAW, focus="Lower"))
+        renderer = _stub_renderer()
+        answers = iter(["change focus to Lower", "y"])
+        orch = LLMOrchestrator(
+            parser_provider=parser_provider,
+            correction_provider=correction_provider,
+            renderer=renderer,
+            input_fn=lambda: next(answers),
+        )
+        result = orch.run("session text")
+        assert result.focus == "Lower"

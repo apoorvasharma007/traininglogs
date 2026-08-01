@@ -3,6 +3,7 @@
 LLM calls."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,7 @@ class ScriptedProvider:
         self._shell_raw = shell_raw
         self._exercise_raw_by_position = exercise_raw_by_position
         self.worker_calls: list[int] = []
+        self.worker_texts: dict[int, str] = {}
 
     def extract(
         self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
@@ -43,8 +45,9 @@ class ScriptedProvider:
         if tool_name == SHELL_TOOL_NAME:
             return self._shell_raw
         if tool_name == WORKER_TOOL_NAME:
-            position = int(text.split("Extract exercise number ")[1].split(".")[0])
+            position = int(re.search(r"Extract exercise number (\d+)", text).group(1))
             self.worker_calls.append(position)
+            self.worker_texts[position] = text
             raw = self._exercise_raw_by_position.get(position)
             if raw is None:
                 raise LLMParserError(f"no scripted response for position {position}")
@@ -54,15 +57,23 @@ class ScriptedProvider:
 
 def _exercise_raw(number: int, name: str, **overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
-        "exercise": {
-            "number": number,
-            "name": name,
-            "sets": [{"number": 1, "weight_kg": 50.0, "rep_count": {"full": 8, "partial": 0}}],
-        },
+        "number": number,
+        "name": name,
+        "sets": [{"number": 1, "weight_kg": 50.0, "rep_count": {"full": 8, "partial": 0}}],
         "uncertain_fields": [],
     }
     base.update(overrides)
     return base
+
+
+SAMPLE_TWO_EXERCISE_TEXT = """Bench Press
+Sets:
+1. 80kg x 8
+
+Overhead Press
+Sets:
+1. 40kg x 8
+"""
 
 
 class TestAssembleIntegration:
@@ -70,18 +81,22 @@ class TestAssembleIntegration:
         provider = ScriptedProvider(
             split_raw={
                 "exercises": [
-                    {"position": 1, "name": "Bench Press"},
-                    {"position": 2, "name": "Overhead Press"},
+                    {"position": 1, "name": "Bench Press", "anchor": "Bench Press"},
+                    {"position": 2, "name": "Overhead Press", "anchor": "Overhead Press"},
                 ]
             },
             shell_raw={"date": "2026-05-12", "focus": "Upper", "session_duration_minutes": 60},
             exercise_raw_by_position={
-                1: _exercise_raw(1, "Bench Press"),
-                2: _exercise_raw(2, "Overhead Press"),
+                1: _exercise_raw(1, "Bench Press", sets=[
+                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+                2: _exercise_raw(2, "Overhead Press", sets=[
+                    {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
             },
         )
 
-        extract = assemble("some session text", provider=provider)
+        extract = assemble(SAMPLE_TWO_EXERCISE_TEXT, provider=provider)
 
         assert extract.date == "2026-05-12"
         assert extract.focus == "Upper"
@@ -91,7 +106,7 @@ class TestAssembleIntegration:
 
     def test_worker_uncertain_fields_get_prefixed_with_exercise_index(self) -> None:
         provider = ScriptedProvider(
-            split_raw={"exercises": [{"position": 1, "name": "Bench Press"}]},
+            split_raw={"exercises": [{"position": 1, "name": "Bench Press", "anchor": "Bench Press"}]},
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
                 1: _exercise_raw(1, "Bench Press", uncertain_fields=["sets.0.rpe"]),
@@ -115,32 +130,129 @@ class TestAssembleIntegration:
         assert extract.exercises == []
 
     def test_failed_worker_becomes_flagged_placeholder_not_a_crash(self) -> None:
+        text = (
+            "Bench Press\nSets:\n1. 80kg x 8\n\n"
+            "Overhead Press\nSets:\n1. 40kg x 8\n\n"
+            "Lat Pulldown\nSets:\n1. 100kg x 8\n"
+        )
         provider = ScriptedProvider(
             split_raw={
                 "exercises": [
-                    {"position": 1, "name": "Bench Press"},
-                    {"position": 2, "name": "Overhead Press"},
-                    {"position": 3, "name": "Lat Pulldown"},
+                    {"position": 1, "name": "Bench Press", "anchor": "Bench Press"},
+                    {"position": 2, "name": "Overhead Press", "anchor": "Overhead Press"},
+                    {"position": 3, "name": "Lat Pulldown", "anchor": "Lat Pulldown"},
                 ]
             },
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
-                1: _exercise_raw(1, "Bench Press"),
+                1: _exercise_raw(1, "Bench Press", sets=[
+                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
                 # position 2 deliberately missing -> ScriptedProvider raises LLMParserError
-                3: _exercise_raw(3, "Lat Pulldown"),
+                3: _exercise_raw(3, "Lat Pulldown", sets=[
+                    {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+            },
+        )
+
+        extract = assemble(text, provider=provider)
+
+        assert [e.name for e in extract.exercises] == ["Bench Press", "Overhead Press", "Lat Pulldown"]
+        assert extract.exercises[1].sets is None
+        assert "Extraction failed" in (extract.exercises[1].notes or "")
+        assert any(
+            "Exercise 2 (Overhead Press) failed to extract" in w for w in extract.warnings
+        )
+        # The other two exercises still extracted cleanly despite the failure.
+        assert extract.exercises[0].sets is not None
+        assert extract.exercises[2].sets is not None
+
+
+class TestAssembleChunking:
+    """Covers the deterministic pre-chunking added to fix the "lost in the middle"
+    position-drift/missing-sets problem found during live E2E testing: each worker should get
+    an isolated, pre-sliced excerpt for its own exercise rather than the full document,
+    with a graceful fallback (full text + a warning, not a crash) when an anchor can't be
+    located verbatim."""
+
+    def test_each_worker_receives_its_own_isolated_chunk_not_the_full_text(self) -> None:
+        text = (
+            "Bench Press\nSets:\n1. 80kg x 8\n\n"
+            "Overhead Press\nSets:\n1. 40kg x 8\n\n"
+            "Lat Pulldown\nSets:\n1. 100kg x 8\n"
+        )
+        provider = ScriptedProvider(
+            split_raw={
+                "exercises": [
+                    {"position": 1, "name": "Bench Press", "anchor": "Bench Press"},
+                    {"position": 2, "name": "Overhead Press", "anchor": "Overhead Press"},
+                    {"position": 3, "name": "Lat Pulldown", "anchor": "Lat Pulldown"},
+                ]
+            },
+            shell_raw={"date": "2026-05-12"},
+            exercise_raw_by_position={
+                1: _exercise_raw(1, "Bench Press", sets=[
+                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+                2: _exercise_raw(2, "Overhead Press", sets=[
+                    {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+                3: _exercise_raw(3, "Lat Pulldown", sets=[
+                    {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+            },
+        )
+
+        assemble(text, provider=provider)
+
+        # Each worker got an isolated excerpt, not the full document with everyone else's data
+        # mixed in — proven by the OTHER exercises' distinctive weight being absent.
+        assert "100kg" not in provider.worker_texts[1]
+        assert "80kg" not in provider.worker_texts[3]
+
+    def test_anchor_not_found_falls_back_to_full_text_with_a_warning_not_a_crash(self) -> None:
+        text = "Bench Press\nSets:\n1. 80kg x 8\n"
+        provider = ScriptedProvider(
+            split_raw={
+                "exercises": [
+                    # This anchor does not appear verbatim in `text` — model paraphrased it.
+                    {"position": 1, "name": "Bench Press", "anchor": "Bench press (paraphrased)"},
+                ]
+            },
+            shell_raw={"date": "2026-05-12"},
+            exercise_raw_by_position={
+                1: _exercise_raw(1, "Bench Press", sets=[
+                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                ]),
+            },
+        )
+
+        extract = assemble(text, provider=provider)
+
+        assert extract.exercises[0].name == "Bench Press"
+        assert extract.exercises[0].sets is not None
+        # Fell back to the full document rather than crashing or dropping the exercise.
+        assert "80kg" in provider.worker_texts[1]
+        assert any("could not isolate its text" in w for w in extract.warnings)
+
+    def test_exercise_number_is_forced_to_the_splitters_position_not_the_workers_own_report(
+        self,
+    ) -> None:
+        """The splitter already knows the correct position — assemble() should trust that over
+        whatever number the worker itself reports, removing one more thing the model can get
+        wrong (independent of chunking)."""
+        provider = ScriptedProvider(
+            split_raw={"exercises": [{"position": 3, "name": "Bench Press", "anchor": "Bench Press"}]},
+            shell_raw={"date": "2026-05-12"},
+            exercise_raw_by_position={
+                # Worker reports the wrong number (1) for what the splitter said was position 3.
+                3: _exercise_raw(1, "Bench Press"),
             },
         )
 
         extract = assemble("text", provider=provider)
 
-        assert [e.name for e in extract.exercises] == ["Bench Press", "Overhead Press", "Lat Pulldown"]
-        assert extract.exercises[1].sets is None
-        assert "Extraction failed" in (extract.exercises[1].notes or "")
-        assert len(extract.warnings) == 1
-        assert "Exercise 2 (Overhead Press) failed to extract" in extract.warnings[0]
-        # The other two exercises still extracted cleanly despite the failure.
-        assert extract.exercises[0].sets is not None
-        assert extract.exercises[2].sets is not None
+        assert extract.exercises[0].number == 3
 
 
 class TestAssembleSixExerciseRegression:
@@ -180,7 +292,9 @@ class TestAssembleSixExerciseRegression:
         }
 
         split_raw = {
-            "exercises": [{"position": i + 1, "name": name} for i, name in enumerate(names)]
+            "exercises": [
+                {"position": i + 1, "name": name, "anchor": name} for i, name in enumerate(names)
+            ]
         }
         shell_raw = {
             "date": "3000-05-11",
@@ -203,8 +317,8 @@ class TestAssembleSixExerciseRegression:
                 sets[-1]["rpe"] = rpe
                 uncertain.append(f"sets.{len(sets) - 1}.rpe")
             exercise_raw_by_position[i] = _exercise_raw(i, name, uncertain_fields=uncertain)
-            exercise_raw_by_position[i]["exercise"]["sets"] = sets
-            exercise_raw_by_position[i]["exercise"]["warmup_sets"] = [
+            exercise_raw_by_position[i]["sets"] = sets
+            exercise_raw_by_position[i]["warmup_sets"] = [
                 {"number": j + 1, "weight_kg": w, "rep_count": reps}
                 for j, (w, reps) in enumerate(warmup)
             ]

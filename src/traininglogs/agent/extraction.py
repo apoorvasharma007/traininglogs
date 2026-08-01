@@ -84,11 +84,18 @@ def extract_shell(text: str, provider: ExtractionProvider | None = None) -> Sess
 def extract_exercise(
     text: str, position: int, provider: ExtractionProvider | None = None
 ) -> ExerciseExtract:
-    """Extract only the exercise at `position` from the full session `text`. Self-contained:
-    depends on nothing but its own inputs, so workers can run independently of each other."""
+    """Extract only the exercise at `position` from `text` — usually a pre-sliced, isolated
+    excerpt for just this exercise (see _chunk_exercises), occasionally the full session as a
+    fallback. Self-contained: depends on nothing but its own inputs, so workers can run
+    independently of each other."""
     provider = provider or AnthropicProvider()
     tool_schema = ExerciseExtract.model_json_schema()
-    prompt = f"Extract exercise number {position}.\n\nSession text:\n{text}"
+    prompt = (
+        f"Extract exercise number {position}. If this excerpt contains only one exercise, "
+        f"that is the one to extract. If it contains the full session instead, count the main "
+        f"working exercise blocks (not warmup/cooldown) from the top to find position "
+        f"{position}. Include its full Sets: section if it has one.\n\nText:\n{text}"
+    )
 
     raw = provider.extract(
         prompt, tool_schema, WORKER_SYSTEM_PROMPT, WORKER_TOOL_NAME, WORKER_TOOL_DESCRIPTION
@@ -115,6 +122,54 @@ def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
         name=name,
         notes=f"{PLACEHOLDER_NOTE_PREFIX} {error}",
     )
+
+
+# A few extra lines past the next exercise's anchor, kept in each chunk as a safety margin in
+# case a trailing remark runs slightly past where the next exercise's anchor line starts.
+CHUNK_TRAILING_OVERLAP_LINES = 3
+
+
+def _locate_anchor_lines(lines: list[str], split: ExerciseSplit) -> dict[int, int]:
+    """Sequentially locate each exercise's anchor line number, searching forward from the line
+    after the previous exercise's anchor. Sequential (not global) search is what makes this
+    work even when the same anchor text appears more than once in the document (e.g. a
+    repeated exercise name) — we're not asking "where does this occur anywhere," only "where
+    does it occur next," using the ordering the splitter already gave us. A position whose
+    anchor can't be found verbatim is simply omitted; the caller falls back to the full text
+    for that one exercise rather than treating it as fatal."""
+    located: dict[int, int] = {}
+    search_from = 0
+    for entry in split.exercises:
+        anchor = entry.anchor.strip()
+        if not anchor:
+            continue
+        for i in range(search_from, len(lines)):
+            if anchor in lines[i]:
+                located[entry.position] = i
+                search_from = i + 1
+                break
+    return located
+
+
+def _chunk_exercises(text: str, split: ExerciseSplit) -> dict[int, str]:
+    """Slice `text` into one isolated chunk per successfully-located exercise: from its own
+    anchor line to CHUNK_TRAILING_OVERLAP_LINES past the next located exercise's anchor line
+    (or to the end of the document for the last one). Positions whose anchor couldn't be
+    located are simply absent from the returned dict — assemble() falls back to the full text
+    for those."""
+    lines = text.split("\n")
+    located = _locate_anchor_lines(lines, split)
+    ordered_positions = sorted(located)
+
+    chunks: dict[int, str] = {}
+    for idx, position in enumerate(ordered_positions):
+        start = located[position]
+        if idx + 1 < len(ordered_positions):
+            end = located[ordered_positions[idx + 1]] + CHUNK_TRAILING_OVERLAP_LINES
+        else:
+            end = len(lines)
+        chunks[position] = "\n".join(lines[start : min(end, len(lines))])
+    return chunks
 
 
 _RPE_TOKEN_RE = re.compile(
@@ -176,21 +231,35 @@ def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[st
 
 def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
     """Run the splitter, the session shell, and one worker call per exercise (sequential),
-    then glue the results into a TrainingLogLLMExtract. A worker that fails becomes a
-    flagged placeholder exercise plus a warning — never a crash or a silent gap. The
-    deterministic drop-check runs last and adds any findings to the same warnings list."""
+    then glue the results into a TrainingLogLLMExtract. Each worker gets an isolated,
+    pre-sliced chunk of `text` for just its own exercise when the splitter's anchor for that
+    position can be located verbatim (see _chunk_exercises) — this is what keeps a worker from
+    having to re-scan and recount blocks in a long, repetitive document itself. A position
+    whose anchor can't be located falls back to the full text, with a warning noting the
+    fallback (lower reliability, not a failure). A worker that raises becomes a flagged
+    placeholder exercise plus a warning — never a crash or a silent gap. The deterministic
+    drop-check runs last and adds any findings to the same warnings list."""
     provider = provider or AnthropicProvider()
 
     split = segment(text, provider=provider)
     shell = extract_shell(text, provider=provider)
+    chunks = _chunk_exercises(text, split)
 
     exercises: list[Exercise] = []
     uncertain_fields: list[str] = list(shell.uncertain_fields)
     warnings: list[str] = []
 
     for i, entry in enumerate(split.exercises):
+        worker_text = chunks.get(entry.position)
+        if worker_text is None:
+            worker_text = text
+            warnings.append(
+                f"Exercise {entry.position} ({entry.name}): could not isolate its text — "
+                "used the full document instead."
+            )
+
         try:
-            worker_result = extract_exercise(text, entry.position, provider=provider)
+            worker_result = extract_exercise(worker_text, entry.position, provider=provider)
         except LLMParserError as exc:
             exercises.append(_placeholder_exercise(entry.position, entry.name, str(exc)))
             warnings.append(
@@ -198,7 +267,11 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
             )
             continue
 
-        exercises.append(worker_result.exercise)
+        exercise = Exercise(**worker_result.model_dump(exclude={"uncertain_fields"}))
+        # The splitter already told us the correct position — trust that over whatever the
+        # worker itself reported, rather than giving the model one more thing to get wrong.
+        exercise = exercise.model_copy(update={"number": entry.position})
+        exercises.append(exercise)
         uncertain_fields.extend(
             f"exercises.{i}.{path}" for path in worker_result.uncertain_fields
         )
