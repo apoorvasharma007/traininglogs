@@ -167,7 +167,7 @@ reconcile-after → parse-first revision above — this step only builds the par
       blocks (`18s - tuck, clean`; `5 attempts, 2 clean - band-assisted`) asserting `None`.
       8/8 pass. Full suite: 380 passed, 0 failed, 0 skipped.
 
-### - [ ] Step 2 — Branch the worker call in `assemble()` (`fix/extraction-accuracy-parse-first`)
+### - [x] Step 2 — Branch the worker call in `assemble()` (`fix/extraction-accuracy-parse-first`) — done
 
 Insertion point: `extraction.py` worker loop, *before* the existing `extract_exercise()` call —
 this replaces that unconditional call with a branch, not a post-hoc reconciliation step.
@@ -180,22 +180,48 @@ this replaces that unconditional call with a branch, not a post-hoc reconciliati
 | `warmup_sets` | parser, directly | LLM |
 | `name`, `tags`, `modality`, `movement_pattern`, exercise `notes`, `form_cues`, `target_muscle_groups`, `rep_tempo`, `current_goal` | LLM (`ExerciseLabelsExtract`) | LLM (`ExerciseExtract`) |
 
-- [ ] New `ExerciseLabelsExtract` schema (`schemas.py`) — no `sets`/`warmup_sets` fields;
-      `set_notes: dict[int, str]` (or equivalent) for per-index notes.
-- [ ] New `LABELS_SYSTEM_PROMPT` (`prompts.py`) — small; no numeric-shape rules, since this
+- [x] New `ExerciseLabelsExtract` schema (`schemas.py`) — no `sets`/`warmup_sets` fields;
+      `set_notes: Dict[str, str]` keyed by set number as a string, plus
+      `exercise_rpe_target_set: Optional[int]` for RPE placement.
+- [x] New `LABELS_SYSTEM_PROMPT` (`prompts.py`) — small; no numeric-shape rules, since this
       path never touches sets/weights/reps at all.
-- [ ] New `extract_exercise_labels(text, position, set_indices, provider)` in `extraction.py`,
-      alongside the existing (unchanged) `extract_exercise()`.
-- [ ] `assemble()`: call `parse_exercise_block(chunk_text)` before choosing which worker
-      function to call; construct the final `Exercise` from parser output (numeric spine) +
-      LLM output (everything else), or from `ExerciseExtract` alone on the fallback path.
-- [ ] `audit()`: add the enumerated-line-count check described above.
-- [ ] Update `tests/test_agent_assembler.py` scripted payloads and dispatch (see breakage note 1).
-- [ ] Regression tests reproducing all three original failures end-to-end with a fake provider,
-      asserting: Incline DB Press keeps its weight/warmup (parser-owned, can't be dropped by the
-      LLM), Lateral Raise's sets land in `sets` not `warmup_sets` (parser-owned, can't be
-      misfiled), Lat Pulldown's RPE placement is exercised against a known index list (reduced
-      risk, explicitly not asserted as guaranteed-correct).
+- [x] New `extract_exercise_labels(text, position, set_numbers, provider)` in `extraction.py`,
+      alongside the existing (unchanged) `extract_exercise()`. Unit tests in
+      `tests/test_agent_exercise_labels.py` (5/5 pass), mirroring `TestExtractExercise`'s
+      pattern in `tests/test_agent_extraction.py`.
+- [x] `assemble()`: calls `parse_exercise_block(chunk_text)` before choosing which worker path
+      to use (only when a chunk was isolated — never on the full-text fallback). New
+      `_build_parsed_exercise()` + `_place_exercise_rpe()` helpers construct the final
+      `Exercise` from parser output (numeric spine, unconditional) + `ExerciseLabelsExtract`
+      output (everything else). A `set_notes` key that isn't among the parser's own set numbers
+      is dropped with a warning, not treated as fatal. RPE placement defaults to the last set
+      (matching the full-extraction path's own convention) unless the LLM names a different
+      valid set number; if every candidate set already has its own inline RPE (parsed directly
+      off a "RPE n" token on the set's own line), the value is left unplaced with a warning
+      instead of silently dropped.
+- [ ] `audit()`: the enumerated-line-count check was **not** added — see note below.
+- [x] Updated `tests/test_agent_assembler.py` scripted payloads and dispatch (breakage note 1,
+      as anticipated): `ScriptedProvider` now dispatches `LABELS_TOOL_NAME` too; new
+      `_labels_raw()` fixture helper for the parsed path, `_exercise_raw()` kept only for the
+      anchor-not-found fallback case. `TestAssembleSixExerciseRegression` simplified — since
+      all 6 of the real fixture's exercises parse cleanly, it no longer hand-constructs
+      weights/RPE at all; the parser reads them straight from the real fixture text.
+- [x] New `TestAssembleReproducesOriginalFailures` in `tests/test_agent_assembler.py`: three
+      end-to-end regression tests, one per original failure, each scripted with a labels
+      response that omits exactly the information the original bad LLM call got wrong — proving
+      each failure is now structurally impossible (weight/warmup: no field exists to drop them
+      from; sets-vs-warmup_sets: no LLM decision about which field at all) or reduced to a
+      code-level default rather than LLM judgment (RPE placement: defaults to last set when the
+      LLM doesn't name one). 11/11 pass in `test_agent_assembler.py`; full suite 483 passed, 0
+      failed, 0 skipped.
+
+**Note — `audit()` line-count check deferred, not forgotten:** on the parsed path this check
+would be trivially true by construction (parser guarantees it), and on the fallback path
+(irregular formats: timed holds, attempts notation) there usually isn't a clean 1:1
+line-to-set mapping to check in the first place — most of those formats collapse multiple
+enumerated lines into one set (MyoReps, DropSet) or vice versa. Adding it now would mean
+writing a check that's either always-true or frequently a false positive. Left out rather than
+added speculatively; revisit if a real fallback-path miss is ever observed.
 
 ### - [ ] Step 3 — Merge `fix/extraction-accuracy` → `dev`
 
@@ -207,26 +233,22 @@ this replaces that unconditional call with a branch, not a post-hoc reconciliati
 
 ## ▶ Resume here
 
-**Correction:** `fix/extraction-accuracy` was initially cut from `dev`, which turned out not to
-have the split-extraction pipeline (`extraction.py`, `schemas.py`, `prompts.py`, `providers.py`)
-at all — that work lives on `refactor/split-extraction-token-cost` and hasn't merged to `dev`
-yet (Step 8.5 of `orchestration-refactor-plan.md` is still blocked). Since this plan's whole
-point is to wire into `assemble()`, rebased `fix/extraction-accuracy` onto
-`refactor/split-extraction-token-cost` instead (clean rebase — `dev` is a direct ancestor of
-that branch, no divergence, no conflicts). Both Step 1 commits carried over unchanged
-(`115e6f6`, `007e08f`). This means merging this plan's base branch to `dev` at the end (Step 3)
-has to happen *after* `refactor/split-extraction-token-cost` merges to `dev`, not before —
-noted so it isn't missed.
+**Correction (still relevant):** `fix/extraction-accuracy` had to be rebased off
+`refactor/split-extraction-token-cost` instead of `dev` — see git log for the full note. This
+means merging this plan's base branch to `dev` at the end (Step 3) has to happen *after*
+`refactor/split-extraction-token-cost` merges to `dev`, not before.
 
-**Step 1 done.** Suite green on the corrected base: 475 passed, 0 failed, 0 skipped (more tests
-than the original 380 since the orchestration test files are now actually present).
+**Steps 1 and 2 both done.** Suite green: 483 passed, 0 failed, 0 skipped. Base branch
+`fix/extraction-accuracy` not yet merged to `dev` (blocked on the above until
+`refactor/split-extraction-token-cost` merges first).
 
 Current branch: `fix/extraction-accuracy`. Working tree still has three untracked scripts
 (`scripts/measure_prefix_tokens.py`, `scripts/spot_check_ai_parser.py`,
 `scripts/validate_with_model.py`) unrelated to this plan — untouched.
 
-**Next action:** cut `fix/extraction-accuracy-parse-first` from `fix/extraction-accuracy`, and
-implement Step 2 — the `ExerciseLabelsExtract` schema, `LABELS_SYSTEM_PROMPT`,
-`extract_exercise_labels()`, and the branch inside `assemble()`'s worker loop that calls
-`parse_exercise_block()` before deciding which worker function to call. Tests first per
-`CLAUDE.md` phase order.
+**Next action:** Step 3 (merge to `dev`) is blocked on `refactor/split-extraction-token-cost`
+merging first — that's a decision/action for `orchestration-refactor-plan.md`, not this plan.
+In the meantime this plan's own work is functionally complete: both structurally-impossible
+failures (weight/warmup drop, sets-vs-warmup_sets misfile) are fixed by construction, and RPE
+placement now defaults correctly instead of depending on model behavior. Nothing left to
+implement unless real-world use surfaces something new.
