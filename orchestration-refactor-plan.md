@@ -142,9 +142,90 @@ one file-split in Step 1. No speculative abstraction.
       warmup/sets sections a placeholder would otherwise render.
       Squash-merged to `refactor/split-extraction` · commit `ff871dd` · 2026-08-01.
       Suite: 444 passed, 0 skipped, 0 failed.
-- [ ] **8. Wire into the orchestrator.** Make the assembler the AI-parser default; keep the
+- [~] **8. Wire into the orchestrator.** Make the assembler the AI-parser default; keep the
       monolithic path reachable behind a flag/env for comparison. Update orchestrator + CLI
       tests. E2E on the real 6-exercise fixture with a live model.
+
+      **In progress — live E2E findings and design work (2026-08-01), via Groq/llama-3.3-70b:**
+
+      - Orchestrator wiring done: `LLMOrchestrator` defaults to `assemble()`;
+        `use_monolithic_parser` (constructor arg + `TRAININGLOGS_USE_MONOLITHIC_PARSER` env var)
+        falls back to `parse()`. `test_agent_llm_orchestrator.py` updated (existing tests
+        exercise the confirm/correct/render loop mechanics via the monolithic path since those
+        mechanics don't depend on which extraction path produced the initial extract; new
+        `TestLLMOrchestratorDefaultsToSplitExtraction` covers the default path + the escape
+        hatch). Suite: 448 passed.
+
+      - **Live run 1 (crash):** `ExerciseExtract` was `{exercise: Exercise, uncertain_fields}`
+        (nested). Groq's model flattened it anyway — a known tool-calling tendency for
+        single-nested-object schemas, confirmed by industry guidance (deep/nested schemas
+        measurably increase failure rates; flat is the documented best practice). **Fixed**:
+        `ExerciseExtract` now extends `Exercise` directly (flat), `assemble()` strips the extra
+        field back to a plain `Exercise` via `model_dump(exclude={"uncertain_fields"})`. Suite:
+        449 passed (added `test_schema_is_flat_not_nested` guard).
+
+      - **Live run 2 (ran, wrong data):** 3 of 6 exercises got zero working sets; one exercise
+        ("Lat Pulldown") was extracted twice while another ("Triceps Pushdown") was dropped
+        entirely. The drop-check (Step 6) correctly flagged all of it via warnings — nothing
+        silently lost — but extraction accuracy itself was the problem. Root cause: each
+        worker call re-reads the *entire* document and must recount to the Nth exercise block
+        itself, every time — a textbook "lost in the middle" failure (LLMs are measurably worse
+        at locating content in the middle of a long, repetitive document — confirmed via
+        research, not just guessed). Prompt strengthening alone (explicit block-counting
+        instructions, explicit "sets is required") was applied but not sufficient by itself —
+        see run 3.
+
+      - **Live run 3 (crash, different cause):** Groq rejected a call because the model wrote
+        `rep_count: 15` (bare int) for a *working* set, confusing it with `warmup_sets.rep_count`
+        (which genuinely is a bare int in our schema). Separately surfaced a structural gap:
+        neither provider's retry loop catches `groq.BadRequestError`/`anthropic.BadRequestError`
+        (the SDK's own server-side schema rejection) — only *our* post-hoc Pydantic validation
+        failures get the existing 2-attempt reask/retry budget. This is the standard "reask"
+        pattern (used by Guardrails AI and Instructor) applied to a failure class we weren't
+        catching. Not yet fixed — tracked as a follow-up, see below.
+
+      **Design decision locked (2026-08-01, discussed with Apoorva): deterministic pre-chunking.**
+      Root-causing run 2 above led to research on how real extraction pipelines handle "pull N
+      similar items out of one long document" reliably — the standard answer is the map-reduce
+      pattern: chunk the document with plain code *once*, hand each worker only its own isolated
+      slice, never the whole document. Rejected pure regex/format-based chunking outright — this
+      project's AI parser exists specifically because the input contract is deliberately
+      free-text with no required format (TRACK B decision), so regex-chunking on assumed
+      structure would reintroduce the old rules-parser's brittleness for a different job.
+
+      Chosen approach — hybrid, grounded chunking:
+      - `segment()`'s schema (`ExercisePosition`) gains a new field: `anchor` — a verbatim quote
+        of the line that begins that exercise's block in the source text. Explicitly prompted
+        as "copy exactly, do not correct spelling/casing/formatting" — deliberately NOT reusing
+        `name`, because `name` is the cleaned/canonical label (the prompt already tells the
+        model to strip set/rep/weight detail from it) and cleaning is exactly what makes a
+        string unreliable as a literal `text.find()` target.
+      - Anchors are located **sequentially** — `text.find(anchor, start=end_of_previous_anchor)`,
+        not a global search — searching forward from where the previous exercise's anchor was
+        found. This is what actually neutralizes repeated-text ambiguity (e.g. the same exercise
+        name appearing twice, which is allowed and was the exact shape of run 2's duplicate-
+        exercise bug): a longer/smarter anchor string doesn't help if two exercises share it, but
+        searching in split order from where we already are does, using ordering information we
+        already trust.
+      - Chunk boundaries: each chunk runs from its own anchor to a few lines past the *next*
+        located exercise's anchor (small trailing overlap for safety, confirmed with Apoorva),
+        or to end-of-document for the last exercise.
+      - Fallback: if an anchor isn't found verbatim (model paraphrased despite instructions),
+        that one exercise's chunk is skipped and `assemble()` falls back to today's behavior
+        (full text + position) for just that worker, with a warning noting the fallback — same
+        graceful-degradation spirit as the existing failed-worker-becomes-placeholder path.
+        Never crash, always degrade and flag.
+      - Side effect: `assemble()` now deterministically overrides `exercise.number = position`
+        after each worker call (we already know the correct position from the split; no reason
+        to trust the model's own reported number field once we can just set it).
+      - Not yet implemented — this is the next unit of work before re-attempting the live E2E
+        check.
+
+      **Deferred, not blocking this fix:** the retry-loop gap (run 3) — catching
+      `BadRequestError` in both providers and reasking with the specific schema-violation
+      message, same mechanism as today's existing retry-on-our-own-validation-failure path.
+      Revisit after chunking is verified live, since chunking may also reduce how often the
+      model produces a malformed call in the first place (smaller, simpler input per call).
 - [ ] **9. Docs.** `CHANGELOG.md` `[Unreleased]` entry; update `docs/design.html` system-shape
       + data-flow section (bump eyebrow/footer date by hand).
 
