@@ -104,11 +104,23 @@ one file-split in Step 1. No speculative abstraction.
       Not wired into anything yet — that's Step 5.
       Squash-merged to `refactor/split-extraction` · commit `4ef81de` · 2026-08-01.
       Suite: 418 passed, 0 skipped, 0 failed.
-- [ ] **5. The assembler.** Run splitter → shell → one worker per position (sequential) →
-      glue into a `TrainingLogLLMExtract`. Failed worker becomes a flagged placeholder
-      exercise. Integration test with a fake multi-exercise provider; add a regression test
-      built from the real 6-exercise session that reproduced the drop bug (assert all 6
-      exercises and their RPEs/remarks survive).
+- [x] **5. The assembler.** `assemble(text, provider)` in `extraction.py`: segment() → shell()
+      → one `extract_exercise()` per position (sequential) → glued into a
+      `TrainingLogLLMExtract`. Worker `uncertain_fields` (relative dot-paths) get prefixed to
+      `exercises.{index}.…` to match the monolithic convention; shell `uncertain_fields` pass
+      through unprefixed. Failed worker → flagged placeholder `Exercise` (name from the
+      splitter, failure noted in `notes`) + an entry in a new `warnings` field.
+      **Open item resolved (2026-08-01, confirmed with Apoorva):** warnings live in their own
+      `warnings: List[str]` field on `TrainingLogLLMExtract`, separate from `uncertain_fields`
+      — `uncertain_fields` is the LLM's self-reported doubt about something it did extract;
+      `warnings` is the deterministic drop-check's "we think this is actually wrong."
+      Tests in `test_agent_assembler.py`: gluing/ordering, uncertain-field prefixing (both
+      directions), failed-worker-becomes-placeholder, and a regression test built from the
+      real 6-exercise `programmed_push_pull_session_with_remarks.md` fixture (the file that
+      originally exposed the drop bug) asserting all 6 exercises and each one's last-set RPE
+      survive the assembler.
+      Squash-merged to `refactor/split-extraction` · commit `34b8738` · 2026-08-01.
+      Suite: 423 passed, 0 skipped, 0 failed.
 - [ ] **6. Drop-check.** Deterministic audit: exercise-count match + orphaned RPE/weight-shaped
       token scan → list of warnings. Unit-test the regex/audit in isolation (false-positive
       and false-negative cases).
@@ -122,19 +134,17 @@ one file-split in Step 1. No speculative abstraction.
 
 ## Open items to settle during, not blocking the plan
 
-- Where warnings live on `TrainingLogLLMExtract`: reuse `uncertain_fields`, or add a separate
-  `warnings` field? (Leaning separate — different meaning: "we think this is wrong" vs "we're
-  unsure." Decide at step 5.)
-- Exact regex set for RPE-shaped / weight-shaped tokens (step 5). Start narrow, grow from real
+- Where warnings live on `TrainingLogLLMExtract` — RESOLVED at Step 5: separate `warnings`
+  field.
+- Exact regex set for RPE-shaped / weight-shaped tokens (step 6). Start narrow, grow from real
   misses.
 
 ## ▶ Resume here
 
-Steps 0-3 done on `refactor/split-extraction` (commit `5a22fd1`), suite green (405 passed,
-0 skipped, 0 failed). Next: Step 4 — the three small-call functions: `segment(text)`,
-`extract_shell(text)`, `extract_exercise(text, position)` in `extraction.py`, each a pure
-function tested with a fake provider (reuse the `ExtractionProvider` protocol from
-`providers.py`, now parametrized per Step 2). This is where decision 7 (self-contained
-workers — `text (+ position) -> one Exercise`, no dependence on other workers' results) is
-enforced and tested. Cut `refactor/split-extraction-call-functions` from
-`refactor/split-extraction`.
+Steps 0-5 done on `refactor/split-extraction` (commit `34b8738`), suite green (423 passed,
+0 skipped, 0 failed). Next: Step 6 — the drop-check. Deterministic audit function (no LLM):
+verify the number of extracted exercises matches the splitter's count, and scan the raw text
+for RPE-shaped and weight-shaped numbers that didn't land in any field — append findings to
+`assemble()`'s output `warnings` list. Unit-test the regex/audit in isolation (false-positive
+and false-negative cases) before wiring it into `assemble()`. Cut
+`refactor/split-extraction-drop-check` from `refactor/split-extraction`.
