@@ -226,6 +226,49 @@ one file-split in Step 1. No speculative abstraction.
       message, same mechanism as today's existing retry-on-our-own-validation-failure path.
       Revisit after chunking is verified live, since chunking may also reduce how often the
       model produces a malformed call in the first place (smaller, simpler input per call).
+      **Fixed 2026-08-01** (see below, unblocked earlier than planned since it turned out to
+      be cheap and independent of the chunk-leak bug).
+
+      **Correction (2026-08-01): the "lost in the middle" diagnosis for run 2 above was wrong.**
+      After pre-chunking was implemented and live-tested (against both `llama-3.3-70b-versatile`
+      and, once its daily quota was exhausted from testing, `openai/gpt-oss-120b`), the *exact*
+      same failure shape kept recurring: first and last exercise always correct, all four middle
+      exercises wrong/empty/failed, reproducibly across runs and across both models — including
+      one live run reproducing the *identical* wrong name at the same position twice, and a
+      model refusal quoting verbatim that its excerpt "contains only two main working-exercise
+      blocks." That specificity didn't fit a genuine model-reliability story, so before
+      finishing Step 8, Apoorva asked for a documented research prompt on whether "lost in the
+      middle" (a long-context phenomenon) could even apply to a ~1,080-token splitter call —
+      it doesn't; that's well below where the effect has been empirically studied. External
+      research (a separate AI research session) then root-caused the real bug precisely, which
+      was verified directly against actual chunk output before accepting it:
+
+      `CHUNK_TRAILING_OVERLAP_LINES = 3` (the "safety margin" from the design decision above)
+      meant every non-last chunk contained a leaked fragment of the *next* exercise (its name +
+      first warmup line) in addition to the current one, and `extract_exercise()` was called
+      with the *global* split position against that now-2-exercise excerpt. A worker told
+      "extract exercise number 3" when handed a chunk containing only 2 recognizable blocks has
+      no correct answer — it picks the wrong (leaked) block, refuses as out-of-range, or returns
+      empty/garbage. This reproduces every cell of every observed failure table exactly,
+      including the verbatim refusal and the reproducible wrong name (the leaked fragment's own
+      name, which has no Sets: section since it's cut off mid-exercise). First/last were never
+      positionally special — index 1 coincidentally equals chunk-local index 1, and the last
+      chunk has no next exercise to leak from. **None of LITM, MoE routing, Groq's tool-calling
+      reliability, gpt-oss-120b vs. llama, or the anchor schema's 3 required fields were
+      necessary to explain any of it** — a correct splitter feeding a broken chunker produces
+      the identical failure regardless of model. This also means the splitter itself was never
+      shown to be unreliable in any of these runs; `assemble()` only ever overrides `number`
+      from the split, not `name`, so the wrong names observed were worker output, not splitter
+      output.
+
+      **Fix applied** (commit `21e948a`): `CHUNK_TRAILING_OVERLAP_LINES` set to 0 (a chunk
+      already runs up to the next exercise's own anchor line, and everything belonging to the
+      current exercise — including its trailing remarks — sits before that line by
+      construction, so a positive value only ever leaks, never protects a real case); and
+      `assemble()` now passes position 1, not the global split position, to `extract_exercise()`
+      whenever a chunk was successfully isolated (global position is only meaningful — and only
+      still used — on the full-text fallback path). Test doubles updated to match (see commit).
+      Suite: 467 passed, 0 skipped, 0 failed. **Not yet re-verified live** — that's next.
 - [ ] **8.5. DETOUR — per-call prefix cost.** *Step 8 is paused here, not abandoned. The live
       E2E runs above cannot be repeated often enough to finish Step 8 without first fixing what
       each call costs. Do this step, then return to Step 8 and re-run the live E2E.*
@@ -309,9 +352,16 @@ one file-split in Step 1. No speculative abstraction.
             and emitting free-form text instead of a tool call, which is precisely the failure
             class this whole refactor exists to eliminate. Do not adopt on cost grounds alone.
 
-      **Deferred until after this step, unchanged:** the retry-loop `BadRequestError` gap from
-      run 3 (see Step 8's deferred note). Order is deliberate — cheaper calls make the live
-      re-runs that would validate a retry fix affordable in the first place.
+      **The retry-loop `BadRequestError` gap from run 3 was fixed** (commit `978fa38`, both
+      providers now reask on the SDK's own schema-rejection error) — done ahead of this step
+      since it turned out cheap and unblocking it didn't depend on anything here.
+
+      **Blocked on `ANTHROPIC_API_KEY`.** Sub-step (a) was attempted and failed: `401 invalid
+      x-api-key` — the same dead key flagged in earlier-session memory, still unresolved.
+      Since Groq's caching only covers GPT-OSS models (not the `llama-3.3-70b-versatile`
+      currently in use) and Apoorva has ruled out paid models entirely for this project, this
+      whole step is Anthropic-dependent and stalled until the key is rotated. Not pursued
+      further for now — see the chunk-leak fix below, which took priority.
 - [ ] **9. Docs.** `CHANGELOG.md` `[Unreleased]` entry; update `docs/design.html` system-shape
       + data-flow section (bump eyebrow/footer date by hand).
 
@@ -325,24 +375,38 @@ one file-split in Step 1. No speculative abstraction.
 ## ▶ Resume here
 
 Steps 0-7 done on `refactor/split-extraction` (commit `ff871dd`), suite green (444 passed,
-0 skipped, 0 failed). Step 8's orchestrator wiring is done on
-`refactor/split-extraction-wire-orchestrator` (suite: 449 passed); three live E2E runs have
-been made against Groq/llama-3.3-70b, and their findings plus the locked pre-chunking design
-are written up under Step 8 above. Pre-chunking itself is implemented (`_chunk_exercises`),
-but the live E2E has **not** been re-run against it.
+0 skipped, 0 failed). Step 8 (orchestrator wiring, live E2E, chunk-leak fix) and the retry-loop
+fix are both done on `refactor/split-extraction-token-cost` (commits `d3fbe71`, `978fa38`,
+`d76c1b9`, `21e948a` — branched off `refactor/split-extraction-wire-orchestrator`, which itself
+branched off the base; not yet squash-merged anywhere, this whole line of work is still mid-flight).
+Suite: 467 passed, 0 skipped, 0 failed.
 
-**We are diverging here. Step 8 is paused mid-flight, not finished.**
+**Current state, plainly:**
+- Orchestrator defaults to `assemble()`; `parse()` reachable via flag/env for comparison.
+- Both providers reask on `BadRequestError`, not just our own post-hoc validation failures.
+- Pre-chunking is implemented, and the chunk-leak + local/global position bug that was
+  producing every observed "model reliability" failure across ~5 live E2E runs (2 models) is
+  fixed — **but not yet re-verified live**. That's the immediate next action.
+- Step 8.5 (token cost via prompt caching) is blocked on a dead `ANTHROPIC_API_KEY` and is
+  lower priority than re-verifying accuracy — no point optimizing cost on a path we haven't
+  confirmed actually works yet.
+- Free models only, confirmed with Apoorva — paid models (Anthropic once the key works, or
+  otherwise) are off the table for this project regardless of reliability tradeoffs.
+- `llama-3.3-70b-versatile`'s Groq free-tier quota (100K TPD) has been exhausted multiple times
+  today from live testing; `openai/gpt-oss-120b`'s separate 200K TPD quota is untouched and
+  available right now.
 
-The live runs surfaced a cost problem that blocks finishing Step 8: each of the N+2 calls
-re-sends its full system prompt *and* tool schema, ~27,400 tokens of prefix per 6-exercise
-session, which is ~3.6 sessions/day against Groq's free-tier 100K TPD cap. We can't iterate
-on extraction accuracy at that burn rate.
-
-**Next: Step 8.5 — the per-call prefix cost detour.** Cut
-`refactor/split-extraction-token-cost` from `refactor/split-extraction`. Sub-steps a-d are
-written up under Step 8.5 above; **a and c spend API credits — confirm with Apoorva before
-running either**, same bar as Step 8 itself.
-
-**Then come back here.** Once 8.5 lands, return to Step 8 and re-run the live E2E on the real
-6-exercise fixture — now against pre-chunking *and* a cached prefix — before moving to Step 9.
-Step 8's own remaining exit criteria are unchanged.
+**Next action: re-verify the chunk-leak fix live**, using the already-built comparison script:
+```
+.venv/bin/python scripts/validate_with_model.py \
+  tests/fixtures/valid/programmed_push_pull_session_with_remarks.md --model openai/gpt-oss-120b
+```
+Expect (if the fix holds): all 6 exercises present in order, each with its own sets/warmup
+populated, no cross-exercise leakage, and no more of the specific failure signatures from the
+pre-fix runs (wrong name at position 2, the "only two blocks" refusal, empty names/args at
+positions 3-5). Run it a couple of times for a real sample — one clean run isn't enough
+evidence either way, per the false confidence a single early spot-check gave the first time.
+Once accuracy is confirmed reliable(-enough) for a free model, decide: finish Step 8 as
+originally scoped (pick a default free model, document its known residual limitations, rely on
+the confirmation card — Apoorva's earlier "option 3"), or revisit Step 8.5 if cost still
+matters once accuracy is no longer the open question.
