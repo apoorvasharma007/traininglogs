@@ -12,6 +12,19 @@ DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 _MAX_RETRIES = 2
 
 
+def _reask_message(last_error: str) -> dict:
+    # A plain follow-up user turn, not a replayed assistant turn — a rejected tool call (the
+    # API's own schema check failing it) never produces a response to replay in the first
+    # place, so this is the one retry shape that works uniformly for every failure kind.
+    return {
+        "role": "user",
+        "content": (
+            f"The previous attempt failed:\n{last_error}\n"
+            "Please fix the issue and call the tool again."
+        ),
+    }
+
+
 @runtime_checkable
 class ExtractionProvider(Protocol):
     def extract(
@@ -42,35 +55,31 @@ class AnthropicProvider:
 
         for attempt in range(_MAX_RETRIES + 1):
             if attempt > 0:
-                messages += [
-                    {"role": "assistant", "content": _last_response_content},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"The extracted data failed validation:\n{last_error}\n"
-                            "Please fix the issues and call the tool again."
-                        ),
-                    },
-                ]
+                messages.append(_reask_message(last_error))
 
-            response = self._client.messages.create(
-                model=self.model,
-                max_tokens=4096,
-                # Extraction, not creative writing — same input must produce the same fields.
-                temperature=0,
-                system=system_prompt,
-                tools=[
-                    {
-                        "name": tool_name,
-                        "description": tool_description,
-                        "input_schema": tool_schema,
-                    }
-                ],
-                tool_choice={"type": "tool", "name": tool_name},
-                messages=messages,
-            )
-
-            _last_response_content = response.content
+            try:
+                response = self._client.messages.create(
+                    model=self.model,
+                    max_tokens=4096,
+                    # Extraction, not creative writing — same input must produce the same fields.
+                    temperature=0,
+                    system=system_prompt,
+                    tools=[
+                        {
+                            "name": tool_name,
+                            "description": tool_description,
+                            "input_schema": tool_schema,
+                        }
+                    ],
+                    tool_choice={"type": "tool", "name": tool_name},
+                    messages=messages,
+                )
+            except anthropic.BadRequestError as exc:
+                # The API's own server-side schema check rejected the tool call before
+                # returning a response — there's nothing to inspect, only the error to reask
+                # with. Same reask budget as a validation failure we catch ourselves.
+                last_error = str(exc)
+                continue
 
             tool_block = next(
                 (b for b in response.content if b.type == "tool_use"),
@@ -105,6 +114,7 @@ class GroqProvider:
         tool_name: str,
         tool_description: str,
     ) -> dict:
+        import groq
         import json
 
         messages: list[dict] = [
@@ -126,27 +136,24 @@ class GroqProvider:
 
         for attempt in range(_MAX_RETRIES + 1):
             if attempt > 0:
-                messages += [
-                    {"role": "assistant", "content": _last_response_content},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"The extracted data failed validation:\n{last_error}\n"
-                            "Please fix the issues and call the tool again."
-                        ),
-                    },
-                ]
+                messages.append(_reask_message(last_error))
 
-            response = self._client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=tools,
-                tool_choice=tool_choice,
-                # Extraction, not creative writing — same input must produce the same fields.
-                temperature=0,
-            )
+            try:
+                response = self._client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice=tool_choice,
+                    # Extraction, not creative writing — same input must produce the same fields.
+                    temperature=0,
+                )
+            except groq.BadRequestError as exc:
+                # The API's own server-side schema check rejected the tool call before
+                # returning a response — there's nothing to inspect, only the error to reask
+                # with. Same reask budget as a validation failure we catch ourselves.
+                last_error = str(exc)
+                continue
 
-            _last_response_content = response.choices[0].message.content or ""
             tool_calls = response.choices[0].message.tool_calls
 
             if not tool_calls:
