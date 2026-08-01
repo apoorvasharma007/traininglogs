@@ -46,14 +46,18 @@ class StubProvider:
         self._responses = list(responses)
         self._idx = 0
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         raw = self._responses[min(self._idx, len(self._responses) - 1)]
         self._idx += 1
         return raw
 
 
 class AlwaysFailProvider:
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         raise LLMParserError("always fails")
 
 

@@ -39,7 +39,9 @@ class StubProvider:
         self._raw = raw
         self.calls: list[tuple[str, dict]] = []
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         self.calls.append((text, tool_schema))
         return self._raw
 
@@ -47,14 +49,18 @@ class StubProvider:
 class InvalidProvider:
     """Returns a dict that fails Pydantic validation."""
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         return {"date": "not-a-date", "exercises": []}
 
 
 class FailingProvider:
     """Raises LLMParserError on every call."""
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         raise LLMParserError("provider always fails")
 
 

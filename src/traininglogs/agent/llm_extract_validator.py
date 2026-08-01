@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import ValidationError
 
+from traininglogs.agent.extraction import TOOL_DESCRIPTION, TOOL_NAME
+from traininglogs.agent.prompts import SYSTEM_PROMPT
 from traininglogs.agent.providers import ExtractionProvider
 from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 
@@ -21,7 +23,7 @@ class LLMExtractValidator:
             "extract_workout tool. Keep all unchanged fields exactly as they are."
         )
         tool_schema = TrainingLogLLMExtract.model_json_schema()
-        raw = self._provider.extract(prompt, tool_schema)
+        raw = self._provider.extract(prompt, tool_schema, SYSTEM_PROMPT, TOOL_NAME, TOOL_DESCRIPTION)
         try:
             return TrainingLogLLMExtract.model_validate(raw)
         except ValidationError as exc:

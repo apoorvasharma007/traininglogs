@@ -25,7 +25,9 @@ class StubProvider:
     def __init__(self, raw: dict) -> None:
         self._raw = raw
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         return self._raw
 
 

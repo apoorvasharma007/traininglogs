@@ -5,18 +5,23 @@ from typing import Protocol, runtime_checkable
 
 import anthropic
 
-from traininglogs.agent.prompts import SYSTEM_PROMPT
 from traininglogs.agent.schemas import LLMParserError
 
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
-_TOOL_NAME = "extract_workout"
 _MAX_RETRIES = 2
 
 
 @runtime_checkable
 class ExtractionProvider(Protocol):
-    def extract(self, text: str, tool_schema: dict) -> dict: ...
+    def extract(
+        self,
+        text: str,
+        tool_schema: dict,
+        system_prompt: str,
+        tool_name: str,
+        tool_description: str,
+    ) -> dict: ...
 
 
 class AnthropicProvider:
@@ -24,7 +29,14 @@ class AnthropicProvider:
         self.model = model
         self._client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self,
+        text: str,
+        tool_schema: dict,
+        system_prompt: str,
+        tool_name: str,
+        tool_description: str,
+    ) -> dict:
         messages: list[dict] = [{"role": "user", "content": text}]
         last_error: str = ""
 
@@ -46,15 +58,15 @@ class AnthropicProvider:
                 max_tokens=4096,
                 # Extraction, not creative writing — same input must produce the same fields.
                 temperature=0,
-                system=SYSTEM_PROMPT,
+                system=system_prompt,
                 tools=[
                     {
-                        "name": _TOOL_NAME,
-                        "description": "Extract structured workout data from the session text.",
+                        "name": tool_name,
+                        "description": tool_description,
                         "input_schema": tool_schema,
                     }
                 ],
-                tool_choice={"type": "tool", "name": _TOOL_NAME},
+                tool_choice={"type": "tool", "name": tool_name},
                 messages=messages,
             )
 
@@ -85,24 +97,31 @@ class GroqProvider:
         self.model = model
         self._client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self,
+        text: str,
+        tool_schema: dict,
+        system_prompt: str,
+        tool_name: str,
+        tool_description: str,
+    ) -> dict:
         import json
 
         messages: list[dict] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
         ]
         tools = [
             {
                 "type": "function",
                 "function": {
-                    "name": _TOOL_NAME,
-                    "description": "Extract structured workout data from the session text.",
+                    "name": tool_name,
+                    "description": tool_description,
                     "parameters": tool_schema,
                 },
             }
         ]
-        tool_choice = {"type": "function", "function": {"name": _TOOL_NAME}}
+        tool_choice = {"type": "function", "function": {"name": tool_name}}
         last_error: str = ""
 
         for attempt in range(_MAX_RETRIES + 1):
