@@ -131,8 +131,17 @@ one file-split in Step 1. No speculative abstraction.
       `test_agent_drop_check.py`: count-mismatch and token-scan true/false cases in isolation.
       Squash-merged to `refactor/split-extraction` · commit `111c9af` · 2026-08-01.
       Suite: 434 passed, 0 skipped, 0 failed.
-- [ ] **7. Card surfacing.** Show warnings and failed-exercise placeholders on the confirmation
-      card. Update card builder + renderer + their tests.
+- [x] **7. Card surfacing.** `UserValidationCard.warnings`, `ExerciseHeader.failed`,
+      `ExerciseCard.failure_reason` (full text — `note_preview` suppressed for a failed
+      exercise instead of a truncated duplicate). Builder detects a placeholder exercise via
+      `PLACEHOLDER_NOTE_PREFIX` (now exported from `extraction.py`, shared with
+      `_placeholder_exercise()`) rather than adding a synthetic field to the `Exercise` model
+      — that model's blast radius extends well beyond this confirmation flow.
+      `TerminalRenderer` prints warnings (⚠, bold yellow) after the session header and renders
+      a failed exercise as a red "⚠ EXTRACTION FAILED" header + reason, skipping the empty
+      warmup/sets sections a placeholder would otherwise render.
+      Squash-merged to `refactor/split-extraction` · commit `ff871dd` · 2026-08-01.
+      Suite: 444 passed, 0 skipped, 0 failed.
 - [ ] **8. Wire into the orchestrator.** Make the assembler the AI-parser default; keep the
       monolithic path reachable behind a flag/env for comparison. Update orchestrator + CLI
       tests. E2E on the real 6-exercise fixture with a live model.
@@ -148,14 +157,13 @@ one file-split in Step 1. No speculative abstraction.
 
 ## ▶ Resume here
 
-Steps 0-6 done on `refactor/split-extraction` (commit `111c9af`), suite green (434 passed,
-0 skipped, 0 failed). All core split-extraction logic is now built and tested with fake
-providers — no live LLM calls have been made yet. Next: Step 7 — card surfacing. Show
-`warnings` and failed-exercise placeholders on the confirmation card: update
-`validation_card_builder.py` + `renderer.py` + their tests. Cut
-`refactor/split-extraction-card-surfacing` from `refactor/split-extraction`.
+Steps 0-7 done on `refactor/split-extraction` (commit `ff871dd`), suite green (444 passed,
+0 skipped, 0 failed). All core split-extraction logic and its confirmation-card surfacing are
+built and tested with fake providers — no live LLM calls have been made yet.
 
-**Note for Step 8** (wiring into the orchestrator + live E2E on the real 6-exercise fixture):
-that step makes real Anthropic/Groq API calls and changes the AI-parser's default behavior —
-pause and confirm with Apoorva before running it, same as any step that spends API credits or
-changes default runtime behavior.
+**Next: Step 8 — wire into the orchestrator + live E2E on the real 6-exercise fixture.**
+This step makes real Anthropic/Groq API calls (costs money, hits external services) and
+changes the AI-parser's default behavior (`assemble()` becomes the default instead of
+`parse()`). **Pause and confirm with Apoorva before running it** — same bar as any step that
+spends API credits or changes default runtime behavior. Cut
+`refactor/split-extraction-wire-orchestrator` from `refactor/split-extraction` once approved.
