@@ -223,7 +223,63 @@ enumerated lines into one set (MyoReps, DropSet) or vice versa. Adding it now wo
 writing a check that's either always-true or frequently a false positive. Left out rather than
 added speculatively; revisit if a real fallback-path miss is ever observed.
 
-### - [ ] Step 3 — Merge `fix/extraction-accuracy` → `dev`
+## Live-test findings after Step 2 (2026-08-02)
+
+Ran `scripts/validate_with_model.py` against `openai/gpt-oss-120b` on the real 6-exercise
+fixture. All three originally-targeted failures confirmed fixed (weight/warmup present on
+Incline DB Press, RPE on Lat Pulldown's last set not the first, Lateral Raise's sets under
+`sets` not `warmup_sets`). Three new, smaller issues surfaced — none are regressions of the
+three original bugs, none are data corruption, and none require reopening Step 1 or 2:
+
+1. **Duplicate RPE note.** Bench Press, Lat Pulldown, and Lateral Raise each show the correctly
+   placed structured RPE on the last set (renders as `RPE 7`, no colon) *and* a redundant raw
+   echo of the same remark in set 1's `notes` (renders as `RPE: 6-7`, with colon — confirmed
+   these are different fields by reading `renderer.py`'s `_mark()`/format strings, not a
+   misreading of the card). `LABELS_SYSTEM_PROMPT` never told the model not to restate a value
+   it's already handling structurally via `exercise_rpe_target_set`.
+2. **Spurious warmup note.** Lat Pulldown's card showed `Warmup note: 45kg x 5` — the model
+   restated the warmup line's own already-parsed numbers instead of actual commentary.
+3. **Shell-level focus truncation.** Session header showed `Powerlifting?` (real value:
+   "Powerlifting and Mobility") — `SHELL_SYSTEM_PROMPT` literally instructs "use the short
+   label, not a long description," and the model over-applied that to a value that wasn't
+   descriptive filler. `TrainingMarkdownParser._parse_metadata_line()` (`parser/extract.py`)
+   already parses `- Focus: ...` lines verbatim, no LLM, already used by the rules path — same
+   "reach for deterministic parsing" principle as Steps 1/2, just applied to the shell call
+   instead of the exercise call this time.
+
+Checked which shell fields are actually free reuse before proposing Step 4 below: `date`,
+`program`, `focus`, `week`, and `is_deload_week` are — `TrainingMarkdownParser`'s generic
+`Key: Value` line parser and `DeepTrainingParser`'s yes/true/1 boolean logic already handle
+them exactly, zero new code. `phase` (word ordinal → int, e.g. "One - Volume/Base Building" →
+1) and `session_duration_minutes` (hrs+min string → total minutes, e.g. "1hrs 41min" → 101) are
+**not** — confirmed by grep that no such converter exists anywhere in the codebase today, only
+as prose instructions to the LLM. Those two need small new (tested) functions, not just reuse —
+a materially different risk/effort category than the rest of this plan so far.
+
+### - [ ] Step 3 — Labels prompt hygiene (not started)
+
+Add two rules to `LABELS_SYSTEM_PROMPT` (`prompts.py`): (a) `set_notes` must never restate this
+exercise's own weight/reps/RPE, including a whole-exercise RPE remark — that's handled via
+`exercise_rpe_target_set`, not `set_notes`; only use `set_notes` for something ADDITIONAL about
+that set (form, feel, a named correction); (b) `warmup_notes` must never restate the warmup
+sets' own weight/rep numbers — only actual commentary about the warmup as a whole. Prompt-only
+change, no schema/pipeline change. Proposed to Apoorva, not yet implemented — work paused
+before starting it.
+
+### - [ ] Step 4 — Shell parse-first (not started)
+
+Mirrors Steps 1–2's pattern for `extract_shell()` instead of `extract_exercise()`. Deterministic
+metadata parse (reusing `TrainingMarkdownParser`'s `Key: Value` line parser, already tested)
+runs before the shell LLM call; if it finds `date`/`program`/`focus`/`week`/`is_deload_week`,
+those come from the parse directly and the LLM's shell schema shrinks to `warmup`/`cooldown`/
+top-level `notes` only. Two new small converters needed and not yet written: word-ordinal phase
+("One" → 1) and hrs+min duration ("1hrs 41min" → 101) — each needs its own unit tests, same
+diligence as `exercise_block.py`'s tests. All-or-nothing fallback to today's full
+`extract_shell()` if the metadata block doesn't parse (e.g. genuinely freeform text with no
+`- Key: Value` lines at all) — same safety property as Steps 1–2. Proposed to Apoorva, not yet
+implemented — work paused before starting it.
+
+### - [ ] Step 5 — Merge `fix/extraction-accuracy` → `dev`
 
 - [ ] Full suite green, 0 skipped.
 - [ ] `CHANGELOG.md` `[Unreleased]` entry.
@@ -233,22 +289,68 @@ added speculatively; revisit if a real fallback-path miss is ever observed.
 
 ## ▶ Resume here
 
+**Work paused (2026-08-02) at Apoorva's request, mid-discussion of Steps 3 and 4 above —
+neither has been started. No code was written for either; this section and the two step
+write-ups above are the only new content from this discussion.**
+
 **Correction (still relevant):** `fix/extraction-accuracy` had to be rebased off
 `refactor/split-extraction-token-cost` instead of `dev` — see git log for the full note. This
-means merging this plan's base branch to `dev` at the end (Step 3) has to happen *after*
+means merging this plan's base branch to `dev` (Step 5) has to happen *after*
 `refactor/split-extraction-token-cost` merges to `dev`, not before.
 
-**Steps 1 and 2 both done.** Suite green: 483 passed, 0 failed, 0 skipped. Base branch
-`fix/extraction-accuracy` not yet merged to `dev` (blocked on the above until
-`refactor/split-extraction-token-cost` merges first).
+**Steps 1 and 2 done and squash-merged.** Suite green last verified at 483 passed, 0 failed, 0
+skipped, before the uncommitted changes below existed.
 
-Current branch: `fix/extraction-accuracy`. Working tree still has three untracked scripts
-(`scripts/measure_prefix_tokens.py`, `scripts/spot_check_ai_parser.py`,
-`scripts/validate_with_model.py`) unrelated to this plan — untouched.
+**Uncommitted in the working tree right now — not mine, do not revert or assume ownership of
+without checking with Apoorva:**
+- `src/traininglogs/agent/providers.py` — `_NON_RETRYABLE_400_MARKERS` /
+  `_is_retryable_bad_request()`: distinguishes a genuinely non-retryable 400 (billing/quota/
+  permission) from a retryable schema-rejection 400, raising `LLMParserError` immediately for
+  the former instead of burning the reask budget on a guaranteed failure.
+- `src/traininglogs/agent/extraction.py` — `assemble()` gained a `use_parse_first` parameter
+  and `DISABLE_PARSE_FIRST_ENV_VAR` env-var escape hatch, to run the pipeline with
+  `parse_exercise_block()` disabled entirely (full LLM extraction for every exercise) for
+  measurement/comparison purposes — explicitly documented in its own docstring as "not a
+  production mode."
+- `.gitignore` — new `eval_runs/` entry.
+- New untracked: `scripts/eval_ab.py`, `scripts/eval_arms.py`, `arms_out.txt`, `eval_out.txt` —
+  look like an A/B evaluation harness comparing parse-first on vs. off, run outputs included.
+  Also still untracked and unrelated to this plan: `scripts/measure_prefix_tokens.py`,
+  `scripts/spot_check_ai_parser.py`, `scripts/validate_with_model.py`.
 
-**Next action:** Step 3 (merge to `dev`) is blocked on `refactor/split-extraction-token-cost`
-merging first — that's a decision/action for `orchestration-refactor-plan.md`, not this plan.
-In the meantime this plan's own work is functionally complete: both structurally-impossible
-failures (weight/warmup drop, sets-vs-warmup_sets misfile) are fixed by construction, and RPE
-placement now defaults correctly instead of depending on model behavior. Nothing left to
-implement unless real-world use surfaces something new.
+**Next action:** confirm with Apoorva what to do with the uncommitted eval-harness work above
+(commit as its own step, fold `use_parse_first` into this plan formally, or leave as a
+standalone measurement branch), then resume Steps 3 and 4 as scoped above — Step 3 first
+(small, no design question), Step 4 second (needs the two new converters + their tests,
+test-first per `CLAUDE.md` phase order). Step 5 (merge to `dev`) stays blocked on
+`refactor/split-extraction-token-cost` regardless.
+
+---
+
+## ✅ CLOSED 2026-08-02 — superseded by `roadmap.md`
+
+This plan is closed. `roadmap.md` at the repo root is the forward plan. Nothing below was
+abandoned silently; each open step has a recorded disposition.
+
+**What closed it:** a measured model evaluation (`scripts/eval_arms.py`, artifacts in
+`eval_runs/`, ~$0.58 total) established that **`parse_exercise_block()` fires on 0 of 10
+exercises in real input files.** Its `_HEADERS = ("Warmup", "Sets", "Remarks")` requires
+exact-match header lines; real logs use markdown (`### Working Sets`). The parse-first design
+this plan delivered has therefore never run in production — it was validated only against the
+older `tests/fixtures/valid/programmed_*.md` format.
+
+The pure-AI pipeline scored 571/578 (98.8%) on 6 real sessions with Haiku 4.5, and 5 of the 7
+misses were the model being *more* correct than the answer key (true accuracy ≈ 99.7%).
+Decision: **remove parse-first from the AI path** rather than fix its header matching.
+
+**Disposition of open steps:**
+
+| Step | Disposition |
+|---|---|
+| **Step 3 — labels prompt hygiene** | **Re-targeted, not dropped.** Its two rules (`set_notes` must not restate this exercise's own weight/reps/RPE; `warmup_notes` must not restate the warmup sets' own numbers) were scoped against `LABELS_SYSTEM_PROMPT`, which is used only by `extract_exercise_labels()` — the parse-first path being deleted. The bugs are real and one was re-observed on 2026-08-02. The same two rules move to `WORKER_SYSTEM_PROMPT`, the surviving path. → `roadmap.md` Phase 1. |
+| **Step 4 — shell parse-first** | **Rejected by decision, bug preserved.** Deterministic metadata parsing before the shell LLM call is hardcoded parsing in the AI pipeline, which Apoorva ruled out ("no parser hardcoding, we want ai native"). The bug that motivated it is real and still open: `focus` returned `"Powerlifting?"` for a source value of `Powerlifting and Mobility`. Root cause is already diagnosed above — `SHELL_SYSTEM_PROMPT`'s "use the short label, not a long description" instruction over-applies. Fix it by correcting that instruction, not by adding a parser. The two converters this step would have needed (word-ordinal phase, hrs+min duration) are **not** being written. → `roadmap.md` Phase 1. |
+| **Step 5 — merge to `dev`** | **Executed as Phase 0.** The chain turned out to be linear: `fix/extraction-accuracy` already contains every commit from `refactor/split-extraction`, `-wire-orchestrator`, and `-token-cost` (verified `git log fix/extraction-accuracy..<each>` = 0). One squash-merge lands all of it, which satisfies this plan's own constraint that `-token-cost` reach `dev` first. |
+
+**Uncommitted eval-harness work resolved:** `scripts/eval_ab.py` and `scripts/eval_arms.py` are
+committed as the pipeline's regression harness. The `use_parse_first` toggle is committed as a
+measurement escape hatch and is removed in Phase 1 along with parse-first itself.

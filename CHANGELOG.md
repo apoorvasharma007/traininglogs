@@ -126,6 +126,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+
+### Added (pipeline evaluation, 2026-08-02)
+
+- `scripts/eval_ab.py` — model A/B harness with an on-disk response cache keyed by the full
+  request hash, a `--max-cost` abort, `--dry-run`, and per-call spend logging to `calls.jsonl`.
+  No paid call is ever made twice, across runs or after a crash.
+- `scripts/eval_arms.py` — pipeline-architecture comparison (`split-pf` / `split-nopf` / `mono`)
+  scored automatically against the historical JSON in `output_training_logs_json/`, matched to
+  each input by the `session_id` path hash. Numeric spine only; classification fields are not
+  scored because they postdate that data.
+- `assemble()` gained `use_parse_first` and `TRAININGLOGS_DISABLE_PARSE_FIRST` — a measurement
+  escape hatch that runs the pipeline with `parse_exercise_block()` disabled. Explicitly not a
+  production mode; removed together with parse-first in roadmap Phase 1.
+- `roadmap.md` — single forward plan superseding `orchestration-refactor-plan.md`,
+  `extraction-accuracy-plan.md`, and the Cloud Deployment Wave in `pre-online-plan.md`.
+
+### Fixed
+
+- Non-retryable API errors (billing, quota, permission) now raise `LLMParserError` immediately
+  instead of consuming the full reask budget. Previously a credit-balance 400 burned three
+  attempts on a guaranteed failure and buried the real cause under "failed after 3 attempts".
+  Applies to both `AnthropicProvider` and `GroqProvider`.
+
+### Removed
+
+- `scripts/spot_check_ai_parser.py` — imported `traininglogs.agent.llm_parser`, removed in the
+  split-extraction refactor; the script had been dead since.
+- `scripts/validate_with_model.py` — Groq-specific comparison runner, superseded by
+  `scripts/eval_arms.py`.
+
 ## [2.0.0] - 2026-05-07
 
 ### Added

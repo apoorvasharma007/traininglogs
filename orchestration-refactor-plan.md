@@ -396,17 +396,49 @@ Suite: 467 passed, 0 skipped, 0 failed.
   today from live testing; `openai/gpt-oss-120b`'s separate 200K TPD quota is untouched and
   available right now.
 
-**Next action: re-verify the chunk-leak fix live**, using the already-built comparison script:
-```
-.venv/bin/python scripts/validate_with_model.py \
-  tests/fixtures/valid/programmed_push_pull_session_with_remarks.md --model openai/gpt-oss-120b
-```
-Expect (if the fix holds): all 6 exercises present in order, each with its own sets/warmup
-populated, no cross-exercise leakage, and no more of the specific failure signatures from the
-pre-fix runs (wrong name at position 2, the "only two blocks" refusal, empty names/args at
-positions 3-5). Run it a couple of times for a real sample — one clean run isn't enough
-evidence either way, per the false confidence a single early spot-check gave the first time.
-Once accuracy is confirmed reliable(-enough) for a free model, decide: finish Step 8 as
-originally scoped (pick a default free model, document its known residual limitations, rely on
-the confirmation card — Apoorva's earlier "option 3"), or revisit Step 8.5 if cost still
-matters once accuracy is no longer the open question.
+**Update (2026-08-02), work paused here:** the chunk-leak fix re-verification this section used
+to point to as the next action is done — confirmed live, repeatedly, on `openai/gpt-oss-120b`.
+All 6 exercises now come through present, in order, with no cross-exercise leakage. Once that
+held up, three remaining *value-level* accuracy bugs (not chunking) were found, root-caused,
+and mostly fixed on a separate branch — that work is its own plan now:
+**`extraction-accuracy-plan.md` is the current source of truth for accuracy work**, on branch
+`fix/extraction-accuracy` (rebased off `refactor/split-extraction-token-cost`, since `dev` still
+doesn't have this branch's work merged in — see that plan's own correction note). Read its
+Resume section for exact state; as of this pause, its Steps 1-2 are done and squash-merged,
+Steps 3-4 are scoped but not started, and there's uncommitted eval-harness work
+(`scripts/eval_ab.py`, `use_parse_first` A/B toggle) not yet reconciled into either plan.
+
+This plan's own remaining open item — Step 8.5 (token-cost via prompt caching) — is still
+blocked on a dead `ANTHROPIC_API_KEY` and still lower priority than the accuracy work above.
+No action pending here beyond that; do not re-run the chunk-leak re-verification again, it's
+already confirmed.
+
+---
+
+## ✅ CLOSED 2026-08-02 — superseded by `roadmap.md`
+
+This plan is closed and its central design decision is **validated by measurement**, not just
+shipped. `roadmap.md` at the repo root is the forward plan.
+
+**The split-call architecture stays.** Measured on 6 real sessions with Haiku 4.5
+(`scripts/eval_arms.py`, artifacts in `eval_runs/`):
+
+| arm | accuracy | perfect files | calls | cost | hard failures |
+|---|---|---|---|---|---|
+| `split-nopf` (this plan's design) | 571/578 (98.8%) | 3/6 | 38 | $0.2963 | 0 |
+| `mono` (the pre-refactor single call) | 337/342 (98.5%) | 2/4 | 6 | $0.1575 | **2 of 6** |
+
+Accuracy between them is a tie on files both completed (339 vs 337 fields). The split wins on a
+different axis: monolithic output ran 3.6–4.1K tokens and **hit the `max_tokens=4096` ceiling on
+2 of 6 files**, returning truncated JSON that failed validation outright. Split keeps each call
+at 400–800 output tokens — headroom that holds as sessions grow. The cost gap is also expected to
+reverse once prompt caching lands, since the ~5,400-token worker prefix repeats ~8× per session.
+
+**Disposition of the one open step:**
+
+| Step | Disposition |
+|---|---|
+| **Step 8.5 — token cost via prompt caching** | **Carried forward unchanged.** The `ANTHROPIC_API_KEY` that blocked it is live as of 2026-08-02. → `roadmap.md` Phase 1. Note for whoever picks it up: the splitter (~670 tok) and shell (~1,400 tok) prefixes are **below Haiku 4.5's 4,096-token minimum cacheable prefix** and will silently never cache (`cache_creation_input_tokens: 0`, no error). Only the ~5,400-token worker prefix will. `scripts/measure_prefix_tokens.py` exists to confirm this against the real endpoint. |
+
+Everything else in this plan is complete and verified. Do not re-run the chunk-leak
+re-verification — it is confirmed.
