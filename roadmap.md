@@ -61,16 +61,25 @@ fix/extraction-accuracy` is **linear**: the tip contains every commit from all t
 automatically satisfies `extraction-accuracy-plan.md`'s constraint that token-cost reach `dev`
 first.
 
-- [ ] Resolve the working tree — commit the eval harness + toggle + retry fix; delete dead
-      `scripts/spot_check_ai_parser.py` (imports `agent.llm_parser`, removed); do not commit
-      `eval_out.txt` / `arms_out.txt`. Two plan files carry pre-existing uncommitted edits from
-      an earlier session — review before committing, do not clobber.
-- [ ] Full suite green (`docker compose up -d` first).
-- [ ] Squash-merge `fix/extraction-accuracy` → `dev`.
-- [ ] Delete the three ancestor branches + the two squash-merged sub-branches.
-- [ ] Delete stale feature branches (list generated and confirmed before deletion — destructive).
-- [ ] Mark `orchestration-refactor-plan.md`, `extraction-accuracy-plan.md`,
-      `movement-skill-plan.md`, `refactor-data-model.md` as superseded/complete.
+- [x] Resolve the working tree — three atomic commits (`5c3a496` retry fix, `b669251` eval
+      harness, `58b12e2` plan closures + roadmap). `spot_check_ai_parser.py` (dead import) and
+      `validate_with_model.py` (Groq-specific, superseded) retired to scratchpad rather than
+      deleted. `eval_out.txt` / `arms_out.txt` gitignored.
+- [x] Full suite green — **483 passed, 0 failed, 0 skipped**, matching the pre-work baseline.
+- [x] Merge `fix/extraction-accuracy` → `dev` (`9bde4f6`). Used `--no-ff` rather than squash:
+      the chain was 29 commits of real staged work and a fast-forward would have hidden the
+      phase boundary. Suite re-verified green on `dev` after the merge.
+- [x] Delete the three ancestor branches — done with `git branch -d` (not `-D`), so git itself
+      verified containment.
+- [ ] Delete the remaining 12 stale branches — **deferred until `dev` reaches `main`**, when
+      `-d` can clear the genuinely-merged ones without a judgement call. Branch counts are
+      misleading for squash-merged branches (`feature/ai-parser-terminal-renderer` shows 1
+      "unique" commit but `agent/renderer.py` is in the tree). Clutter is cheap; deleted work
+      is not.
+- [x] `orchestration-refactor-plan.md` and `extraction-accuracy-plan.md` closed with a recorded
+      disposition for every open step.
+- [ ] Mark `movement-skill-plan.md` and `refactor-data-model.md` complete (both appear done;
+      confirm before closing).
 
 ## Phase 1 — Finalize the pipeline
 
@@ -165,9 +174,18 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 **Written 2026-08-02.** Architecture decisions locked above from the model evaluation run the
 same day; total eval spend ~$0.58.
 
-**Nothing from Phase 0 has been executed.** The working tree is dirty (eval harness, parse-first
-toggle, retry fix, two plan files with pre-existing edits). Branch deletion is destructive and
-has not been done — the exact list must be generated and confirmed in-session before any
-deletion.
+**Phase 0 is complete.** `dev` is at `9bde4f6` with the whole split-extraction +
+extraction-accuracy chain landed, suite **483 passed / 0 failed / 0 skipped**. Three ancestor
+branches deleted (`-d`, verified contained). Twelve stale branches deliberately left until
+`dev` → `main`. Nothing has been pushed — the merge is local only.
 
-**Next action:** Phase 0, step 1 — resolve the working tree and get the suite green.
+**Next action: Phase 1, first item — delete `parse_exercise_block` and the parse-first branch
+from `assemble()`.** Cut `phase-1/finalize-pipeline` from `dev`, then a sub-branch per item.
+
+Order within Phase 1 matters: do the **deletion first** (it removes `extract_exercise_labels`,
+`LABELS_SYSTEM_PROMPT`, and `ExerciseLabelsExtract`, shrinking the surface everything else
+touches), then the two inherited prompt fixes, then `audit()`, then caching last — caching is
+the only item whose measurement depends on the final call structure.
+
+Re-run `scripts/eval_arms.py --n 6 --arms split-nopf` after each item; the responses are cached,
+so a re-score after a prompt change costs only the calls whose prefix actually changed.
