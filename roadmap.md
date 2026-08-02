@@ -86,9 +86,18 @@ first.
 Three of these are inherited open steps from the two closed plans — noted so their provenance
 isn't lost.
 
-- [ ] Delete `parse_exercise_block` and the parse-first branch from `assemble()`; remove
-      `use_parse_first` and `DISABLE_PARSE_FIRST_ENV_VAR`. Also removes `extract_exercise_labels()`,
-      `LABELS_SYSTEM_PROMPT`, and `ExerciseLabelsExtract`, which have no other caller.
+- [x] **Delete parse-first** (`3afafb2`). Removed `parse_exercise_block` + `exercise_block.py`,
+      `extract_exercise_labels`, `LABELS_SYSTEM_PROMPT`, `ExerciseLabelsExtract`,
+      `_place_exercise_rpe`, `_build_parsed_exercise`, `use_parse_first` /
+      `DISABLE_PARSE_FIRST_ENV_VAR`, and `eval_arms`' `split-pf` arm. −740 lines.
+      Suite 467 green (was 483; the 16 removed covered deleted code).
+      **Coverage tradeoff, recorded deliberately:** `TestAssembleReproducesOriginalFailures`
+      proved two of the three original extraction failures were structurally impossible — a
+      guarantee that held *because* the parser owned the numeric spine. With the model owning
+      it, those tests would assert only that a scripted value came back unchanged, so they were
+      deleted rather than rewritten into something weaker than they look. That coverage now
+      lives in `scripts/eval_arms.py` (measured against real sessions) and in `audit()` — which
+      makes the `audit()` rewrite below the item that restores the guard, not just a nice-to-have.
 - [ ] Rewrite `audit()`: per-exercise set-count check against enumerated source lines; flag
       `unilateral_rep_count` populated where the source line has no left/right marker. Keep the
       RPE/kg token checks. Tune for sensitivity — a false warning costs two seconds of reading,
@@ -174,18 +183,30 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 **Written 2026-08-02.** Architecture decisions locked above from the model evaluation run the
 same day; total eval spend ~$0.58.
 
-**Phase 0 is complete.** `dev` is at `9bde4f6` with the whole split-extraction +
-extraction-accuracy chain landed, suite **483 passed / 0 failed / 0 skipped**. Three ancestor
-branches deleted (`-d`, verified contained). Twelve stale branches deliberately left until
-`dev` → `main`. Nothing has been pushed — the merge is local only.
+**Phase 0 complete.** `dev` is at `99c9fae` with the whole split-extraction +
+extraction-accuracy chain landed. Three ancestor branches deleted (`-d`, verified contained).
+Twelve stale branches deliberately left until `dev` → `main`. Nothing has been pushed.
 
-**Next action: Phase 1, first item — delete `parse_exercise_block` and the parse-first branch
-from `assemble()`.** Cut `phase-1/finalize-pipeline` from `dev`, then a sub-branch per item.
+**Phase 1 in progress** on `phase-1/finalize-pipeline` (cut from `dev`), sub-branch per item.
+Item 1 (delete parse-first) done and squash-merged — `3afafb2`, suite **467 passed / 0 failed /
+0 skipped**.
 
-Order within Phase 1 matters: do the **deletion first** (it removes `extract_exercise_labels`,
-`LABELS_SYSTEM_PROMPT`, and `ExerciseLabelsExtract`, shrinking the surface everything else
-touches), then the two inherited prompt fixes, then `audit()`, then caching last — caching is
-the only item whose measurement depends on the final call structure.
+**Next action: rewrite `audit()`.** It moved up the order deliberately: deleting parse-first
+removed the structural guarantee that two of the three original extraction failures couldn't
+happen, so `audit()` is now the only runtime guard against them. Its known blind spots, each
+with a real example from the 2026-08-02 evaluation:
 
-Re-run `scripts/eval_arms.py --n 6 --arms split-nopf` after each item; the responses are cached,
-so a re-score after a prompt change costs only the calls whose prefix actually changed.
+1. **Per-exercise set count.** Groq dropped 4 sets on one fixture and 3 on another with
+   `warn=0` — `audit()` compares *exercise* counts against the splitter, never set counts.
+2. **Timed / bodyweight sets carry no kg tokens.** `20s`, `18s`, `15s` — the weight-token check
+   has nothing to look for, leaving the whole calisthenics input class unguarded.
+3. **Structural misplacement.** `12.5 x 13 - right did partial range only` became
+   `unilateral_rep_count={right:{full:13}}` with `rep_count=None`. Both numbers are still in the
+   output, so every token-presence check passes. Fixture: `Wrist Flexion DB Curl` in
+   `inputs/programs/bodybuilding_transformation_system/phase_2/week_12/upper_strength_foundation_block.md`.
+
+Then the two inherited prompt fixes, then caching last — caching is the only item whose
+measurement depends on the final call structure.
+
+Re-run `scripts/eval_arms.py --n 6 --arms split` after each item. Responses are cached, so a
+re-score after a prompt change costs only the calls whose prefix actually changed.
