@@ -1,9 +1,8 @@
 """Architecture A/B/C — scores pipeline variants against the historical JSON answer key.
 
 Answers three design questions with one run:
-  1. Is the deterministic parse-first path still needed?   (split-pf vs split-nopf)
-  2. Is the split-call architecture needed at all?         (split-nopf vs mono)
-  3. What does each cost?                                  (tokens/$ recorded per arm)
+  1. Is the split-call architecture needed at all?  (split vs mono)
+  2. What does each cost?                           (tokens/$ recorded per arm)
 
 GROUND TRUTH is output_training_logs_json/*.json, matched to each input .md by the
 session_id hash (processor.compute_session_id). Those files predate the v3 model, so only
@@ -18,11 +17,11 @@ Usage:
     # plan + cost estimate, no API calls
     .venv/bin/python -u scripts/eval_arms.py --n 6 --dry-run
 
-    # the decisive run: is splitting necessary?
-    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split-nopf mono --max-cost 2.00
+    # is splitting necessary?
+    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split mono --max-cost 2.00
 
-    # add the current production baseline
-    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split-pf split-nopf mono
+    # re-score one arm after a prompt change (cached calls are free)
+    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split
 """
 from __future__ import annotations
 
@@ -59,10 +58,11 @@ from traininglogs.agent.schemas import LLMParserError  # noqa: E402
 INPUTS_DIR = PROJECT_ROOT / "inputs"
 TRUTH_GLOB = str(PROJECT_ROOT / "output_training_logs_json" / "**" / "*.json")
 
-# arm -> (entrypoint, kwargs). "mono" is the single-call path; it has no parse-first concept.
+# arm -> (entrypoint, kwargs). The `split-pf` arm (parse-first ON) was removed with
+# parse_exercise_block itself on 2026-08-03 — it fired on 0 of 10 real exercises, so it was
+# never distinguishable from `split` on production input anyway.
 ARMS = {
-    "split-pf": (extraction.assemble, {"use_parse_first": True}),
-    "split-nopf": (extraction.assemble, {"use_parse_first": False}),
+    "split": (extraction.assemble, {}),
     "mono": (extraction.parse, {}),
 }
 
@@ -178,7 +178,7 @@ def score(truth: list[dict], got: list[dict]) -> tuple[int, int, list[str]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--arms", nargs="+", default=["split-nopf", "mono"], choices=list(ARMS))
+    ap.add_argument("--arms", nargs="+", default=["split", "mono"], choices=list(ARMS))
     ap.add_argument("--model", default="haiku", choices=list(MODELS))
     ap.add_argument("--n", type=int, default=6, help="How many input files to sample")
     ap.add_argument("--seed", type=int, default=7, help="Sampling seed — keep it fixed across runs")

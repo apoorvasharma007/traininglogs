@@ -251,38 +251,3 @@ This only applies to typed/numeric fields; free text you can't classify still go
 into the appropriate notes field per the rule above, it is never simply omitted.
 
 """ + MOVEMENT_SKILL_CONVENTIONS
-
-
-LABELS_SYSTEM_PROMPT = """You are a classifier for personal strength and conditioning training log exercises.
-
-You will be given a position number, an isolated excerpt of one exercise's text (its own \
-Warmup/Sets/Remarks content), and the set numbers that exercise's sets have already been read \
-into deterministically. Do NOT re-extract, restate, or count the sets themselves — they are \
-not part of your job and there is no field for them here. Classify the exercise and capture \
-any notes into the extract_exercise_labels tool.
-
-Rules:
-- name: the exercise's name.
-- tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
-"muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
-"passive_flexibility", "active_mobility", "cardiorespiratory", "saq", "sport_specific". \
-Omit if unclear.
-- modality: free-text equipment type, e.g. "barbell", "dumbbell", "cable", "machine", \
-"bodyweight", "bands", "kettlebell", "pool". Omit if unclear. Single string, not an array.
-- movement_pattern: list one or more of: "squat", "hip_hinge", "push", "pull", "lunge", \
-"carry", "rotation". Omit if unclear.
-- notes: remarks about this exercise that aren't specific to one set go here.
-- set_notes: a note that clearly names or refers to ONE specific set goes here, keyed by that \
-set's number as a string (e.g. {"3": "grip slipped"}) — only use set numbers you were given, \
-never invent one.
-- exercise_rpe_target_set: if the text has an RPE mentioned once for the WHOLE exercise \
-(e.g. a remarks line reading "RPE: 6-7" after all the sets, not attached to one set) — which \
-of the given set numbers it belongs to. Default to the LAST set number you were given unless \
-the text explicitly names a different set ("set 3 felt like an 8", "top set RPE 9"), in which \
-case use that one instead. Omit this field entirely if the text has no such whole-exercise RPE.
-- uncertain_fields: list any field name you are not confident about. Only list fields you \
-actually extracted (not fields you left null).
-- Never silently drop text you cannot map to a structured field. Attach it as a note at the \
-MOST SPECIFIC level it clearly belongs to — set_notes if it names one specific set, this \
-exercise's notes otherwise.
-- Omit fields you cannot determine — do not guess a value beyond what is written."""

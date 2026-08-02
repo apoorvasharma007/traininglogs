@@ -78,43 +78,6 @@ class ExerciseExtract(Exercise):
     uncertain_fields: List[str] = Field(default_factory=list)
 
 
-class ExerciseLabelsExtract(BaseModel):
-    """One narrow-path worker call's result — used only when parse_exercise_block() (see
-    extraction.py) already supplied this exercise's numeric spine (sets, warmup_sets)
-    deterministically. Deliberately has no sets/warmup_sets fields at all: the LLM is
-    structurally never asked for them on this path, so it cannot get them wrong the way the
-    full ExerciseExtract path can.
-
-    set_notes keys must be among the set numbers the caller supplied in its prompt (the
-    parser's own set numbers); the caller drops any key that isn't, with a warning, rather than
-    treating it as fatal. exercise_rpe_target_set is only meaningful when the parser found an
-    exercise-level RPE mentioned once for the whole exercise (ParsedBlock.exercise_rpe) — this
-    field says which of the given set numbers that RPE belongs to. The RPE *value* is always
-    deterministic (the parser read it); only its *placement* is still a judgment call, same as
-    the full-extraction path's last-set convention."""
-
-    name: str
-    tags: Optional[List[str]] = None
-    modality: Optional[str] = None
-    movement_pattern: Optional[List[str]] = None
-    target_muscle_groups: Optional[List[str]] = None
-    rep_tempo: Optional[str] = None
-    current_goal: Optional[Goal] = None
-    notes: Optional[str] = None
-    warmup_notes: Optional[str] = None
-    form_cues: Optional[List[str]] = None
-    set_notes: Dict[str, str] = Field(default_factory=dict)
-    exercise_rpe_target_set: Optional[int] = None
-    uncertain_fields: List[str] = Field(default_factory=list)
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("Exercise name cannot be empty")
-        return v
-
-
 class ExercisePosition(BaseModel):
     """One entry in the splitter's ordered exercise listing. `anchor` is a verbatim quote used
     to deterministically locate this exercise's text in the source document (see

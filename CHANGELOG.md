@@ -156,6 +156,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/validate_with_model.py` — Groq-specific comparison runner, superseded by
   `scripts/eval_arms.py`.
 
+
+### Removed (parse-first, 2026-08-03)
+
+- `parse_exercise_block()` and `src/traininglogs/agent/exercise_block.py` — the deterministic
+  per-exercise block parser. Measurement showed it fired on **0 of 10 exercises in real input
+  files**: it required exact-match `Warmup:` / `Sets:` / `Remarks:` header lines, while real
+  logs use markdown (`### Working Sets`). It had never run in production, only against the older
+  `tests/fixtures/valid/programmed_*.md` format it was validated on. The pure-AI path scores
+  ~99.7% on the numeric spine across 6 real sessions with Haiku 4.5.
+- `extract_exercise_labels()`, `LABELS_SYSTEM_PROMPT`, `LABELS_TOOL_NAME`/`_DESCRIPTION`, and
+  the `ExerciseLabelsExtract` schema — the narrow classification-only worker path, reachable
+  only when parse-first succeeded.
+- `assemble()`'s `use_parse_first` parameter and `TRAININGLOGS_DISABLE_PARSE_FIRST` env var —
+  the measurement escape hatch added to run this comparison. `assemble(text, provider)` again.
+- `tests/test_agent_exercise_block.py`, `tests/test_agent_exercise_labels.py`, and
+  `TestAssembleReproducesOriginalFailures` in `tests/test_agent_assembler.py`. **Coverage note:**
+  that last class proved two of the three original extraction failures were structurally
+  impossible — a guarantee that held *because* the parser supplied the numeric spine. With the
+  model supplying it instead, the same tests would only assert that a scripted value came back
+  unchanged, so they were deleted rather than rewritten into something weaker than they look.
+  That coverage moves from unit-level structural proof to measurement: `scripts/eval_arms.py`
+  scores real extractions against historical data, and `audit()` (strengthened next in roadmap
+  Phase 1) is the runtime guard.
+- `eval_arms.py`'s `split-pf` arm, which is no longer distinguishable from `split`.
+
+Suite: 467 passed, 0 failed, 0 skipped (was 483; the 16 removed covered deleted code).
+
 ## [2.0.0] - 2026-05-07
 
 ### Added

@@ -1,8 +1,7 @@
-"""Model A/B for the AI extraction pipeline — Haiku 4.5 vs Groq, pure-AI (no parse-first).
+"""Model A/B for the AI extraction pipeline — Haiku 4.5 vs Groq.
 
-Answers one question: with the deterministic parser switched OFF, how well does each model
-extract a session on its own? Parse-first is disabled for every run here, so the model owns
-the numeric spine and model capability is what's actually being measured.
+Answers one question: how well does each model extract a session on its own? The model owns
+the numeric spine, so model capability is what's actually being measured.
 
 MONEY SAFETY — the reason this script exists instead of a one-liner:
   * Every provider response is cached on disk, keyed by a hash of the exact request
@@ -50,7 +49,7 @@ EVAL_ROOT = PROJECT_ROOT / "eval_runs"
 CACHE_DIR = EVAL_ROOT / ".cache"
 
 # The eval set. Two classes of input on purpose:
-#   - programmed_*  : strictly formatted, the parse-first fast path would normally cover it
+#   - programmed_*  : strictly formatted, the easy case
 #   - adhoc_*       : irregular notation, where the model has always done the whole job
 DEFAULT_FILES = [
     "tests/fixtures/valid/programmed_push_pull_session_with_remarks.md",
@@ -262,11 +261,8 @@ def main() -> int:
     ap.add_argument("--models", nargs="*", default=["haiku", "groq"], choices=list(MODELS))
     ap.add_argument("--max-cost", type=float, default=1.00, help="Abort once spend crosses this (USD)")
     ap.add_argument("--dry-run", action="store_true", help="Show the plan, make no API calls")
-    ap.add_argument("--parse-first", action="store_true",
-                    help="Leave the deterministic parser ON (default is OFF for this eval)")
     args = ap.parse_args()
 
-    use_parse_first = bool(args.parse_first)
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = EVAL_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -275,7 +271,6 @@ def main() -> int:
     print("=" * 78)
     print(f"EVAL RUN {run_id}{'  [DRY RUN — no API calls]' if args.dry_run else ''}")
     print("=" * 78)
-    print(f"parse-first : {'ON' if use_parse_first else 'OFF (pure AI — model owns the numbers)'}")
     print(f"models      : {', '.join(args.models)}")
     print(f"files       : {len(args.files)}")
     print(f"cost cap    : ${args.max_cost:.2f}")
@@ -311,9 +306,7 @@ def main() -> int:
 
             t0 = time.time()
             try:
-                extract = extraction.assemble(
-                    md_text, provider=provider, use_parse_first=use_parse_first
-                )
+                extract = extraction.assemble(md_text, provider=provider)
             except _DryRunStop as exc:
                 print(f"      NOT CACHED — {exc}")
                 continue
@@ -380,8 +373,7 @@ def main() -> int:
                       f"{r['n_warmup_sets']:>8} {r['n_warnings']:>6} {r['n_uncertain']:>10}")
 
     report = run_dir / "summary.json"
-    report.write_text(json.dumps({"run_id": run_id, "parse_first": use_parse_first,
-                                  "results": results}, indent=2))
+    report.write_text(json.dumps({"run_id": run_id, "results": results}, indent=2))
     print(f"\nFull per-model JSON extracts + summary.json in: {run_dir}")
     print(f"Per-call log: {log_path}")
     return 0
