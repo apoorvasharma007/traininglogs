@@ -12,6 +12,24 @@ DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 _MAX_RETRIES = 2
 
 
+# A 400 covers two very different things: the model produced a tool call the API's schema
+# check rejected (re-asking can fix it), and the account/request is unusable no matter what we
+# send (re-asking cannot). Re-asking the second kind just triples latency on a guaranteed
+# failure and buries the real cause under a generic "failed after 3 attempts".
+_NON_RETRYABLE_400_MARKERS = (
+    "credit balance is too low",
+    "billing",
+    "quota",
+    "not allowed to sample from this model",
+    "permission",
+)
+
+
+def _is_retryable_bad_request(message: str) -> bool:
+    lowered = message.lower()
+    return not any(marker in lowered for marker in _NON_RETRYABLE_400_MARKERS)
+
+
 def _reask_message(last_error: str) -> dict:
     # A plain follow-up user turn, not a replayed assistant turn — a rejected tool call (the
     # API's own schema check failing it) never produces a response to replay in the first
@@ -79,6 +97,8 @@ class AnthropicProvider:
                 # returning a response — there's nothing to inspect, only the error to reask
                 # with. Same reask budget as a validation failure we catch ourselves.
                 last_error = str(exc)
+                if not _is_retryable_bad_request(last_error):
+                    raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
                 continue
 
             tool_block = next(
@@ -152,6 +172,8 @@ class GroqProvider:
                 # returning a response — there's nothing to inspect, only the error to reask
                 # with. Same reask budget as a validation failure we catch ourselves.
                 last_error = str(exc)
+                if not _is_retryable_bad_request(last_error):
+                    raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
                 continue
 
             tool_calls = response.choices[0].message.tool_calls
