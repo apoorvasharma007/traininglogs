@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 
 from pydantic import ValidationError
@@ -154,6 +155,10 @@ def extract_exercise_labels(
 # a new field on the Exercise model itself, since that model's blast radius (DB, API) extends
 # well beyond the AI-parser confirmation flow this refactor is scoped to.
 PLACEHOLDER_NOTE_PREFIX = "Extraction failed for this exercise:"
+
+# Escape hatch that turns the parse-first fast path off, so the model does the full extraction
+# for every exercise. Measurement only — see assemble()'s docstring.
+DISABLE_PARSE_FIRST_ENV_VAR = "TRAININGLOGS_DISABLE_PARSE_FIRST"
 
 
 def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
@@ -365,7 +370,11 @@ def _build_parsed_exercise(
     return exercise, uncertain, warnings
 
 
-def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
+def assemble(
+    text: str,
+    provider: ExtractionProvider | None = None,
+    use_parse_first: bool | None = None,
+) -> TrainingLogLLMExtract:
     """Run the splitter, the session shell, and one worker call per exercise (sequential),
     then glue the results into a TrainingLogLLMExtract. Each worker gets an isolated,
     pre-sliced chunk of `text` for just its own exercise when the splitter's anchor for that
@@ -384,8 +393,15 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
 
     A worker that raises becomes a flagged placeholder exercise plus a warning — never a crash
     or a silent gap. The deterministic drop-check runs last and adds any findings to the same
-    warnings list."""
+    warnings list.
+
+    `use_parse_first=False` (or DISABLE_PARSE_FIRST_ENV_VAR=1) skips parse_exercise_block()
+    entirely, so every exercise goes down the full extract_exercise() path and the model owns
+    the numeric spine. That is a strictly less reliable pipeline — it exists to measure model
+    capability in isolation, not as a production mode."""
     provider = provider or AnthropicProvider()
+    if use_parse_first is None:
+        use_parse_first = os.environ.get(DISABLE_PARSE_FIRST_ENV_VAR) != "1"
 
     split = segment(text, provider=provider)
     shell = extract_shell(text, provider=provider)
@@ -402,7 +418,7 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
             # global split position, which would only make sense against the full document.
             worker_text = chunk_text
             worker_position = 1
-            parsed = parse_exercise_block(chunk_text)
+            parsed = parse_exercise_block(chunk_text) if use_parse_first else None
         else:
             worker_text = text
             worker_position = entry.position
