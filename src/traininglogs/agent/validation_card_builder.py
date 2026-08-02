@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from traininglogs.agent.llm_parser import TrainingLogLLMExtract
+from traininglogs.agent.extraction import PLACEHOLDER_NOTE_PREFIX
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.agent.validation_card_data import (
     ExerciseCard,
     ExerciseHeader,
@@ -43,6 +44,7 @@ class ValidationCardBuilder:
             ],
             cooldown_section=self._movement_section("Cooldown", extract.cooldown),
             note_preview=NotePreview(extract.notes) if extract.notes else None,
+            warnings=list(extract.warnings),
         )
 
     def _session_header(
@@ -93,17 +95,21 @@ class ValidationCardBuilder:
                 if len(parts) == 1 and parts[0] == "name":
                     header_uf.add(parts[0])
 
+        failed = bool(ex.notes and ex.notes.startswith(PLACEHOLDER_NOTE_PREFIX))
+
         return ExerciseCard(
             header=ExerciseHeader(
                 number=ex.number,
                 name=ex.name,
                 goal=self._goal_summary(ex.current_goal) if ex.current_goal else None,
                 uncertain_fields=frozenset(header_uf),
+                failed=failed,
             ),
             warmup_rows=self._warmup_rows(ex, ex_idx, uncertain),
             working_set_rows=self._working_set_rows(ex, ex_idx, uncertain),
-            note_preview=NotePreview(ex.notes) if ex.notes else None,
+            note_preview=NotePreview(ex.notes) if ex.notes and not failed else None,
             warmup_note_preview=NotePreview(ex.warmup_notes) if ex.warmup_notes else None,
+            failure_reason=ex.notes if failed else None,
         )
 
     def _goal_summary(self, goal: Goal) -> GoalSummary:

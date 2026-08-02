@@ -15,7 +15,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from traininglogs.agent.llm_parser import SYSTEM_PROMPT, TrainingLogLLMExtract, parse
+from traininglogs.agent.extraction import parse
+from traininglogs.agent.prompts import SYSTEM_PROMPT
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.processor.processor import build_session_from_extract
 
 
@@ -23,7 +25,9 @@ class StubProvider:
     def __init__(self, raw: dict) -> None:
         self._raw = raw
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         return self._raw
 
 

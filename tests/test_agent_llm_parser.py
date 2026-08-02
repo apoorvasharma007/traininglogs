@@ -10,12 +10,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
-from traininglogs.agent.llm_parser import (
-    SYSTEM_PROMPT,
-    LLMParserError,
-    TrainingLogLLMExtract,
-    parse,
-)
+from traininglogs.agent.extraction import parse
+from traininglogs.agent.prompts import SYSTEM_PROMPT
+from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
 
@@ -27,7 +24,9 @@ class StubProvider:
     def __init__(self, raw: dict) -> None:
         self._raw = raw
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         return self._raw
 
 
@@ -39,7 +38,9 @@ class FailThenSucceedProvider:
         self._fail_times = fail_times
         self._calls = 0
 
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         self._calls += 1
         if self._calls <= self._fail_times:
             raise LLMParserError("simulated provider failure")
@@ -47,7 +48,9 @@ class FailThenSucceedProvider:
 
 
 class AlwaysFailProvider:
-    def extract(self, text: str, tool_schema: dict) -> dict:
+    def extract(
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+    ) -> dict:
         raise LLMParserError("always fails")
 
 
@@ -203,7 +206,9 @@ class TestParse:
         calls: list[tuple[str, dict]] = []
 
         class CapturingProvider:
-            def extract(self, text: str, tool_schema: dict) -> dict:
+            def extract(
+                self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+            ) -> dict:
                 calls.append((text, tool_schema))
                 return VALID_STRENGTH_RAW
 
@@ -230,8 +235,7 @@ class TestParse:
     def test_default_provider_is_anthropic(self) -> None:
         # Just verify AnthropicProvider is used when none supplied.
         # Don't call .extract() — just check the type.
-        from traininglogs.agent.llm_parser import AnthropicProvider
-        with patch("traininglogs.agent.llm_parser.AnthropicProvider") as mock_cls:
+        with patch("traininglogs.agent.extraction.AnthropicProvider") as mock_cls:
             mock_provider = MagicMock()
             mock_provider.extract.return_value = VALID_STRENGTH_RAW
             mock_cls.return_value = mock_provider
@@ -247,9 +251,9 @@ class TestProviderTemperature:
     exercise-level remarks that other runs correctly captured)."""
 
     def test_anthropic_provider_pins_temperature_zero(self) -> None:
-        from traininglogs.agent.llm_parser import AnthropicProvider
+        from traininglogs.agent.providers import AnthropicProvider
 
-        with patch("traininglogs.agent.llm_parser.anthropic.Anthropic") as mock_cls:
+        with patch("traininglogs.agent.providers.anthropic.Anthropic") as mock_cls:
             mock_client = MagicMock()
             tool_block = MagicMock()
             tool_block.type = "tool_use"
@@ -258,7 +262,13 @@ class TestProviderTemperature:
             mock_cls.return_value = mock_client
 
             provider = AnthropicProvider()
-            provider.extract("some text", TrainingLogLLMExtract.model_json_schema())
+            provider.extract(
+                "some text",
+                TrainingLogLLMExtract.model_json_schema(),
+                "a system prompt",
+                "extract_workout",
+                "a tool description",
+            )
 
             _, kwargs = mock_client.messages.create.call_args
             assert kwargs["temperature"] == 0
@@ -266,7 +276,7 @@ class TestProviderTemperature:
     def test_groq_provider_pins_temperature_zero(self) -> None:
         import groq
 
-        from traininglogs.agent.llm_parser import GroqProvider
+        from traininglogs.agent.providers import GroqProvider
 
         with patch.object(groq, "Groq") as mock_cls:
             mock_client = MagicMock()
@@ -279,10 +289,78 @@ class TestProviderTemperature:
             mock_cls.return_value = mock_client
 
             provider = GroqProvider()
-            provider.extract("some text", TrainingLogLLMExtract.model_json_schema())
+            provider.extract(
+                "some text",
+                TrainingLogLLMExtract.model_json_schema(),
+                "a system prompt",
+                "extract_workout",
+                "a tool description",
+            )
 
             _, kwargs = mock_client.chat.completions.create.call_args
             assert kwargs["temperature"] == 0
+
+
+class TestProviderParametrization:
+    """Providers must use the caller-supplied system prompt / tool name / tool description —
+    not a hardcoded module constant — so the same provider can serve the splitter, shell, and
+    worker calls added later in the orchestration refactor."""
+
+    def test_anthropic_provider_uses_caller_supplied_prompt_and_tool(self) -> None:
+        from traininglogs.agent.providers import AnthropicProvider
+
+        with patch("traininglogs.agent.providers.anthropic.Anthropic") as mock_cls:
+            mock_client = MagicMock()
+            tool_block = MagicMock()
+            tool_block.type = "tool_use"
+            tool_block.input = VALID_STRENGTH_RAW
+            mock_client.messages.create.return_value = MagicMock(content=[tool_block])
+            mock_cls.return_value = mock_client
+
+            provider = AnthropicProvider()
+            provider.extract(
+                "some text",
+                TrainingLogLLMExtract.model_json_schema(),
+                "a custom system prompt",
+                "custom_tool",
+                "a custom tool description",
+            )
+
+            _, kwargs = mock_client.messages.create.call_args
+            assert kwargs["system"] == "a custom system prompt"
+            assert kwargs["tools"][0]["name"] == "custom_tool"
+            assert kwargs["tools"][0]["description"] == "a custom tool description"
+            assert kwargs["tool_choice"] == {"type": "tool", "name": "custom_tool"}
+
+    def test_groq_provider_uses_caller_supplied_prompt_and_tool(self) -> None:
+        import groq
+
+        from traininglogs.agent.providers import GroqProvider
+
+        with patch.object(groq, "Groq") as mock_cls:
+            mock_client = MagicMock()
+            tool_call = MagicMock()
+            tool_call.function.arguments = "{}"
+            message = MagicMock(content="", tool_calls=[tool_call])
+            mock_client.chat.completions.create.return_value = MagicMock(
+                choices=[MagicMock(message=message)]
+            )
+            mock_cls.return_value = mock_client
+
+            provider = GroqProvider()
+            provider.extract(
+                "some text",
+                TrainingLogLLMExtract.model_json_schema(),
+                "a custom system prompt",
+                "custom_tool",
+                "a custom tool description",
+            )
+
+            _, kwargs = mock_client.chat.completions.create.call_args
+            assert kwargs["messages"][0] == {"role": "system", "content": "a custom system prompt"}
+            assert kwargs["tools"][0]["function"]["name"] == "custom_tool"
+            assert kwargs["tools"][0]["function"]["description"] == "a custom tool description"
+            assert kwargs["tool_choice"] == {"type": "function", "function": {"name": "custom_tool"}}
 
 
 class TestSystemPromptSessionNotesAndRemarks:

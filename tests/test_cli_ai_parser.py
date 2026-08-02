@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from traininglogs.agent.llm_parser import TrainingLogLLMExtract
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.cli.validate import main as validate_main
 
 

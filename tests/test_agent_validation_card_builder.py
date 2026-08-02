@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 
-from traininglogs.agent.llm_parser import TrainingLogLLMExtract
+from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.agent.validation_card_builder import ValidationCardBuilder
 from traininglogs.agent.validation_card_data import UserValidationCard
 
@@ -368,3 +368,47 @@ class TestNotePreview:
     def test_no_session_note_when_absent(self) -> None:
         card = builder.build(_make_extract())
         assert card.note_preview is None
+
+
+class TestWarningsAndFailedExercise:
+    """Step 7 of the orchestration refactor: surfacing assemble()'s warnings and
+    flagging placeholder exercises that failed extraction, on the confirmation card."""
+
+    def test_warnings_pass_through_to_the_card(self) -> None:
+        extract = _make_extract({"warnings": ["Weight 95.0kg appears in the text but not in any extracted set."]})
+        card = builder.build(extract)
+        assert card.warnings == ["Weight 95.0kg appears in the text but not in any extracted set."]
+
+    def test_no_warnings_by_default(self) -> None:
+        card = builder.build(_make_extract())
+        assert card.warnings == []
+
+    def test_placeholder_exercise_is_flagged_failed(self) -> None:
+        extract = _make_extract({
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Overhead Press",
+                    "notes": "Extraction failed for this exercise: LLM extraction failed after 3 attempts.",
+                }
+            ],
+        })
+        card = builder.build(extract)
+        assert card.exercises[0].header.failed is True
+        assert card.exercises[0].failure_reason == (
+            "Extraction failed for this exercise: LLM extraction failed after 3 attempts."
+        )
+        # The full, untruncated reason lives in failure_reason — note_preview (which
+        # truncates) is suppressed for a failed exercise rather than duplicating it.
+        assert card.exercises[0].note_preview is None
+
+    def test_ordinary_exercise_notes_are_not_mistaken_for_a_failure(self) -> None:
+        extract = _make_extract({
+            "exercises": [
+                {"number": 1, "name": "Squat", "notes": "Extraction went great today"}
+            ],
+        })
+        card = builder.build(extract)
+        assert card.exercises[0].header.failed is False
+        assert card.exercises[0].failure_reason is None
+        assert card.exercises[0].note_preview is not None

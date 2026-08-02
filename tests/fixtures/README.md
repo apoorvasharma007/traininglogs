@@ -31,7 +31,7 @@ See `.claude/testing-guide.md` for the full E2E protocol.
 **AI-parser only:** the movement-skill and remarks/session-notes fixtures above only work
 with `--parser ai` or `--parser groq` — the deterministic `rules` parser has no concept of
 skill-run counts, holds recorded as bare `Ns`, attempt/clean phrasing, or remark-block
-attachment, and will raise on them. See `src/traininglogs/agent/llm_parser.py`'s
+attachment, and will raise on them. See `src/traininglogs/agent/prompts.py`'s
 `SYSTEM_PROMPT` for the extraction conventions these fixtures exercise, and
 `movement-skill-plan.md` / `refactor-data-model.md` for the full design record.
 
