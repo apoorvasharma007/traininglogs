@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from pydantic import ValidationError
 
@@ -210,6 +211,25 @@ def _extracted_weights_kg(exercises: list[Exercise]) -> set[float]:
     return from_sets | from_warmup
 
 
+def _comparable(text: str) -> str:
+    """Flatten the differences between what a person typed and what a model types back.
+
+    Real logs contain characters a model reliably normalises when it quotes them: a curly
+    apostrophe becomes a straight one, a non-breaking space becomes an ordinary space, an em
+    dash becomes a hyphen. Both were found in real files on 2026-08-03 and both made a correctly
+    read line look invented. Comparing exact bytes flags those as fabrications, which is a false
+    alarm about the one thing this check exists to be trusted on.
+
+    So: normalise the compatibility forms, unify the quote and dash variants NFKC leaves alone,
+    and collapse runs of whitespace. What survives is the content, which is what we actually
+    want to compare."""
+    text = unicodedata.normalize("NFKC", text)
+    for fancy, plain in (("’", "'"), ("‘", "'"), ("“", '"'), ("”", '"'),
+                         ("–", "-"), ("—", "-"), ("−", "-")):
+        text = text.replace(fancy, plain)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def check_sources_are_real(chunk: str, extract: ExerciseExtract) -> list[str]:
     """Did the model read each set from a line that actually exists?
 
@@ -218,12 +238,14 @@ def check_sources_are_real(chunk: str, extract: ExerciseExtract) -> list[str]:
     up, or copied it from an example in the prompt.
 
     Knows nothing about weights, units, headers or exercise types, so it works the same on
-    markdown, on text off a photograph, and on a speech transcript."""
+    markdown, on text off a photograph, and on a speech transcript. Comparison is on content
+    rather than exact bytes -- see _comparable()."""
     warnings: list[str] = []
+    haystack = _comparable(chunk)
     for kind, sources in (("set", extract.set_sources), ("warmup", extract.warmup_sources)):
         for number, line in sorted(sources.items()):
-            quote = line.strip()
-            if quote and quote not in chunk:
+            quote = _comparable(line)
+            if quote and quote not in haystack:
                 warnings.append(
                     f"{kind} {number}: the source line recorded for it isn't in the text — "
                     f"this may be invented: {quote!r}"

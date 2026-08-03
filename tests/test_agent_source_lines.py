@@ -117,3 +117,39 @@ class TestCheckSetsAndSourcesMatch:
     def test_no_sets_and_no_sources_is_clean(self) -> None:
         extract = _extract(sets=None, warmup_sets=None, set_sources={}, warmup_sources={})
         assert check_sets_and_sources_match(extract) == []
+
+
+class TestSourceComparisonIgnoresTranscriptionDifferences:
+    """Both of these were real false alarms on 2026-08-03: the model read the right line and
+    typed a plain character where the file had a typographic one."""
+
+    def test_curly_apostrophe_typed_back_as_a_straight_one(self) -> None:
+        chunk = "1. 63 x 10 good - since it’s already tired\n"
+        extract = _extract(
+            sets=[{"number": 1, "weight_kg": 63.0}],
+            set_sources={"1": "1. 63 x 10 good - since it's already tired"},
+            warmup_sets=None,
+            warmup_sources={},
+        )
+        assert check_sources_are_real(chunk, extract) == []
+
+    def test_non_breaking_space_typed_back_as_an_ordinary_one(self) -> None:
+        chunk = "2. 0 x 4  learning\n"
+        extract = _extract(
+            sets=[{"number": 1, "rep_count": {"full": 4, "partial": 0}}],
+            set_sources={"1": "2. 0 x 4 learning"},
+            warmup_sets=None,
+            warmup_sources={},
+        )
+        assert check_sources_are_real(chunk, extract) == []
+
+    def test_a_genuinely_different_line_is_still_flagged(self) -> None:
+        """The normalising must not be so loose that it stops catching real fabrication."""
+        chunk = "1. 63 x 10 RPE 10 good\n"
+        extract = _extract(
+            sets=[{"number": 1, "weight_kg": 57.0}],
+            set_sources={"1": "1. 57 x 12 RPE 9 good"},
+            warmup_sets=None,
+            warmup_sources={},
+        )
+        assert len(check_sources_are_real(chunk, extract)) == 1
