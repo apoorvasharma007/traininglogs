@@ -41,6 +41,21 @@ because `13` is still in the output. Fixture: `Wrist Flexion DB Curl` in
 
 ## Conventions
 
+**Spend as little on the API as possible.** The cache key is a hash of the whole request --
+model + system prompt + tool schema + input text -- so:
+
+| Change | Cost to verify |
+|---|---|
+| Python only (checks, parsing, glue) | **$0.00** — every call replays from `eval_runs/.cache/` |
+| Prompt or schema | **~$0.45** for a 6-file run — every worker call is a fresh hash |
+
+So: **batch prompt and schema changes, then measure once.** Measuring after each of B6/B7/B8
+separately costs ~$1.35; doing all three then measuring costs ~$0.45, for the same information.
+Always `--dry-run` first to see what is already cached, and always pass `--max-cost`.
+
+Spend so far: **$1.21** across 158 paid calls (158 cached, none paid for twice).
+
+
 **Name things in plain words.** No `provenance`, no `cardinality`, no `coverage`. A function name
 should say what it checks in words you'd use out loud: `check_sources_are_real()`,
 `check_sets_and_sources_match()`, `check_for_unread_lines()`. This applies to new code; existing
@@ -132,6 +147,17 @@ isn't lost.
       the chunk. A line that doesn't resolve was invented. Zero false positives by construction.
 - [ ] **B3 — `check_sets_and_sources_match()`.** Every set has a source; every source has a set.
       Catches phantom sets and dropped ones.
+- [x] **B1–B3 done** (`ab2ed8d`, `9c8dbc4`). Measured on 6 real sessions, 102 sets:
+      **0 false positives, 0 set/source mismatches, accuracy unchanged at 571/578 (98.8%)** --
+      so adding the field did not degrade extraction. One correction along the way: exact string
+      matching produced 4 false "may be invented" warnings, all from the model typing a plain
+      character where the file had a typographic one (U+2019 curly apostrophe, U+00A0
+      non-breaking space). `_comparable()` now compares content, not bytes. The claim that B2
+      had "zero false positives by construction" was wrong -- real text has more variation than
+      that.
+      **Still unproven:** these checks have never fired on a real defect outside unit tests.
+      The honest validation is one Groq run (free) on a file where it drops sets -- if the
+      checks stay silent there, they are not earning their place.
 - [ ] **B4 — `check_for_unread_lines()` — DEFERRED.** Flags source lines containing numbers that
       nothing claimed. Catches a set dropped together with its source, which B2/B3 miss. Held
       back because of real false-positive risk (`**Goal:** 15 kg x 3 sets x 10-12 reps` has
