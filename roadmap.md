@@ -39,6 +39,31 @@ because `13` is still in the output. Fixture: `Wrist Flexion DB Curl` in
 
 ---
 
+## Conventions
+
+**Name things in plain words.** No `provenance`, no `cardinality`, no `coverage`. A function name
+should say what it checks in words you'd use out loud: `check_sources_are_real()`,
+`check_sets_and_sources_match()`, `check_for_unread_lines()`. This applies to new code; existing
+names are left alone unless they're actively confusing.
+
+**Watch the size.** The codebase is large for what it does. Every addition should remove a
+category of bug, not just add capability — parse-first removal was −740 lines, and patch-based
+corrections (C6) will remove more than they add. If an item is pure growth, say so out loud
+before building it.
+
+## Settled during planning (2026-08-03)
+
+| | Decision |
+|---|---|
+| Rules parser | **Kept** as a backup pipeline. Not deleted. |
+| `output_training_logs_json/` | **Existing 242 files kept and never modified** — they are the eval answer key. Stop *writing* new ones once layer 3 is in Postgres (a third copy of data that lives in two places). |
+| The unilateral defect | **Accepted.** `12.5 x 13 - right did partial range only` → `unilateral_rep_count={right:{full:13}}` is not generically detectable; the confirmation card is the guard. |
+| `mono` at `max_tokens=8192` | **Re-run** (~$0.06) so the split-vs-mono verdict rests on an unconfounded result rather than an inference. |
+| `max_tokens=4096` | **Make configurable** in `providers.py`. Fine for split calls, fatal for monolithic. |
+| Eval-set expansion | **After deploy.** The 6 real files have free ground truth; the irregular `adhoc_*` cases need hand-labels. |
+| Anthropic Citations | **Check before building B1** — may do source grounding natively, but may not compose with tool use. |
+| `movement-skill-plan.md`, `refactor-data-model.md` | **Close** — both complete. |
+
 ## Working backwards from the goal
 
 | | For the goal to be true… | Needs | Phase |
@@ -98,10 +123,29 @@ isn't lost.
       deleted rather than rewritten into something weaker than they look. That coverage now
       lives in `scripts/eval_arms.py` (measured against real sessions) and in `audit()` — which
       makes the `audit()` rewrite below the item that restores the guard, not just a nice-to-have.
-- [ ] Rewrite `audit()`: per-exercise set-count check against enumerated source lines; flag
-      `unilateral_rep_count` populated where the source line has no left/right marker. Keep the
-      RPE/kg token checks. Tune for sensitivity — a false warning costs two seconds of reading,
-      a missed one costs wrong data.
+- [ ] **B1 — Source lines on the extraction.** `set_sources` / `warmup_sources` on
+      `ExerciseExtract`: set number -> the verbatim line it was read from. Goes on the
+      *extraction*, not on `WorkingSet` — `ExerciseExtract` inherits from the production
+      `Exercise`, so a field there would mean a DB column, API change, and dashboard change.
+      Same idea as the existing `ExercisePosition.anchor`, one level down.
+- [ ] **B2 — `check_sources_are_real()`.** Every recorded source line must appear verbatim in
+      the chunk. A line that doesn't resolve was invented. Zero false positives by construction.
+- [ ] **B3 — `check_sets_and_sources_match()`.** Every set has a source; every source has a set.
+      Catches phantom sets and dropped ones.
+- [ ] **B4 — `check_for_unread_lines()` — DEFERRED.** Flags source lines containing numbers that
+      nothing claimed. Catches a set dropped together with its source, which B2/B3 miss. Held
+      back because of real false-positive risk (`**Goal:** 15 kg x 3 sets x 10-12 reps` has
+      numbers and is legitimately not a set). Decide after measuring B2/B3 on the eval set.
+- [ ] **B5 — Remove the kg/RPE token checks** — only once B2–B4 have proven out. They are
+      format-specific (kg-only) and blind to timed sets, but until then they are the only drop
+      detection there is.
+
+  Design principle for all of these: a check should encode a **property of the data**, not a
+  **memory of a bug**. "Every number in the source should be accounted for" survives new input
+  formats; "watch out for unilateral_rep_count on this shape of line" dies the moment the input
+  changes. That rules out the unilateral rule proposed earlier — it is explicitly not being
+  built. Warnings are *attention direction* for the confirmation card, not a safety net: a false
+  warning costs two seconds of reading, a missed one costs wrong data.
 - [ ] **Worker prompt hygiene** *(inherited: extraction-accuracy Step 3, re-targeted from
       `LABELS_SYSTEM_PROMPT` to `WORKER_SYSTEM_PROMPT`)*. Two rules: `set_notes` must never
       restate this exercise's own weight/reps/RPE — only something additional about that set
@@ -133,13 +177,62 @@ isn't lost.
       (`processor.compute_session_id`). Keep the date prefix for readability.
 - [ ] Stop dropping the confidence signal — `build_session_from_extract` currently does
       `exclude={"uncertain_fields"}` and discards `warnings` entirely.
+- [ ] **C6 — Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
+      the whole extract and asks for the whole extract back, with "keep all unchanged fields
+      exactly as they are" as the only guarantee — a hope, not a mechanism. It also uses
+      `SYSTEM_PROMPT`/`TOOL_NAME`, i.e. the monolithic path that hit `max_tokens=4096` and
+      truncated on 2 of 6 files in the evaluation. Replace with a patch: the model returns
+      `[{path, value}]`, Python applies it. ~40x cheaper (~$0.028 -> ~$0.0007 per correction),
+      and fields not named in the patch cannot change *by construction*.
+- [ ] **C7 — `corrections` JSONB, append-only; `extract` stays immutable.** Keeps three facts
+      forever: what the model said, what the human changed, what was stored. Byproduct: "which
+      fields do I correct most often?" becomes a SQL query — the prompt-improvement backlog,
+      generated from real use.
+- [ ] **C8 — LIVE BUG: `source_file` is never set on the AI path.** `process_md_file` sets it
+      (rules path only, `processor.py:158-168`); `_process_with_ai` in `cli/log.py` never does.
+      Every AI-parsed session currently in the DB has no link to the text it came from. Fixed
+      properly by C1-C3 (the `raw_input_id` FK), but worth knowing it is broken today.
+- [ ] **C9 — Decision, not code:** keep `set_sources` in the `extractions` row rather than
+      discarding it after the audit. It is what lets the confirmation card show "3 sets @ 90kg"
+      next to "read from: `1. 90kg x 8`", and eventually highlight a region of a photographed
+      page. Costs nothing extra to keep.
 
 ## Phase 3 — Ingest core
 
-- [ ] Extract pure functions from `cli/log.py`: text → extraction id. No `input()`, no
-      `subprocess`, no `git`, no dashboard rebuild.
-- [ ] `cli/log.py` becomes a thin wrapper that calls the core, then does its git/dashboard work.
-- [ ] `LLMOrchestrator`'s confirm loop moves out of the ingest path.
+Three durable states, three steps between them. Each step reads its input **from the database**,
+not from the previous function's memory — that is what makes any of it restartable.
+
+```
+   capture()              extract()                  confirm()
+text ────────▶ raw_inputs ──────────▶ extractions ───────────────▶ sessions
+               (saved)      N LLM      (saved,          human       (saved)
+                            calls      pending)         decides
+```
+
+- [ ] **D1 — `ingest/` module**: `capture.py` (text -> raw_input_id), `extract.py`
+      (raw_input_id -> extraction_id), `confirm.py` (extraction_id -> session_id). One job each,
+      each saves before returning.
+- [ ] **D2 — `cli/` and `api/` both call `ingest/`; neither holds logic.** If logic is being
+      copied between them, it belongs in `ingest/`.
+- [ ] **D3 — `status` column is the state machine.** Gives idempotency for free: re-running
+      extract on an input that already has one must not spend money producing a second copy.
+- [ ] **D4 — `llm_calls` table**: raw_input_id, step, model, input/output tokens, cost_usd, ms,
+      cached. Makes cost a SQL query. Already prototyped as `calls.jsonl` in the eval harness.
+- [ ] **D5 — Structured logs carrying `raw_input_id`** on every line, so one id shows a
+      session's whole life.
+- [ ] **D6 — Save the raw LLM response before parsing it.** A validation failure should not also
+      cost you the response.
+- [ ] **D7 — Log "call succeeded" and "result usable" separately.** The `mono` truncation was the
+      former, not an outage; conflating them misdiagnoses failures.
+- [ ] **D8 — Strip `git`, dashboard rebuild, and `input()` out of the ingest path.** This, not
+      the Dockerfile, is what blocks hosting: a blocking terminal prompt cannot sit behind an
+      HTTP endpoint no matter where it is deployed. `cli/log.py` keeps its git/dashboard work as
+      a thin wrapper around the core.
+
+**Deliberately NOT built at this scale** (~20 sessions/month): no queue (Celery/SQS/Redis — the
+status column is the queue), no microservices, no retry framework (the SDK retries), no provider
+abstraction layer (one provider, one model), no caching before measuring. The point is that the
+*shape* is queue-ready, not that a queue exists.
 
 ## Phase 4 — Write API
 
@@ -177,36 +270,39 @@ Base branch per phase, cut from `dev`. Sub-branch per step, squash-merged to the
 merges to `dev` only when the phase is complete and the suite is green (0 failed, 0 skipped).
 
 ---
-
 ## ▶ Resume here
 
-**Written 2026-08-02.** Architecture decisions locked above from the model evaluation run the
-same day; total eval spend ~$0.58.
+**Architecture decisions locked** from the 2026-08-02 evaluation (~$0.58 spend). **Full backlog
+approved** 2026-08-03 — every item in Phases 1-6 above, plus the decisions table near the top.
 
-**Phase 0 complete.** `dev` is at `99c9fae` with the whole split-extraction +
-extraction-accuracy chain landed. Three ancestor branches deleted (`-d`, verified contained).
-Twelve stale branches deliberately left until `dev` → `main`. Nothing has been pushed.
+**Done:** Phase 0 complete (`dev` at `99c9fae`). Phase 1 item 1 — parse-first deleted
+(`3afafb2`). Suite **467 passed / 0 failed / 0 skipped**. Nothing pushed; all local.
 
-**Phase 1 in progress** on `phase-1/finalize-pipeline` (cut from `dev`), sub-branch per item.
-Item 1 (delete parse-first) done and squash-merged — `3afafb2`, suite **467 passed / 0 failed /
-0 skipped**.
+**In progress:** `phase-1/finalize-pipeline`, cut from `dev`. Sub-branch per item.
 
-**Next action: rewrite `audit()`.** It moved up the order deliberately: deleting parse-first
-removed the structural guarantee that two of the three original extraction failures couldn't
-happen, so `audit()` is now the only runtime guard against them. Its known blind spots, each
-with a real example from the 2026-08-02 evaluation:
+**Next action, in this order:**
 
-1. **Per-exercise set count.** Groq dropped 4 sets on one fixture and 3 on another with
-   `warn=0` — `audit()` compares *exercise* counts against the splitter, never set counts.
-2. **Timed / bodyweight sets carry no kg tokens.** `20s`, `18s`, `15s` — the weight-token check
-   has nothing to look for, leaving the whole calisthenics input class unguarded.
-3. **Structural misplacement.** `12.5 x 13 - right did partial range only` became
-   `unilateral_rep_count={right:{full:13}}` with `rep_count=None`. Both numbers are still in the
-   output, so every token-presence check passes. Fixture: `Wrist Flexion DB Curl` in
-   `inputs/programs/bodybuilding_transformation_system/phase_2/week_12/upper_strength_foundation_block.md`.
+1. **Check Anthropic Citations** (~20 min, no code) — it may provide source grounding natively.
+   It is documented as incompatible with `output_config.format`; this pipeline uses tool calls,
+   so whether it composes is unverified. If it works, B1 gets simpler. If not, proceed as
+   planned — a `set_sources` field is provider-agnostic either way, which is the safer default.
+2. **B1-B3** — source lines + the two checks that have zero false positives by construction.
+3. **Measure** — `scripts/eval_arms.py --n 6 --arms split` (~$0.30, most calls cached). Two
+   numbers wanted: how many warnings fire, and whether accuracy moved. Adding output fields
+   could degrade extraction; this measures it directly rather than assuming.
+4. **B4/B5** decided on those numbers, not on argument.
+5. Then B6-B8 (prompt fixes), then B9 (caching) last — caching is the only item whose
+   measurement depends on the final call structure.
 
-Then the two inherited prompt fixes, then caching last — caching is the only item whose
-measurement depends on the final call structure.
+**Why `audit()` matters more than it looks:** deleting parse-first removed the structural
+guarantee that two of the three original extraction failures couldn't happen. These checks are
+now the only runtime guard. Three known blind spots in the current implementation, each with a
+real example from the evaluation:
 
-Re-run `scripts/eval_arms.py --n 6 --arms split` after each item. Responses are cached, so a
-re-score after a prompt change costs only the calls whose prefix actually changed.
+1. **Per-exercise set count** — Groq dropped 4 sets on one fixture and 3 on another with
+   `warn=0`; `audit()` compares *exercise* counts only.
+2. **Timed / bodyweight sets carry no kg tokens** — `20s`, `18s`, `15s`; the weight check has
+   nothing to look for, leaving the calisthenics input class unguarded.
+3. **Structural misplacement** — `12.5 x 13 - right did partial range only` became
+   `unilateral_rep_count={right:{full:13}}`. Both numbers are still present, so every
+   token-presence check passes. Accepted as a card-caught defect (see decisions table).
