@@ -77,6 +77,20 @@ class ExerciseExtract(Exercise):
 
     uncertain_fields: List[str] = Field(default_factory=list)
 
+    # Where each set was read from: set number (as a string key, since JSON object keys are
+    # always strings) -> the verbatim source line. Lets extraction.py check two things without
+    # knowing anything about the input format: that a recorded line really exists in the text
+    # (so the set wasn't invented), and that sets and source lines account for each other (so
+    # none were dropped or conjured).
+    #
+    # Deliberately here rather than on WorkingSet: this class inherits from Exercise, the
+    # production model behind the exercises/working_sets tables, so a field on WorkingSet would
+    # mean a DB column, an API change and a dashboard change. Where a value came from is a fact
+    # about the extraction, not about the training data. Same idea as ExercisePosition.anchor,
+    # one level down.
+    set_sources: Dict[str, str] = Field(default_factory=dict)
+    warmup_sources: Dict[str, str] = Field(default_factory=dict)
+
 
 class ExercisePosition(BaseModel):
     """One entry in the splitter's ordered exercise listing. `anchor` is a verbatim quote used

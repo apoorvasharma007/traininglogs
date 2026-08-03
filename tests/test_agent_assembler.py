@@ -106,12 +106,18 @@ class TestAssembleIntegration:
             },
             shell_raw={"date": "2026-05-12", "focus": "Upper", "session_duration_minutes": 60},
             exercise_raw_by_position={
-                1: _exercise_raw(1, "Bench Press", sets=[
-                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
-                ]),
-                2: _exercise_raw(2, "Overhead Press", sets=[
-                    {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}
-                ]),
+                1: _exercise_raw(
+                    1,
+                    "Bench Press",
+                    sets=[{"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}],
+                    set_sources={"1": "1. 80kg x 8"},
+                ),
+                2: _exercise_raw(
+                    2,
+                    "Overhead Press",
+                    sets=[{"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}],
+                    set_sources={"1": "1. 40kg x 8"},
+                ),
             },
         )
 
@@ -340,3 +346,47 @@ class TestAssembleSixExerciseRegression:
             expected_rpe = rpe_by_position[i + 1]
             last_set = extract.exercises[i].sets[-1]
             assert last_set.rpe == expected_rpe, f"{name} lost its last-set RPE"
+
+
+class TestAssembleSourceLines:
+    """assemble() runs the two source-line checks per exercise and keeps the source fields out
+    of the plain Exercise it hands downstream."""
+
+    TEXT = "Bench Press\nSets:\n1. 80kg x 8\n"
+    SPLIT = {"exercises": [{"position": 1, "name": "Bench Press", "anchor": "Bench Press"}]}
+
+    def _run(self, **raw_overrides) -> Any:
+        provider = ScriptedProvider(
+            split_raw=self.SPLIT,
+            shell_raw={"date": "2026-05-12"},
+            exercise_raw_by_position={
+                1: _exercise_raw(
+                    1,
+                    "Bench Press",
+                    sets=[{"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}],
+                    **raw_overrides,
+                )
+            },
+        )
+        return assemble(self.TEXT, provider=provider)
+
+    def test_source_fields_do_not_reach_the_plain_exercise(self) -> None:
+        extract = self._run(set_sources={"1": "1. 80kg x 8"})
+        exercise = extract.exercises[0]
+        assert not hasattr(exercise, "set_sources")
+        assert not hasattr(exercise, "warmup_sources")
+
+    def test_a_real_source_line_produces_no_warning(self) -> None:
+        extract = self._run(set_sources={"1": "1. 80kg x 8"})
+        assert extract.warnings == []
+
+    def test_an_invented_source_line_is_reported_against_its_exercise(self) -> None:
+        extract = self._run(set_sources={"1": "1. 500kg x 1"})
+        assert any(
+            "Exercise 1 (Bench Press)" in w and "isn't in the text" in w
+            for w in extract.warnings
+        )
+
+    def test_a_set_with_no_source_is_reported(self) -> None:
+        extract = self._run(set_sources={})
+        assert any("set 1 has no source line recorded" in w for w in extract.warnings)

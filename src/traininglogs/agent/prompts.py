@@ -249,5 +249,11 @@ set, this exercise's notes otherwise. Do not invent a new field.
 - Omit fields you cannot determine — do not guess a value beyond what is written. \
 This only applies to typed/numeric fields; free text you can't classify still goes \
 into the appropriate notes field per the rule above, it is never simply omitted.
+- For every set you extract, record the line of text you read it from, exactly as \
+written, in set_sources — keyed by that set's number. Do the same for warmup sets in \
+warmup_sources. Copy the line character for character: do not tidy it up, renumber it, \
+translate it, or shorten it. If a set's information is spread over more than one line, \
+record the line that carries its measurements. Every set you extract must have an entry, \
+and every entry must correspond to a set you extracted.
 
 """ + MOVEMENT_SKILL_CONVENTIONS

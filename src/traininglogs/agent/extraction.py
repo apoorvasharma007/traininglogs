@@ -210,6 +210,48 @@ def _extracted_weights_kg(exercises: list[Exercise]) -> set[float]:
     return from_sets | from_warmup
 
 
+def check_sources_are_real(chunk: str, extract: ExerciseExtract) -> list[str]:
+    """Did the model read each set from a line that actually exists?
+
+    Every entry in set_sources/warmup_sources is a verbatim quote the model claims it read a set
+    from. If that quote isn't in the text, the set has no basis in the source — the model made it
+    up, or copied it from an example in the prompt.
+
+    Knows nothing about weights, units, headers or exercise types, so it works the same on
+    markdown, on text off a photograph, and on a speech transcript."""
+    warnings: list[str] = []
+    for kind, sources in (("set", extract.set_sources), ("warmup", extract.warmup_sources)):
+        for number, line in sorted(sources.items()):
+            quote = line.strip()
+            if quote and quote not in chunk:
+                warnings.append(
+                    f"{kind} {number}: the source line recorded for it isn't in the text — "
+                    f"this may be invented: {quote!r}"
+                )
+    return warnings
+
+
+def check_sets_and_sources_match(extract: ExerciseExtract) -> list[str]:
+    """Does every set have a source line, and every source line a set?
+
+    A set with no source is one the model produced without pointing at anything. A source with
+    no set is a line it read and then dropped. Both directions are worth knowing about."""
+    warnings: list[str] = []
+    pairs = (
+        ("set", {str(s.number) for s in (extract.sets or [])}, extract.set_sources),
+        ("warmup", {str(w.number) for w in (extract.warmup_sets or [])}, extract.warmup_sources),
+    )
+    for kind, numbers, sources in pairs:
+        for missing in sorted(numbers - sources.keys()):
+            warnings.append(f"{kind} {missing} has no source line recorded.")
+        for orphan in sorted(sources.keys() - numbers):
+            warnings.append(
+                f"{kind} {orphan} has a source line but no matching {kind} was extracted — "
+                "it may have been dropped."
+            )
+    return warnings
+
+
 def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[str]:
     """Deterministic, LLM-free check for the two failure shapes the split-call design exists
     to prevent: an exercise silently missing from the final list, or a value (RPE, weight)
@@ -281,7 +323,18 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
 
         try:
             worker_result = extract_exercise(worker_text, worker_position, provider=provider)
-            exercise = Exercise(**worker_result.model_dump(exclude={"uncertain_fields"}))
+            # Checked against worker_text, which is what the model was actually shown — not the
+            # whole document, or a quote from an isolated chunk would look invented whenever the
+            # rest of the session happened not to contain it.
+            for w in check_sources_are_real(worker_text, worker_result):
+                warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
+            for w in check_sets_and_sources_match(worker_result):
+                warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
+            exercise = Exercise(
+                **worker_result.model_dump(
+                    exclude={"uncertain_fields", "set_sources", "warmup_sources"}
+                )
+            )
             # The splitter already told us the correct position — trust that over whatever
             # the worker itself reported, rather than giving the model one more thing to
             # get wrong.
