@@ -155,9 +155,16 @@ isn't lost.
       non-breaking space). `_comparable()` now compares content, not bytes. The claim that B2
       had "zero false positives by construction" was wrong -- real text has more variation than
       that.
-      **Still unproven:** these checks have never fired on a real defect outside unit tests.
-      The honest validation is one Groq run (free) on a file where it drops sets -- if the
-      checks stay silent there, they are not earning their place.
+      **Validated 2026-08-04 on live output, free:** run against `openai/gpt-oss-120b`, the
+      checks fired 13 times on one real session -- Groq ignored the source-line instruction on
+      2 of 3 exercises, producing sets with no sources at all. Haiku recorded a source for
+      102/102 sets; Groq for 3/10. So the checks do fire on real model output, and they flag
+      exactly what they should: an extraction that cannot show its work.
+      **Still narrowly unproven:** the "source with no set" branch (a line read then dropped)
+      has only ever fired in unit tests -- Haiku has not produced that shape. Not worth paying
+      to manufacture; it will surface on its own or it won't matter. Groq's free-tier quota was
+      exhausted after 5 calls, so a fuller Groq comparison is available later for $0 whenever
+      the quota resets.
 - [ ] **B4 — `check_for_unread_lines()` — DEFERRED.** Flags source lines containing numbers that
       nothing claimed. Catches a set dropped together with its source, which B2/B3 miss. Held
       back because of real false-positive risk (`**Goal:** 15 kg x 3 sets x 10-12 reps` has
