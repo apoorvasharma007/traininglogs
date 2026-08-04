@@ -165,13 +165,21 @@ isn't lost.
       to manufacture; it will surface on its own or it won't matter. Groq's free-tier quota was
       exhausted after 5 calls, so a fuller Groq comparison is available later for $0 whenever
       the quota resets.
-- [ ] **B4 — `check_for_unread_lines()` — DEFERRED.** Flags source lines containing numbers that
-      nothing claimed. Catches a set dropped together with its source, which B2/B3 miss. Held
-      back because of real false-positive risk (`**Goal:** 15 kg x 3 sets x 10-12 reps` has
-      numbers and is legitimately not a set). Decide after measuring B2/B3 on the eval set.
-- [ ] **B5 — Remove the kg/RPE token checks** — only once B2–B4 have proven out. They are
-      format-specific (kg-only) and blind to timed sets, but until then they are the only drop
-      detection there is.
+- [x] **B4 — REJECTED on measurement, 2026-08-04.** Counted what it would flag on one real
+      session: 76 lines contain a number, only 36 are enumerated set entries. The other **40
+      would all be false positives** — Date, Phase, Week, Duration, `## Exercise 1`,
+      `**Name:** Incline DB Press 45 Degree`, `**Goal:**`, `**Rest:**`, warmup prose. Making it
+      precise means teaching it that a set looks like `^\d+[.)]`, which is exactly the
+      format-specific overfit this plan rules out — and that pattern dies on speech input.
+      Not built. A set dropped together with its source line stays undetectable; that is an
+      accepted limit, not an oversight.
+- [x] **B5 — kg check removed, RPE check kept** (2026-08-04). Measured across all 122 input
+      files: 1,009 of 1,036 kg-suffixed numbers are on `**Goal:**` lines, 27 are prose, and
+      **none** are working-set weights (sets write `63 x 10`, no unit). It could only ever fire
+      on goal weights, so all 9 of its warnings were noise and it could never catch a dropped
+      weight. The RPE check stays — sets write `RPE 10` inline, and "RPE" is domain vocabulary
+      that survives a change of input format.
+      **Result: warnings across 6 real sessions went 13 -> 0**, accuracy unchanged at 571/578.
 
   Design principle for all of these: a check should encode a **property of the data**, not a
   **memory of a bug**. "Every number in the source should be accounted for" survives new input
