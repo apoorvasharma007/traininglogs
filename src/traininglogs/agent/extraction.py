@@ -183,9 +183,6 @@ def _chunk_exercises(text: str, split: ExerciseSplit) -> dict[int, str]:
 _RPE_TOKEN_RE = re.compile(
     r"rpe\s*:?\s*(\d{1,2}(?:\.\d)?)(?:\s*-\s*(\d{1,2}(?:\.\d)?))?", re.IGNORECASE
 )
-_WEIGHT_KG_TOKEN_RE = re.compile(r"(\d+(?:\.\d+)?)\s*kg\b", re.IGNORECASE)
-
-
 def _rpe_tokens_in_text(text: str) -> set[float]:
     # A range ("RPE: 6-7") contributes only its upper bound — that's the value the extraction
     # convention (design session, 2026-07-26) says should land on the last set.
@@ -195,20 +192,8 @@ def _rpe_tokens_in_text(text: str) -> set[float]:
     }
 
 
-def _weight_kg_tokens_in_text(text: str) -> set[float]:
-    # Intentionally kg-only, not lbs — an lbs value in the text is unit-converted before it
-    # lands in weight_kg, so it would never textually match and would always false-positive.
-    return {float(v) for v in _WEIGHT_KG_TOKEN_RE.findall(text)}
-
-
 def _extracted_rpes(exercises: list[Exercise]) -> set[float]:
     return {s.rpe for ex in exercises for s in (ex.sets or []) if s.rpe is not None}
-
-
-def _extracted_weights_kg(exercises: list[Exercise]) -> set[float]:
-    from_sets = {s.weight_kg for ex in exercises for s in (ex.sets or []) if s.weight_kg is not None}
-    from_warmup = {ws.weight_kg for ex in exercises for ws in (ex.warmup_sets or [])}
-    return from_sets | from_warmup
 
 
 def _comparable(text: str) -> str:
@@ -275,12 +260,22 @@ def check_sets_and_sources_match(extract: ExerciseExtract) -> list[str]:
 
 
 def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[str]:
-    """Deterministic, LLM-free check for the two failure shapes the split-call design exists
-    to prevent: an exercise silently missing from the final list, or a value (RPE, weight)
-    present in the raw text but absent from every field it could have landed in. Findings are
-    a heuristic, not proof — a value can legitimately appear in text without being extractable
-    data (e.g. an RPE mentioned in passing prose). Start narrow; grow the token patterns from
-    real misses rather than guessing edge cases up front."""
+    """Session-level checks: an exercise missing from the final list, or an RPE present in the
+    text but absent from every set it could have landed on. Per-exercise checks live in
+    check_sources_are_real() and check_sets_and_sources_match().
+
+    A kg-token check used to sit here too. It was removed on 2026-08-04 after measuring where
+    kg-suffixed numbers actually occur across all 122 input files: 1,009 of 1,036 are on
+    `**Goal:**` lines and the remaining 27 are prose ("I can perhaps handle 63kg"). **None** are
+    working-set weights, because sets are written `63 x 10` with no unit. So it could only ever
+    fire on goal weights, which legitimately are not set weights — every warning it produced was
+    noise, and it was structurally incapable of catching a dropped weight.
+
+    The RPE check stays: sets do write `RPE 10` inline, so it can see real values, and "RPE" is
+    domain vocabulary rather than a quirk of the markdown — it survives a speech transcript.
+
+    Findings are a heuristic, not proof: a value can appear in text without being extractable
+    data."""
     warnings: list[str] = []
 
     if len(exercises) != len(split.exercises):
@@ -292,10 +287,6 @@ def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[st
     extracted_rpes = _extracted_rpes(exercises)
     for value in sorted(_rpe_tokens_in_text(text) - extracted_rpes):
         warnings.append(f"RPE {value} appears in the text but not in any extracted set.")
-
-    extracted_weights = _extracted_weights_kg(exercises)
-    for value in sorted(_weight_kg_tokens_in_text(text) - extracted_weights):
-        warnings.append(f"Weight {value}kg appears in the text but not in any extracted set.")
 
     return warnings
 

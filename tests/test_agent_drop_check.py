@@ -72,39 +72,3 @@ class TestOrphanedRpeTokens:
         exercises = [_exercise(1, "Bench Press", sets=[_set(1, weight_kg=90.0)])]
         warnings = audit("Sets: 1. 90kg x 8, felt smooth", split, exercises)
         assert warnings == []
-
-
-class TestOrphanedWeightTokens:
-    def test_weight_present_in_text_and_extraction_produces_no_warning(self) -> None:
-        split = ExerciseSplit(exercises=[ExercisePosition(position=1, name="Bench Press", anchor="Bench Press")])
-        exercises = [_exercise(1, "Bench Press", sets=[_set(1, weight_kg=90.0)])]
-        warnings = audit("Sets: 1. 90kg x 8", split, exercises)
-        assert warnings == []
-
-    def test_weight_in_text_missing_from_extraction_is_flagged(self) -> None:
-        split = ExerciseSplit(exercises=[ExercisePosition(position=1, name="Bench Press", anchor="Bench Press")])
-        exercises = [_exercise(1, "Bench Press", sets=[_set(1, weight_kg=90.0)])]
-        warnings = audit("Sets: 1. 90kg x 8\nSets: 2. 95kg x 6", split, exercises)
-        assert any("95.0kg" in w for w in warnings)
-
-    def test_warmup_set_weights_count_toward_extracted_weights(self) -> None:
-        split = ExerciseSplit(exercises=[ExercisePosition(position=1, name="Bench Press", anchor="Bench Press")])
-        exercises = [
-            _exercise(
-                1,
-                "Bench Press",
-                sets=[_set(1, weight_kg=90.0)],
-                warmup_sets=[WarmupSet(number=1, weight_kg=60.0, rep_count=4)],
-            )
-        ]
-        warnings = audit("Warmup: 60kg x 4\nSets: 90kg x 8", split, exercises)
-        assert warnings == []
-
-    def test_lbs_values_are_not_scanned(self) -> None:
-        # Weight is unit-converted to kg during extraction, so a raw lbs number in the text
-        # would never textually match weight_kg — scoping the scan to kg avoids that
-        # guaranteed false positive rather than trying to approximate a conversion.
-        split = ExerciseSplit(exercises=[ExercisePosition(position=1, name="Bench Press", anchor="Bench Press")])
-        exercises = [_exercise(1, "Bench Press", sets=[_set(1, weight_kg=90.7)])]
-        warnings = audit("Sets: 1. 200lbs x 8", split, exercises)
-        assert warnings == []
