@@ -172,12 +172,18 @@ class CachedProvider:
             self.planned += 1
             raise _DryRunStop(f"first uncached call would be '{tool_name}' (~{len(text):,} chars in)")
 
-        spent = self.usage.cost(self.model)
-        if spent >= self.max_cost:
-            raise LLMParserError(
-                f"COST CAP: ${spent:.4f} spent, cap is ${self.max_cost:.2f}. Aborting before "
-                f"the next call. Raise --max-cost to continue; cached work is preserved."
-            )
+        # A free model never trips the cap -- otherwise `--max-cost 0` on Groq aborts before the
+        # first call, since 0 >= 0. On a paid model `--max-cost 0` still correctly refuses to
+        # spend anything at all.
+        price_in, price_out = PRICING.get(self.model, (0.0, 0.0))
+        if (price_in or price_out):
+            spent = self.usage.cost(self.model)
+            if spent >= self.max_cost:
+                raise LLMParserError(
+                    f"COST CAP: ${spent:.4f} spent, cap is ${self.max_cost:.2f}. Aborting "
+                    f"before the next call. Raise --max-cost to continue; cached work is "
+                    f"preserved."
+                )
 
         before_in, before_out = self.usage.input_tokens, self.usage.output_tokens
         t0 = time.time()
