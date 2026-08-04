@@ -41,6 +41,11 @@ because `13` is still in the output. Fixture: `Wrist Flexion DB Curl` in
 
 ## Conventions
 
+**Read `extraction-design-principles.md` before changing a prompt or a schema.** It records what
+production extraction teams and published research actually find works — including several
+findings that contradicted our own assumptions. The short version: the schema is a bigger lever
+than the prompt, flat beats nested, field names are search hints, and 2-4 real examples beat more.
+
 **Spend as little on the API as possible.** The cache key is a hash of the whole request --
 model + system prompt + tool schema + input text -- so:
 
@@ -187,6 +192,34 @@ isn't lost.
   changes. That rules out the unilateral rule proposed earlier — it is explicitly not being
   built. Warnings are *attention direction* for the confirmation card, not a safety net: a false
   warning costs two seconds of reading, a missed one costs wrong data.
+### Reordered 2026-08-04 — schema before prompt
+
+Research (`extraction-design-principles.md`) says we had the priority backwards: 55% of accuracy
+improvements come from flattening schemas, and one field rename moved a benchmark from 4.5% to
+95%. We were about to spend on prompt wording while the schema stayed 6 levels deep with two
+competing fields for "reps". The prompt items below are still wanted; they now come *after* the
+schema work, and against a much smaller schema.
+
+**Test each change on Groq first — it is free.** If schema complexity is the real constraint, the
+weaker model improves most, and we learn the direction for $0.00 before spending on Haiku.
+See the open hypothesis at the end of `extraction-design-principles.md`.
+
+- [ ] **S1 — Split the extraction schema from the database model.** `ExerciseExtract` currently
+      inherits from `Exercise`, the production model behind the `exercises`/`working_sets` tables,
+      so the model is asked to fill a shape designed for storage. Make it standalone, carrying
+      only the fields the POC needs, and add a projection function to `Exercise`. **No DB, API or
+      dashboard change** — the projection absorbs it. Needs a decision on the POC field set.
+- [ ] **S2 — Flatten `reps` to one field.** `rep_count` (2 levels) and `unilateral_rep_count`
+      (4 levels) are two competing fields for one concept; the model must infer which applies,
+      which is the Wrist Flexion defect. Replace with a single string field the model copies from
+      the text (`"8"`, `"8+1"`, `"L8/R7"`, `"12 catches"`), parsed deterministically in Python.
+      Grounding already proves the copy is faithful.
+- [ ] **S3 — Field names and descriptions.** Name fields the way the source names them; give every
+      field an explicit scope description in the schema rather than a rule in the prompt.
+      (Findings 1 and 4: 4.5%→95% on a rename; 34% of improvements from descriptions.)
+- [ ] **S4 — Add 2-4 few-shot examples** drawn from real inputs covering the notation variety
+      (barbell sets, timed holds, unilateral, "x feel" warmups). Currently there are **zero**.
+      (Finding 6: up to +17%.)
 - [ ] **Worker prompt hygiene** *(inherited: extraction-accuracy Step 3, re-targeted from
       `LABELS_SYSTEM_PROMPT` to `WORKER_SYSTEM_PROMPT`)*. Two rules: `set_notes` must never
       restate this exercise's own weight/reps/RPE — only something additional about that set
@@ -310,40 +343,61 @@ confirm button. Mobile capture comes later.
 Base branch per phase, cut from `dev`. Sub-branch per step, squash-merged to the base. Base
 merges to `dev` only when the phase is complete and the suite is green (0 failed, 0 skipped).
 
----
-## ▶ Resume here
+---## ▶ Resume here
 
-**Architecture decisions locked** from the 2026-08-02 evaluation (~$0.58 spend). **Full backlog
-approved** 2026-08-03 — every item in Phases 1-6 above, plus the decisions table near the top.
+**Architecture decisions locked** from the 2026-08-02 evaluation. **Full backlog approved**
+2026-08-03. **Phase 1 reordered 2026-08-04** — schema before prompt, on evidence.
 
-**Done:** Phase 0 complete (`dev` at `99c9fae`). Phase 1 item 1 — parse-first deleted
-(`3afafb2`). Suite **467 passed / 0 failed / 0 skipped**. Nothing pushed; all local.
+**Done:** Phase 0 (`dev` at `99c9fae`). Phase 1: parse-first deleted (`3afafb2`); source lines +
+their two checks (`ab2ed8d`, `9c8dbc4`), validated live on Groq for $0; B4 rejected and B5
+narrowed on measurement (`92f0073`). Suite **483 passed / 0 failed / 0 skipped**. Nothing pushed.
 
-**In progress:** `phase-1/finalize-pipeline`, cut from `dev`. Sub-branch per item.
+**Spend: $1.21 of $5.00.**
 
-**Next action, in this order:**
+**In progress:** `phase-1/prompt-fixes`, cut from `phase-1/finalize-pipeline`. **Nothing committed
+on it yet** — the branch holds only an untracked baseline capture in the scratchpad. The prompt
+work was paused mid-flight when the research showed the ordering was wrong.
 
-1. **Check Anthropic Citations** (~20 min, no code) — it may provide source grounding natively.
-   It is documented as incompatible with `output_config.format`; this pipeline uses tool calls,
-   so whether it composes is unverified. If it works, B1 gets simpler. If not, proceed as
-   planned — a `set_sources` field is provider-agnostic either way, which is the safer default.
-2. **B1-B3** — source lines + the two checks that have zero false positives by construction.
-3. **Measure** — `scripts/eval_arms.py --n 6 --arms split` (~$0.30, most calls cached). Two
-   numbers wanted: how many warnings fire, and whether accuracy moved. Adding output fields
-   could degrade extraction; this measures it directly rather than assuming.
-4. **B4/B5** decided on those numbers, not on argument.
-5. Then B6-B8 (prompt fixes), then B9 (caching) last — caching is the only item whose
-   measurement depends on the final call structure.
+### Next action: S1 — split the extraction schema from the DB model
 
-**Why `audit()` matters more than it looks:** deleting parse-first removed the structural
-guarantee that two of the three original extraction failures couldn't happen. These checks are
-now the only runtime guard. Three known blind spots in the current implementation, each with a
-real example from the evaluation:
+`ExerciseExtract(Exercise)` at `schemas.py:68` is the coupling. Breaking it is the prerequisite
+for S2-S4 and costs nothing at the DB layer.
 
-1. **Per-exercise set count** — Groq dropped 4 sets on one fixture and 3 on another with
-   `warn=0`; `audit()` compares *exercise* counts only.
-2. **Timed / bodyweight sets carry no kg tokens** — `20s`, `18s`, `15s`; the weight check has
-   nothing to look for, leaving the calisthenics input class unguarded.
-3. **Structural misplacement** — `12.5 x 13 - right did partial range only` became
-   `unilateral_rep_count={right:{full:13}}`. Both numbers are still present, so every
-   token-presence check passes. Accepted as a card-caught defect (see decisions table).
+**Ask Apoorva first — this needs a decision, not a guess:**
+
+1. **Which fields are in the POC extraction schema?** Proposed minimum: exercise `name`, `sets`
+   (weight, reps, RPE, notes), `warmup_sets`, exercise `notes`. Proposed to drop *from extraction
+   only*: `tags`, `modality`, `movement_pattern`, `rep_tempo`, `target_muscle_groups`,
+   `current_goal`, `form_cues`. They stay in the DB model; they just stop being asked of the model
+   for now. Fewer fields measurably improves accuracy on the rest (finding 3).
+2. **What happens to the dropped fields in the DB** — left null, or backfilled later by a separate
+   classification call?
+
+### Measurement strategy for S1-S4 — Groq first, free
+
+Each of S1-S4 changes the schema, so each invalidates the worker cache (~$0.45 on Haiku). To keep
+the spend down:
+
+1. Run the change on **Groq first** (`--model groq`, $0.00). If schema complexity is the real
+   constraint, the weaker model improves most — that is the hypothesis being tested.
+2. Only spend on Haiku once a batch is settled. Batch **S1+S2** (both schema shape) and **S3+S4**
+   (both schema metadata and examples) — two Haiku measurements, ~$0.90, instead of four at ~$1.80.
+3. Groq's free quota was exhausted on 2026-08-04 and resets on its own; check before planning a
+   Groq run.
+
+Baseline to beat: **571/578 (98.8%), 0 warnings, 3/6 files perfect.** A drop means revert, not
+patch.
+
+### Then, against the smaller schema
+
+B6 (worker prompt hygiene), B7 (shell focus truncation), B8 (warmup-notes convention), then B9
+(prompt caching) last. Detail for each is in the Phase 1 list above.
+
+### Also found on 2026-08-04, not yet fixed
+
+`WORKER_SYSTEM_PROMPT` carries a 497-character block of `program`/`phase`/`week` rules —
+session-level fields `ExerciseExtract` does not have and the worker cannot extract. Roughly 125
+wasted tokens on every worker call, ~8 calls per session, plus instruction about fields not in the
+schema. `tests/test_agent_prompts.py::test_has_no_session_level_fields` was written to catch this
+and its pattern missed (it guards `"program":`, the prompt says `"Program:"`). Fold the deletion
+into S3 and tighten the test guard.
