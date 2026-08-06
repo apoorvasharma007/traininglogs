@@ -130,7 +130,7 @@ class CachedProvider:
     """
 
     def __init__(self, inner, model: str, usage: _Usage, log_path: Path, dry_run: bool,
-                 max_cost: float, stage_label: str = "") -> None:
+                 max_cost: float, stage_label: str = "", delay: float = 0.0) -> None:
         self.inner = inner
         self.model = model
         self.usage = usage
@@ -138,6 +138,10 @@ class CachedProvider:
         self.dry_run = dry_run
         self.max_cost = max_cost
         self.stage_label = stage_label
+        # Seconds to wait before each *uncached* call. Free tiers meter tokens per minute, so
+        # firing calls back to back saturates the window and everything after it either crawls
+        # or 429s. Pacing costs wall-clock time and nothing else. Cached calls never wait.
+        self.delay = delay
         self.planned = 0
         # Everything the model returned, in call order -- so a run can be read afterwards
         # rather than reconstructed from hashed cache files.
@@ -189,6 +193,9 @@ class CachedProvider:
                     f"before the next call. Raise --max-cost to continue; cached work is "
                     f"preserved."
                 )
+
+        if self.delay:
+            time.sleep(self.delay)
 
         before_in, before_out = self.usage.input_tokens, self.usage.output_tokens
         t0 = time.time()

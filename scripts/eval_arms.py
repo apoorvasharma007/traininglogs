@@ -186,6 +186,13 @@ def main() -> int:
     ap.add_argument("--max-cost", type=float, default=2.00)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--show-diffs", type=int, default=8, help="Max mismatch lines per file")
+    ap.add_argument(
+        "--delay", type=float, default=0.0,
+        help=(
+            "Seconds to pause before each uncached call. Free tiers meter tokens per minute; "
+            "pacing avoids saturating the window. Try 20 for Groq. Cached calls never wait."
+        ),
+    )
     args = ap.parse_args()
 
     truth_index = build_truth_index()
