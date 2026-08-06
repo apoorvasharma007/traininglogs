@@ -140,39 +140,46 @@ def _eq(a, b) -> bool:
         return a == b
 
 
-def score(truth: list[dict], got: list[dict]) -> tuple[int, int, list[str]]:
-    ok = total = 0
+def score(truth: list[dict], got: list[dict]) -> tuple[dict[str, list[int]], list[str]]:
+    """Score in two categories, because they are not equally trustworthy.
+
+    CORE -- exercise count, set counts, weights, reps, RPE. The answer key is reliable here, so
+    a drop is a real regression.
+
+    WARMUP -- warmup set counts only. The answer key came from the rules parser, which ignored
+    the `### Warmup Notes` prose where warmups are actually written ("36 x feel", "200 kgs power
+    kicks"). Five of seven mismatches in the 2026-08-03 run were the model being *more* correct
+    than the key. So a rise in warmup mismatches may mean the extraction improved. Adjudicate
+    these by reading the source, never by the number alone.
+    """
+    tally = {"core": [0, 0], "warmup": [0, 0]}   # category -> [correct, total]
     diffs: list[str] = []
 
-    total += 1
-    if len(truth) == len(got):
-        ok += 1
-    else:
-        diffs.append(f"exercise count: truth={len(truth)} got={len(got)}")
+    def record(category: str, correct: bool, message: str) -> None:
+        tally[category][1] += 1
+        if correct:
+            tally[category][0] += 1
+        else:
+            diffs.append(f"[{category}] {message}")
+
+    record("core", len(truth) == len(got),
+           f"exercise count: truth={len(truth)} got={len(got)}")
 
     for i, t in enumerate(truth):
         g = got[i] if i < len(got) else {"name": "<MISSING>", "sets": [], "n_warmup": 0}
         label = f"ex{i+1} {t['name'][:24]!r}"
 
-        for field, tv, gv in (
-            ("set count", len(t["sets"]), len(g["sets"])),
-            ("warmup count", t["n_warmup"], g["n_warmup"]),
-        ):
-            total += 1
-            if tv == gv:
-                ok += 1
-            else:
-                diffs.append(f"{label}: {field} truth={tv} got={gv}")
+        record("core", len(t["sets"]) == len(g["sets"]),
+               f"{label}: set count truth={len(t['sets'])} got={len(g['sets'])}")
+        record("warmup", t["n_warmup"] == g["n_warmup"],
+               f"{label}: warmup count truth={t['n_warmup']} got={g['n_warmup']}")
 
         for j, ts in enumerate(t["sets"]):
             gs = g["sets"][j] if j < len(g["sets"]) else {}
             for key in ("kg", "full", "partial", "rpe"):
-                total += 1
-                if _eq(ts.get(key), gs.get(key)):
-                    ok += 1
-                else:
-                    diffs.append(f"{label} set{j+1} {key}: truth={ts.get(key)} got={gs.get(key)}")
-    return ok, total, diffs
+                record("core", _eq(ts.get(key), gs.get(key)),
+                       f"{label} set{j+1} {key}: truth={ts.get(key)} got={gs.get(key)}")
+    return tally, diffs
 
 
 def main() -> int:
@@ -226,7 +233,8 @@ def main() -> int:
     for arm in args.arms:
         fn, kwargs = ARMS[arm]
         usage = _Usage()
-        agg = {"ok": 0, "total": 0, "files_perfect": 0, "files_run": 0, "errors": 0}
+        agg = {"core": [0, 0], "warmup": [0, 0],
+               "files_perfect": 0, "files_run": 0, "errors": 0}
         table[arm] = {"usage": usage, "agg": agg}
         print("-" * 78)
         print(f"ARM: {arm}")
@@ -258,14 +266,18 @@ def main() -> int:
                 print("      FULLY CACHED — $0.00")
                 continue
 
-            ok, total, diffs = score(truth, spine_from_extract(extract))
-            agg["ok"] += ok
-            agg["total"] += total
+            tally, diffs = score(truth, spine_from_extract(extract))
+            for category, (ok_n, total_n) in tally.items():
+                agg[category][0] += ok_n
+                agg[category][1] += total_n
             agg["files_run"] += 1
             if not diffs:
                 agg["files_perfect"] += 1
-            pct = 100.0 * ok / total if total else 0.0
-            print(f"      {ok}/{total} fields ({pct:.1f}%)  {time.time()-t0:.1f}s"
+            core_ok, core_total = tally["core"]
+            warm_ok, warm_total = tally["warmup"]
+            core_pct = 100.0 * core_ok / core_total if core_total else 0.0
+            print(f"      core {core_ok}/{core_total} ({core_pct:.1f}%) | "
+                  f"warmup {warm_ok}/{warm_total}  {time.time()-t0:.1f}s"
                   f"{'  PERFECT' if not diffs else ''}")
             for d in diffs[: args.show_diffs]:
                 print(f"         x {d}")
@@ -290,13 +302,24 @@ def main() -> int:
     print("=" * 78)
     print("VERDICT")
     print("=" * 78)
-    print(f"{'arm':<12} {'accuracy':>14} {'perfect files':>14} {'calls':>7} {'cost':>9} {'fails':>6}")
+    print(f"{'arm':<12} {'CORE (trust this)':>20} {'warmup (adjudicate)':>21} "
+          f"{'perfect':>9} {'calls':>7} {'cost':>9} {'fails':>6}")
     for arm, d in table.items():
         a, u = d["agg"], d["usage"]
-        pct = 100.0 * a["ok"] / a["total"] if a["total"] else 0.0
-        print(f"{arm:<12} {a['ok']:>5}/{a['total']:<5}{pct:>5.1f}% "
-              f"{a['files_perfect']:>7}/{a['files_run']:<6} {u.calls:>7} "
+        c_ok, c_tot = a["core"]
+        w_ok, w_tot = a["warmup"]
+        c_pct = 100.0 * c_ok / c_tot if c_tot else 0.0
+        w_pct = 100.0 * w_ok / w_tot if w_tot else 0.0
+        print(f"{arm:<12} {c_ok:>6}/{c_tot:<5}{c_pct:>6.1f}% "
+              f"{w_ok:>7}/{w_tot:<5}{w_pct:>6.1f}% "
+              f"{a['files_perfect']:>4}/{a['files_run']:<4} {u.calls:>7} "
               f"${u.cost(model):>8.4f} {a['errors']:>6}")
+    print()
+    print("CORE is exercise/set counts, weights, reps, RPE -- the answer key is reliable, so a")
+    print("drop there is a real regression. WARMUP counts are scored against a key built by the")
+    print("rules parser, which ignored the `### Warmup Notes` prose where warmups are actually")
+    print("written -- so more mismatches there may mean the extraction got better. Read the")
+    print("source before believing that number.")
     print(f"\nArtifacts: {run_dir}")
     return 0
 
