@@ -11,6 +11,16 @@ DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 _MAX_RETRIES = 2
 
+# Ceiling on a single call's output. Shared by both providers so they cannot drift apart --
+# GroqProvider previously set none at all, and OpenAI-compatible APIs reserve
+# `input + max_tokens` against the per-minute token budget, so an unset ceiling reserves the
+# model's full completion length on every call. On Groq's free tier (8,000 tokens/minute) that
+# exhausted the window after two or three calls whose actual usage was a fraction of it.
+#
+# 4096 is generous for one exercise -- observed worker outputs run 300-1,500 tokens -- while
+# staying well clear of the ceiling that truncated the monolithic path's 3.6-4.1K outputs.
+DEFAULT_MAX_TOKENS = 4096
+
 
 # A 400 covers two very different things: the model produced a tool call the API's schema
 # check rejected (re-asking can fix it), and the account/request is unusable no matter what we
@@ -56,8 +66,11 @@ class ExtractionProvider(Protocol):
 
 
 class AnthropicProvider:
-    def __init__(self, model: str = DEFAULT_ANTHROPIC_MODEL) -> None:
+    def __init__(
+        self, model: str = DEFAULT_ANTHROPIC_MODEL, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> None:
         self.model = model
+        self.max_tokens = max_tokens
         self._client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     def extract(
@@ -78,7 +91,7 @@ class AnthropicProvider:
             try:
                 response = self._client.messages.create(
                     model=self.model,
-                    max_tokens=4096,
+                    max_tokens=self.max_tokens,
                     # Extraction, not creative writing — same input must produce the same fields.
                     temperature=0,
                     system=system_prompt,
@@ -120,10 +133,13 @@ class AnthropicProvider:
 
 
 class GroqProvider:
-    def __init__(self, model: str = DEFAULT_GROQ_MODEL) -> None:
+    def __init__(
+        self, model: str = DEFAULT_GROQ_MODEL, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> None:
         import groq
 
         self.model = model
+        self.max_tokens = max_tokens
         self._client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
     def extract(
@@ -164,6 +180,7 @@ class GroqProvider:
                     messages=messages,
                     tools=tools,
                     tool_choice=tool_choice,
+                    max_tokens=self.max_tokens,
                     # Extraction, not creative writing — same input must produce the same fields.
                     temperature=0,
                 )
