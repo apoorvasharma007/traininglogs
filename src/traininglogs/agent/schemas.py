@@ -65,7 +65,13 @@ class SessionShellExtract(BaseModel):
     warmup: Optional[List[SessionWarmup]] = None
     cooldown: Optional[List[SessionCooldown]] = None
     notes: Optional[str] = None
-    uncertain_fields: List[str] = Field(default_factory=list)
+    # Optional for the same reason as ExerciseExtract.uncertain_fields -- see the note there.
+    uncertain_fields: Optional[List[str]] = Field(default_factory=list)
+
+    @field_validator("uncertain_fields", mode="before")
+    @classmethod
+    def null_means_none_uncertain(cls, v: object) -> object:
+        return [] if v is None else v
 
     @field_validator("date")
     @classmethod
@@ -179,13 +185,24 @@ class ExerciseExtract(BaseModel):
             "weights or reps."
         ),
     )
-    uncertain_fields: List[str] = Field(
+    # Optional rather than a plain list because models naturally serialise "nothing uncertain"
+    # as null, and a schema that only accepts an array gets the whole tool call rejected for it.
+    # On 2026-08-06 that discarded two complete, correct extractions out of 22 exercises —
+    # Groq returned `"uncertain_fields": null` and its validator refused the call. Research
+    # finding 5 in extraction-design-principles.md says the same thing more generally: requiring
+    # a field that may legitimately be absent makes models behave worse, not better.
+    uncertain_fields: Optional[List[str]] = Field(
         default_factory=list,
         description=(
             "Dot-paths, relative to this exercise, that you are not confident about — e.g. "
-            "'sets.2.rpe'. Only list fields you actually filled in."
+            "'sets.2.rpe'. Only list fields you actually filled in. Omit or use null if none."
         ),
     )
+
+    @field_validator("uncertain_fields", mode="before")
+    @classmethod
+    def null_means_none_uncertain(cls, v: object) -> object:
+        return [] if v is None else v
 
     @field_validator("number")
     @classmethod

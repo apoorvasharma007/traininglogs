@@ -172,3 +172,29 @@ class TestExerciseSplit:
         dumped = split.model_dump(mode="json")
         restored = ExerciseSplit.model_validate(dumped)
         assert restored == split
+
+
+class TestNullUncertainFieldsIsAccepted:
+    """Models serialise "nothing uncertain" as null, and a schema that only accepts an array
+    gets the whole tool call rejected for it. On 2026-08-06 that cost two complete, correct
+    extractions out of 22 exercises -- Groq returned `"uncertain_fields": null` and its
+    server-side validator refused the call before we ever saw the answer."""
+
+    def test_the_schema_permits_null(self) -> None:
+        import json
+
+        from traininglogs.agent.schemas import ExerciseExtract, SessionShellExtract
+
+        for model in (ExerciseExtract, SessionShellExtract):
+            prop = model.model_json_schema()["properties"]["uncertain_fields"]
+            assert "null" in json.dumps(prop), f"{model.__name__} would reject null"
+
+    def test_null_becomes_an_empty_list(self) -> None:
+        from traininglogs.agent.schemas import ExerciseExtract
+
+        assert ExerciseExtract(number=1, name="Bench", uncertain_fields=None).uncertain_fields == []
+
+    def test_omitted_is_still_an_empty_list(self) -> None:
+        from traininglogs.agent.schemas import ExerciseExtract
+
+        assert ExerciseExtract(number=1, name="Bench").uncertain_fields == []
