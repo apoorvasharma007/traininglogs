@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import os
 from typing import Any, Callable, Protocol, runtime_checkable
 
@@ -87,35 +86,28 @@ def _tool_error_turns(tool_use_id: str, tool_name: str, sent_input: dict, error:
     ]
 
 
-def strict_schema(schema: dict) -> dict:
-    """Prepare a Pydantic-generated schema for `strict: true`.
-
-    Strict mode constrains token sampling to the grammar compiled from this schema, so a tool
-    call that omits a required field or uses the wrong type cannot be produced at all. That is
-    strictly better than catching it afterwards: on 2026-08-06 a worker returned `{"number": 1}`
-    with `name` missing, and under strict mode that output is unreachable.
-
-    The one thing it requires that Pydantic doesn't emit is `additionalProperties: false` on
-    every object. Everything else already satisfies it -- internal $defs, no recursion, and none
-    of the unsupported keywords (minimum/maxLength/pattern/format), which is verified by test.
-
-    Note what this does NOT guarantee: that the call is *meaningful*. `{"number": 1, "name":
-    "Leg Extension"}` with no sets is schema-valid and strict mode will happily produce it. That
-    case is caught by ExerciseExtract's own validation, via the retry loop."""
-    out = copy.deepcopy(schema)
-
-    def mark(node: Any) -> None:
-        if isinstance(node, dict):
-            if node.get("type") == "object" and "properties" in node:
-                node["additionalProperties"] = False
-            for value in node.values():
-                mark(value)
-        elif isinstance(node, list):
-            for value in node:
-                mark(value)
-
-    mark(out)
-    return out
+# DO NOT set `strict: true` on these tool definitions. Measured 2026-08-06, and it is a trap
+# for exactly this schema.
+#
+# Strict mode constrains sampling to a grammar compiled from the schema, which guarantees no
+# required field is ever missing. It also enforces the schema's **property order**. Our people
+# write warmups above working sets -- `### Warmup Notes` comes before `### Working Sets` -- so
+# the model emits in document order: name, warmup_notes, warmup_sets, sets. The schema declares
+# name, sets, warmup_sets, notes, warmup_notes. Under the grammar those conflict: once the model
+# has emitted `warmup_notes`, `sets` is behind it and can never be produced.
+#
+# The evidence, from the raw dumps of three runs. Without strict, 8 of 18 Haiku payloads emitted
+# keys out of schema order and every one of them carried its sets. With strict, 0 of 10 were out
+# of order -- and core accuracy fell from 77.6% to 31.4%, with whole exercises arriving as a name
+# and nothing else.
+#
+# Reordering the fields to match the document would only move the problem: Groq's natural order
+# was different again (`name, notes, sets`), and photo/speech input will not follow the markdown
+# layout at all. No single order is right for every input.
+#
+# The failure strict mode was meant to prevent -- a required field missing -- is already handled
+# by validating inside the retry loop below, which costs one extra call on the rare bad payload
+# instead of silently truncating every good one.
 
 
 @runtime_checkable
@@ -174,10 +166,8 @@ class AnthropicProvider:
                         {
                             "name": tool_name,
                             "description": tool_description,
-                            "input_schema": strict_schema(tool_schema),
-                            # Constrains sampling to the schema, so a call that omits a required
-                            # field or mistypes one cannot be generated. See strict_schema().
-                            "strict": True,
+                            "input_schema": tool_schema,
+                            # No `strict` here, deliberately — see the note above the class.
                         }
                     ],
                     tool_choice={"type": "tool", "name": tool_name},
@@ -267,9 +257,8 @@ class GroqProvider:
                     tool_choice=tool_choice,
                     max_tokens=self.max_tokens,
                     # Extraction, not creative writing — see the note in AnthropicProvider.
-                    # No `strict` here: that is an Anthropic tool-definition field, and this
-                    # provider talks to an OpenAI-compatible API. Groq gets the same protection
-                    # from `validate` below, just after the fact rather than by construction.
+                    # Grammar-constrained decoding is not used on either provider — see the
+                    # note above AnthropicProvider. `validate` below is what guards the payload.
                     temperature=0,
                 )
             except groq.BadRequestError as exc:

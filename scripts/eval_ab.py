@@ -77,6 +77,10 @@ class _Usage:
         # extract() calls that needed more than one attempt. Distinct from `calls`, which counts
         # billed API requests -- this counts how many logical extractions had to be re-asked.
         self.retried_calls = 0
+        # extract() calls that raised after exhausting retries. These are the *expensive*
+        # failures -- three billed attempts each -- so they must be visible in the summary,
+        # not just in whatever the pipeline did with the exception.
+        self.failed_calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
 
@@ -152,6 +156,11 @@ class CachedProvider:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     def _key(self, text, tool_schema, system_prompt, tool_name, tool_description) -> str:
+        # This must cover everything that can change the response. It did not on 2026-08-06:
+        # `strict: true` was added to the tool definition, which changes how the model decodes,
+        # but it wasn't part of the key — so 12 strict-truncated answers stayed cached and would
+        # have been served as if the current code had produced them. They were deleted by hand.
+        # Anything added to the request from here on belongs in this hash.
         payload = json.dumps(
             {
                 "model": self.model,
@@ -220,38 +229,52 @@ class CachedProvider:
         # storm is visible instead of just showing up as a bigger number at the end.
         before_calls = self.usage.calls
         t0 = time.time()
-        result = self.inner.extract(
-            text, tool_schema, system_prompt, tool_name, tool_description, validate=validate
-        )
-        elapsed = time.time() - t0
 
-        d_in = self.usage.input_tokens - before_in
-        d_out = self.usage.output_tokens - before_out
-        attempts = self.usage.calls - before_calls
-        pin, pout = PRICING.get(self.model, (0.0, 0.0))
-        call_cost = d_in / 1e6 * pin + d_out / 1e6 * pout
+        # An extract() that exhausts its retries raises, and a call that raised still cost money.
+        # Logging only on success hid $0.18 of $0.25 in the 2026-08-06 20:33 run — the failures
+        # were the expensive ones, three billed attempts each, and they left no trace.
+        failure: str | None = None
+        try:
+            result = self.inner.extract(
+                text, tool_schema, system_prompt, tool_name, tool_description, validate=validate
+            )
+        except Exception as exc:
+            failure = f"{type(exc).__name__}: {str(exc).splitlines()[0][:160]}"
+            raise
+        finally:
+            elapsed = time.time() - t0
+            d_in = self.usage.input_tokens - before_in
+            d_out = self.usage.output_tokens - before_out
+            attempts = self.usage.calls - before_calls
+            pin, pout = PRICING.get(self.model, (0.0, 0.0))
+            call_cost = d_in / 1e6 * pin + d_out / 1e6 * pout
 
-        if attempts > 1:
-            self.usage.retried_calls += 1
-        retried = f"  [{attempts} attempts — re-asked]" if attempts > 1 else ""
-        print(
-            f"      [called    ] {tool_name}  {d_in:,} in + {d_out:,} out tok  "
-            f"${call_cost:.5f}  {elapsed:.1f}s{retried}"
-        )
-        self._log(
-            {
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "stage": self.stage_label,
-                "model": self.model,
-                "tool": tool_name,
-                "attempts": attempts,
-                "input_tokens": d_in,
-                "output_tokens": d_out,
-                "cost_usd": round(call_cost, 6),
-                "seconds": round(elapsed, 2),
-                "cache_key": key,
-            }
-        )
+            if attempts > 1:
+                self.usage.retried_calls += 1
+            if failure:
+                self.usage.failed_calls += 1
+            tag = "[FAILED    ]" if failure else "[called    ]"
+            retried = f"  [{attempts} attempts]" if attempts > 1 else ""
+            note = f"  {failure}" if failure else ""
+            print(
+                f"      {tag} {tool_name}  {d_in:,} in + {d_out:,} out tok  "
+                f"${call_cost:.5f}  {elapsed:.1f}s{retried}{note}"
+            )
+            self._log(
+                {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "stage": self.stage_label,
+                    "model": self.model,
+                    "tool": tool_name,
+                    "attempts": attempts,
+                    "failed": failure,
+                    "input_tokens": d_in,
+                    "output_tokens": d_out,
+                    "cost_usd": round(call_cost, 6),
+                    "seconds": round(elapsed, 2),
+                    "cache_key": key,
+                }
+            )
         cache_file.write_text(json.dumps(result, indent=2))
         self.responses.append({"tool": tool_name, "cached": False, "response": result})
         return result
