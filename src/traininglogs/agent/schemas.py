@@ -4,7 +4,7 @@ import datetime
 import re
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from traininglogs.agent.reps import parse_reps
 from traininglogs.models.models import (
@@ -161,9 +161,11 @@ class ExerciseExtract(BaseModel):
     tool-calling models flatten a single-nested-object schema regardless of prompt wording, so
     matching that tendency is more robust than fighting it."""
 
-    number: int = Field(
-        description="This exercise's position among the session's main working exercises."
-    )
+    # No `number` field, deliberately. The splitter already established this exercise's position
+    # and assemble() overwrites whatever a worker reports with it, so asking for it gave the
+    # model one more thing to get wrong in exchange for nothing. Removed 2026-08-06, after a run
+    # where the single most common failure was a worker returning `{"number": 1}` and nothing
+    # else -- filling the one field that gets discarded.
     name: str = Field(description="The exercise's name, as written.")
     sets: Optional[List[SetExtract]] = Field(
         default=None, description="The exercise's working sets, in the order they appear."
@@ -204,19 +206,32 @@ class ExerciseExtract(BaseModel):
     def null_means_none_uncertain(cls, v: object) -> object:
         return [] if v is None else v
 
-    @field_validator("number")
-    @classmethod
-    def number_positive(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError("Exercise number must be positive")
-        return v
-
     @field_validator("name")
     @classmethod
     def name_not_empty(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Exercise name cannot be empty")
         return v
+
+    @model_validator(mode="after")
+    def must_contain_at_least_one_set(self) -> "ExerciseExtract":
+        """An exercise with no sets at all is a non-answer, not a result.
+
+        Every field except `name` is optional, which is right — a model shouldn't invent an RPE
+        it can't see. But that also means `{"name": "Leg Extension"}` satisfies the schema while
+        carrying none of the data the call exists to collect, and none of the other checks can
+        see it: check_sources_are_real() and check_sets_are_numbered_and_sourced() both iterate
+        over the sets that came back, so zero sets means zero findings.
+
+        Failing here instead routes it through the provider's retry, which re-asks with the
+        reason. Only if every attempt comes back empty does it become a flagged placeholder —
+        visible, rather than a session that looks clean with its sets quietly missing."""
+        if not (self.sets or self.warmup_sets):
+            raise ValueError(
+                f"Exercise {self.name!r} has no working sets and no warmup sets. If the text "
+                "really records none, say so in notes; otherwise read the sets from the text."
+            )
+        return self
 
     @field_validator("sets", "warmup_sets", mode="before")
     @classmethod
@@ -226,8 +241,11 @@ class ExerciseExtract(BaseModel):
             return [x for x in v if x is not None]
         return v
 
-    def to_exercise(self) -> tuple[Exercise, List[str]]:
+    def to_exercise(self, number: int) -> tuple[Exercise, List[str]]:
         """Project onto the production model, converting rep text to typed counts.
+
+        `number` comes from the caller because the splitter is what knows this exercise's
+        position in the session; the worker only ever saw its own excerpt.
 
         Returns the Exercise and any warnings raised while converting — rep text that could not
         be read is left unset and reported rather than guessed at. The classification fields
@@ -263,7 +281,7 @@ class ExerciseExtract(BaseModel):
             )
 
         exercise = Exercise(
-            number=self.number,
+            number=number,
             name=self.name,
             sets=[_working(s) for s in self.sets] if self.sets else None,
             warmup_sets=[_warmup(s) for s in self.warmup_sets] if self.warmup_sets else None,

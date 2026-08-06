@@ -58,7 +58,8 @@ class StubProvider:
         self._idx = 0
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         raw = self._responses[min(self._idx, len(self._responses) - 1)]
         self._idx += 1
@@ -67,7 +68,8 @@ class StubProvider:
 
 class AlwaysFailProvider:
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         raise LLMParserError("always fails")
 
@@ -223,7 +225,8 @@ class ScriptedProvider:
         self.tool_names_called: list[str] = []
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         self.tool_names_called.append(tool_name)
         if tool_name == SEGMENT_TOOL_NAME:
@@ -231,7 +234,10 @@ class ScriptedProvider:
         if tool_name == SHELL_TOOL_NAME:
             return self._shell_raw
         if tool_name == WORKER_TOOL_NAME:
-            position = int(re.search(r"Extract exercise number (\d+)", text).group(1))
+            # A worker handed an isolated chunk is given no position at all — there is exactly
+            # one exercise in the text. Only the full-document fallback names a number.
+            match = re.search(r"extract number (\d+)", text)
+            position = int(match.group(1)) if match else 1
             return self._exercise_raw_by_position[position]
         raise AssertionError(f"unexpected tool_name: {tool_name}")
 

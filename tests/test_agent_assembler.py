@@ -50,7 +50,8 @@ class ScriptedProvider:
         self.worker_tool_names: list[str] = []
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         if tool_name == SEGMENT_TOOL_NAME:
             return self._split_raw

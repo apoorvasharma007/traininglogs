@@ -10,6 +10,7 @@ markdown block, a plain-prose transcript and a table row to prove that.
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from traininglogs.agent.extraction import (
     check_sets_are_numbered_and_sourced,
@@ -154,15 +155,18 @@ class TestCheckSetsAreNumberedAndSourced:
         warnings = check_sets_are_numbered_and_sourced(extract)
         assert any("warmup numbers" in w for w in warnings)
 
-    def test_an_exercise_with_no_sets_is_clean(self) -> None:
-        assert check_sets_are_numbered_and_sourced(
+    def test_an_exercise_with_no_sets_cannot_be_built_at_all(self) -> None:
+        """These checks iterate over the sets that came back, so zero sets means zero findings —
+        which is exactly how a worker returning nothing used to pass as clean data. The gap is
+        closed one level up now: an extract with no sets is rejected on construction, so it can
+        never reach these checks."""
+        with pytest.raises(ValidationError, match="no working sets and no warmup sets"):
             _extract(sets=None, warmup_sets=None)
-        ) == []
 
 
 class TestProjectionToExercise:
     def test_rep_text_becomes_typed_counts(self) -> None:
-        exercise, warnings = _extract().to_exercise()
+        exercise, warnings = _extract().to_exercise(1)
         assert warnings == []
         assert exercise.sets[0].rep_count.full == 8
         assert exercise.sets[1].rep_count.full == 7
@@ -172,15 +176,15 @@ class TestProjectionToExercise:
         extract = _extract(sets=[
             {"number": 1, "source_line": "1. 90kg x a few", "weight_kg": 90.0, "reps": "a few"}
         ])
-        exercise, warnings = extract.to_exercise()
+        exercise, warnings = extract.to_exercise(1)
         assert exercise.sets[0].rep_count is None
         assert any("a few" in w for w in warnings)
 
     def test_classification_fields_are_left_unset_not_invented(self) -> None:
-        exercise, _ = _extract().to_exercise()
+        exercise, _ = _extract().to_exercise(1)
         for field in ("tags", "modality", "movement_pattern", "form_cues"):
             assert getattr(exercise, field) is None
 
     def test_source_lines_do_not_reach_the_production_model(self) -> None:
-        exercise, _ = _extract().to_exercise()
+        exercise, _ = _extract().to_exercise(1)
         assert not hasattr(exercise.sets[0], "source_line")

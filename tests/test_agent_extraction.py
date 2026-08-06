@@ -28,7 +28,8 @@ class CapturingProvider:
         self.calls: list[tuple[str, dict, str, str, str]] = []
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         self.calls.append((text, tool_schema, system_prompt, tool_name, tool_description))
         return self._raw
@@ -36,7 +37,8 @@ class CapturingProvider:
 
 class AlwaysFailProvider:
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         raise LLMParserError("provider always fails")
 
@@ -55,7 +57,6 @@ VALID_SHELL_RAW: dict[str, Any] = {
 }
 
 VALID_EXERCISE_EXTRACT_RAW: dict[str, Any] = {
-    "number": 2,
     "name": "Overhead Press",
     "sets": [
         {"number": 1, "source_line": "1. 40kg x 8", "weight_kg": 40.0, "reps": "8"},
@@ -116,35 +117,51 @@ class TestExtractShell:
 class TestExtractExercise:
     def test_happy_path(self) -> None:
         result = extract_exercise(
-            "some workout text", 2, provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
+            "some workout text", provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
         )
-        assert result.number == 2
         assert result.name == "Overhead Press"
         assert result.uncertain_fields == []
 
-    def test_provider_receives_position_and_full_text(self) -> None:
+    def test_isolated_chunk_is_not_asked_to_find_a_position(self) -> None:
+        """The normal path. The excerpt holds one exercise, so there is nothing to count — and
+        telling the model to find "exercise number N" in it invited exactly that."""
         provider = CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
-        extract_exercise("the full session note", 3, provider=provider)
+        extract_exercise("the one exercise", provider=provider)
         text, tool_schema, system_prompt, tool_name, tool_description = provider.calls[0]
-        assert "3" in text
-        assert "the full session note" in text
+        assert "number" not in text
+        assert "the one exercise" in text
         assert system_prompt == WORKER_SYSTEM_PROMPT
         assert tool_name == WORKER_TOOL_NAME
 
+    def test_full_document_fallback_still_names_the_position(self) -> None:
+        """The only case where a position is meaningful: the anchor could not be located, so the
+        worker gets the whole session and has to count blocks to find its own."""
+        provider = CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
+        extract_exercise("the full session note", 3, provider=provider)
+        text = provider.calls[0][0]
+        assert "extract number 3" in text
+        assert "the full session note" in text
+
     def test_invalid_raw_raises_llm_parser_error(self) -> None:
-        bad_raw = {"number": 0, "name": "Overhead Press"}
+        bad_raw = {"name": "   "}
         with pytest.raises(LLMParserError):
-            extract_exercise("text", 1, provider=CapturingProvider(bad_raw))
+            extract_exercise("text", provider=CapturingProvider(bad_raw))
+
+    def test_an_empty_result_is_rejected_not_accepted_as_an_exercise(self) -> None:
+        """Schema-valid, semantically empty. Left to stand it becomes an exercise with every set
+        silently missing — the failure this whole layer exists to prevent."""
+        with pytest.raises(LLMParserError, match="no working sets and no warmup sets"):
+            extract_exercise("text", provider=CapturingProvider({"name": "Overhead Press"}))
 
     def test_provider_error_propagates(self) -> None:
         with pytest.raises(LLMParserError):
-            extract_exercise("text", 1, provider=AlwaysFailProvider())
+            extract_exercise("text", provider=AlwaysFailProvider())
 
     def test_self_contained_no_call_ordering_dependency(self) -> None:
-        """Decision 7: a worker is `text (+ position) -> one Exercise` with no dependence on
+        """Decision 7: a worker is `text -> one Exercise` with no dependence on
         segment()/extract_shell() having run first, or on any other worker's result. Calling
-        it standalone, out of order, for a position other than 1 must work identically."""
+        it standalone and out of order must work identically."""
         result = extract_exercise(
-            "some workout text", 2, provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
+            "some workout text", provider=CapturingProvider(VALID_EXERCISE_EXTRACT_RAW)
         )
-        assert result.number == 2
+        assert result.name == "Overhead Press"

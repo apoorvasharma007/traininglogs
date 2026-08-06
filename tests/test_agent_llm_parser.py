@@ -25,7 +25,8 @@ class StubProvider:
         self._raw = raw
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         return self._raw
 
@@ -39,7 +40,8 @@ class FailThenSucceedProvider:
         self._calls = 0
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         self._calls += 1
         if self._calls <= self._fail_times:
@@ -49,7 +51,8 @@ class FailThenSucceedProvider:
 
 class AlwaysFailProvider:
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         raise LLMParserError("always fails")
 
@@ -207,7 +210,8 @@ class TestParse:
 
         class CapturingProvider:
             def extract(
-                self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+                self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
             ) -> dict:
                 calls.append((text, tool_schema))
                 return VALID_STRENGTH_RAW

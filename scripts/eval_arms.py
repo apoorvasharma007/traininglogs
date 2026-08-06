@@ -303,7 +303,7 @@ def main() -> int:
     print("VERDICT")
     print("=" * 78)
     print(f"{'arm':<12} {'CORE (trust this)':>20} {'warmup (adjudicate)':>21} "
-          f"{'perfect':>9} {'calls':>7} {'cost':>9} {'fails':>6}")
+          f"{'perfect':>9} {'calls':>7} {'re-ask':>7} {'cost':>9} {'fails':>6}")
     for arm, d in table.items():
         a, u = d["agg"], d["usage"]
         c_ok, c_tot = a["core"]
@@ -313,7 +313,7 @@ def main() -> int:
         print(f"{arm:<12} {c_ok:>6}/{c_tot:<5}{c_pct:>6.1f}% "
               f"{w_ok:>7}/{w_tot:<5}{w_pct:>6.1f}% "
               f"{a['files_perfect']:>4}/{a['files_run']:<4} {u.calls:>7} "
-              f"${u.cost(model):>8.4f} {a['errors']:>6}")
+              f"{u.retried_calls:>7} ${u.cost(model):>8.4f} {a['errors']:>6}")
     print()
     print("CORE is exercise/set counts, weights, reps, RPE -- the answer key is reliable, so a")
     print("drop there is a real regression. WARMUP counts are scored against a key built by the")

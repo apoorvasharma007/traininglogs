@@ -35,14 +35,21 @@ SHELL_TOOL_DESCRIPTION = (
 )
 
 WORKER_TOOL_NAME = "extract_exercise"
-WORKER_TOOL_DESCRIPTION = "Extract the exercise at the given position from the session text."
+WORKER_TOOL_DESCRIPTION = "Extract one exercise — its sets, warmup sets and notes — from the text."
 
 
 def parse(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
     provider = provider or AnthropicProvider()
     tool_schema = TrainingLogLLMExtract.model_json_schema()
 
-    raw = provider.extract(text, tool_schema, SYSTEM_PROMPT, TOOL_NAME, TOOL_DESCRIPTION)
+    raw = provider.extract(
+        text,
+        tool_schema,
+        SYSTEM_PROMPT,
+        TOOL_NAME,
+        TOOL_DESCRIPTION,
+        validate=TrainingLogLLMExtract.model_validate,
+    )
 
     try:
         return TrainingLogLLMExtract.model_validate(raw)
@@ -58,7 +65,12 @@ def segment(text: str, provider: ExtractionProvider | None = None) -> ExerciseSp
     tool_schema = ExerciseSplit.model_json_schema()
 
     raw = provider.extract(
-        text, tool_schema, SPLITTER_SYSTEM_PROMPT, SEGMENT_TOOL_NAME, SEGMENT_TOOL_DESCRIPTION
+        text,
+        tool_schema,
+        SPLITTER_SYSTEM_PROMPT,
+        SEGMENT_TOOL_NAME,
+        SEGMENT_TOOL_DESCRIPTION,
+        validate=ExerciseSplit.model_validate,
     )
 
     try:
@@ -73,7 +85,12 @@ def extract_shell(text: str, provider: ExtractionProvider | None = None) -> Sess
     tool_schema = SessionShellExtract.model_json_schema()
 
     raw = provider.extract(
-        text, tool_schema, SHELL_SYSTEM_PROMPT, SHELL_TOOL_NAME, SHELL_TOOL_DESCRIPTION
+        text,
+        tool_schema,
+        SHELL_SYSTEM_PROMPT,
+        SHELL_TOOL_NAME,
+        SHELL_TOOL_DESCRIPTION,
+        validate=SessionShellExtract.model_validate,
     )
 
     try:
@@ -83,31 +100,42 @@ def extract_shell(text: str, provider: ExtractionProvider | None = None) -> Sess
 
 
 def extract_exercise(
-    text: str, position: int, provider: ExtractionProvider | None = None
+    text: str, position: int | None = None, provider: ExtractionProvider | None = None
 ) -> ExerciseExtract:
-    """Extract only the exercise at `position` from `text` — usually a pre-sliced, isolated
-    excerpt for just this exercise (see _chunk_exercises), occasionally the full session as a
-    fallback. Self-contained: depends on nothing but its own inputs, so workers can run
-    independently of each other."""
+    """Extract one exercise from `text`.
+
+    `position` is only for the fallback case where `text` is the whole session because the
+    splitter's anchor couldn't be located. Normally `text` is a pre-sliced excerpt containing
+    exactly one exercise (see _chunk_exercises), and then there is nothing to count and no
+    position to find — asking for "exercise number N" there invited the model to go looking for
+    an Nth block in a text that has one.
+
+    Self-contained: depends on nothing but its own inputs, so workers can run independently of
+    each other."""
     provider = provider or AnthropicProvider()
     tool_schema = ExerciseExtract.model_json_schema()
-    prompt = (
-        f"Extract exercise number {position}. If this excerpt contains only one exercise, "
-        f"that is the one to extract. If it contains the full session instead, count the main "
-        f"working exercise blocks (not warmup/cooldown) from the top to find position "
-        f"{position}. Include its full Sets: section if it has one.\n\nText:\n{text}"
-    )
+    if position is None:
+        instruction = "Extract the exercise described in the text below."
+    else:
+        instruction = (
+            f"The text below is a full session, not a single exercise. Count the main working "
+            f"exercise blocks (not warmup/cooldown) from the top and extract number {position}."
+        )
+    prompt = f"{instruction}\n\nText:\n{text}"
 
     raw = provider.extract(
-        prompt, tool_schema, WORKER_SYSTEM_PROMPT, WORKER_TOOL_NAME, WORKER_TOOL_DESCRIPTION
+        prompt,
+        tool_schema,
+        WORKER_SYSTEM_PROMPT,
+        WORKER_TOOL_NAME,
+        WORKER_TOOL_DESCRIPTION,
+        validate=ExerciseExtract.model_validate,
     )
 
     try:
         return ExerciseExtract.model_validate(raw)
     except ValidationError as exc:
-        raise LLMParserError(
-            f"Exercise {position} extraction did not pass validation:\n{exc}"
-        ) from exc
+        raise LLMParserError(f"Exercise extraction did not pass validation:\n{exc}") from exc
 
 
 # Sentinel prefix identifying a placeholder Exercise's notes field. Owned here and read by
@@ -132,8 +160,8 @@ def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
 # leak was the root cause of a "lost in the middle"-looking failure that was actually a
 # deterministic bug: a worker handed a 2-exercise excerpt but told to extract "exercise number
 # N" (the global split position) would count blocks in the leaked fragment and misfire — see
-# assemble(), which now passes position 1 (not the global position) whenever a chunk was
-# successfully isolated, precisely because an isolated chunk contains exactly one exercise.
+# assemble(), which passes no position at all whenever a chunk was successfully isolated,
+# precisely because an isolated chunk contains exactly one exercise.
 CHUNK_TRAILING_OVERLAP_LINES = 0
 
 
@@ -261,10 +289,18 @@ def check_sets_are_numbered_and_sourced(extract: ExerciseExtract) -> list[str]:
     return warnings
 
 
-def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[str]:
-    """Session-level checks: an exercise missing from the final list, or an RPE present in the
-    text but absent from every set it could have landed on. Per-exercise checks live in
-    check_sources_are_real() and check_sets_and_sources_match().
+def audit(text: str, exercises: list[Exercise]) -> list[str]:
+    """Session-level check: an RPE present in the text but absent from every set it could have
+    landed on. Per-exercise checks live in check_sources_are_real() and
+    check_sets_are_numbered_and_sourced().
+
+    An exercise-count check used to sit here too, comparing len(exercises) against the number the
+    splitter found. It was removed on 2026-08-06 because it could never fire: assemble() appends
+    exactly one exercise per split entry — the extracted one, or a placeholder when the worker
+    fails — so the two counts are equal by construction. It read as a safety net while being
+    structurally incapable of catching anything, the same defect as the kg-token check removed
+    before it. A worker that fails is reported by assemble() directly, which is where the
+    information actually is.
 
     A kg-token check used to sit here too. It was removed on 2026-08-04 after measuring where
     kg-suffixed numbers actually occur across all 122 input files: 1,009 of 1,036 are on
@@ -279,12 +315,6 @@ def audit(text: str, split: ExerciseSplit, exercises: list[Exercise]) -> list[st
     Findings are a heuristic, not proof: a value can appear in text without being extractable
     data."""
     warnings: list[str] = []
-
-    if len(exercises) != len(split.exercises):
-        warnings.append(
-            f"Exercise count mismatch: splitter found {len(split.exercises)} exercises, "
-            f"but {len(exercises)} were assembled."
-        )
 
     extracted_rpes = _extracted_rpes(exercises)
     for value in sorted(_rpe_tokens_in_text(text) - extracted_rpes):
@@ -324,10 +354,10 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
     for i, entry in enumerate(split.exercises):
         chunk_text = chunks.get(entry.position)
         if chunk_text is not None:
-            # An isolated chunk contains exactly this one exercise — position 1, not the
-            # global split position, which would only make sense against the full document.
+            # An isolated chunk contains exactly this one exercise, so there is no position to
+            # find in it — see extract_exercise().
             worker_text = chunk_text
-            worker_position = 1
+            worker_position = None
         else:
             worker_text = text
             worker_position = entry.position
@@ -345,13 +375,11 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
             for w in check_sets_are_numbered_and_sourced(worker_result):
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
-            exercise, projection_warnings = worker_result.to_exercise()
+            # The splitter already told us the correct position, so it is passed in rather than
+            # asked of the worker and overwritten afterwards.
+            exercise, projection_warnings = worker_result.to_exercise(entry.position)
             for w in projection_warnings:
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
-            # The splitter already told us the correct position — trust that over whatever
-            # the worker itself reported, rather than giving the model one more thing to
-            # get wrong.
-            exercise = exercise.model_copy(update={"number": entry.position})
             exercise_uncertain = worker_result.uncertain_fields
         except LLMParserError as exc:
             exercises.append(_placeholder_exercise(entry.position, entry.name, str(exc)))
@@ -365,7 +393,7 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
             f"exercises.{i}.{path}" for path in exercise_uncertain
         )
 
-    warnings.extend(audit(text, split, exercises))
+    warnings.extend(audit(text, exercises))
 
     return TrainingLogLLMExtract(
         date=shell.date,

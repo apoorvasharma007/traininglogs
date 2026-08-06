@@ -74,6 +74,9 @@ class _Usage:
     def __init__(self) -> None:
         self.calls = 0
         self.cached_calls = 0
+        # extract() calls that needed more than one attempt. Distinct from `calls`, which counts
+        # billed API requests -- this counts how many logical extractions had to be re-asked.
+        self.retried_calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
 
@@ -166,16 +169,30 @@ class CachedProvider:
         with self.log_path.open("a") as fh:
             fh.write(json.dumps(record) + "\n")
 
-    def extract(self, text, tool_schema, system_prompt, tool_name, tool_description) -> dict:
+    def extract(self, text, tool_schema, system_prompt, tool_name, tool_description,
+                validate=None) -> dict:
         key = self._key(text, tool_schema, system_prompt, tool_name, tool_description)
         cache_file = CACHE_DIR / f"{key}.json"
 
         if cache_file.exists():
-            self.usage.cached_calls += 1
-            print(f"      [cache hit ] {tool_name}")
             cached = json.loads(cache_file.read_text())
-            self.responses.append({"tool": tool_name, "cached": True, "response": cached})
-            return cached
+            # A cached payload has to clear the same bar as a live one. Otherwise the cache can
+            # serve an answer the real pipeline would have re-asked or rejected, and the eval
+            # measures something production would never accept. Treat a stale bad entry as a
+            # miss and pay for the call rather than score a result that isn't reachable.
+            usable = True
+            if validate is not None:
+                try:
+                    validate(cached)
+                except Exception as exc:
+                    usable = False
+                    print(f"      [stale     ] {tool_name} — cached answer no longer valid "
+                          f"({str(exc).splitlines()[0][:80]}); re-calling")
+            if usable:
+                self.usage.cached_calls += 1
+                print(f"      [cache hit ] {tool_name}")
+                self.responses.append({"tool": tool_name, "cached": True, "response": cached})
+                return cached
 
         if self.dry_run:
             self.planned += 1
@@ -198,18 +215,28 @@ class CachedProvider:
             time.sleep(self.delay)
 
         before_in, before_out = self.usage.input_tokens, self.usage.output_tokens
+        # The provider re-asks internally when a payload fails validation, so one extract() can
+        # be several billed API calls. usage.calls counts them, which is the only way a retry
+        # storm is visible instead of just showing up as a bigger number at the end.
+        before_calls = self.usage.calls
         t0 = time.time()
-        result = self.inner.extract(text, tool_schema, system_prompt, tool_name, tool_description)
+        result = self.inner.extract(
+            text, tool_schema, system_prompt, tool_name, tool_description, validate=validate
+        )
         elapsed = time.time() - t0
 
         d_in = self.usage.input_tokens - before_in
         d_out = self.usage.output_tokens - before_out
+        attempts = self.usage.calls - before_calls
         pin, pout = PRICING.get(self.model, (0.0, 0.0))
         call_cost = d_in / 1e6 * pin + d_out / 1e6 * pout
 
+        if attempts > 1:
+            self.usage.retried_calls += 1
+        retried = f"  [{attempts} attempts — re-asked]" if attempts > 1 else ""
         print(
             f"      [called    ] {tool_name}  {d_in:,} in + {d_out:,} out tok  "
-            f"${call_cost:.5f}  {elapsed:.1f}s"
+            f"${call_cost:.5f}  {elapsed:.1f}s{retried}"
         )
         self._log(
             {
@@ -217,6 +244,7 @@ class CachedProvider:
                 "stage": self.stage_label,
                 "model": self.model,
                 "tool": tool_name,
+                "attempts": attempts,
                 "input_tokens": d_in,
                 "output_tokens": d_out,
                 "cost_usd": round(call_cost, 6),

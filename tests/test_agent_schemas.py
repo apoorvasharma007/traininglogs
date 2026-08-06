@@ -62,7 +62,6 @@ class TestSessionShellExtract:
 
 class TestExerciseExtract:
     _VALID_EXERCISE: dict[str, Any] = {
-        "number": 1,
         "name": "Bench Press",
         "sets": [
             {
@@ -85,9 +84,15 @@ class TestExerciseExtract:
         assert "sets.0.rpe" in extract.uncertain_fields
 
     def test_invalid_exercise_field_raises(self) -> None:
-        bad = dict(self._VALID_EXERCISE, number=0)
+        bad = dict(self._VALID_EXERCISE, name="   ")
         with pytest.raises(ValidationError):
             ExerciseExtract(**bad)
+
+    def test_an_exercise_with_no_sets_at_all_is_rejected(self) -> None:
+        """A schema-valid but empty result is a non-answer. Rejecting it here is what routes it
+        into the provider's retry instead of letting a session look clean with its sets gone."""
+        with pytest.raises(ValidationError, match="no working sets and no warmup sets"):
+            ExerciseExtract(name="Bench Press")
 
     def test_json_round_trip(self) -> None:
         extract = ExerciseExtract(**self._VALID_EXERCISE, uncertain_fields=["sets.0.rpe"])
@@ -174,6 +179,9 @@ class TestExerciseSplit:
         assert restored == split
 
 
+_SET = {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
+
+
 class TestNullUncertainFieldsIsAccepted:
     """Models serialise "nothing uncertain" as null, and a schema that only accepts an array
     gets the whole tool call rejected for it. On 2026-08-06 that cost two complete, correct
@@ -192,9 +200,11 @@ class TestNullUncertainFieldsIsAccepted:
     def test_null_becomes_an_empty_list(self) -> None:
         from traininglogs.agent.schemas import ExerciseExtract
 
-        assert ExerciseExtract(number=1, name="Bench", uncertain_fields=None).uncertain_fields == []
+        assert ExerciseExtract(
+            name="Bench", sets=[_SET], uncertain_fields=None
+        ).uncertain_fields == []
 
     def test_omitted_is_still_an_empty_list(self) -> None:
         from traininglogs.agent.schemas import ExerciseExtract
 
-        assert ExerciseExtract(number=1, name="Bench").uncertain_fields == []
+        assert ExerciseExtract(name="Bench", sets=[_SET]).uncertain_fields == []
