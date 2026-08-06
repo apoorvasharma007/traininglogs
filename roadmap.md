@@ -333,6 +333,17 @@ confirm button. Mobile capture comes later.
 - [ ] **Historical regeneration** — recover the warmup data the rules parser dropped across
       ~121 sessions. Deferred by explicit decision until a working end-to-end version exists.
       Requires Phase 2 (re-runnable extraction). ~$5 at Haiku rates.
+- [ ] **Learn from corrections — dynamic few-shot selection.** Replace the fixed examples in the
+      worker prompt with ones retrieved per request from this user's own confirmed extractions.
+      Specialisation moves out of the prompt and into the example pool, so one prompt serves a
+      powerlifter, a calisthenics athlete and a runner without a prompt per vertical.
+      Proven technique (11-12% F1 over static prompting); full write-up and sources in
+      `extraction-design-principles.md` § Learning from corrections.
+      **Needs no new tables** — `raw_inputs`, `extractions.extract`, `corrections` and
+      `status = confirmed` from Phase 2 are exactly the corpus it draws on.
+      **Gated on having a corpus**, so it comes after Phase 2 has run for a while. Two things to
+      get right when building it: a way to exclude a confirmed-but-wrong extraction (a bad example
+      teaches the wrong thing), and keeping the hand-written examples as the cold-start fallback.
 - [ ] Photo input — new `source_kind`, vision model. Not a new pipeline.
 - [ ] Speech input — new `source_kind`, ASR → text → same pipeline.
 

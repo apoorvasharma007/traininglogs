@@ -90,3 +90,70 @@ on Haiku. If Groq's accuracy climbs materially, that is strong evidence the sche
 constraint, and it may make a free model viable for this app.
 
 This is the cheapest experiment available and it is recorded here so it does not get forgotten.
+
+---
+
+## Learning from corrections — the direction this app should grow in
+
+A fixed prompt cannot serve every user. Someone logging powerlifting, someone logging rings and
+juggling, and someone logging running intervals need different guidance, and no single prompt is
+optimal for all three. Writing a prompt per vertical means writing, maintaining, and choosing
+between them — which does not scale and gets stale.
+
+**The better answer moves specialisation out of the prompt and into the examples.**
+
+### Dynamic few-shot selection
+
+Rather than fixing the examples in the prompt, retrieve them per request: embed the incoming text,
+find the most similar previously-confirmed extractions, and inject the top 1–3 as examples.
+
+The evidence is good. Retrieval-augmented few-shot prompting *"consistently outperforms both
+random prompting and retrieval-based labeling"*, with reported F1 gains of 11–12% over static
+prompting on named-entity benchmarks. The mechanics are unremarkable: embed the request, query an
+index of curated examples, rank by similarity, insert the best few.
+
+Sources: [RAG-based dynamic prompting for few-shot NER](https://arxiv.org/abs/2508.06504) ·
+[Structured dynamic prompting with RAG](https://www.nature.com/articles/s44387-025-00062-2)
+
+### Why this app is unusually well placed
+
+The published bottleneck for these systems is blunt: **"high-quality, reliable feedback is the
+bottleneck."** Most teams have no ground truth, so they fall back on model-generated feedback —
+which [the self-correction survey](https://arxiv.org/html/2406.01297v3) shows does not reliably
+work.
+
+**This app has a human confirming every extraction.** The confirmation card is not only a safety
+net; it is a ground-truth generator, produced for free as a side effect of the product working
+the way it already does. That is the expensive part of this pattern, and it is already built.
+
+### The loop
+
+```
+raw text -> extraction -> human confirms or corrects -> stored
+                                  |
+                a verified (input -> output) pair in THIS user's notation
+                                  |
+              retrieved as an example next time similar text arrives
+```
+
+Every table it needs is already in the Phase 2 plan: `raw_inputs` (the text), `extractions.extract`
+(what the model produced), `corrections` (what the human changed), `status = confirmed` (which
+pairs are trustworthy). **No new data model is required** — which is a good sign the layering was
+right.
+
+### Three cautions
+
+1. **Do not build it before there is data.** Retrieval needs a corpus of confirmed extractions.
+   Phase 2 produces that corpus; building retrieval first is premature.
+2. **Bad examples poison the pool.** The literature is explicit about cleaning it regularly and
+   dropping noisy or ambiguous entries. A confirmed-but-wrong extraction teaches the wrong thing,
+   so there must be a way to exclude one.
+3. **Static examples become the floor, not dead weight.** A new user has no history, and retrieval
+   sometimes finds nothing similar. The hand-written examples are the cold-start set and the
+   fallback — they stay.
+
+### What this replaces
+
+Per-vertical prompts, a growing pile of notation conventions in the system prompt, and the
+temptation to enumerate every synonym a user might type. All three are attempts to anticipate
+users in advance. Retrieval learns them instead.
