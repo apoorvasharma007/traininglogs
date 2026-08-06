@@ -58,7 +58,7 @@ VALID_EXERCISE_EXTRACT_RAW: dict[str, Any] = {
     "number": 2,
     "name": "Overhead Press",
     "sets": [
-        {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}},
+        {"number": 1, "source_line": "1. 40kg x 8", "weight_kg": 40.0, "reps": "8"},
     ],
     "uncertain_fields": [],
 }

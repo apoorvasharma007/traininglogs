@@ -78,7 +78,9 @@ def _exercise_raw(number: int, name: str, **overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "number": number,
         "name": name,
-        "sets": [{"number": 1, "weight_kg": 50.0, "rep_count": {"full": 8, "partial": 0}}],
+        "sets": [
+            {"number": 1, "source_line": "1. 50kg x 8", "weight_kg": 50.0, "reps": "8"}
+        ],
         "uncertain_fields": [],
     }
     base.update(overrides)
@@ -109,14 +111,12 @@ class TestAssembleIntegration:
                 1: _exercise_raw(
                     1,
                     "Bench Press",
-                    sets=[{"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}],
-                    set_sources={"1": "1. 80kg x 8"},
+                    sets=[{"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}],
                 ),
                 2: _exercise_raw(
                     2,
                     "Overhead Press",
-                    sets=[{"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}],
-                    set_sources={"1": "1. 40kg x 8"},
+                    sets=[{"number": 1, "source_line": "1. 40kg x 8", "weight_kg": 40.0, "reps": "8"}],
                 ),
             },
         )
@@ -240,7 +240,7 @@ class TestAssembleChunking:
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
                 1: _exercise_raw(1, "Bench Press", sets=[
-                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                    {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
                 ]),
             },
         )
@@ -307,9 +307,10 @@ class TestAssembleSixExerciseRegression:
         # Two sets each; the RPE rides the last one, mirroring the convention above.
         def _sets_with_last_rpe(rpe: float | None) -> list[dict[str, Any]]:
             return [
-                {"number": 1, "weight_kg": 60.0, "rep_count": {"full": 8, "partial": 0}},
-                {"number": 2, "weight_kg": 60.0, "rep_count": {"full": 8, "partial": 0},
-                 "rpe": rpe},
+                {"number": 1, "source_line": "1. 60kg x 8",
+                 "weight_kg": 60.0, "reps": "8"},
+                {"number": 2, "source_line": "2. 60kg x 8",
+                 "weight_kg": 60.0, "reps": "8", "rpe": rpe},
             ]
 
         split_raw = {
@@ -349,44 +350,50 @@ class TestAssembleSixExerciseRegression:
 
 
 class TestAssembleSourceLines:
-    """assemble() runs the two source-line checks per exercise and keeps the source fields out
-    of the plain Exercise it hands downstream."""
+    """assemble() runs the two source-line checks per exercise, and the projection keeps
+    extraction-only fields out of the plain Exercise it hands downstream."""
 
     TEXT = "Bench Press\nSets:\n1. 80kg x 8\n"
     SPLIT = {"exercises": [{"position": 1, "name": "Bench Press", "anchor": "Bench Press"}]}
 
-    def _run(self, **raw_overrides) -> Any:
+    def _run(self, sets: list[dict[str, Any]]) -> Any:
         provider = ScriptedProvider(
             split_raw=self.SPLIT,
             shell_raw={"date": "2026-05-12"},
-            exercise_raw_by_position={
-                1: _exercise_raw(
-                    1,
-                    "Bench Press",
-                    sets=[{"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}],
-                    **raw_overrides,
-                )
-            },
+            exercise_raw_by_position={1: _exercise_raw(1, "Bench Press", sets=sets)},
         )
         return assemble(self.TEXT, provider=provider)
 
-    def test_source_fields_do_not_reach_the_plain_exercise(self) -> None:
-        extract = self._run(set_sources={"1": "1. 80kg x 8"})
-        exercise = extract.exercises[0]
-        assert not hasattr(exercise, "set_sources")
-        assert not hasattr(exercise, "warmup_sources")
+    def test_source_lines_do_not_reach_the_plain_exercise(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
+        ])
+        assert not hasattr(extract.exercises[0].sets[0], "source_line")
 
     def test_a_real_source_line_produces_no_warning(self) -> None:
-        extract = self._run(set_sources={"1": "1. 80kg x 8"})
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
+        ])
         assert extract.warnings == []
 
     def test_an_invented_source_line_is_reported_against_its_exercise(self) -> None:
-        extract = self._run(set_sources={"1": "1. 500kg x 1"})
+        extract = self._run([
+            {"number": 1, "source_line": "1. 500kg x 1", "weight_kg": 500.0, "reps": "1"}
+        ])
         assert any(
             "Exercise 1 (Bench Press)" in w and "isn't in the text" in w
             for w in extract.warnings
         )
 
-    def test_a_set_with_no_source_is_reported(self) -> None:
-        extract = self._run(set_sources={})
+    def test_an_empty_source_line_is_reported(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "  ", "weight_kg": 80.0, "reps": "8"}
+        ])
         assert any("set 1 has no source line recorded" in w for w in extract.warnings)
+
+    def test_rep_text_that_cannot_be_read_is_reported(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "a few"}
+        ])
+        assert any("a few" in w for w in extract.warnings)
+        assert extract.exercises[0].sets[0].rep_count is None

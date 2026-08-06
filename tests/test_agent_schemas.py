@@ -64,13 +64,12 @@ class TestExerciseExtract:
     _VALID_EXERCISE: dict[str, Any] = {
         "number": 1,
         "name": "Bench Press",
-        "tags": ["absolute_strength"],
-        "modality": "barbell",
         "sets": [
             {
                 "number": 1,
+                "source_line": "1. 80kg x 8 RPE 8",
                 "weight_kg": 80.0,
-                "rep_count": {"full": 8, "partial": 0},
+                "reps": "8",
                 "rpe": 8.0,
             }
         ],

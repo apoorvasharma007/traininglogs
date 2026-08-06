@@ -6,7 +6,15 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from traininglogs.models.models import Exercise, Goal, SessionCooldown, SessionWarmup
+from traininglogs.agent.reps import parse_reps
+from traininglogs.models.models import (
+    Exercise,
+    Goal,
+    SessionCooldown,
+    SessionWarmup,
+    WarmupSet,
+    WorkingSet,
+)
 
 
 def _validate_date(v: str) -> str:
@@ -65,31 +73,187 @@ class SessionShellExtract(BaseModel):
         return _validate_date(v)
 
 
-class ExerciseExtract(Exercise):
-    """One worker call's result: Exercise's own fields, flattened at the top level, plus
-    uncertain_fields. Deliberately NOT `exercise: Exercise` nested under a wrapper key — live
-    testing showed tool-calling models reliably flatten a single-nested-object schema
-    regardless of prompt wording (Groq/llama-3.3-70b did this on the first live run: it
-    produced every field correctly, just not wrapped). Matching that tendency is more robust
-    than fighting it with prompt engineering. Dot-paths in uncertain_fields are relative to
-    the exercise (e.g. "sets.1.rpe"), not the full session. extraction.assemble() converts
-    this back to a plain Exercise before it goes anywhere near the rest of the pipeline."""
+class SetExtract(BaseModel):
+    """One set, as the person wrote it.
 
-    uncertain_fields: List[str] = Field(default_factory=list)
+    The model's job here is to find a set and copy it. Converting what it copied is Python's
+    job (see agent/reps.py) — that split exists because copying is what a language model does
+    reliably and `source_line` can prove it did so, while turning "8+1" into {full: 8,
+    partial: 1} is string handling that should behave identically every time.
 
-    # Where each set was read from: set number (as a string key, since JSON object keys are
-    # always strings) -> the verbatim source line. Lets extraction.py check two things without
-    # knowing anything about the input format: that a recorded line really exists in the text
-    # (so the set wasn't invented), and that sets and source lines account for each other (so
-    # none were dropped or conjured).
-    #
-    # Deliberately here rather than on WorkingSet: this class inherits from Exercise, the
-    # production model behind the exercises/working_sets tables, so a field on WorkingSet would
-    # mean a DB column, an API change and a dashboard change. Where a value came from is a fact
-    # about the extraction, not about the training data. Same idea as ExercisePosition.anchor,
-    # one level down.
-    set_sources: Dict[str, str] = Field(default_factory=dict)
-    warmup_sources: Dict[str, str] = Field(default_factory=dict)
+    Working sets and warmup sets use this same shape. They used to differ — `rep_count` was an
+    object on one and a plain integer on the other — which cost a rule in the prompt and gave
+    the model something else to get wrong."""
+
+    number: int = Field(description="Position of this set within the exercise, starting at 1.")
+    source_line: str = Field(
+        description=(
+            "The exact line of text this set was read from, character for character. Do not "
+            "tidy it, renumber it, or shorten it."
+        )
+    )
+    weight_kg: Optional[float] = Field(
+        default=None,
+        description=(
+            "Weight in kilograms. Convert if the text says lbs. Omit for bodyweight work or "
+            "when no weight is written."
+        ),
+    )
+    reps: Optional[str] = Field(
+        default=None,
+        description=(
+            "Rep information exactly as written — '8', '8+1', 'left 8, right 7', "
+            "'12 catches', 'feel'. Do not convert it to a number. Omit if the set records no "
+            "reps at all, such as a timed hold."
+        ),
+    )
+    rpe: Optional[float] = Field(
+        default=None,
+        description="Rate of perceived exertion, 1-10 in whole or half steps. Omit if not stated.",
+    )
+    duration_seconds: Optional[int] = Field(
+        default=None, description="Duration in seconds for a timed set, e.g. a 20s hold."
+    )
+    distance_meters: Optional[float] = Field(
+        default=None, description="Distance in metres, if the set records one."
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        description=(
+            "Commentary about this set specifically — how it felt, a form cue, a correction. "
+            "Not a restatement of its own weight, reps or RPE."
+        ),
+    )
+
+    @field_validator("number")
+    @classmethod
+    def number_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Set number must be positive")
+        return v
+
+
+class ExerciseExtract(BaseModel):
+    """One worker call's result — the shape the model is asked to fill.
+
+    Deliberately NOT inheriting from Exercise. It used to, which meant the model was handed the
+    production model behind the exercises/working_sets tables: 16 fields, six levels of nesting.
+    Production extraction teams measure that as costly — 55% of their accuracy improvements came
+    from flattening schemas "so the model never had to infer a relationship", and 4+ levels of
+    nesting degrades quality outright. See `extraction-design-principles.md`.
+
+    So the shapes are separate. This one is built for a model to fill; `to_exercise()` projects
+    it onto the production model, which is unchanged. No DB, API or dashboard change.
+
+    Not asked for, and why: `tags`, `modality`, `movement_pattern`, `target_muscle_groups`,
+    `rep_tempo`, `current_goal`, `form_cues` are classifications rather than content. Dropping
+    them improves accuracy on what remains, and nothing is lost — the raw text is kept, so they
+    can be backfilled later by a separate classification pass. This schema carries what the
+    person wrote; classifying it is a different job.
+
+    Flat at the top level rather than nested under a wrapper key: live testing showed
+    tool-calling models flatten a single-nested-object schema regardless of prompt wording, so
+    matching that tendency is more robust than fighting it."""
+
+    number: int = Field(
+        description="This exercise's position among the session's main working exercises."
+    )
+    name: str = Field(description="The exercise's name, as written.")
+    sets: Optional[List[SetExtract]] = Field(
+        default=None, description="The exercise's working sets, in the order they appear."
+    )
+    warmup_sets: Optional[List[SetExtract]] = Field(
+        default=None,
+        description="Warmup sets for this exercise, in order. Same shape as working sets.",
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        description=(
+            "Commentary about the exercise as a whole — anything not specific to one set."
+        ),
+    )
+    warmup_notes: Optional[str] = Field(
+        default=None,
+        description=(
+            "Commentary about the warmup as a whole. Not a restatement of the warmup sets' own "
+            "weights or reps."
+        ),
+    )
+    uncertain_fields: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Dot-paths, relative to this exercise, that you are not confident about — e.g. "
+            "'sets.2.rpe'. Only list fields you actually filled in."
+        ),
+    )
+
+    @field_validator("number")
+    @classmethod
+    def number_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Exercise number must be positive")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Exercise name cannot be empty")
+        return v
+
+    @field_validator("sets", "warmup_sets", mode="before")
+    @classmethod
+    def drop_nulls_in_lists(cls, v: object) -> object:
+        # Tool-calling models occasionally emit a null entry inside a list.
+        if isinstance(v, list):
+            return [x for x in v if x is not None]
+        return v
+
+    def to_exercise(self) -> tuple[Exercise, List[str]]:
+        """Project onto the production model, converting rep text to typed counts.
+
+        Returns the Exercise and any warnings raised while converting — rep text that could not
+        be read is left unset and reported rather than guessed at. The classification fields
+        this schema does not ask for are left unset: deferred, not lost."""
+        warnings: List[str] = []
+
+        def _working(s: SetExtract) -> WorkingSet:
+            parsed = parse_reps(s.reps)
+            if parsed.warning:
+                warnings.append(f"set {s.number}: {parsed.warning}")
+            return WorkingSet(
+                number=s.number,
+                weight_kg=s.weight_kg,
+                rep_count=parsed.rep_count,
+                unilateral_rep_count=parsed.unilateral,
+                rpe=s.rpe,
+                duration_seconds=s.duration_seconds,
+                distance_meters=s.distance_meters,
+                notes=s.notes,
+            )
+
+        def _warmup(s: SetExtract) -> WarmupSet:
+            parsed = parse_reps(s.reps)
+            if parsed.warning:
+                warnings.append(f"warmup {s.number}: {parsed.warning}")
+            # WarmupSet's rep_count is a plain integer and its weight is required; a warmup set
+            # with no weight written is recorded as 0, which is what bodyweight warmups mean.
+            return WarmupSet(
+                number=s.number,
+                weight_kg=s.weight_kg if s.weight_kg is not None else 0.0,
+                rep_count=parsed.rep_count.full if parsed.rep_count else None,
+                notes=s.notes,
+            )
+
+        exercise = Exercise(
+            number=self.number,
+            name=self.name,
+            sets=[_working(s) for s in self.sets] if self.sets else None,
+            warmup_sets=[_warmup(s) for s in self.warmup_sets] if self.warmup_sets else None,
+            notes=self.notes,
+            warmup_notes=self.warmup_notes,
+        )
+        return exercise, warnings
 
 
 class ExercisePosition(BaseModel):

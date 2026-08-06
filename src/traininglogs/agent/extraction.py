@@ -218,43 +218,45 @@ def _comparable(text: str) -> str:
 def check_sources_are_real(chunk: str, extract: ExerciseExtract) -> list[str]:
     """Did the model read each set from a line that actually exists?
 
-    Every entry in set_sources/warmup_sources is a verbatim quote the model claims it read a set
-    from. If that quote isn't in the text, the set has no basis in the source — the model made it
-    up, or copied it from an example in the prompt.
+    Every set carries a source_line: a verbatim quote the model claims it read that set from.
+    If the quote isn't in the text, the set has no basis in the source — the model invented it,
+    or copied it out of an example in the prompt.
 
     Knows nothing about weights, units, headers or exercise types, so it works the same on
     markdown, on text off a photograph, and on a speech transcript. Comparison is on content
     rather than exact bytes -- see _comparable()."""
     warnings: list[str] = []
     haystack = _comparable(chunk)
-    for kind, sources in (("set", extract.set_sources), ("warmup", extract.warmup_sources)):
-        for number, line in sorted(sources.items()):
-            quote = _comparable(line)
+    for kind, sets in (("set", extract.sets or []), ("warmup", extract.warmup_sets or [])):
+        for s in sets:
+            quote = _comparable(s.source_line)
             if quote and quote not in haystack:
                 warnings.append(
-                    f"{kind} {number}: the source line recorded for it isn't in the text — "
-                    f"this may be invented: {quote!r}"
+                    f"{kind} {s.number}: the source line recorded for it isn't in the text — "
+                    f"this may be invented: {s.source_line.strip()!r}"
                 )
     return warnings
 
 
-def check_sets_and_sources_match(extract: ExerciseExtract) -> list[str]:
-    """Does every set have a source line, and every source line a set?
+def check_sets_are_numbered_and_sourced(extract: ExerciseExtract) -> list[str]:
+    """Does every set carry a source line, and are they numbered sensibly?
 
-    A set with no source is one the model produced without pointing at anything. A source with
-    no set is a line it read and then dropped. Both directions are worth knowing about."""
+    `source_line` is required by the schema, so a set cannot exist without one -- but it can
+    exist with an empty one, which is the same failure wearing a different hat. Set numbers
+    should also run 1..n without gaps or repeats; a gap is the shape a dropped set leaves."""
     warnings: list[str] = []
-    pairs = (
-        ("set", {str(s.number) for s in (extract.sets or [])}, extract.set_sources),
-        ("warmup", {str(w.number) for w in (extract.warmup_sets or [])}, extract.warmup_sources),
-    )
-    for kind, numbers, sources in pairs:
-        for missing in sorted(numbers - sources.keys()):
-            warnings.append(f"{kind} {missing} has no source line recorded.")
-        for orphan in sorted(sources.keys() - numbers):
+    for kind, sets in (("set", extract.sets or []), ("warmup", extract.warmup_sets or [])):
+        if not sets:
+            continue
+        for s in sets:
+            if not s.source_line.strip():
+                warnings.append(f"{kind} {s.number} has no source line recorded.")
+        numbers = [s.number for s in sets]
+        expected = list(range(1, len(numbers) + 1))
+        if sorted(numbers) != expected:
             warnings.append(
-                f"{kind} {orphan} has a source line but no matching {kind} was extracted — "
-                "it may have been dropped."
+                f"{kind} numbers are {sorted(numbers)}, expected {expected} — "
+                "one may have been dropped or duplicated."
             )
     return warnings
 
@@ -341,13 +343,11 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
             # rest of the session happened not to contain it.
             for w in check_sources_are_real(worker_text, worker_result):
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
-            for w in check_sets_and_sources_match(worker_result):
+            for w in check_sets_are_numbered_and_sourced(worker_result):
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
-            exercise = Exercise(
-                **worker_result.model_dump(
-                    exclude={"uncertain_fields", "set_sources", "warmup_sources"}
-                )
-            )
+            exercise, projection_warnings = worker_result.to_exercise()
+            for w in projection_warnings:
+                warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
             # The splitter already told us the correct position — trust that over whatever
             # the worker itself reported, rather than giving the model one more thing to
             # get wrong.
