@@ -387,23 +387,36 @@ chunks, and a dead exercise-count check. See CHANGELOG `[Unreleased] → Fixed`.
 | Postgres placeholder audit | Deferred to Phase 2, which reworks the write path anyway. **Do it first if `traininglogs log` is run on real sessions before then.** |
 | Parallel workers, call timeouts | Phase 6. Workers are already independent (pinned by test); the blocker is rate limits, not ordering. |
 
-### Next action — the verification run
+### Verification run — done, 2026-08-06
 
-Splitter and shell responses are still cached; only worker calls re-key (schema + prompt
-changed). Estimated **~$0.13**:
+Measured on the two files that failed hardest before the fix. Identical files, identical scorer:
 
-```
-.venv/bin/python -u scripts/eval_arms.py --n 3 --arms split --max-cost 0.30 2>&1 | tee haiku_out.txt
-```
+| File | before | after |
+|---|---|---|
+| legs_hypertrophy phase_3/week_3 | 68/77 (88.3%) | **77/77 (100%)** |
+| upper_strength phase_2/week_12 | 97/123 (78.9%) | **123/123 (100%)** |
+| combined core | 165/200 (82.5%) | **200/200 (100%)** |
 
-Read it as: **core** should return to ~98%+; the `re-ask` column shows whether the retry path
-fired and recovered; **warmup** is scored against a key the rules parser built without reading
-`### Warmup Notes` prose, so adjudicate those against the source, never the number.
+`dropped 0`, `fails 0`, warmup **18/18** once adjudicated against the source. Cost $0.101.
 
-This is also the first live exercise of two things that have only ever run against mocks:
-`strict: true` (an unsupported schema returns a 400 on the first call — cheap to discover, and
-guarded by `tests/test_agent_strict_schema.py`) and the reask shape.
+Every warmup the answer key called wrong was the model reading `### Warmup Notes` prose the
+rules parser never looked at — including one warmup sitting under a mistyped `### Notes` heading,
+which no layout-based parser could get right. Measured across the corpus: ~102 weight-bearing
+prose lines in 55 of 121 files, against 647 warmup sets the rules parser stored. **The historical
+JSON is missing roughly 15% of warmup data**, and it is the answer key, so the AI is penalised for
+being correct. Regeneration is a Phase 2 job — see `.claude/regen-historical.md`.
 
-**Then:** B9 prompt caching closes Phase 1. Phase 2 is `raw_inputs`/`extractions`, C6 patch-based
-corrections, and deleting `SYSTEM_PROMPT`/`parse()`/the mono arm once C6 removes the correction
-path's dependency.
+**Caveat worth keeping:** `re-ask` stayed 0 on both files. The bail-outs were *prevented* (by
+dropping `ExerciseExtract.number` and the position instruction), not *recovered*. The retry path
+is therefore still only tested against mocks, never live.
+
+**Not spent:** the third file (legs phase_3/week_5, ~$0.05). Two files at 100%, including the
+largest and the one that failed worst, answered the question.
+
+### Next action
+
+B9 prompt caching closes Phase 1. Then Phase 2: `raw_inputs`/`extractions`, C6 patch-based
+corrections, the Postgres placeholder audit deferred on 2026-08-06, and deleting
+`SYSTEM_PROMPT`/`parse()`/the mono arm once C6 removes the correction path's dependency.
+
+**Spend: $1.71 of $5.00.**
