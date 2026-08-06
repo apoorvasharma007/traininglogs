@@ -413,10 +413,21 @@ is therefore still only tested against mocks, never live.
 **Not spent:** the third file (legs phase_3/week_5, ~$0.05). Two files at 100%, including the
 largest and the one that failed worst, answered the question.
 
-### Next action
+### Landed 2026-08-06
 
-B9 prompt caching closes Phase 1. Then Phase 2: `raw_inputs`/`extractions`, C6 patch-based
-corrections, the Postgres placeholder audit deferred on 2026-08-06, and deleting
-`SYSTEM_PROMPT`/`parse()`/the mono arm once C6 removes the correction path's dependency.
+Phase 1 merged to `dev` and pushed (`d3239e6`, 63 commits). Suite 555 passing, working tree
+clean. 19 stale local branches removed; each is kept as `archive/<name>` tags in case a
+squash-merge lost something — delete with `git tag -d archive/<name>` once you're satisfied.
+Only `dev` and `main` remain as branches.
 
-**Spend: $1.71 of $5.00.**
+**B9 (prompt caching) is dropped, not deferred.** The cacheable prefix is the system prompt plus
+tool schema, ~2,100 tokens estimated. Haiku 4.5 needs 4,096 minimum, so there is nothing to
+cache. Confirm with the free token-counting endpoint before revisiting. **Phase 1 is complete.**
+
+**Historical regeneration deferred by decision, 2026-08-06.** ~$6.76 for 121 files / 1,009
+exercises against $3.29 remaining. Revisit after Phase 2, so the regeneration is re-runnable and
+versioned rather than a one-shot that might be repeated.
+
+### Next action — Phase 2
+
+**Spend: $1.71 of $5.00.** Phase 2 needs no API credits.
