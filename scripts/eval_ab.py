@@ -139,6 +139,9 @@ class CachedProvider:
         self.max_cost = max_cost
         self.stage_label = stage_label
         self.planned = 0
+        # Everything the model returned, in call order -- so a run can be read afterwards
+        # rather than reconstructed from hashed cache files.
+        self.responses: list[dict] = []
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     def _key(self, text, tool_schema, system_prompt, tool_name, tool_description) -> str:
@@ -166,7 +169,9 @@ class CachedProvider:
         if cache_file.exists():
             self.usage.cached_calls += 1
             print(f"      [cache hit ] {tool_name}")
-            return json.loads(cache_file.read_text())
+            cached = json.loads(cache_file.read_text())
+            self.responses.append({"tool": tool_name, "cached": True, "response": cached})
+            return cached
 
         if self.dry_run:
             self.planned += 1
@@ -213,6 +218,7 @@ class CachedProvider:
             }
         )
         cache_file.write_text(json.dumps(result, indent=2))
+        self.responses.append({"tool": tool_name, "cached": False, "response": result})
         return result
 
 

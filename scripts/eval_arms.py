@@ -268,6 +268,12 @@ def main() -> int:
             (run_dir / f"{path.stem}__{arm}.json").write_text(
                 json.dumps(extract.model_dump(mode="json"), indent=2)
             )
+            # What the model actually said, before assembly and projection. The assembled file
+            # above has source_line and reps-as-written stripped out by to_exercise(), so this
+            # is the only place the raw answer survives in readable form.
+            (run_dir / f"{path.stem}__{arm}__raw.json").write_text(
+                json.dumps(provider.responses, indent=2)
+            )
 
     if args.dry_run:
         print("\nDry run complete — no API calls, $0.00 spent.")
