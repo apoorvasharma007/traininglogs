@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any, Callable, Protocol, runtime_checkable
 
 import anthropic
@@ -38,6 +39,40 @@ _NON_RETRYABLE_400_MARKERS = (
 def _is_retryable_bad_request(message: str) -> bool:
     lowered = message.lower()
     return not any(marker in lowered for marker in _NON_RETRYABLE_400_MARKERS)
+
+
+# A 429 is not a bad answer, it is "not yet" — so it must not consume the reask budget, which
+# exists for answers that came back wrong. Waiting out a rate limit and re-asking a malformed
+# payload are different problems with different right responses.
+_MAX_RATE_LIMIT_WAITS = 5
+_DEFAULT_RATE_LIMIT_WAIT = 20.0
+_MAX_RATE_LIMIT_WAIT = 90.0
+
+
+def _rate_limit_wait_seconds(exc: Exception) -> float:
+    """How long to wait before retrying a 429, taken from the server when it says.
+
+    Both SDKs surface the response headers on the exception. `retry-after` is the authoritative
+    answer; the per-window reset headers are the fallback. Guessing shorter than the server asks
+    just burns another request against a window that hasn't reopened."""
+    headers = getattr(getattr(exc, "response", None), "headers", None) or {}
+    for key in ("retry-after", "x-ratelimit-reset-tokens", "x-ratelimit-reset-requests"):
+        raw = headers.get(key)
+        if not raw:
+            continue
+        try:
+            # Groq writes durations like "7.66s" or "2m59.56s"; retry-after is plain seconds.
+            text = str(raw).strip()
+            if text.endswith("s") and "m" in text:
+                minutes, _, rest = text[:-1].partition("m")
+                seconds = float(minutes) * 60 + float(rest or 0)
+            else:
+                seconds = float(text.rstrip("s"))
+        except ValueError:
+            continue
+        if seconds > 0:
+            return min(seconds + 1.0, _MAX_RATE_LIMIT_WAIT)
+    return _DEFAULT_RATE_LIMIT_WAIT
 
 
 def _reask_message(last_error: str) -> dict:
@@ -150,8 +185,10 @@ class AnthropicProvider:
     ) -> dict:
         messages: list[dict] = [{"role": "user", "content": text}]
         last_error: str = ""
+        rate_limit_waits = 0
 
-        for attempt in range(_MAX_RETRIES + 1):
+        attempt = 0
+        while attempt <= _MAX_RETRIES:
             try:
                 response = self._client.messages.create(
                     model=self.model,
@@ -173,6 +210,15 @@ class AnthropicProvider:
                     tool_choice={"type": "tool", "name": tool_name},
                     messages=messages,
                 )
+            except anthropic.RateLimitError as exc:
+                rate_limit_waits += 1
+                if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
+                    raise LLMParserError(
+                        f"Rate limited {rate_limit_waits} times without the window reopening. "
+                        f"Last error: {exc}"
+                    ) from exc
+                time.sleep(_rate_limit_wait_seconds(exc))
+                continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
             except anthropic.BadRequestError as exc:
                 # The API's own server-side schema check rejected the tool call before
                 # returning a response — there's nothing to inspect, only the error to reask
@@ -181,8 +227,10 @@ class AnthropicProvider:
                 if not _is_retryable_bad_request(last_error):
                     raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
                 messages.append(_reask_message(last_error))
+                attempt += 1
                 continue
 
+            attempt += 1
             tool_block = next(
                 (b for b in response.content if b.type == "tool_use"),
                 None,
@@ -247,8 +295,10 @@ class GroqProvider:
         ]
         tool_choice = {"type": "function", "function": {"name": tool_name}}
         last_error: str = ""
+        rate_limit_waits = 0
 
-        for attempt in range(_MAX_RETRIES + 1):
+        attempt = 0
+        while attempt <= _MAX_RETRIES:
             try:
                 response = self._client.chat.completions.create(
                     model=self.model,
@@ -261,6 +311,19 @@ class GroqProvider:
                     # note above AnthropicProvider. `validate` below is what guards the payload.
                     temperature=0,
                 )
+            except groq.RateLimitError as exc:
+                # The free tier meters tokens per minute and reserves `input + max_tokens` on
+                # every call, so a handful of worker calls saturates the window. Waiting it out
+                # is the correct response and costs only wall-clock time; failing the file is
+                # what used to happen, and it made the free verification path unusable.
+                rate_limit_waits += 1
+                if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
+                    raise LLMParserError(
+                        f"Rate limited {rate_limit_waits} times without the window reopening. "
+                        f"Last error: {exc}"
+                    ) from exc
+                time.sleep(_rate_limit_wait_seconds(exc))
+                continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
             except groq.BadRequestError as exc:
                 # The API's own server-side schema check rejected the tool call before
                 # returning a response — there's nothing to inspect, only the error to reask
@@ -269,8 +332,10 @@ class GroqProvider:
                 if not _is_retryable_bad_request(last_error):
                     raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
                 messages.append(_reask_message(last_error))
+                attempt += 1
                 continue
 
+            attempt += 1
             tool_calls = response.choices[0].message.tool_calls
 
             if not tool_calls:
