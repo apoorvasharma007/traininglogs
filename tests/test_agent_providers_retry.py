@@ -370,14 +370,35 @@ class TestRateLimitWaitSeconds:
     @pytest.mark.parametrize(
         "headers,expected",
         [
-            ({"retry-after": "12"}, 13.0),
+            ({"retry-after": "12"}, 13.0),                          # plain seconds
             ({"x-ratelimit-reset-tokens": "7.66s"}, 8.66),
-            ({"x-ratelimit-reset-tokens": "2m59.56s"}, 90.0),      # clamped to the ceiling
-            ({}, 20.0),                                            # nothing said -> default
-            ({"retry-after": "not-a-number"}, 20.0),               # unparseable -> default
+            ({"x-ratelimit-reset-tokens": "547ms"}, 1.547),         # NOT 547 minutes
+            ({"x-ratelimit-reset-tokens": "1m26.4s"}, 87.4),        # compound
+            ({}, 20.0),                                             # nothing said -> default
+            ({"retry-after": "not-a-number"}, 20.0),                # unreadable -> default
         ],
     )
     def test_reads_the_server_stated_wait(self, headers, expected) -> None:
         from traininglogs.agent.providers import _rate_limit_wait_seconds
 
         assert _rate_limit_wait_seconds(self._exc(headers)) == pytest.approx(expected)
+
+    @pytest.mark.parametrize("header", ["2m59.56s", "8h32m", "3h", "1h0m0s"])
+    def test_a_window_too_far_out_is_not_waited_on(self, header) -> None:
+        """A quota, not a busy moment. Sitting on it burns minutes to learn nothing — which is
+        what happened on 2026-08-06: "8h32m" failed to parse, fell back to the 20s default, and
+        the run retried six times over 451 seconds before failing anyway."""
+        from traininglogs.agent.providers import _rate_limit_wait_seconds
+
+        assert _rate_limit_wait_seconds(
+            self._exc({"x-ratelimit-reset-tokens": header})
+        ) is None
+
+    @pytest.mark.parametrize(
+        "header,phrase",
+        [("8h32m", "8.5 hours"), ("3m", "3 minutes"), ("45s", "45 seconds")],
+    )
+    def test_the_give_up_message_says_when_it_reopens(self, header, phrase) -> None:
+        from traininglogs.agent.providers import _describe_wait
+
+        assert _describe_wait(self._exc({"x-ratelimit-reset-tokens": header})) == phrase

@@ -239,7 +239,10 @@ class CachedProvider:
                 text, tool_schema, system_prompt, tool_name, tool_description, validate=validate
             )
         except Exception as exc:
-            failure = f"{type(exc).__name__}: {str(exc).splitlines()[0][:160]}"
+            # The FULL message goes to the log. Truncating it to one 160-char line is how the
+            # 2026-08-06 rate-limit failure stayed undiagnosed -- the part that said when the
+            # window reopened was in the bytes that got cut.
+            failure = f"{type(exc).__name__}: {exc}"
             raise
         finally:
             elapsed = time.time() - t0
@@ -255,7 +258,8 @@ class CachedProvider:
                 self.usage.failed_calls += 1
             tag = "[FAILED    ]" if failure else "[called    ]"
             retried = f"  [{attempts} attempts]" if attempts > 1 else ""
-            note = f"  {failure}" if failure else ""
+            # Console gets one readable line; the log above keeps the whole thing.
+            note = f"  {failure.splitlines()[0][:200]}" if failure else ""
             print(
                 f"      {tag} {tool_name}  {d_in:,} in + {d_out:,} out tok  "
                 f"${call_cost:.5f}  {elapsed:.1f}s{retried}{note}"

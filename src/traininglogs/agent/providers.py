@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from typing import Any, Callable, Protocol, runtime_checkable
 
@@ -46,33 +47,63 @@ def _is_retryable_bad_request(message: str) -> bool:
 # payload are different problems with different right responses.
 _MAX_RATE_LIMIT_WAITS = 5
 _DEFAULT_RATE_LIMIT_WAIT = 20.0
-_MAX_RATE_LIMIT_WAIT = 90.0
+
+# Above this, waiting is the wrong answer. A per-minute window reopens in seconds and is worth
+# sitting out; an hourly or daily allowance is not, and retrying against it burns minutes to
+# learn nothing. On 2026-08-06 that is exactly what happened: the server said the window reopened
+# in hours, the wait was mis-parsed as the 20s default, and the run retried six times over 451
+# seconds before failing anyway. Past this threshold, stop and say when it reopens.
+_MAX_WORTH_WAITING = 120.0
+
+# Groq states durations as "547ms", "7.66s", "1m26.4s", "8h32m". `retry-after` is plain seconds.
+_DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)\s*(ms|h|m|s)", re.IGNORECASE)
+_UNIT_SECONDS = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
 
 
-def _rate_limit_wait_seconds(exc: Exception) -> float:
-    """How long to wait before retrying a 429, taken from the server when it says.
+def _parse_duration(raw: object) -> float | None:
+    """Seconds from a duration string, or None if it can't be read.
 
-    Both SDKs surface the response headers on the exception. `retry-after` is the authoritative
-    answer; the per-window reset headers are the fallback. Guessing shorter than the server asks
-    just burns another request against a window that hasn't reopened."""
+    Must handle every shape the server actually sends. Reading "547ms" as 547 minutes, or
+    failing on "8h32m" and silently substituting a default, turns "come back tomorrow" into
+    "try again in 20 seconds" — which is how a hard quota looked like a transient blip."""
+    text = str(raw).strip()
+    if not text:
+        return None
+    parts = _DURATION_PART.findall(text)
+    if parts:
+        return sum(float(value) * _UNIT_SECONDS[unit.lower()] for value, unit in parts)
+    try:
+        return float(text)   # bare `retry-after`, already in seconds
+    except ValueError:
+        return None
+
+
+def _rate_limit_wait_seconds(exc: Exception) -> float | None:
+    """How long the server says to wait, or None if waiting is not worth it.
+
+    `retry-after` is authoritative; the per-window reset headers are the fallback. None means
+    the caller should give up now rather than sit on a window that won't reopen in time."""
     headers = getattr(getattr(exc, "response", None), "headers", None) or {}
     for key in ("retry-after", "x-ratelimit-reset-tokens", "x-ratelimit-reset-requests"):
-        raw = headers.get(key)
-        if not raw:
+        seconds = _parse_duration(headers.get(key)) if headers.get(key) else None
+        if seconds is None or seconds <= 0:
             continue
-        try:
-            # Groq writes durations like "7.66s" or "2m59.56s"; retry-after is plain seconds.
-            text = str(raw).strip()
-            if text.endswith("s") and "m" in text:
-                minutes, _, rest = text[:-1].partition("m")
-                seconds = float(minutes) * 60 + float(rest or 0)
-            else:
-                seconds = float(text.rstrip("s"))
-        except ValueError:
-            continue
-        if seconds > 0:
-            return min(seconds + 1.0, _MAX_RATE_LIMIT_WAIT)
+        return None if seconds > _MAX_WORTH_WAITING else seconds + 1.0
     return _DEFAULT_RATE_LIMIT_WAIT
+
+
+def _describe_wait(exc: Exception) -> str:
+    """Human-readable reopening time for the give-up message."""
+    headers = getattr(getattr(exc, "response", None), "headers", None) or {}
+    for key in ("retry-after", "x-ratelimit-reset-tokens", "x-ratelimit-reset-requests"):
+        seconds = _parse_duration(headers.get(key)) if headers.get(key) else None
+        if seconds and seconds > 0:
+            if seconds >= 3600:
+                return f"{seconds / 3600:.1f} hours"
+            if seconds >= 60:
+                return f"{seconds / 60:.0f} minutes"
+            return f"{seconds:.0f} seconds"
+    return "an unknown amount of time"
 
 
 def _reask_message(last_error: str) -> dict:
@@ -211,13 +242,20 @@ class AnthropicProvider:
                     messages=messages,
                 )
             except anthropic.RateLimitError as exc:
+                wait = _rate_limit_wait_seconds(exc)
+                if wait is None:
+                    raise LLMParserError(
+                        f"Rate limited, and the window does not reopen for "
+                        f"{_describe_wait(exc)} — too long to wait out. This is a quota, not a "
+                        f"busy moment. Full response: {exc}"
+                    ) from exc
                 rate_limit_waits += 1
                 if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
                     raise LLMParserError(
                         f"Rate limited {rate_limit_waits} times without the window reopening. "
-                        f"Last error: {exc}"
+                        f"Full response: {exc}"
                     ) from exc
-                time.sleep(_rate_limit_wait_seconds(exc))
+                time.sleep(wait)
                 continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
             except anthropic.BadRequestError as exc:
                 # The API's own server-side schema check rejected the tool call before
@@ -316,13 +354,20 @@ class GroqProvider:
                 # every call, so a handful of worker calls saturates the window. Waiting it out
                 # is the correct response and costs only wall-clock time; failing the file is
                 # what used to happen, and it made the free verification path unusable.
+                wait = _rate_limit_wait_seconds(exc)
+                if wait is None:
+                    raise LLMParserError(
+                        f"Rate limited, and the window does not reopen for "
+                        f"{_describe_wait(exc)} — too long to wait out. This is a quota, not a "
+                        f"busy moment. Full response: {exc}"
+                    ) from exc
                 rate_limit_waits += 1
                 if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
                     raise LLMParserError(
                         f"Rate limited {rate_limit_waits} times without the window reopening. "
-                        f"Last error: {exc}"
+                        f"Full response: {exc}"
                     ) from exc
-                time.sleep(_rate_limit_wait_seconds(exc))
+                time.sleep(wait)
                 continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
             except groq.BadRequestError as exc:
                 # The API's own server-side schema check rejected the tool call before
