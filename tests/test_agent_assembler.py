@@ -1,13 +1,12 @@
 """Integration tests for assemble() — the split-extraction glue: segment() -> extract_shell()
--> per-position parse_exercise_block() gate -> extract_exercise_labels() (parsed path) or
-extract_exercise() (fallback path) -> TrainingLogLLMExtract. Fake providers only, no real LLM
-calls.
+-> one extract_exercise() worker call per position -> TrainingLogLLMExtract. Fake providers
+only, no real LLM calls.
 
-Most texts in this file use clean "N. weight x reps" set lines, which parse_exercise_block()
-parses successfully — so most worker calls below go through the LABELS_TOOL_NAME path, not
-WORKER_TOOL_NAME, and their scripted responses are shaped as ExerciseLabelsExtract (name +
-classification only, no sets/warmup_sets — see _labels_raw). Only texts that can't isolate a
-chunk at all (anchor not found) still exercise the old full-extraction path."""
+The model owns the numeric spine, so every scripted worker response here supplies its own
+sets/warmup_sets (see _exercise_raw). A deterministic pre-parse used to fill those in from the
+real chunk text (parse_exercise_block, removed 2026-08-03 — it fired on 0 of 10 exercises in
+real input); these tests now cover what the assembler does with a worker's answer, not where
+the numbers came from."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,7 +15,6 @@ from typing import Any
 import pytest
 
 from traininglogs.agent.extraction import (
-    LABELS_TOOL_NAME,
     SEGMENT_TOOL_NAME,
     SHELL_TOOL_NAME,
     WORKER_TOOL_NAME,
@@ -28,18 +26,14 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures" / "valid"
 
 
 class ScriptedProvider:
-    """Dispatches by tool_name (splitter/shell/either worker tool). Worker calls (whichever
-    tool_name they use) are dispatched by call order, not by the position number embedded in
-    the prompt text: assemble() passes 1 (the chunk-local position) for every
-    successfully-isolated chunk, not the splitter's global split_position — so every chunked
-    worker call's prompt says "exercise number 1" no matter which real exercise it's for, and
-    parsing that number can't tell calls apart. assemble() calls workers in split order, one
-    per entry, so the Nth worker call always corresponds to the Nth entry in
-    split_raw["exercises"] — that ordering, not the prompt text, is what identifies each call's
-    split_position here. Which tool_name is used for a given position isn't controlled by this
-    class at all — it's decided by whether parse_exercise_block() succeeds on that position's
-    real (isolated) chunk text, so the caller must supply a raw response of the right shape for
-    whichever path a given text will actually take."""
+    """Dispatches by tool_name (splitter / shell / worker). Worker calls are dispatched by call
+    order, not by the position number embedded in the prompt text: assemble() passes 1 (the
+    chunk-local position) for every successfully-isolated chunk, not the splitter's global
+    split_position — so every chunked worker call's prompt says "exercise number 1" no matter
+    which real exercise it's for, and parsing that number can't tell calls apart. assemble()
+    calls workers in split order, one per entry, so the Nth worker call always corresponds to
+    the Nth entry in split_raw["exercises"] — that ordering, not the prompt text, is what
+    identifies each call's split_position here."""
 
     def __init__(
         self,
@@ -56,13 +50,14 @@ class ScriptedProvider:
         self.worker_tool_names: list[str] = []
 
     def extract(
-        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str, tool_description: str
+        self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
+        tool_description: str, validate=None
     ) -> dict:
         if tool_name == SEGMENT_TOOL_NAME:
             return self._split_raw
         if tool_name == SHELL_TOOL_NAME:
             return self._shell_raw
-        if tool_name in (WORKER_TOOL_NAME, LABELS_TOOL_NAME):
+        if tool_name == WORKER_TOOL_NAME:
             # This is the Nth worker call overall -> it's for the Nth exercise in the split,
             # by call order (see class docstring), not by anything in the prompt text.
             split_position = self._split_raw["exercises"][self._worker_call_count]["position"]
@@ -78,24 +73,17 @@ class ScriptedProvider:
 
 
 def _exercise_raw(number: int, name: str, **overrides: Any) -> dict[str, Any]:
-    """Full-extraction-path (ExerciseExtract) fixture — only meaningful for a position whose
-    chunk can't be isolated at all (anchor not found), since that's the only case that still
-    calls extract_exercise() instead of extract_exercise_labels()."""
+    """ExerciseExtract fixture — one scripted worker response. Override `sets` when a test
+    asserts specific numbers; the default single 50kg x 8 set is enough for tests that only
+    care that *an* exercise came through."""
     base: dict[str, Any] = {
         "number": number,
         "name": name,
-        "sets": [{"number": 1, "weight_kg": 50.0, "rep_count": {"full": 8, "partial": 0}}],
+        "sets": [
+            {"number": 1, "source_line": "1. 50kg x 8", "weight_kg": 50.0, "reps": "8"}
+        ],
         "uncertain_fields": [],
     }
-    base.update(overrides)
-    return base
-
-
-def _labels_raw(name: str, **overrides: Any) -> dict[str, Any]:
-    """Parsed-path (ExerciseLabelsExtract) fixture — no sets/warmup_sets fields exist on this
-    schema at all, so there's nothing to specify for them; parse_exercise_block() supplies the
-    numeric spine directly from the real chunk text."""
-    base: dict[str, Any] = {"name": name, "uncertain_fields": []}
     base.update(overrides)
     return base
 
@@ -121,8 +109,16 @@ class TestAssembleIntegration:
             },
             shell_raw={"date": "2026-05-12", "focus": "Upper", "session_duration_minutes": 60},
             exercise_raw_by_position={
-                1: _labels_raw("Bench Press"),
-                2: _labels_raw("Overhead Press"),
+                1: _exercise_raw(
+                    1,
+                    "Bench Press",
+                    sets=[{"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}],
+                ),
+                2: _exercise_raw(
+                    2,
+                    "Overhead Press",
+                    sets=[{"number": 1, "source_line": "1. 40kg x 8", "weight_kg": 40.0, "reps": "8"}],
+                ),
             },
         )
 
@@ -131,13 +127,11 @@ class TestAssembleIntegration:
         assert extract.date == "2026-05-12"
         assert extract.focus == "Upper"
         assert [e.name for e in extract.exercises] == ["Bench Press", "Overhead Press"]
-        # Both blocks parse cleanly (SAMPLE_TWO_EXERCISE_TEXT's set lines are regular), so both
-        # weights below came from parse_exercise_block(), not the scripted labels response.
         assert extract.exercises[0].sets[0].weight_kg == 80.0
         assert extract.exercises[1].sets[0].weight_kg == 40.0
         assert extract.warnings == []
         assert provider.worker_calls == [1, 2]
-        assert provider.worker_tool_names == [LABELS_TOOL_NAME, LABELS_TOOL_NAME]
+        assert provider.worker_tool_names == [WORKER_TOOL_NAME, WORKER_TOOL_NAME]
 
     def test_worker_uncertain_fields_get_prefixed_with_exercise_index(self) -> None:
         provider = ScriptedProvider(
@@ -180,9 +174,9 @@ class TestAssembleIntegration:
             },
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
-                1: _labels_raw("Bench Press"),
+                1: _exercise_raw(1, "Bench Press"),
                 # position 2 deliberately missing -> ScriptedProvider raises LLMParserError
-                3: _labels_raw("Lat Pulldown"),
+                3: _exercise_raw(3, "Lat Pulldown"),
             },
         )
 
@@ -222,9 +216,9 @@ class TestAssembleChunking:
             },
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
-                1: _labels_raw("Bench Press"),
-                2: _labels_raw("Overhead Press"),
-                3: _labels_raw("Lat Pulldown"),
+                1: _exercise_raw(1, "Bench Press"),
+                2: _exercise_raw(2, "Overhead Press"),
+                3: _exercise_raw(3, "Lat Pulldown"),
             },
         )
 
@@ -247,7 +241,7 @@ class TestAssembleChunking:
             shell_raw={"date": "2026-05-12"},
             exercise_raw_by_position={
                 1: _exercise_raw(1, "Bench Press", sets=[
-                    {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 8, "partial": 0}}
+                    {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
                 ]),
             },
         )
@@ -288,12 +282,11 @@ class TestAssembleSixExerciseRegression:
     exercise's data). Confirms the assembler itself never drops an exercise regardless of how
     many worker calls it makes.
 
-    All 6 of this real fixture's exercises parse cleanly via parse_exercise_block() (confirmed
-    in tests/test_agent_exercise_block.py), so every exercise's numeric spine — sets,
-    warmup_sets, and last-set RPE placement — comes directly from the real fixture text below,
-    not from anything in the scripted labels responses (which only supply each exercise's
-    name). This is a stronger test than before this fix: it no longer needs to hand-construct
-    weights/RPE mirroring the fixture, because the parser reads the fixture itself."""
+    Scope note: this covers the *assembler*, not extraction accuracy. Each scripted worker
+    response supplies its own last-set RPE, so what's proven here is that assemble() keeps all
+    six exercises, in order, and attaches each worker's answer to the right one. Whether a real
+    model reads those RPEs correctly out of the fixture is measured by scripts/eval_arms.py
+    against real sessions, not here."""
 
     FIXTURE = FIXTURES_DIR / "programmed_push_pull_session_with_remarks.md"
 
@@ -312,6 +305,14 @@ class TestAssembleSixExerciseRegression:
         # per the design-session convention (upper bound taken for a range). Chest Supported
         # Rows genuinely has no RPE remark at all in the real fixture.
         rpe_by_position = {1: 7.0, 2: 7.0, 3: None, 4: 8.0, 5: 8.0, 6: 8.0}
+        # Two sets each; the RPE rides the last one, mirroring the convention above.
+        def _sets_with_last_rpe(rpe: float | None) -> list[dict[str, Any]]:
+            return [
+                {"number": 1, "source_line": "1. 60kg x 8",
+                 "weight_kg": 60.0, "reps": "8"},
+                {"number": 2, "source_line": "2. 60kg x 8",
+                 "weight_kg": 60.0, "reps": "8", "rpe": rpe},
+            ]
 
         split_raw = {
             "exercises": [
@@ -326,7 +327,10 @@ class TestAssembleSixExerciseRegression:
             "focus": "Powerlifting and Mobility",
             "session_duration_minutes": 101,
         }
-        exercise_raw_by_position = {i: _labels_raw(name) for i, name in enumerate(names, start=1)}
+        exercise_raw_by_position = {
+            i: _exercise_raw(i, name, sets=_sets_with_last_rpe(rpe_by_position[i]))
+            for i, name in enumerate(names, start=1)
+        }
 
         provider = ScriptedProvider(split_raw, shell_raw, exercise_raw_by_position)
 
@@ -334,89 +338,63 @@ class TestAssembleSixExerciseRegression:
 
         assert [e.name for e in extract.exercises] == names
         assert len(extract.exercises) == 6
-        assert extract.warnings == []
-        assert provider.worker_tool_names == [LABELS_TOOL_NAME] * 6
+        assert provider.worker_tool_names == [WORKER_TOOL_NAME] * 6
+        # audit() legitimately flags the real fixture's weights as missing, because the scripted
+        # worker responses above carry a synthetic 60kg spine rather than mirroring the file.
+        # That's the drop-check working, not a failure — so assert only that the *assembler*
+        # raised nothing: no exercise failed to extract, none fell back to the full document.
+        assert not [w for w in extract.warnings if "failed to extract" in w or "isolate" in w]
         for i, name in enumerate(names):
             expected_rpe = rpe_by_position[i + 1]
             last_set = extract.exercises[i].sets[-1]
             assert last_set.rpe == expected_rpe, f"{name} lost its last-set RPE"
 
 
-class TestAssembleReproducesOriginalFailures:
-    """End-to-end regression tests for the three value-level LLM failures found in live E2E
-    testing that motivated the extraction-accuracy fix (see extraction-accuracy-plan.md). Each
-    scripted labels response omits the very information the original bad LLM call got wrong —
-    proving the fix removes the failure by construction (there's no field left for the LLM to
-    misreport), not by hoping a better-behaved model happens to get it right."""
+class TestAssembleSourceLines:
+    """assemble() runs the two source-line checks per exercise, and the projection keeps
+    extraction-only fields out of the plain Exercise it hands downstream."""
 
-    def test_weight_and_warmup_are_never_dropped(self) -> None:
-        """Original failure: weight dropped from all three Incline DB Press sets, plus its
-        whole warmup section, despite reps/RPE on the same lines being correct. The labels
-        schema has no sets/warmup_sets fields at all, so there's nothing for the LLM to drop."""
-        text = (
-            "Incline DB Press\nWarmup:\n1. 40kg x 4\n2. 60kg x 4\nSets:\n"
-            "1. 80kg x 8\n2. 80kg x 9\n3. 80kg x 6\n\nRemarks:\n1. RPE: 6-7.\n"
-        )
+    TEXT = "Bench Press\nSets:\n1. 80kg x 8\n"
+    SPLIT = {"exercises": [{"position": 1, "name": "Bench Press", "anchor": "Bench Press"}]}
+
+    def _run(self, sets: list[dict[str, Any]]) -> Any:
         provider = ScriptedProvider(
-            split_raw={
-                "exercises": [
-                    {"position": 1, "name": "Incline DB Press", "anchor": "Incline DB Press"}
-                ]
-            },
+            split_raw=self.SPLIT,
             shell_raw={"date": "2026-05-12"},
-            exercise_raw_by_position={1: _labels_raw("Incline DB Press")},
+            exercise_raw_by_position={1: _exercise_raw(1, "Bench Press", sets=sets)},
+        )
+        return assemble(self.TEXT, provider=provider)
+
+    def test_source_lines_do_not_reach_the_plain_exercise(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
+        ])
+        assert not hasattr(extract.exercises[0].sets[0], "source_line")
+
+    def test_a_real_source_line_produces_no_warning(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "8"}
+        ])
+        assert extract.warnings == []
+
+    def test_an_invented_source_line_is_reported_against_its_exercise(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 500kg x 1", "weight_kg": 500.0, "reps": "1"}
+        ])
+        assert any(
+            "Exercise 1 (Bench Press)" in w and "isn't in the text" in w
+            for w in extract.warnings
         )
 
-        extract = assemble(text, provider=provider)
+    def test_an_empty_source_line_is_reported(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "  ", "weight_kg": 80.0, "reps": "8"}
+        ])
+        assert any("set 1 has no source line recorded" in w for w in extract.warnings)
 
-        exercise = extract.exercises[0]
-        assert [s.weight_kg for s in exercise.sets] == [80.0, 80.0, 80.0]
-        assert [w.weight_kg for w in exercise.warmup_sets] == [40.0, 60.0]
-
-    def test_lat_pulldown_rpe_defaults_to_last_set_not_first(self) -> None:
-        """Original failure: an exercise-level RPE mentioned once in remarks landed on set 1
-        instead of set 3. The scripted labels response below deliberately omits
-        exercise_rpe_target_set (the field a model would use to name a different set) —
-        placement defaults to the last set by construction, not by LLM judgment."""
-        text = (
-            "Lat Pulldown\nWarmup:\n1. 45kg x 5\nSets:\n"
-            "1. 100kg x 8\n2. 100kg x 8\n3. 100kg x 8\n\nRemarks:\n1. RPE: 8\n"
-        )
-        provider = ScriptedProvider(
-            split_raw={
-                "exercises": [{"position": 1, "name": "Lat Pulldown", "anchor": "Lat Pulldown"}]
-            },
-            shell_raw={"date": "2026-05-12"},
-            exercise_raw_by_position={1: _labels_raw("Lat Pulldown")},
-        )
-
-        extract = assemble(text, provider=provider)
-
-        sets = extract.exercises[0].sets
-        assert sets[0].rpe is None
-        assert sets[1].rpe is None
-        assert sets[2].rpe == 8.0
-
-    def test_lateral_raise_working_sets_land_in_sets_not_warmup_sets(self) -> None:
-        """Original failure: three working sets under a Sets: header got filed into
-        warmup_sets, leaving sets empty. Structurally impossible now — the parser reads the
-        section header itself, so there's no LLM decision about which field these numbers
-        belong in at all. This is also the fixture's one exercise with an empty Warmup: line
-        immediately before Sets:."""
-        text = (
-            "Lateral Raise\nWarmup:\nSets:\n1. 10kg x 15\n2. 10kg x 15\n3. 10kg x 15\n\n"
-            "Remarks:\n1. RPE: 8\n"
-        )
-        provider = ScriptedProvider(
-            split_raw={
-                "exercises": [{"position": 1, "name": "Lateral Raise", "anchor": "Lateral Raise"}]
-            },
-            shell_raw={"date": "2026-05-12"},
-            exercise_raw_by_position={1: _labels_raw("Lateral Raise")},
-        )
-
-        extract = assemble(text, provider=provider)
-
-        exercise = extract.exercises[0]
-        assert [s.weight_kg for s in exercise.sets] == [10.0, 10.0, 10.0]
-        assert not exercise.warmup_sets
+    def test_rep_text_that_cannot_be_read_is_reported(self) -> None:
+        extract = self._run([
+            {"number": 1, "source_line": "1. 80kg x 8", "weight_kg": 80.0, "reps": "a few"}
+        ])
+        assert any("a few" in w for w in extract.warnings)
+        assert extract.exercises[0].sets[0].rep_count is None

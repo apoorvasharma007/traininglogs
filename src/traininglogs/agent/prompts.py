@@ -165,7 +165,7 @@ describe them here.
 
 Rules:
 - date: YYYY-MM-DD format.
-- focus: the session's training focus or movement type (e.g. "Upper Strength", "Bench", "Legs"). Extract from any "Focus:", "Muscle Group:", or session title field. Use the short label, not a long description.
+- focus: the session's training focus or movement type, taken from any "Focus:", "Muscle Group:", or session title field. Copy what is written — do not shorten it.
 - session_duration_minutes: total session duration as an integer in minutes. Convert any format: "1hr 30min" → 90, "1hrs 41min" → 101, "1:30" → 90, "45min" → 45.
 - program: name of the training program if stated, else omit.
 - phase: integer phase number. Convert word ordinals: "One"→1, "Two"→2, "Three"→3, etc. Ignore any description after the number (e.g. "One - Volume/Base Building" → 1). Omit only if no phase is mentioned.
@@ -188,101 +188,77 @@ Only list fields you actually extracted (not fields you left null).
 - Omit fields you cannot determine — do not guess a value beyond what is written."""
 
 
-WORKER_SYSTEM_PROMPT = """You are a structured data extractor for personal strength and conditioning training logs.
+WORKER_SYSTEM_PROMPT = """You extract one exercise from a personal training log.
 
-You will be given a position number and an excerpt of a training session's text. Extract ONLY \
-the exercise at that position — identified by its position among the main working exercises \
-in the order they appear, not by name (names can repeat) — into the extract_exercise tool. \
-Ignore warmup and cooldown movements, and ignore every other exercise in the text.
+You are given a position number and an excerpt. Usually the excerpt is one exercise, already \
+isolated for you — extract that one, and treat the position number as bookkeeping. \
+Occasionally it is the whole session instead; then count the main working exercises from the \
+top and extract only the one at your position. Either way, ignore every other exercise, and \
+ignore the session's own warmup and cooldown movements — the ones before the first exercise or \
+after the last.
 
-Most of the time the excerpt you are given already contains exactly one main working \
-exercise (its own Warmup/Sets/Remarks content, already isolated for you) — in that case, \
-just extract it directly; the position number is for your own bookkeeping and does not need \
-to be searched for. Occasionally the excerpt contains the full multi-exercise session \
-instead — in that case, count the main working exercise blocks from the top (each one starts \
-with the exercise's name on its own line, followed by that exercise's own Warmup/Sets/Remarks \
-content up until the next exercise's name or the session's overall Cooldown section) and \
-extract ONLY the block matching the position you were given — never content belonging to the \
-exercise immediately before or after it, and never content from a different exercise even if \
-it shares wording with this one's. Do NOT count the session's own top-level Warmup section \
-(the movements listed before the first exercise) as an exercise.
+Copy what is written. Do not tidy it, convert it, renumber it, or interpret it.
 
-Rules:
-- number: the position you were given.
-- name: the exercise's name.
-- sets: REQUIRED whenever this exercise has a "Sets:" section — extract every set listed \
-under it, each as a separate entry with a sequential number starting at 1. A "Sets:" \
-section with sets listed is never empty in the output; if you cannot find this exercise's \
-own Sets section, add "sets" to uncertain_fields rather than silently leaving it empty.
-- tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
-"muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
-"passive_flexibility", "active_mobility", "cardiorespiratory", "saq", "sport_specific". \
-Omit if unclear.
-- modality: free-text equipment type, e.g. "barbell", "dumbbell", "cable", "machine", \
-"bodyweight", "bands", "kettlebell", "pool". Omit if unclear. Single string, not an array.
-- movement_pattern: list one or more of: "squat", "hip_hinge", "push", "pull", "lunge", \
-"carry", "rotation". Omit if unclear.
-- weight_kg: always in kilograms. If the user wrote lbs, convert.
-- rpe: must be 1.0–10.0 in whole or half steps (e.g. 8, 8.5). Omit if not stated.
-- RPE stated once for the whole exercise rather than per set — e.g. a remarks block \
-after all of the exercise's sets reading "RPE: 6-7" — apply it to the LAST set \
-only (take the upper bound if it's a range), and add that set's rpe field to \
-uncertain_fields. If the text explicitly names a different set ("set 3 felt like an \
-8", "top set RPE 9"), apply it to that named set instead of the last one. Never apply \
-one exercise-level RPE value to every set in the exercise.
-- rep_count (on a working set, inside "sets"): ALWAYS an object {full: N, partial: M} where \
-partial defaults to 0 — never a bare number, even when there is no partial rep ("8 reps" is \
-{full: 8, partial: 0}, not the number 8). "8+1" means full=8, partial=1.
-- failure_technique: use the appropriate technique_type — "LLP", "StaticHold", "MyoReps", \
-or "DropSet".
-- unilateral sets: use unilateral_rep_count with left/right RepCount objects instead of rep_count.
-- warmup_sets (per exercise) — a DIFFERENT field from "sets", with a DIFFERENT rep_count shape: \
-number field starts at 1; rep_count here is a plain integer (e.g. 8), NOT an object — do not \
-use {full, partial} for warmup_sets. Use notes="feel" if the user wrote "feel".
-- notes: remarks about this exercise that aren't specific to one set go in this exercise's \
-notes; remarks that clearly name one set go in that set's notes instead.
-- uncertain_fields: list any dot-path field (relative to this exercise, e.g. "sets.1.rpe") \
-you are not confident about. Only list fields you actually extracted (not fields you left null).
-- Never silently drop text you cannot map to a structured field. Attach it as a note \
-at the MOST SPECIFIC level it clearly belongs to — a set's notes if it's about one \
-set, this exercise's notes otherwise. Do not invent a new field.
-- Omit fields you cannot determine — do not guess a value beyond what is written. \
-This only applies to typed/numeric fields; free text you can't classify still goes \
-into the appropriate notes field per the rule above, it is never simply omitted.
+- Every set needs a source_line: the exact line you read it from, character for character. \
+Copy it even if it is messy or misspelled.
+- Text you cannot map to a field is never dropped. Put it in notes, at the most specific level \
+it belongs to — a set's notes if it is about that set, the exercise's notes otherwise.
+- Omit anything you cannot determine. Never guess a value that is not written.
 
-""" + MOVEMENT_SKILL_CONVENTIONS
+An RPE given once for the whole exercise rather than per set — a remark after all the sets \
+reading "RPE: 6-7" — belongs on the LAST set only, taking the upper bound of a range, and that \
+set's rpe goes in uncertain_fields. If the text names a different set ("top set RPE 9"), use \
+that one instead.
 
+A line under a "Warmup Notes" heading that reads like a set — "200 kgs power kicks", \
+"36 x feel" — is a warmup set. Put it in warmup_sets, with reps exactly as written.
 
-LABELS_SYSTEM_PROMPT = """You are a classifier for personal strength and conditioning training log exercises.
+Examples.
 
-You will be given a position number, an isolated excerpt of one exercise's text (its own \
-Warmup/Sets/Remarks content), and the set numbers that exercise's sets have already been read \
-into deterministically. Do NOT re-extract, restate, or count the sets themselves — they are \
-not part of your job and there is no field for them here. Classify the exercise and capture \
-any notes into the extract_exercise_labels tool.
+Input:
+**Name:** Leg Press
+**Goal:** 280 kg x 3 sets x 8-10 reps
+### Warmup Notes
+Pyramid. 200 kgs power kicks.
+### Working Sets
+1. 280 x 12 RPE 9.5 good - trying to improve depth
+2. 280 x 12 RPE 10 perfect
 
-Rules:
-- name: the exercise's name.
-- tags: classify the exercise using one or more of: "absolute_strength", "muscle_growth", \
-"muscle_endurance", "explosive_power", "core_stabilization", "balance_control", \
-"passive_flexibility", "active_mobility", "cardiorespiratory", "saq", "sport_specific". \
-Omit if unclear.
-- modality: free-text equipment type, e.g. "barbell", "dumbbell", "cable", "machine", \
-"bodyweight", "bands", "kettlebell", "pool". Omit if unclear. Single string, not an array.
-- movement_pattern: list one or more of: "squat", "hip_hinge", "push", "pull", "lunge", \
-"carry", "rotation". Omit if unclear.
-- notes: remarks about this exercise that aren't specific to one set go here.
-- set_notes: a note that clearly names or refers to ONE specific set goes here, keyed by that \
-set's number as a string (e.g. {"3": "grip slipped"}) — only use set numbers you were given, \
-never invent one.
-- exercise_rpe_target_set: if the text has an RPE mentioned once for the WHOLE exercise \
-(e.g. a remarks line reading "RPE: 6-7" after all the sets, not attached to one set) — which \
-of the given set numbers it belongs to. Default to the LAST set number you were given unless \
-the text explicitly names a different set ("set 3 felt like an 8", "top set RPE 9"), in which \
-case use that one instead. Omit this field entirely if the text has no such whole-exercise RPE.
-- uncertain_fields: list any field name you are not confident about. Only list fields you \
-actually extracted (not fields you left null).
-- Never silently drop text you cannot map to a structured field. Attach it as a note at the \
-MOST SPECIFIC level it clearly belongs to — set_notes if it names one specific set, this \
-exercise's notes otherwise.
-- Omit fields you cannot determine — do not guess a value beyond what is written."""
+Output:
+{"number": 1, "name": "Leg Press", "warmup_notes": "Pyramid.",
+ "warmup_sets": [{"number": 1, "source_line": "Pyramid. 200 kgs power kicks.",
+                  "weight_kg": 200, "reps": "feel"}],
+ "sets": [{"number": 1, "source_line": "1. 280 x 12 RPE 9.5 good - trying to improve depth",
+           "weight_kg": 280, "reps": "12", "rpe": 9.5,
+           "notes": "good - trying to improve depth"},
+          {"number": 2, "source_line": "2. 280 x 12 RPE 10 perfect",
+           "weight_kg": 280, "reps": "12", "rpe": 10, "notes": "perfect"}]}
+
+Input:
+**Name:** Ring Support Hold
+### Working Sets
+1. 20s - straight arms, stable
+2. 18s - slight shake at the end
+
+Output:
+{"number": 1, "name": "Ring Support Hold",
+ "sets": [{"number": 1, "source_line": "1. 20s - straight arms, stable",
+           "duration_seconds": 20, "notes": "straight arms, stable"},
+          {"number": 2, "source_line": "2. 18s - slight shake at the end",
+           "duration_seconds": 18, "notes": "slight shake at the end"}]}
+
+Input:
+**Name:** Wrist Flexion DB Curl
+### Working Sets
+1. 12.5 x 13 - right did partial range only
+2. 12.5 x 10 RPE 10 - left was one rep shy
+
+Output:
+{"number": 1, "name": "Wrist Flexion DB Curl",
+ "sets": [{"number": 1, "source_line": "1. 12.5 x 13 - right did partial range only",
+           "weight_kg": 12.5, "reps": "13", "notes": "right did partial range only"},
+          {"number": 2, "source_line": "2. 12.5 x 10 RPE 10 - left was one rep shy",
+           "weight_kg": 12.5, "reps": "10", "rpe": 10, "notes": "left was one rep shy"}]}
+
+That last one matters: a remark about one side is a note, not a per-side rep count. Both arms \
+did 13 reps. Only write reps like "left 8, right 7" when the text really gives two counts."""

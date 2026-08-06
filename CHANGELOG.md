@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — extraction reliability (2026-08-06)
+
+A measurement run scored 215/277 on core fields, down from 98.8%. The cause was not extraction
+quality: on every exercise the model actually returned it was **147/147**. Five worker calls
+returned `{"number": 1}` — no name, no sets — and each became an exercise-shaped hole.
+
+- **Validation now runs inside the provider's retry loop.** `ExtractionProvider.extract()` takes
+  a `validate` callback and re-asks when the payload fails it. Previously validation lived in the
+  callers (`parse`, `segment`, `extract_shell`, `extract_exercise`), one layer above the loop, so
+  a tool call that parsed as JSON but didn't satisfy its model got none of its three attempts.
+  The reask replays the failed `tool_use` and answers it with a `tool_result` carrying
+  `is_error`, so the model sees what it sent and why it was wrong. Groq uses the equivalent
+  OpenAI `tool` role shape.
+- **`strict: true` on Anthropic tool definitions.** Grammar-constrained sampling makes a call
+  that omits a required field impossible to generate, rather than something to recover from.
+  `strict_schema()` adds the required `additionalProperties: false`; a test pins that the live
+  schemas stay inside the supported subset, since the API answers an unsupported schema with a
+  400 rather than degrading quietly.
+- **An extract with no working sets and no warmup sets is rejected.** It was schema-valid and
+  invisible: `check_sources_are_real()` and `check_sets_are_numbered_and_sourced()` both iterate
+  over the sets that came back, so zero sets produced zero findings. One token's difference from
+  the observed failure would have written a clean-looking session with every set silently
+  missing. It now takes the retry path, and only becomes a flagged placeholder if every attempt
+  comes back empty.
+- **Removed `ExerciseExtract.number`.** The splitter already knows each exercise's position and
+  `assemble()` overwrote whatever the worker reported, so the field asked the model for
+  information that was discarded — and it was the one field the failing calls did fill.
+  `to_exercise(number)` now takes the position from the caller.
+- **A worker handed an isolated chunk is no longer told to find "exercise number N".** That
+  instruction only makes sense in the full-document fallback, where it is still used.
+- **Removed the exercise-count check in `audit()`.** `assemble()` appends exactly one exercise
+  per split entry, extracted or placeholder, so the counts were equal by construction and the
+  check could never fire — the same defect as the kg-token check removed before it.
+
+Validation rules in effect: `ExerciseExtract` requires a non-empty `name` and at least one
+working or warmup set; `SetExtract` requires `source_line` and a positive `number`.
+
 ### Added (v3.0.0 data model — Steps 1–5 complete, Step 6 (cloud validation) + Step 7 (JSON comparison) remaining)
 
 - `WorkingSet`: flat model replacing `StrengthSet`/`ActivitySet`/`AnySet` discriminated union.
@@ -155,6 +192,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   split-extraction refactor; the script had been dead since.
 - `scripts/validate_with_model.py` — Groq-specific comparison runner, superseded by
   `scripts/eval_arms.py`.
+
+
+### Removed (parse-first, 2026-08-03)
+
+- `parse_exercise_block()` and `src/traininglogs/agent/exercise_block.py` — the deterministic
+  per-exercise block parser. Measurement showed it fired on **0 of 10 exercises in real input
+  files**: it required exact-match `Warmup:` / `Sets:` / `Remarks:` header lines, while real
+  logs use markdown (`### Working Sets`). It had never run in production, only against the older
+  `tests/fixtures/valid/programmed_*.md` format it was validated on. The pure-AI path scores
+  ~99.7% on the numeric spine across 6 real sessions with Haiku 4.5.
+- `extract_exercise_labels()`, `LABELS_SYSTEM_PROMPT`, `LABELS_TOOL_NAME`/`_DESCRIPTION`, and
+  the `ExerciseLabelsExtract` schema — the narrow classification-only worker path, reachable
+  only when parse-first succeeded.
+- `assemble()`'s `use_parse_first` parameter and `TRAININGLOGS_DISABLE_PARSE_FIRST` env var —
+  the measurement escape hatch added to run this comparison. `assemble(text, provider)` again.
+- `tests/test_agent_exercise_block.py`, `tests/test_agent_exercise_labels.py`, and
+  `TestAssembleReproducesOriginalFailures` in `tests/test_agent_assembler.py`. **Coverage note:**
+  that last class proved two of the three original extraction failures were structurally
+  impossible — a guarantee that held *because* the parser supplied the numeric spine. With the
+  model supplying it instead, the same tests would only assert that a scripted value came back
+  unchanged, so they were deleted rather than rewritten into something weaker than they look.
+  That coverage moves from unit-level structural proof to measurement: `scripts/eval_arms.py`
+  scores real extractions against historical data, and `audit()` (strengthened next in roadmap
+  Phase 1) is the runtime guard.
+- `eval_arms.py`'s `split-pf` arm, which is no longer distinguishable from `split`.
+
+Suite: 467 passed, 0 failed, 0 skipped (was 483; the 16 removed covered deleted code).
 
 ## [2.0.0] - 2026-05-07
 

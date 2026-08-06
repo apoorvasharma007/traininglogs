@@ -1,9 +1,8 @@
 """Architecture A/B/C — scores pipeline variants against the historical JSON answer key.
 
 Answers three design questions with one run:
-  1. Is the deterministic parse-first path still needed?   (split-pf vs split-nopf)
-  2. Is the split-call architecture needed at all?         (split-nopf vs mono)
-  3. What does each cost?                                  (tokens/$ recorded per arm)
+  1. Is the split-call architecture needed at all?  (split vs mono)
+  2. What does each cost?                           (tokens/$ recorded per arm)
 
 GROUND TRUTH is output_training_logs_json/*.json, matched to each input .md by the
 session_id hash (processor.compute_session_id). Those files predate the v3 model, so only
@@ -18,11 +17,11 @@ Usage:
     # plan + cost estimate, no API calls
     .venv/bin/python -u scripts/eval_arms.py --n 6 --dry-run
 
-    # the decisive run: is splitting necessary?
-    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split-nopf mono --max-cost 2.00
+    # is splitting necessary?
+    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split mono --max-cost 2.00
 
-    # add the current production baseline
-    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split-pf split-nopf mono
+    # re-score one arm after a prompt change (cached calls are free)
+    .venv/bin/python -u scripts/eval_arms.py --n 6 --arms split
 """
 from __future__ import annotations
 
@@ -59,10 +58,11 @@ from traininglogs.agent.schemas import LLMParserError  # noqa: E402
 INPUTS_DIR = PROJECT_ROOT / "inputs"
 TRUTH_GLOB = str(PROJECT_ROOT / "output_training_logs_json" / "**" / "*.json")
 
-# arm -> (entrypoint, kwargs). "mono" is the single-call path; it has no parse-first concept.
+# arm -> (entrypoint, kwargs). The `split-pf` arm (parse-first ON) was removed with
+# parse_exercise_block itself on 2026-08-03 — it fired on 0 of 10 real exercises, so it was
+# never distinguishable from `split` on production input anyway.
 ARMS = {
-    "split-pf": (extraction.assemble, {"use_parse_first": True}),
-    "split-nopf": (extraction.assemble, {"use_parse_first": False}),
+    "split": (extraction.assemble, {}),
     "mono": (extraction.parse, {}),
 }
 
@@ -140,45 +140,52 @@ def _eq(a, b) -> bool:
         return a == b
 
 
-def score(truth: list[dict], got: list[dict]) -> tuple[int, int, list[str]]:
-    ok = total = 0
+def score(truth: list[dict], got: list[dict]) -> tuple[dict[str, list[int]], list[str]]:
+    """Score in two categories, because they are not equally trustworthy.
+
+    CORE -- exercise count, set counts, weights, reps, RPE. The answer key is reliable here, so
+    a drop is a real regression.
+
+    WARMUP -- warmup set counts only. The answer key came from the rules parser, which ignored
+    the `### Warmup Notes` prose where warmups are actually written ("36 x feel", "200 kgs power
+    kicks"). Five of seven mismatches in the 2026-08-03 run were the model being *more* correct
+    than the key. So a rise in warmup mismatches may mean the extraction improved. Adjudicate
+    these by reading the source, never by the number alone.
+    """
+    tally = {"core": [0, 0], "warmup": [0, 0]}   # category -> [correct, total]
     diffs: list[str] = []
 
-    total += 1
-    if len(truth) == len(got):
-        ok += 1
-    else:
-        diffs.append(f"exercise count: truth={len(truth)} got={len(got)}")
+    def record(category: str, correct: bool, message: str) -> None:
+        tally[category][1] += 1
+        if correct:
+            tally[category][0] += 1
+        else:
+            diffs.append(f"[{category}] {message}")
+
+    record("core", len(truth) == len(got),
+           f"exercise count: truth={len(truth)} got={len(got)}")
 
     for i, t in enumerate(truth):
         g = got[i] if i < len(got) else {"name": "<MISSING>", "sets": [], "n_warmup": 0}
         label = f"ex{i+1} {t['name'][:24]!r}"
 
-        for field, tv, gv in (
-            ("set count", len(t["sets"]), len(g["sets"])),
-            ("warmup count", t["n_warmup"], g["n_warmup"]),
-        ):
-            total += 1
-            if tv == gv:
-                ok += 1
-            else:
-                diffs.append(f"{label}: {field} truth={tv} got={gv}")
+        record("core", len(t["sets"]) == len(g["sets"]),
+               f"{label}: set count truth={len(t['sets'])} got={len(g['sets'])}")
+        record("warmup", t["n_warmup"] == g["n_warmup"],
+               f"{label}: warmup count truth={t['n_warmup']} got={g['n_warmup']}")
 
         for j, ts in enumerate(t["sets"]):
             gs = g["sets"][j] if j < len(g["sets"]) else {}
             for key in ("kg", "full", "partial", "rpe"):
-                total += 1
-                if _eq(ts.get(key), gs.get(key)):
-                    ok += 1
-                else:
-                    diffs.append(f"{label} set{j+1} {key}: truth={ts.get(key)} got={gs.get(key)}")
-    return ok, total, diffs
+                record("core", _eq(ts.get(key), gs.get(key)),
+                       f"{label} set{j+1} {key}: truth={ts.get(key)} got={gs.get(key)}")
+    return tally, diffs
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--arms", nargs="+", default=["split-nopf", "mono"], choices=list(ARMS))
+    ap.add_argument("--arms", nargs="+", default=["split", "mono"], choices=list(ARMS))
     ap.add_argument("--model", default="haiku", choices=list(MODELS))
     ap.add_argument("--n", type=int, default=6, help="How many input files to sample")
     ap.add_argument("--seed", type=int, default=7, help="Sampling seed — keep it fixed across runs")
@@ -186,6 +193,13 @@ def main() -> int:
     ap.add_argument("--max-cost", type=float, default=2.00)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--show-diffs", type=int, default=8, help="Max mismatch lines per file")
+    ap.add_argument(
+        "--delay", type=float, default=0.0,
+        help=(
+            "Seconds to pause before each uncached call. Free tiers meter tokens per minute; "
+            "pacing avoids saturating the window. Try 20 for Groq. Cached calls never wait."
+        ),
+    )
     args = ap.parse_args()
 
     truth_index = build_truth_index()
@@ -219,7 +233,8 @@ def main() -> int:
     for arm in args.arms:
         fn, kwargs = ARMS[arm]
         usage = _Usage()
-        agg = {"ok": 0, "total": 0, "files_perfect": 0, "files_run": 0, "errors": 0}
+        agg = {"core": [0, 0], "warmup": [0, 0],
+               "files_perfect": 0, "files_run": 0, "errors": 0}
         table[arm] = {"usage": usage, "agg": agg}
         print("-" * 78)
         print(f"ARM: {arm}")
@@ -251,14 +266,18 @@ def main() -> int:
                 print("      FULLY CACHED — $0.00")
                 continue
 
-            ok, total, diffs = score(truth, spine_from_extract(extract))
-            agg["ok"] += ok
-            agg["total"] += total
+            tally, diffs = score(truth, spine_from_extract(extract))
+            for category, (ok_n, total_n) in tally.items():
+                agg[category][0] += ok_n
+                agg[category][1] += total_n
             agg["files_run"] += 1
             if not diffs:
                 agg["files_perfect"] += 1
-            pct = 100.0 * ok / total if total else 0.0
-            print(f"      {ok}/{total} fields ({pct:.1f}%)  {time.time()-t0:.1f}s"
+            core_ok, core_total = tally["core"]
+            warm_ok, warm_total = tally["warmup"]
+            core_pct = 100.0 * core_ok / core_total if core_total else 0.0
+            print(f"      core {core_ok}/{core_total} ({core_pct:.1f}%) | "
+                  f"warmup {warm_ok}/{warm_total}  {time.time()-t0:.1f}s"
                   f"{'  PERFECT' if not diffs else ''}")
             for d in diffs[: args.show_diffs]:
                 print(f"         x {d}")
@@ -267,6 +286,12 @@ def main() -> int:
 
             (run_dir / f"{path.stem}__{arm}.json").write_text(
                 json.dumps(extract.model_dump(mode="json"), indent=2)
+            )
+            # What the model actually said, before assembly and projection. The assembled file
+            # above has source_line and reps-as-written stripped out by to_exercise(), so this
+            # is the only place the raw answer survives in readable form.
+            (run_dir / f"{path.stem}__{arm}__raw.json").write_text(
+                json.dumps(provider.responses, indent=2)
             )
 
     if args.dry_run:
@@ -277,13 +302,25 @@ def main() -> int:
     print("=" * 78)
     print("VERDICT")
     print("=" * 78)
-    print(f"{'arm':<12} {'accuracy':>14} {'perfect files':>14} {'calls':>7} {'cost':>9} {'fails':>6}")
+    print(f"{'arm':<12} {'CORE (trust this)':>20} {'warmup (adjudicate)':>21} "
+          f"{'perfect':>9} {'calls':>7} {'re-ask':>7} {'dropped':>8} {'cost':>9} {'fails':>6}")
     for arm, d in table.items():
         a, u = d["agg"], d["usage"]
-        pct = 100.0 * a["ok"] / a["total"] if a["total"] else 0.0
-        print(f"{arm:<12} {a['ok']:>5}/{a['total']:<5}{pct:>5.1f}% "
-              f"{a['files_perfect']:>7}/{a['files_run']:<6} {u.calls:>7} "
-              f"${u.cost(model):>8.4f} {a['errors']:>6}")
+        c_ok, c_tot = a["core"]
+        w_ok, w_tot = a["warmup"]
+        c_pct = 100.0 * c_ok / c_tot if c_tot else 0.0
+        w_pct = 100.0 * w_ok / w_tot if w_tot else 0.0
+        print(f"{arm:<12} {c_ok:>6}/{c_tot:<5}{c_pct:>6.1f}% "
+              f"{w_ok:>7}/{w_tot:<5}{w_pct:>6.1f}% "
+              f"{a['files_perfect']:>4}/{a['files_run']:<4} {u.calls:>7} "
+              f"{u.retried_calls:>7} {u.failed_calls:>8} ${u.cost(model):>8.4f} "
+              f"{a['errors']:>6}")
+    print()
+    print("CORE is exercise/set counts, weights, reps, RPE -- the answer key is reliable, so a")
+    print("drop there is a real regression. WARMUP counts are scored against a key built by the")
+    print("rules parser, which ignored the `### Warmup Notes` prose where warmups are actually")
+    print("written -- so more mismatches there may mean the extraction got better. Read the")
+    print("source before believing that number.")
     print(f"\nArtifacts: {run_dir}")
     return 0
 

@@ -1,8 +1,7 @@
-"""Model A/B for the AI extraction pipeline — Haiku 4.5 vs Groq, pure-AI (no parse-first).
+"""Model A/B for the AI extraction pipeline — Haiku 4.5 vs Groq.
 
-Answers one question: with the deterministic parser switched OFF, how well does each model
-extract a session on its own? Parse-first is disabled for every run here, so the model owns
-the numeric spine and model capability is what's actually being measured.
+Answers one question: how well does each model extract a session on its own? The model owns
+the numeric spine, so model capability is what's actually being measured.
 
 MONEY SAFETY — the reason this script exists instead of a one-liner:
   * Every provider response is cached on disk, keyed by a hash of the exact request
@@ -50,7 +49,7 @@ EVAL_ROOT = PROJECT_ROOT / "eval_runs"
 CACHE_DIR = EVAL_ROOT / ".cache"
 
 # The eval set. Two classes of input on purpose:
-#   - programmed_*  : strictly formatted, the parse-first fast path would normally cover it
+#   - programmed_*  : strictly formatted, the easy case
 #   - adhoc_*       : irregular notation, where the model has always done the whole job
 DEFAULT_FILES = [
     "tests/fixtures/valid/programmed_push_pull_session_with_remarks.md",
@@ -75,6 +74,13 @@ class _Usage:
     def __init__(self) -> None:
         self.calls = 0
         self.cached_calls = 0
+        # extract() calls that needed more than one attempt. Distinct from `calls`, which counts
+        # billed API requests -- this counts how many logical extractions had to be re-asked.
+        self.retried_calls = 0
+        # extract() calls that raised after exhausting retries. These are the *expensive*
+        # failures -- three billed attempts each -- so they must be visible in the summary,
+        # not just in whatever the pipeline did with the exception.
+        self.failed_calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
 
@@ -131,7 +137,7 @@ class CachedProvider:
     """
 
     def __init__(self, inner, model: str, usage: _Usage, log_path: Path, dry_run: bool,
-                 max_cost: float, stage_label: str = "") -> None:
+                 max_cost: float, stage_label: str = "", delay: float = 0.0) -> None:
         self.inner = inner
         self.model = model
         self.usage = usage
@@ -139,10 +145,22 @@ class CachedProvider:
         self.dry_run = dry_run
         self.max_cost = max_cost
         self.stage_label = stage_label
+        # Seconds to wait before each *uncached* call. Free tiers meter tokens per minute, so
+        # firing calls back to back saturates the window and everything after it either crawls
+        # or 429s. Pacing costs wall-clock time and nothing else. Cached calls never wait.
+        self.delay = delay
         self.planned = 0
+        # Everything the model returned, in call order -- so a run can be read afterwards
+        # rather than reconstructed from hashed cache files.
+        self.responses: list[dict] = []
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     def _key(self, text, tool_schema, system_prompt, tool_name, tool_description) -> str:
+        # This must cover everything that can change the response. It did not on 2026-08-06:
+        # `strict: true` was added to the tool definition, which changes how the model decodes,
+        # but it wasn't part of the key — so 12 strict-truncated answers stayed cached and would
+        # have been served as if the current code had produced them. They were deleted by hand.
+        # Anything added to the request from here on belongs in this hash.
         payload = json.dumps(
             {
                 "model": self.model,
@@ -160,54 +178,109 @@ class CachedProvider:
         with self.log_path.open("a") as fh:
             fh.write(json.dumps(record) + "\n")
 
-    def extract(self, text, tool_schema, system_prompt, tool_name, tool_description) -> dict:
+    def extract(self, text, tool_schema, system_prompt, tool_name, tool_description,
+                validate=None) -> dict:
         key = self._key(text, tool_schema, system_prompt, tool_name, tool_description)
         cache_file = CACHE_DIR / f"{key}.json"
 
         if cache_file.exists():
-            self.usage.cached_calls += 1
-            print(f"      [cache hit ] {tool_name}")
-            return json.loads(cache_file.read_text())
+            cached = json.loads(cache_file.read_text())
+            # A cached payload has to clear the same bar as a live one. Otherwise the cache can
+            # serve an answer the real pipeline would have re-asked or rejected, and the eval
+            # measures something production would never accept. Treat a stale bad entry as a
+            # miss and pay for the call rather than score a result that isn't reachable.
+            usable = True
+            if validate is not None:
+                try:
+                    validate(cached)
+                except Exception as exc:
+                    usable = False
+                    print(f"      [stale     ] {tool_name} — cached answer no longer valid "
+                          f"({str(exc).splitlines()[0][:80]}); re-calling")
+            if usable:
+                self.usage.cached_calls += 1
+                print(f"      [cache hit ] {tool_name}")
+                self.responses.append({"tool": tool_name, "cached": True, "response": cached})
+                return cached
 
         if self.dry_run:
             self.planned += 1
             raise _DryRunStop(f"first uncached call would be '{tool_name}' (~{len(text):,} chars in)")
 
-        spent = self.usage.cost(self.model)
-        if spent >= self.max_cost:
-            raise LLMParserError(
-                f"COST CAP: ${spent:.4f} spent, cap is ${self.max_cost:.2f}. Aborting before "
-                f"the next call. Raise --max-cost to continue; cached work is preserved."
-            )
+        # A free model never trips the cap -- otherwise `--max-cost 0` on Groq aborts before the
+        # first call, since 0 >= 0. On a paid model `--max-cost 0` still correctly refuses to
+        # spend anything at all.
+        price_in, price_out = PRICING.get(self.model, (0.0, 0.0))
+        if (price_in or price_out):
+            spent = self.usage.cost(self.model)
+            if spent >= self.max_cost:
+                raise LLMParserError(
+                    f"COST CAP: ${spent:.4f} spent, cap is ${self.max_cost:.2f}. Aborting "
+                    f"before the next call. Raise --max-cost to continue; cached work is "
+                    f"preserved."
+                )
+
+        if self.delay:
+            time.sleep(self.delay)
 
         before_in, before_out = self.usage.input_tokens, self.usage.output_tokens
+        # The provider re-asks internally when a payload fails validation, so one extract() can
+        # be several billed API calls. usage.calls counts them, which is the only way a retry
+        # storm is visible instead of just showing up as a bigger number at the end.
+        before_calls = self.usage.calls
         t0 = time.time()
-        result = self.inner.extract(text, tool_schema, system_prompt, tool_name, tool_description)
-        elapsed = time.time() - t0
 
-        d_in = self.usage.input_tokens - before_in
-        d_out = self.usage.output_tokens - before_out
-        pin, pout = PRICING.get(self.model, (0.0, 0.0))
-        call_cost = d_in / 1e6 * pin + d_out / 1e6 * pout
+        # An extract() that exhausts its retries raises, and a call that raised still cost money.
+        # Logging only on success hid $0.18 of $0.25 in the 2026-08-06 20:33 run — the failures
+        # were the expensive ones, three billed attempts each, and they left no trace.
+        failure: str | None = None
+        try:
+            result = self.inner.extract(
+                text, tool_schema, system_prompt, tool_name, tool_description, validate=validate
+            )
+        except Exception as exc:
+            # The FULL message goes to the log. Truncating it to one 160-char line is how the
+            # 2026-08-06 rate-limit failure stayed undiagnosed -- the part that said when the
+            # window reopened was in the bytes that got cut.
+            failure = f"{type(exc).__name__}: {exc}"
+            raise
+        finally:
+            elapsed = time.time() - t0
+            d_in = self.usage.input_tokens - before_in
+            d_out = self.usage.output_tokens - before_out
+            attempts = self.usage.calls - before_calls
+            pin, pout = PRICING.get(self.model, (0.0, 0.0))
+            call_cost = d_in / 1e6 * pin + d_out / 1e6 * pout
 
-        print(
-            f"      [called    ] {tool_name}  {d_in:,} in + {d_out:,} out tok  "
-            f"${call_cost:.5f}  {elapsed:.1f}s"
-        )
-        self._log(
-            {
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "stage": self.stage_label,
-                "model": self.model,
-                "tool": tool_name,
-                "input_tokens": d_in,
-                "output_tokens": d_out,
-                "cost_usd": round(call_cost, 6),
-                "seconds": round(elapsed, 2),
-                "cache_key": key,
-            }
-        )
+            if attempts > 1:
+                self.usage.retried_calls += 1
+            if failure:
+                self.usage.failed_calls += 1
+            tag = "[FAILED    ]" if failure else "[called    ]"
+            retried = f"  [{attempts} attempts]" if attempts > 1 else ""
+            # Console gets one readable line; the log above keeps the whole thing.
+            note = f"  {failure.splitlines()[0][:200]}" if failure else ""
+            print(
+                f"      {tag} {tool_name}  {d_in:,} in + {d_out:,} out tok  "
+                f"${call_cost:.5f}  {elapsed:.1f}s{retried}{note}"
+            )
+            self._log(
+                {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "stage": self.stage_label,
+                    "model": self.model,
+                    "tool": tool_name,
+                    "attempts": attempts,
+                    "failed": failure,
+                    "input_tokens": d_in,
+                    "output_tokens": d_out,
+                    "cost_usd": round(call_cost, 6),
+                    "seconds": round(elapsed, 2),
+                    "cache_key": key,
+                }
+            )
         cache_file.write_text(json.dumps(result, indent=2))
+        self.responses.append({"tool": tool_name, "cached": False, "response": result})
         return result
 
 
@@ -262,11 +335,8 @@ def main() -> int:
     ap.add_argument("--models", nargs="*", default=["haiku", "groq"], choices=list(MODELS))
     ap.add_argument("--max-cost", type=float, default=1.00, help="Abort once spend crosses this (USD)")
     ap.add_argument("--dry-run", action="store_true", help="Show the plan, make no API calls")
-    ap.add_argument("--parse-first", action="store_true",
-                    help="Leave the deterministic parser ON (default is OFF for this eval)")
     args = ap.parse_args()
 
-    use_parse_first = bool(args.parse_first)
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = EVAL_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -275,7 +345,6 @@ def main() -> int:
     print("=" * 78)
     print(f"EVAL RUN {run_id}{'  [DRY RUN — no API calls]' if args.dry_run else ''}")
     print("=" * 78)
-    print(f"parse-first : {'ON' if use_parse_first else 'OFF (pure AI — model owns the numbers)'}")
     print(f"models      : {', '.join(args.models)}")
     print(f"files       : {len(args.files)}")
     print(f"cost cap    : ${args.max_cost:.2f}")
@@ -311,9 +380,7 @@ def main() -> int:
 
             t0 = time.time()
             try:
-                extract = extraction.assemble(
-                    md_text, provider=provider, use_parse_first=use_parse_first
-                )
+                extract = extraction.assemble(md_text, provider=provider)
             except _DryRunStop as exc:
                 print(f"      NOT CACHED — {exc}")
                 continue
@@ -380,8 +447,7 @@ def main() -> int:
                       f"{r['n_warmup_sets']:>8} {r['n_warnings']:>6} {r['n_uncertain']:>10}")
 
     report = run_dir / "summary.json"
-    report.write_text(json.dumps({"run_id": run_id, "parse_first": use_parse_first,
-                                  "results": results}, indent=2))
+    report.write_text(json.dumps({"run_id": run_id, "results": results}, indent=2))
     print(f"\nFull per-model JSON extracts + summary.json in: {run_dir}")
     print(f"Per-call log: {log_path}")
     return 0
