@@ -360,55 +360,50 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 2026-08-03. **Phase 1 reordered 2026-08-04** — schema before prompt, on evidence.
 
 **Done:** Phase 0 (`dev` at `99c9fae`). Phase 1: parse-first deleted (`3afafb2`); source lines +
-their two checks (`ab2ed8d`, `9c8dbc4`), validated live on Groq for $0; B4 rejected and B5
-narrowed on measurement (`92f0073`). Suite **483 passed / 0 failed / 0 skipped**. Nothing pushed.
+their two checks (`ab2ed8d`, `9c8dbc4`); B4 rejected and B5 narrowed on measurement (`92f0073`);
+lean schema + reps.py + rewritten prompts; split core/warmup scoring (`6943efe`); **extraction
+reliability fixes (`a76f1bb`)**. Suite **546 passed / 0 failed / 0 skipped**. Nothing pushed.
 
-**Spend: $1.21 of $5.00.**
+**Spend: $1.36 of $5.00.**
 
-**In progress:** `phase-1/prompt-fixes`, cut from `phase-1/finalize-pipeline`. **Nothing committed
-on it yet** — the branch holds only an untracked baseline capture in the scratchpad. The prompt
-work was paused mid-flight when the research showed the ordering was wrong.
+### The 2026-08-06 measurement and what it found
 
-### Next action: S1 — split the extraction schema from the DB model
+3 files on Haiku, $0.1495. Core 215/277 (77.6%) against a 98.8% baseline — but the drop was not
+extraction quality. **On every exercise the model returned, it scored 147/147.** Five workers
+returned `{"number": 1}` and each became a placeholder.
 
-`ExerciseExtract(Exercise)` at `schemas.py:68` is the coupling. Breaking it is the prerequisite
-for S2-S4 and costs nothing at the DB layer.
+Root cause: the provider's 3-attempt reask budget could never be spent on a schema-invalid
+payload, because it returned the tool input raw and validation lived one layer up in the
+callers. Fixed in `a76f1bb`, along with four related defects found in the same audit — the
+silent-empty-extract path, the discarded `number` field, the position instruction on isolated
+chunks, and a dead exercise-count check. See CHANGELOG `[Unreleased] → Fixed`.
 
-**Ask Apoorva first — this needs a decision, not a guess:**
+**Settled while fixing it:**
 
-1. **Which fields are in the POC extraction schema?** Proposed minimum: exercise `name`, `sets`
-   (weight, reps, RPE, notes), `warmup_sets`, exercise `notes`. Proposed to drop *from extraction
-   only*: `tags`, `modality`, `movement_pattern`, `rep_tempo`, `target_muscle_groups`,
-   `current_goal`, `form_cues`. They stay in the DB model; they just stop being asked of the model
-   for now. Fewer fields measurably improves accuracy on the rest (finding 3).
-2. **What happens to the dropped fields in the DB** — left null, or backfilled later by a separate
-   classification call?
+| Question | Answer |
+|---|---|
+| Why `temperature=0`? | Extraction copies rather than composes; it keeps the eval comparable and made this diagnosis free. Keep it for attempt 1. |
+| Escalate temperature on retry? | Only if reasks still bail. Adding it now would confound the retry fix. |
+| Postgres placeholder audit | Deferred to Phase 2, which reworks the write path anyway. **Do it first if `traininglogs log` is run on real sessions before then.** |
+| Parallel workers, call timeouts | Phase 6. Workers are already independent (pinned by test); the blocker is rate limits, not ordering. |
 
-### Measurement strategy for S1-S4 — Groq first, free
+### Next action — the verification run
 
-Each of S1-S4 changes the schema, so each invalidates the worker cache (~$0.45 on Haiku). To keep
-the spend down:
+Splitter and shell responses are still cached; only worker calls re-key (schema + prompt
+changed). Estimated **~$0.13**:
 
-1. Run the change on **Groq first** (`--model groq`, $0.00). If schema complexity is the real
-   constraint, the weaker model improves most — that is the hypothesis being tested.
-2. Only spend on Haiku once a batch is settled. Batch **S1+S2** (both schema shape) and **S3+S4**
-   (both schema metadata and examples) — two Haiku measurements, ~$0.90, instead of four at ~$1.80.
-3. Groq's free quota was exhausted on 2026-08-04 and resets on its own; check before planning a
-   Groq run.
+```
+.venv/bin/python -u scripts/eval_arms.py --n 3 --arms split --max-cost 0.30 2>&1 | tee haiku_out.txt
+```
 
-Baseline to beat: **571/578 (98.8%), 0 warnings, 3/6 files perfect.** A drop means revert, not
-patch.
+Read it as: **core** should return to ~98%+; the `re-ask` column shows whether the retry path
+fired and recovered; **warmup** is scored against a key the rules parser built without reading
+`### Warmup Notes` prose, so adjudicate those against the source, never the number.
 
-### Then, against the smaller schema
+This is also the first live exercise of two things that have only ever run against mocks:
+`strict: true` (an unsupported schema returns a 400 on the first call — cheap to discover, and
+guarded by `tests/test_agent_strict_schema.py`) and the reask shape.
 
-B6 (worker prompt hygiene), B7 (shell focus truncation), B8 (warmup-notes convention), then B9
-(prompt caching) last. Detail for each is in the Phase 1 list above.
-
-### Also found on 2026-08-04, not yet fixed
-
-`WORKER_SYSTEM_PROMPT` carries a 497-character block of `program`/`phase`/`week` rules —
-session-level fields `ExerciseExtract` does not have and the worker cannot extract. Roughly 125
-wasted tokens on every worker call, ~8 calls per session, plus instruction about fields not in the
-schema. `tests/test_agent_prompts.py::test_has_no_session_level_fields` was written to catch this
-and its pattern missed (it guards `"program":`, the prompt says `"Program:"`). Fold the deletion
-into S3 and tighten the test guard.
+**Then:** B9 prompt caching closes Phase 1. Phase 2 is `raw_inputs`/`extractions`, C6 patch-based
+corrections, and deleting `SYSTEM_PROMPT`/`parse()`/the mono arm once C6 removes the correction
+path's dependency.
