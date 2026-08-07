@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 SYSTEM_PROMPT = """You are a structured data extractor for personal strength and conditioning training logs.
 
 Extract the workout data from the user's session text into the extract_workout tool.
@@ -262,3 +264,20 @@ Output:
 
 That last one matters: a remark about one side is a note, not a per-side rep count. Both arms \
 did 13 reps. Only write reps like "left 8, right 7" when the text really gives two counts."""
+
+
+def _prompt_version() -> str:
+    """A short fingerprint of the live prompts, recomputed on import.
+
+    Stored on every extraction so a change in accuracy months from now is attributable. It is
+    derived rather than declared on purpose: a hand-maintained version constant is only correct
+    while someone remembers to bump it, and the one time it is forgotten is the one time the
+    number was needed.
+
+    Covers the three prompts actually sent. SYSTEM_PROMPT is excluded — it is frozen and
+    scheduled for deletion once patch-based corrections remove its last caller."""
+    joined = "\x00".join([SPLITTER_SYSTEM_PROMPT, SHELL_SYSTEM_PROMPT, WORKER_SYSTEM_PROMPT])
+    return hashlib.sha256(joined.encode()).hexdigest()[:12]
+
+
+PROMPT_VERSION = _prompt_version()

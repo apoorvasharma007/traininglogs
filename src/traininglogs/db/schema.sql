@@ -1,3 +1,51 @@
+-- ---------------------------------------------------------------------------
+-- Capture and interpretation layers.
+--
+-- `raw_inputs` is what the person actually produced -- the markdown they typed, and later the
+-- text off a photograph or a speech transcript. It is never edited. Everything downstream can
+-- be rebuilt from it, which is the point: an extraction is a *derived* artifact, and deriving
+-- it again with a better model or prompt must not require the person to write anything twice.
+--
+-- `extractions` is one attempt at reading a raw input. Several may exist for the same input --
+-- different model, different prompt, a re-run after a fix -- so this is deliberately not a
+-- one-to-one relationship. The extract is stored whole, as sent, including the fields the
+-- normalized tables drop: `uncertain_fields` (what the model was unsure of) and `warnings`
+-- (what the checks found). Those were being computed and then discarded, which threw away the
+-- only signal about how much to trust a row.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS raw_inputs (
+    id          TEXT PRIMARY KEY,
+    content     TEXT NOT NULL,
+    -- What kind of capture this was. Markdown today; the other two are why this table exists.
+    source_kind TEXT NOT NULL,
+    -- Where it came from, when there is a where. Null for pasted or spoken input.
+    source_file TEXT,
+    -- sha256 of `content`. Lets a re-run recognise text it has already seen without comparing
+    -- whole documents, and proves the row was not altered after the fact.
+    checksum    TEXT NOT NULL,
+    captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT raw_inputs_source_kind_check
+        CHECK (source_kind IN ('markdown', 'photo', 'speech'))
+);
+
+CREATE TABLE IF NOT EXISTS extractions (
+    id               TEXT PRIMARY KEY,
+    raw_input_id     TEXT NOT NULL REFERENCES raw_inputs(id) ON DELETE CASCADE,
+    -- Which model and which prompts produced this. Without both, a change in accuracy months
+    -- from now is unattributable.
+    model            TEXT NOT NULL,
+    prompt_version   TEXT NOT NULL,
+    extract          JSONB NOT NULL,
+    uncertain_fields TEXT[] NOT NULL DEFAULT '{}',
+    warnings         TEXT[] NOT NULL DEFAULT '{}',
+    status           TEXT NOT NULL DEFAULT 'pending',
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    confirmed_at     TIMESTAMPTZ,
+    CONSTRAINT extractions_status_check
+        CHECK (status IN ('pending', 'confirmed', 'rejected'))
+);
+
 CREATE TABLE IF NOT EXISTS sessions (
     session_id           TEXT PRIMARY KEY,
     date                 DATE NOT NULL,
@@ -90,6 +138,10 @@ CREATE TABLE IF NOT EXISTS warmup_sets (
     rep_count   INT,
     notes       TEXT
 );
+
+-- Finding earlier captures of the same text, and every attempt at reading one input.
+CREATE INDEX IF NOT EXISTS idx_raw_inputs_checksum      ON raw_inputs(checksum);
+CREATE INDEX IF NOT EXISTS idx_extractions_raw_input_id ON extractions(raw_input_id);
 
 CREATE INDEX IF NOT EXISTS idx_warmups_session_id   ON warmups(session_id);
 CREATE INDEX IF NOT EXISTS idx_cooldowns_session_id ON cooldowns(session_id);

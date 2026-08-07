@@ -183,7 +183,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-07-26 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-08-07 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
 </header>
@@ -313,9 +313,35 @@ WorkingSet                    one flat model — every measurement field optiona
   <h2 id="storage">Storage</h2>
   <p>Two artifacts, one source of truth.</p>
   <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Six tables: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery), <code>sessions.notes</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
+    <li><strong>PostgreSQL</strong> is the source of truth. Eight tables. Two hold what came in and how it was read &mdash; <code>raw_inputs</code>, <code>extractions</code> (see Capture and interpretation below) &mdash; and six hold the normalized result: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery), <code>sessions.notes</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
     <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
   </ul>
+
+
+  <h3>Capture and interpretation</h3>
+  <p><code>raw_inputs</code> stores what the person actually produced &mdash; the markdown they
+  typed today, the text off a photograph or a speech transcript later. It is never edited.
+  Columns: <code>id</code>, <code>content</code>, <code>source_kind</code>
+  (<code>markdown</code>|<code>photo</code>|<code>speech</code>), <code>source_file</code>,
+  <code>checksum</code> (sha256 of the content), <code>captured_at</code>.</p>
+
+  <p><code>extractions</code> stores one attempt at reading a raw input: <code>raw_input_id</code>,
+  <code>model</code>, <code>prompt_version</code>, the whole <code>extract</code> as
+  <code>JSONB</code>, <code>uncertain_fields</code>, <code>warnings</code>, <code>status</code>
+  (<code>pending</code>|<code>confirmed</code>|<code>rejected</code>), <code>created_at</code>,
+  <code>confirmed_at</code>. Deliberately many-to-one: a better model or a fixed prompt should be
+  able to re-read the same text without the person writing anything twice.</p>
+
+  <p>Two consequences worth stating. An extraction is a <em>derived</em> artifact, so it can be
+  regenerated; and the confidence signals travel with it. <code>uncertain_fields</code> (what the
+  model was unsure of) and <code>warnings</code> (what the deterministic checks found) were
+  previously computed and then discarded on the way to the normalized tables, leaving no record of
+  how much to trust a row.</p>
+
+  <p><code>prompt_version</code> is a short hash of the three live prompts, recomputed on import
+  rather than declared by hand &mdash; a version constant is only correct while someone remembers
+  to bump it.</p>
+
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
 </section>
 

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — capture and interpretation layers (Phase 2, step 1)
+
+- `raw_inputs` table: what the person actually produced, never edited. `id`, `content`,
+  `source_kind` (`markdown`|`photo`|`speech`, CHECK-constrained), `source_file` (null for
+  spoken or pasted input), `checksum` (sha256 of the content), `captured_at`. Identical text
+  is deliberately **not** deduplicated — repeating a session is a real thing a person does, and
+  collapsing two captures into one would make them indistinguishable. The checksum is indexed
+  so finding duplicates is a query; deciding what to do about them belongs to the ingest path.
+- `extractions` table: one attempt at reading a raw input. `raw_input_id` FK (cascading),
+  `model`, `prompt_version`, `extract` (JSONB), `uncertain_fields`, `warnings`, `status`
+  (`pending`|`confirmed`|`rejected`, CHECK-constrained), `created_at`, `confirmed_at`.
+  Many-to-one by design: re-reading the same text with a better model or a fixed prompt must not
+  require the person to write anything twice.
+- `insert_raw_input`, `insert_extraction`, `content_checksum` in `db/insert.py`; `get_raw_input`,
+  `find_raw_inputs_by_checksum`, `get_extraction`, `get_extractions_for_raw_input` in
+  `db/fetch.py`.
+- `prompts.PROMPT_VERSION` — a 12-character hash of the three live prompts, recomputed on
+  import. Derived rather than declared, because a hand-maintained version constant is only
+  correct while someone remembers to bump it.
+
+Nothing writes to these tables yet — this step is purely additive, so no existing behaviour
+changes. `schema.sql` uses `CREATE TABLE IF NOT EXISTS` throughout, so applying it to an
+existing database adds the two tables and touches nothing else.
+
+Validation rules in effect: `raw_inputs.source_kind` must be one of `markdown`/`photo`/`speech`;
+`extractions.status` must be one of `pending`/`confirmed`/`rejected`; an extraction cannot
+reference a raw input that does not exist, and is deleted with it.
+
 ### Fixed — extraction reliability (2026-08-06)
 
 A measurement run scored 215/277 on core fields, down from 98.8%. The cause was not extraction
