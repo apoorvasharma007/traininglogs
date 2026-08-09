@@ -141,6 +141,121 @@ class TestExtract:
             extract(conn, "does-not-exist")
 
 
+class FakeProviderWithCalls:
+    """A provider whose `.calls` is already populated, standing in for what
+    AnthropicProvider looks like after assemble() has driven it through a few steps."""
+
+    model = "fake-model"
+
+    def __init__(self, calls: list[dict]) -> None:
+        self.calls = calls
+
+
+def _call_record(step: str, **overrides) -> dict:
+    base = dict(
+        step=step, model="fake-model", attempts=1, input_tokens=100, output_tokens=50,
+        cost_usd=0.0007, ms=250, cached=False, failed=None, raw_payload={"ok": True},
+    )
+    base.update(overrides)
+    return base
+
+
+class TestLLMCallsArePersisted:
+    """D4: cost becomes a SQL query. D5: every row is findable by raw_input_id."""
+
+    def test_each_call_the_provider_made_becomes_a_row(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
+        )
+        provider = FakeProviderWithCalls(
+            [_call_record("segment"), _call_record("shell"), _call_record("worker")]
+        )
+        raw_input_id = capture(conn, MARKDOWN)
+
+        extract(conn, raw_input_id, provider=provider)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT step FROM llm_calls WHERE raw_input_id = %s ORDER BY id", (raw_input_id,)
+            )
+            steps = [r[0] for r in cur.fetchall()]
+        assert steps == ["segment", "shell", "worker"]
+
+    def test_tokens_and_cost_are_stored(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
+        )
+        provider = FakeProviderWithCalls(
+            [_call_record("worker", input_tokens=1234, output_tokens=567, cost_usd=0.004532)]
+        )
+        raw_input_id = capture(conn, MARKDOWN)
+
+        extract(conn, raw_input_id, provider=provider)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT input_tokens, output_tokens, cost_usd FROM llm_calls "
+                "WHERE raw_input_id = %s",
+                (raw_input_id,),
+            )
+            row = cur.fetchone()
+        assert row[0] == 1234
+        assert row[1] == 567
+        assert float(row[2]) == pytest.approx(0.004532)
+
+    def test_calls_are_persisted_even_if_assemble_raises(self, conn, monkeypatch) -> None:
+        """A run that fails partway through still spent money on the calls it made -- that
+        cost must not vanish with the exception (roadmap D4's whole point)."""
+        provider = FakeProviderWithCalls([_call_record("segment"), _call_record("shell")])
+
+        def failing_assemble(text, provider=None):
+            raise RuntimeError("worker blew up")
+
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", failing_assemble)
+        raw_input_id = capture(conn, MARKDOWN)
+
+        with pytest.raises(RuntimeError):
+            extract(conn, raw_input_id, provider=provider)
+
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,))
+            assert cur.fetchone()[0] == 2
+
+    def test_a_provider_with_no_calls_attribute_does_not_break_extract(self, conn, monkeypatch) -> None:
+        """Most test doubles (FakeProvider above, StubProvider elsewhere) have no `.calls` --
+        extract() must not require it."""
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
+        )
+        raw_input_id = capture(conn, MARKDOWN)
+
+        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
+
+        assert extraction_id is not None
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,))
+            assert cur.fetchone()[0] == 0
+
+    def test_a_failed_call_is_stored_with_its_error_and_raw_payload(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
+        )
+        provider = FakeProviderWithCalls(
+            [_call_record("worker", failed="LLMParserError: bad payload", raw_payload={"bad": 1})]
+        )
+        raw_input_id = capture(conn, MARKDOWN)
+
+        extract(conn, raw_input_id, provider=provider)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT failed, raw_payload FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,)
+            )
+            failed, raw_payload = cur.fetchone()
+        assert failed == "LLMParserError: bad payload"
+        assert raw_payload == {"bad": 1}
+
+
 class TestConfirm:
     def test_writes_the_session_and_marks_the_extraction_confirmed(self, conn, tmp_path) -> None:
         raw_input_id = capture(conn, MARKDOWN)

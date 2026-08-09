@@ -260,3 +260,49 @@ class TestCorrectionsAreKeptBesideTheModelsReading:
         assert extraction["corrections"][0]["instruction"] == (
             "it was a strength session not hypertrophy"
         )
+
+    def test_correction_calls_made_during_the_confirm_loop_are_persisted(
+        self, conn, md_file, monkeypatch
+    ) -> None:
+        """extract() already drains and persists provider.calls before the confirm loop runs
+        -- a correction made during that loop is a real LLM call too, made after extract() has
+        already returned, so nothing else would ever record it without this."""
+
+        class FakeSharedProvider:
+            model = "fake-model"
+
+            def __init__(self) -> None:
+                self.calls: list[dict] = []
+
+            def extract(self, text, tool_schema, system_prompt, tool_name, tool_description, validate=None):
+                self.calls.append(
+                    {
+                        "step": tool_name, "model": self.model, "attempts": 1,
+                        "input_tokens": 10, "output_tokens": 5, "cost_usd": 0.0001, "ms": 50,
+                        "cached": False, "failed": None,
+                        "raw_payload": {"edits": [{"path": "focus", "value": "Legs Strength"}]},
+                    }
+                )
+                return {"edits": [{"path": "focus", "value": "Legs Strength"}]}
+
+        _stub_assemble(monkeypatch, make_extract(focus="Legs Hypertrophy"))
+        provider = FakeSharedProvider()
+        answers = iter(["it was a strength session not hypertrophy", "y"])
+        orchestrator = LLMOrchestrator(
+            correction_provider=provider,
+            renderer=TerminalRenderer(console=Console(file=io.StringIO(), highlight=False)),
+            input_fn=lambda: next(answers),
+        )
+
+        session = _process_ai_file(
+            md_file, conn, provider=provider, orchestrator=orchestrator, output_dir=None,
+        )
+        extraction = _extraction_for(conn, session)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT step FROM llm_calls WHERE raw_input_id = %s",
+                (extraction["raw_input_id"],),
+            )
+            steps = [r[0] for r in cur.fetchall()]
+        assert steps == ["edit_extraction"]

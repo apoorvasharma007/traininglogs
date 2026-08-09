@@ -13,6 +13,12 @@ DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 _MAX_RETRIES = 2
 
+# Per-million-token USD price (input, output). Used only to populate llm_calls.cost_usd -- an
+# observability number, never a gate the way scripts/eval_ab.py's --max-cost is.
+PRICING: dict[str, tuple[float, float]] = {
+    "claude-haiku-4-5-20251001": (1.00, 5.00),
+}
+
 # Ceiling on a single call's output. Shared by both providers so they cannot drift apart --
 # GroqProvider previously set none at all, and OpenAI-compatible APIs reserve
 # `input + max_tokens` against the per-minute token budget, so an unset ceiling reserves the
@@ -204,6 +210,13 @@ class AnthropicProvider:
         self.model = model
         self.max_tokens = max_tokens
         self._client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        # One record per extract() call -- i.e. per step (segment/shell/worker/correction), not
+        # per raw HTTP attempt -- appended in `finally` whether the call ends in success or a
+        # raised LLMParserError. ingest/extract.py drains this into the llm_calls table after
+        # assemble() returns (roadmap D4). Never read internally; purely so a caller downstream
+        # of `text` can see what it cost without threading a logger through every function in
+        # between.
+        self.calls: list[dict] = []
 
     def extract(
         self,
@@ -217,82 +230,127 @@ class AnthropicProvider:
         messages: list[dict] = [{"role": "user", "content": text}]
         last_error: str = ""
         rate_limit_waits = 0
-
         attempt = 0
-        while attempt <= _MAX_RETRIES:
-            try:
-                response = self._client.messages.create(
-                    model=self.model,
-                    max_tokens=self.max_tokens,
-                    # Extraction, not creative writing — sampling variety has no upside when the
-                    # correct answer is already written in the text. This is greedy decoding, not
-                    # a determinism guarantee: identical requests are very likely but not
-                    # promised to return identical output.
-                    temperature=0,
-                    system=system_prompt,
-                    tools=[
-                        {
-                            "name": tool_name,
-                            "description": tool_description,
-                            "input_schema": tool_schema,
-                            # No `strict` here, deliberately — see the note above the class.
-                        }
-                    ],
-                    tool_choice={"type": "tool", "name": tool_name},
-                    messages=messages,
-                )
-            except anthropic.RateLimitError as exc:
-                wait = _rate_limit_wait_seconds(exc)
-                if wait is None:
-                    raise LLMParserError(
-                        f"Rate limited, and the window does not reopen for "
-                        f"{_describe_wait(exc)} — too long to wait out. This is a quota, not a "
-                        f"busy moment. Full response: {exc}"
-                    ) from exc
-                rate_limit_waits += 1
-                if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
-                    raise LLMParserError(
-                        f"Rate limited {rate_limit_waits} times without the window reopening. "
-                        f"Full response: {exc}"
-                    ) from exc
-                time.sleep(wait)
-                continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
-            except anthropic.BadRequestError as exc:
-                # The API's own server-side schema check rejected the tool call before
-                # returning a response — there's nothing to inspect, only the error to reask
-                # with. Same reask budget as a validation failure we catch ourselves.
-                last_error = str(exc)
-                if not _is_retryable_bad_request(last_error):
-                    raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
-                messages.append(_reask_message(last_error))
+        input_tokens = 0
+        output_tokens = 0
+        raw_payload: dict | None = None
+        succeeded = False
+        t0 = time.time()
+
+        try:
+            while attempt <= _MAX_RETRIES:
+                try:
+                    response = self._client.messages.create(
+                        model=self.model,
+                        max_tokens=self.max_tokens,
+                        # Extraction, not creative writing — sampling variety has no upside when
+                        # the correct answer is already written in the text. This is greedy
+                        # decoding, not a determinism guarantee: identical requests are very
+                        # likely but not promised to return identical output.
+                        temperature=0,
+                        system=system_prompt,
+                        tools=[
+                            {
+                                "name": tool_name,
+                                "description": tool_description,
+                                "input_schema": tool_schema,
+                                # No `strict` here, deliberately — see the note above the class.
+                            }
+                        ],
+                        tool_choice={"type": "tool", "name": tool_name},
+                        messages=messages,
+                    )
+                except anthropic.RateLimitError as exc:
+                    wait = _rate_limit_wait_seconds(exc)
+                    if wait is None:
+                        last_error = (
+                            f"Rate limited, and the window does not reopen for "
+                            f"{_describe_wait(exc)} — too long to wait out. This is a quota."
+                        )
+                        raise LLMParserError(f"{last_error} Full response: {exc}") from exc
+                    rate_limit_waits += 1
+                    if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
+                        last_error = (
+                            f"Rate limited {rate_limit_waits} times without the window "
+                            f"reopening."
+                        )
+                        raise LLMParserError(f"{last_error} Full response: {exc}") from exc
+                    time.sleep(wait)
+                    continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
+                except anthropic.BadRequestError as exc:
+                    # The API's own server-side schema check rejected the tool call before
+                    # returning a response — there's nothing to inspect, only the error to reask
+                    # with. Same reask budget as a validation failure we catch ourselves.
+                    last_error = str(exc)
+                    if not _is_retryable_bad_request(last_error):
+                        raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
+                    messages.append(_reask_message(last_error))
+                    attempt += 1
+                    continue
+
                 attempt += 1
-                continue
+                usage = getattr(response, "usage", None)
+                if usage is not None:
+                    input_tokens += getattr(usage, "input_tokens", 0) or 0
+                    output_tokens += getattr(usage, "output_tokens", 0) or 0
 
-            attempt += 1
-            tool_block = next(
-                (b for b in response.content if b.type == "tool_use"),
-                None,
-            )
-            if tool_block is None:
-                last_error = "No tool call in response."
-                messages.append(_reask_message(last_error))
-                continue
-
-            payload = dict(tool_block.input)
-            if validate is None:
-                return payload
-            try:
-                validate(payload)
-                return payload
-            except Exception as exc:
-                last_error = str(exc)
-                messages.extend(
-                    _tool_error_turns(tool_block.id, tool_name, payload, last_error)
+                tool_block = next(
+                    (b for b in response.content if b.type == "tool_use"),
+                    None,
                 )
+                if tool_block is None:
+                    last_error = "No tool call in response."
+                    # The call itself succeeded -- the API answered -- it just didn't call the
+                    # tool. Conflating this with a transport failure is what misdiagnosed the
+                    # `mono` truncation as an outage rather than an unusable result (D7).
+                    print(f"[llm] {tool_name}: call succeeded, no tool call in response — reasking")
+                    messages.append(_reask_message(last_error))
+                    continue
 
-        raise LLMParserError(
-            f"LLM extraction failed after {_MAX_RETRIES + 1} attempts. Last error: {last_error}"
-        )
+                payload = dict(tool_block.input)
+                # Kept even if `validate` rejects it below, so a validation failure does not
+                # also cost the response that triggered it (D6) — visible on the llm_calls row
+                # via `raw_payload` for whatever attempt is last, not just the final one.
+                raw_payload = payload
+                if validate is None:
+                    succeeded = True
+                    return payload
+                try:
+                    validate(payload)
+                    succeeded = True
+                    return payload
+                except Exception as exc:
+                    last_error = str(exc)
+                    print(
+                        f"[llm] {tool_name}: call succeeded, result not usable — "
+                        f"{last_error.splitlines()[0][:160]}"
+                    )
+                    messages.extend(
+                        _tool_error_turns(tool_block.id, tool_name, payload, last_error)
+                    )
+
+            raise LLMParserError(
+                f"LLM extraction failed after {_MAX_RETRIES + 1} attempts. "
+                f"Last error: {last_error}"
+            )
+        finally:
+            elapsed_ms = round((time.time() - t0) * 1000)
+            price_in, price_out = PRICING.get(self.model, (0.0, 0.0))
+            cost_usd = round(input_tokens / 1e6 * price_in + output_tokens / 1e6 * price_out, 6)
+            self.calls.append(
+                {
+                    "step": tool_name,
+                    "model": self.model,
+                    "attempts": attempt,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost_usd": cost_usd,
+                    "ms": elapsed_ms,
+                    "cached": False,
+                    "failed": None if succeeded else (last_error or "unknown"),
+                    "raw_payload": raw_payload,
+                }
+            )
 
 
 class GroqProvider:

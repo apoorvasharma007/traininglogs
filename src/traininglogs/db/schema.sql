@@ -152,9 +152,36 @@ CREATE TABLE IF NOT EXISTS warmup_sets (
     notes       TEXT
 );
 
+-- ---------------------------------------------------------------------------
+-- One row per LLM call site (segment/shell/worker/correction), not per raw HTTP attempt --
+-- `attempts` says how many of those an extract() call needed, so a retry storm is visible as a
+-- number instead of showing up only as inflated tokens. Makes cost a SQL query instead of
+-- something read out of console output (roadmap D4). `raw_payload` is the last tool-call
+-- payload seen even when `failed` is set, so a validation rejection does not also cost the
+-- response that triggered it (D6).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS llm_calls (
+    id           SERIAL PRIMARY KEY,
+    raw_input_id TEXT NOT NULL REFERENCES raw_inputs(id) ON DELETE CASCADE,
+    step         TEXT NOT NULL,
+    model        TEXT NOT NULL,
+    attempts     INT NOT NULL,
+    input_tokens  INT NOT NULL DEFAULT 0,
+    output_tokens INT NOT NULL DEFAULT 0,
+    cost_usd     NUMERIC NOT NULL DEFAULT 0,
+    ms           INT NOT NULL,
+    -- Always false today -- prompt caching was measured and dropped (roadmap B9). Reserved so a
+    -- future caching decision doesn't need a new column, just a value.
+    cached       BOOLEAN NOT NULL DEFAULT false,
+    failed       TEXT,
+    raw_payload  JSONB,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Finding earlier captures of the same text, and every attempt at reading one input.
 CREATE INDEX IF NOT EXISTS idx_raw_inputs_checksum      ON raw_inputs(checksum);
 CREATE INDEX IF NOT EXISTS idx_extractions_raw_input_id ON extractions(raw_input_id);
+CREATE INDEX IF NOT EXISTS idx_llm_calls_raw_input_id   ON llm_calls(raw_input_id);
 
 CREATE INDEX IF NOT EXISTS idx_warmups_session_id   ON warmups(session_id);
 CREATE INDEX IF NOT EXISTS idx_cooldowns_session_id ON cooldowns(session_id);

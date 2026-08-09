@@ -117,6 +117,7 @@ def _process_ai_file(md_path: Path, conn, provider=None, orchestrator=None, outp
     from traininglogs.agent.providers import AnthropicProvider
     from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.db.fetch import get_extraction
+    from traininglogs.db.insert import insert_llm_calls
     from traininglogs.ingest.capture import capture
     from traininglogs.ingest.confirm import confirm
     from traininglogs.ingest.extract import extract
@@ -142,7 +143,13 @@ def _process_ai_file(md_path: Path, conn, provider=None, orchestrator=None, outp
     pending_extract = TrainingLogLLMExtract.model_validate(stored["extract"])
 
     orchestrator = orchestrator or LLMOrchestrator(correction_provider=provider)
+    # extract() already drained and persisted provider.calls up to this point. The confirm
+    # loop below can make more (each correction is its own LLM call, via the same provider
+    # instance when the caller shares one) -- those happen after extract() has already
+    # returned, so nothing else will ever persist them unless this does.
+    calls_recorded_so_far = len(getattr(provider, "calls", []))
     final_extract = orchestrator.confirm_loop(pending_extract)
+    insert_llm_calls(conn, raw_input_id, getattr(provider, "calls", [])[calls_recorded_so_far:])
 
     session = confirm(
         conn,

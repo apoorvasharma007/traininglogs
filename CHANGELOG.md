@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — cost and call visibility (Phase 3, step 3: D4, D6, D7)
+
+- `llm_calls` table — one row per extraction step (segment/shell/worker/correction), not per
+  raw HTTP attempt: `raw_input_id, step, model, attempts, input_tokens, output_tokens,
+  cost_usd, ms, cached, failed, raw_payload`. Makes cost a SQL query instead of something read
+  out of console output (D4). `cached` is always `false` today — prompt caching was measured
+  and dropped (B9) — the column is reserved rather than invented later.
+- `AnthropicProvider.calls` — accumulates one record per `extract()` call, appended in
+  `finally` whether the call succeeds or exhausts its retries. `raw_payload` holds the last
+  tool-call payload the model returned even when `validate()` rejected every attempt, so a
+  validation failure no longer also costs the response that triggered it (D6). Previously
+  nothing about a failed call's actual output survived past the raised exception.
+- Two distinct `[llm]` log lines replace one conflated code path: "call succeeded, no tool
+  call in response" and "call succeeded, result not usable" (D7). The `mono` truncation
+  incident was the API answering successfully with an unusable result, not an outage — before
+  this, both looked identical in the retry loop.
+- `ingest/extract.py` drains `provider.calls` into `llm_calls` after `assemble()` returns *or
+  raises* — a run that fails partway through still spent money on the calls it made, and that
+  cost does not disappear with the exception. `cli/log.py`'s `_process_ai_file` separately
+  drains whatever the confirm loop's corrections added afterward, since those are calls made
+  after `extract()` has already returned and persisted its own batch.
+- Two `raw_input_id`-tagged `[ingest]` log lines bracket `assemble()` in `extract()`. **D5 is
+  scoped to this, not threaded through every provider call**: `raw_input_id` is not passed into
+  `ExtractionProvider.extract()` itself, which would have meant changing the protocol and every
+  call site (including test doubles across half the test suite) for one logging field. The
+  durable, queryable form of "one id shows a session's whole life" is `llm_calls` and
+  `raw_inputs`/`extractions`, both already keyed by it — a SQL `WHERE raw_input_id = ...`
+  answers the question the roadmap motivation actually asks for.
+
 ### Added — ingest/ module (Phase 3, step 1)
 
 - `ingest/capture.py`, `ingest/extract.py`, `ingest/confirm.py` — three single-job functions,
