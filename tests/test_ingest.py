@@ -332,3 +332,56 @@ class TestConfirm:
         md_path.write_text(MARKDOWN)
         with pytest.raises(ValueError):
             confirm(conn, "does-not-exist", make_extract(), md_path=md_path)
+
+
+class TestConfirmWithNoFilePath:
+    """The API path has no file at all -- confirm() fetches the raw input's own content and
+    derives session_id from that, same as the CLI path, just without a directory to also read
+    program/phase/week from (roadmap decision 2026-08-10: identity is content, not source)."""
+
+    def _extraction_for(self, conn, content: str, extraction_id: str) -> str:
+        raw_input_id = capture(conn, content)
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
+                "VALUES (%s, %s, 'm', 'v1', '{}')",
+                (extraction_id, raw_input_id),
+            )
+        conn.commit()
+        return raw_input_id
+
+    def test_confirm_works_with_no_md_path(self, conn) -> None:
+        self._extraction_for(conn, MARKDOWN, "y1")
+        session = confirm(conn, "y1", make_extract())
+        assert session.session_id.startswith("2026-03-01-")
+        assert session.program is None
+        assert session.phase is None
+        assert session.week is None
+
+    def test_session_id_matches_the_cli_path_for_identical_content(self, conn, tmp_path) -> None:
+        """Same content, different capture routes (a file vs. none) -- same session_id."""
+        self._extraction_for(conn, MARKDOWN, "y2")
+        via_api = confirm(conn, "y2", make_extract())
+
+        md_path = tmp_path / "leg_press.md"
+        md_path.write_text(MARKDOWN)
+        from traininglogs.processor.processor import compute_session_id
+        via_cli_id = compute_session_id(MARKDOWN, make_extract().date)
+
+        assert via_api.session_id == via_cli_id
+
+    def test_identical_content_confirmed_twice_collides_instead_of_duplicating(self, conn) -> None:
+        self._extraction_for(conn, MARKDOWN, "y3")
+        confirm(conn, "y3", make_extract())
+
+        self._extraction_for(conn, MARKDOWN, "y4")
+        with pytest.raises(SystemExit, match="already exists"):
+            confirm(conn, "y4", make_extract())
+
+    def test_whitespace_only_differences_still_collide(self, conn) -> None:
+        self._extraction_for(conn, MARKDOWN, "y5")
+        confirm(conn, "y5", make_extract())
+
+        self._extraction_for(conn, MARKDOWN + "\n\n", "y6")
+        with pytest.raises(SystemExit, match="already exists"):
+            confirm(conn, "y6", make_extract())

@@ -59,7 +59,44 @@ def md_file(tmp_path) -> Path:
 
 
 def _session_id(md_path: Path, date: str) -> str:
-    return compute_session_id(md_path, md_path.parent, date)
+    return compute_session_id(md_path.read_text(encoding="utf-8"), date)
+
+
+class TestComputeSessionId:
+    """Identity is the content, not where it came from -- roadmap decision 2026-08-10."""
+
+    def test_the_same_content_produces_the_same_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-01")
+        assert a == b
+
+    def test_a_trailing_newline_does_not_change_the_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8\n", "2026-01-01")
+        assert a == b
+
+    def test_different_line_endings_do_not_change_the_id(self) -> None:
+        a = compute_session_id("line one\nline two", "2026-01-01")
+        b = compute_session_id("line one\r\nline two", "2026-01-01")
+        assert a == b
+
+    def test_extra_internal_whitespace_does_not_change_the_id(self) -> None:
+        a = compute_session_id("1.  90kg   x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-01")
+        assert a == b
+
+    def test_different_content_produces_a_different_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 95kg x 8", "2026-01-01")
+        assert a != b
+
+    def test_the_same_content_on_a_different_date_produces_a_different_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-02")
+        assert a != b
+
+    def test_starts_with_the_date(self) -> None:
+        assert compute_session_id("1. 90kg x 8", "2026-01-01").startswith("2026-01-01-")
 
 
 def test_process_inserts_to_db(md_file, conn, tmp_path):

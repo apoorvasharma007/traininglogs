@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 4, write API (step 1: POST /inputs, GET /extractions/{id})
+
+- `POST /inputs` — `ingest.capture()` then `ingest.extract()` over HTTP, the first real
+  caller of `ingest/` from `api/app.py`. Returns `{raw_input_id, extraction_id}` (201) on
+  success. `capture()` commits before extraction is attempted, so a failed extraction (502)
+  still returns `raw_input_id` — the text isn't lost, and the caller can retry extraction
+  against the same raw input (`extract()` is idempotent) instead of resubmitting.
+- `GET /extractions/{id}` — the same confirmation card the CLI's confirm loop renders to a
+  terminal, as JSON. `ValidationCardBuilder` was already DB-free and shared; this adds a
+  serializer (`fastapi.encoders.jsonable_encoder`, which handles the card's dataclass tree
+  including its `frozenset` fields) in place of `TerminalRenderer`.
+- CORS `allow_methods` extended from `["GET"]` to `["GET", "POST"]`.
+
+### Changed — session_id is derived from content, not file path
+
+- `compute_session_id()` now hashes the session's (whitespace-normalized) text instead of a
+  file path relative to `inputs/`. Motivation: Phase 4's write API accepts content with no
+  file behind it at all, so path-based identity had no answer for that case. Chose to unify
+  onto one identity scheme everywhere rather than run two (path-based for the CLI,
+  content-based for the API) — the same input now gets the same `session_id` regardless of
+  how it arrives (file, pasted text, eventually a photo transcript), including across
+  `--parser rules`, `--parser ai`, and the new `POST /inputs`.
+- **Real, deliberate trade, not a side effect:** editing a file's content and resubmitting no
+  longer updates the same session in place — it produces a new `session_id`, since the content
+  changed. The previous scheme's "fix a typo, rerun, same session" behavior is gone; what's
+  gained is that identical content submitted twice, from any source, is now caught by the
+  existing session_id-collision check instead of silently becoming a duplicate session.
+- `session_id` was never guaranteed stable across code changes to begin with — it already
+  changed once before (`.claude/regen-historical.md`), which is why that guide already says to
+  compare regen output on `date`, not `session_id`. This is the same category of change.
+- `build_session_from_extract()` and `ingest.confirm()` both take `content`/fetch it from the
+  raw input now; `md_path` is optional on both, used only to enrich `program`/`phase`/`week`
+  from the file's directory position when one exists. No change to existing `sessions` rows —
+  this only affects sessions processed going forward.
+
 ### Fixed — AI path silently dropped rep_quality_assessment and failure_technique
 
 - `SetExtract` (the schema the model actually fills in) never had fields for these two,

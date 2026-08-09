@@ -54,7 +54,7 @@ def _validate_ai(md_path: Path) -> int:
     try:
         orchestrator = LLMOrchestrator()
         extract = orchestrator.run(md_text)
-        session = build_session_from_extract(extract, md_path, INPUTS_DIR)
+        session = build_session_from_extract(extract, md_text, md_path, INPUTS_DIR)
     except ValidationError as e:
         print(f"✗ Validation failed:\n{e}")
         return 1
@@ -81,7 +81,7 @@ def _validate_groq(md_path: Path) -> int:
         provider = GroqProvider()
         orchestrator = LLMOrchestrator(parser_provider=provider, correction_provider=provider)
         extract = orchestrator.run(md_text)
-        session = build_session_from_extract(extract, md_path, INPUTS_DIR)
+        session = build_session_from_extract(extract, md_text, md_path, INPUTS_DIR)
     except ValidationError as e:
         print(f"✗ Validation failed:\n{e}")
         return 1
@@ -126,7 +126,7 @@ def _validate_rules(md_path: Path) -> int:
             session_dict["weight_unit"] = "lbs"
 
         date_str = intermediate["metadata"].get("date", session_dict.get("date", ""))
-        session_dict["session_id"] = compute_session_id(md_path, INPUTS_DIR, date_str)
+        session_dict["session_id"] = compute_session_id(md_text, date_str)
 
         session = TrainingSession.model_validate(session_dict)
 
