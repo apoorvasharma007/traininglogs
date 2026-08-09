@@ -391,28 +391,37 @@ the commit attached to each item — all eight are checked. **604 tests passing,
 (started the session at 584). **Spend: $1.71 of $5.00**, unchanged — every test this session
 mocked the client or monkeypatched `assemble()`, $0 real spend.
 
-**Blocked, not done: the live E2E smoke test.** `.claude/testing-guide.md` Stage 2
-(`traininglogs log --parser ai --test --no-commit` against a real fixture, one real API call,
-~$0.05) was attempted and got as far as proving `capture()` writes to the real test DB before
-failing — `ANTHROPIC_API_KEY` in `.env` is rejected with a 401. No spend occurred (auth
-failures aren't billed). **This has to happen, with a working key, before `phase-3-ingest-core`
-merges to `dev`** — everything else this phase built has only ever been exercised against a
-faked model.
+**Live E2E smoke test: done, with Groq substituted for Anthropic.** `ANTHROPIC_API_KEY` in
+`.env` is still invalid (401) — untouched, by request, rather than risk real spend chasing it
+mid-session. Ran the new wiring against a real model anyway: `_process_ai_file` driven directly
+with `GroqProvider` (free tier) against `tests/fixtures/valid/strength_session.md` and
+`TEST_DATABASE_URL`, script in this session's scratchpad. Result: `capture()` →
+`extract()` (real Groq call, real card rendered with real numbers) → confirm loop → `confirm()`
+→ session inserted, extraction `status=confirmed`, `source_file` correct — the whole new path,
+proven against a real, non-scripted model response for the first time.
+
+**One real gap this leaves open:** `GroqProvider` was never instrumented with `.calls` (only
+`AnthropicProvider` was, per the locked "Model: Claude Haiku 4.5, not Groq" decision) — the
+smoke test's `llm_calls` query correctly came back empty. So D4/D6/D7's actual persistence path
+(`AnthropicProvider.calls` → `insert_llm_calls`) is still only unit-tested against mocked
+Anthropic SDK responses shaped like the real thing, never against a live Anthropic call. Lower
+risk than the D1/D2 wiring the smoke test just confirmed, but not zero.
 
 ### Start here next session
 
-1. **Fix `ANTHROPIC_API_KEY`** in `.env`, then run the Stage 2 smoke test above. Confirm in the
-   test DB afterward:
+1. **Decide: merge now, or fix the Anthropic key first for full-fidelity confirmation of
+   D4/D6/D7's llm_calls persistence.** Nothing about the code says which — it's a risk-tolerance
+   call. If merging now, note in the merge commit that `llm_calls` was proven by unit test, not
+   by a live Anthropic call.
+2. If fixing the key first: rerun the Stage 2 smoke test from `.claude/testing-guide.md`
+   (`traininglogs log --parser ai --test --no-commit`, ~$0.05), then check
    ```bash
-   docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
-     "SELECT session_id, date FROM sessions WHERE date > '2999-01-01' ORDER BY date DESC LIMIT 3;"
    docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
      "SELECT step, cost_usd, ms FROM llm_calls ORDER BY created_at DESC LIMIT 10;"
    ```
-   The second query is new — first time `llm_calls` will have a row from a real call rather
-   than a test fixture.
-2. **Merge `phase-3-ingest-core` → `dev`** once the smoke test is green, same gate as Phase 1/2
-   (`--no-ff`, suite re-verified green on `dev` after).
+   for real rows.
+3. **Merge `phase-3-ingest-core` → `dev`** once satisfied, same gate as Phase 1/2 (`--no-ff`,
+   suite re-verified green on `dev` after).
 3. **Phase 4 — Write API** is next after that (`POST /inputs`, `GET /extractions/{id}`,
    `POST /extractions/{id}/confirm`, `POST /extractions/{id}/correct`) — see that section above.
    It is the first place `api/app.py` will actually call `ingest/`, which is what D2's own
