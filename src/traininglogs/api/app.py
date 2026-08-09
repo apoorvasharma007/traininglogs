@@ -12,6 +12,8 @@ from traininglogs.db.fetch import get_exercise_history, get_session, get_session
 from traininglogs.api.schemas import (
     CaptureIn,
     CaptureOut,
+    ConfirmIn,
+    ConfirmOut,
     ExerciseHistoryRow,
     SessionDetail,
     SessionSummary,
@@ -38,6 +40,15 @@ def _db():
     try:
         yield conn
     finally:
+        # A connection pool reuses the same physical connection across unrelated requests.
+        # Without this, a request that opens a transaction and never explicitly commits or
+        # rolls back (every GET endpoint; the early "already exists" return in
+        # insert_session()) hands the connection back to the pool mid-transaction. The next
+        # request to get that connection then runs inside that leftover transaction and sees
+        # its uncommitted writes as if they were its own -- invisible to every other
+        # connection, including a test's own, but very visible to itself. Rollback is a safe
+        # no-op when everything was already committed.
+        conn.rollback()
         pool.putconn(conn)
 
 
@@ -145,3 +156,34 @@ def get_extraction_card(extraction_id: str, conn=Depends(_db), _=Depends(_auth))
     extract_obj = TrainingLogLLMExtract.model_validate(stored["extract"])
     card = ValidationCardBuilder().build(extract_obj)
     return jsonable_encoder(card)
+
+
+@app.post("/extractions/{extraction_id}/confirm", response_model=ConfirmOut)
+def confirm_extraction_endpoint(
+    extraction_id: str,
+    response: Response,
+    body: ConfirmIn = ConfirmIn(),
+    conn=Depends(_db),
+    _=Depends(_auth),
+):
+    """ingest.confirm() over HTTP. `body.extract` lets a client submit the result of one or
+    more /correct calls; omitted, the extraction's own stored reading is confirmed as-is.
+    """
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.db.fetch import get_extraction
+    from traininglogs.ingest.confirm import confirm
+
+    stored = get_extraction(conn, extraction_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+
+    extract_dict = body.extract if body.extract is not None else stored["extract"]
+    final_extract = TrainingLogLLMExtract.model_validate(extract_dict)
+
+    try:
+        session = confirm(conn, extraction_id, final_extract, corrections=body.corrections)
+    except SystemExit as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+    response.status_code = 201
+    return ConfirmOut(session_id=session.session_id)

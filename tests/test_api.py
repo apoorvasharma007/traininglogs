@@ -310,3 +310,106 @@ class TestGetExtractionCard:
         extraction_id = self._insert_extraction(db_conn)
         r = client.get(f"/extractions/{extraction_id}")
         assert r.status_code == 401
+
+
+class TestConfirmExtraction:
+    """POST /extractions/{id}/confirm -- ingest.confirm() over HTTP. Content must be unique
+    per test: session_id is derived from it now, so two tests using identical content would
+    collide with each other, not just within a test. And because it's derived from content
+    rather than a fresh tmp_path per run, the sessions this class creates must be cleaned up
+    -- otherwise a second run of the suite against the same persistent test DB collides with
+    the *previous* run's rows, not just within itself. Dates in this class are deliberately
+    all "2026-05-0X" so teardown can find them by prefix."""
+
+    @pytest.fixture(autouse=True)
+    def _cleanup(self, db_conn):
+        yield
+        with db_conn.cursor() as cur:
+            cur.execute("DELETE FROM sessions WHERE session_id LIKE '2026-05-0%'")
+        db_conn.commit()
+
+    def _insert_extraction(self, db_conn, date: str, content: str, extraction_id=None) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, content)
+        extract = {
+            "date": date,
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+            extraction_id=extraction_id,
+        )
+
+    def test_confirms_the_extraction_as_is(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-01", "confirm test content 1")
+        r = client.post(f"/extractions/{extraction_id}/confirm", headers={"x-api-key": "testkey"})
+        assert r.status_code == 201
+        session_id = r.json()["session_id"]
+        assert session_id.startswith("2026-05-01-")
+
+        with db_conn.cursor() as cur:
+            cur.execute(
+                "SELECT extraction_id FROM sessions WHERE session_id = %s", (session_id,)
+            )
+            assert cur.fetchone()[0] == extraction_id
+
+    def test_confirms_with_an_extract_override(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-02", "confirm test content 2")
+        override = {
+            "date": "2026-05-02",
+            "focus": "Corrected Focus",
+            "exercises": [
+                {"number": 1, "name": "Leg Press", "sets": [
+                    {"number": 1, "weight_kg": 280.0,
+                     "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5},
+                ]},
+            ],
+        }
+        corrections = [{
+            "at": "2026-05-02T00:00:00Z", "instruction": "fix focus",
+            "edits": [{"path": "focus", "value": "Corrected Focus"}],
+        }]
+        r = client.post(
+            f"/extractions/{extraction_id}/confirm",
+            json={"extract": override, "corrections": corrections},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 201
+        session_id = r.json()["session_id"]
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT focus FROM sessions WHERE session_id = %s", (session_id,))
+            assert cur.fetchone()[0] == "Corrected Focus"
+
+        from traininglogs.db.fetch import get_extraction
+        assert get_extraction(db_conn, extraction_id)["corrections"] == corrections
+
+    def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
+        id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
+        r1 = client.post(f"/extractions/{id_a}/confirm", headers={"x-api-key": "testkey"})
+        assert r1.status_code == 201
+
+        id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
+        r2 = client.post(f"/extractions/{id_b}/confirm", headers={"x-api-key": "testkey"})
+        assert r2.status_code == 409
+
+    def test_not_found(self, client) -> None:
+        r = client.post("/extractions/does-not-exist/confirm", headers={"x-api-key": "testkey"})
+        assert r.status_code == 404
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-05", "auth test content")
+        r = client.post(f"/extractions/{extraction_id}/confirm")
+        assert r.status_code == 401

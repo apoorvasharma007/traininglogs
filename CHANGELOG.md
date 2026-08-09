@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — Phase 4, write API (step 1: POST /inputs, GET /extractions/{id})
+### Added — Phase 4, write API (POST /inputs, GET /extractions/{id}, POST .../confirm)
 
 - `POST /inputs` — `ingest.capture()` then `ingest.extract()` over HTTP, the first real
   caller of `ingest/` from `api/app.py`. Returns `{raw_input_id, extraction_id}` (201) on
@@ -18,7 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   terminal, as JSON. `ValidationCardBuilder` was already DB-free and shared; this adds a
   serializer (`fastapi.encoders.jsonable_encoder`, which handles the card's dataclass tree
   including its `frozenset` fields) in place of `TerminalRenderer`.
+- `POST /extractions/{id}/confirm` — `ingest.confirm()` over HTTP. Accepts an optional
+  `{extract, corrections}` body so it composes with whatever `/correct` ends up needing later;
+  omitted, the extraction's own stored reading is confirmed as-is. The `SystemExit` `confirm()`
+  raises on a `session_id` collision (fine for a CLI process to exit on, wrong for a request)
+  is caught here and returned as `409`.
 - CORS `allow_methods` extended from `["GET"]` to `["GET", "POST"]`.
+- Fixed a real connection-pool bug surfaced while adding these: `_db()`'s dependency handed
+  connections back to the pool without rolling back, so a request that never explicitly
+  committed (every existing `GET` endpoint; the early "already exists" return inside
+  `insert_session()`) left the connection mid-transaction for the *next*, unrelated request to
+  inherit — which would then see that leftover transaction's uncommitted writes as its own,
+  invisible to every other connection. `_db()` now rolls back unconditionally before returning
+  a connection to the pool (a no-op when everything was already committed).
 
 ### Changed — session_id is derived from content, not file path
 

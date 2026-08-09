@@ -109,6 +109,26 @@ class CaptureOut(BaseModel):
     error: Optional[str] = None
 
 
+class ConfirmIn(BaseModel):
+    extract: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "The final extract to write, if it differs from the extraction's own stored "
+            "reading -- e.g. after one or more /correct calls. Omit to accept the reading "
+            "as-is."
+        ),
+    )
+    corrections: Optional[list[dict[str, Any]]] = Field(
+        default=None,
+        description="The corrections that produced `extract`, recorded alongside the "
+        "extraction. Omit if none were applied.",
+    )
+
+
+class ConfirmOut(BaseModel):
+    session_id: str
+
+
 class ExerciseHistoryRow(BaseModel):
     date: date
     phase: Optional[int]
