@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — AI path silently dropped rep_quality_assessment and failure_technique
+
+- `SetExtract` (the schema the model actually fills in) never had fields for these two,
+  unlike the other classification fields it deliberately omits — this one had no
+  "not asked for, and why" note, because it wasn't a decision. Every session logged
+  through `--parser ai` since the split pipeline shipped has `rep_quality_assessment`
+  and `failure_technique` unset regardless of what the source text says.
+- Added `rep_quality_assessment` and `failure_technique_raw` to `SetExtract`.
+  `failure_technique_raw` accepts either the compact notation the rules parser already
+  understands (`failure:myo(3,3,3)`) or a plain description — the compact form is
+  parsed by reusing `parser/parse.py`'s `_parse_failure`/`_parse_quality` (the exact
+  code the rules path already uses, not a reimplementation); a plain description that
+  doesn't match is never dropped, it's kept visible in the set's `notes` with a
+  warning, same rule the prompt already gives the model for anything else it can't
+  map to a field. A technique noted at RPE other than 10 is also dropped with a
+  warning rather than raising (`WorkingSet` requires RPE 10 for a failure technique).
+- Fixed the worker prompt's own worked example, which was teaching the model to fold
+  quality words into `notes` — that's what the schema previously required, but it
+  actively worked against the new field once added. Added a second example
+  demonstrating the failure-technique notation.
+- Verified against 3 real sessions (push/pull/legs, chosen for length and technique
+  variety) run through the real AI pipeline against a reset `db_regen`, compared
+  field-by-field against the existing rules-parser JSON: every difference found was
+  the *old* data being wrong or incomplete (a quality word on the same line as a
+  failure notation, an `RPE` token in an order the old regex didn't expect) — zero
+  cases of the new extraction being wrong. `failure_technique` matched exactly
+  wherever it appeared, including both `MyoReps` and `LLP` shapes.
+- 9 new unit tests (`tests/test_agent_source_lines.py`).
+
 ### Fixed — GroqProvider had no call instrumentation
 
 - `AnthropicProvider.calls` was added below (D4/D6/D7) without the matching change to

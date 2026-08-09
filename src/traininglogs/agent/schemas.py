@@ -15,6 +15,10 @@ from traininglogs.models.models import (
     WarmupSet,
     WorkingSet,
 )
+from traininglogs.parser.parse import _parse_failure, _parse_quality
+
+
+_FAILURE_NOTATION_RE = re.compile(r"failure:\s*([a-zA-Z_]+)\s*\(\s*([^)]+)\s*\)", re.IGNORECASE)
 
 
 def _validate_date(v: str) -> str:
@@ -128,6 +132,25 @@ class SetExtract(BaseModel):
         description=(
             "Commentary about this set specifically — how it felt, a form cue, a correction. "
             "Not a restatement of its own weight, reps or RPE."
+        ),
+    )
+    rep_quality_assessment: Optional[str] = Field(
+        default=None,
+        description=(
+            "The person's own qualitative word for this set, if they gave one -- 'good', "
+            "'bad', 'perfect', or 'learning'. Copy the word as written; do not infer one from "
+            "RPE or notes. Omit if none is stated."
+        ),
+    )
+    failure_technique_raw: Optional[str] = Field(
+        default=None,
+        description=(
+            "Any indication that this set used a named failure technique (myo-reps, "
+            "lengthened-partials, a static hold, a drop set) once it could go no further -- "
+            "copy it exactly as written, in whatever form it takes. This might be compact "
+            "notation ('failure:myo(3,3,3)', 'failure:dropset(15x6,10x8)') or a plain "
+            "description ('did 3 myo rep clusters of 3 reps each', 'dropped to 15kg for 6 "
+            "more'). Copy it verbatim; do not interpret it. Omit if the set has none."
         ),
     )
 
@@ -256,6 +279,46 @@ class ExerciseExtract(BaseModel):
             parsed = parse_reps(s.reps)
             if parsed.warning:
                 warnings.append(f"set {s.number}: {parsed.warning}")
+
+            # Same regex and conversion the rules parser uses on "failure:kind(inner)" notation
+            # (parser/parse.py) -- reused rather than reimplemented, so the two paths cannot
+            # silently drift apart on how they read the same notation.
+            quality = _parse_quality(s.rep_quality_assessment)
+
+            failure_technique = None
+            notes = s.notes
+            if s.failure_technique_raw:
+                match = _FAILURE_NOTATION_RE.search(s.failure_technique_raw)
+                if match is None:
+                    # The model copied something -- it just isn't the compact notation Python
+                    # knows how to structure (a plain description, e.g.). Never dropped: kept in
+                    # notes so it is visible on the confirmation card, the same rule the prompt
+                    # already gives the model for anything else it cannot map to a field.
+                    marker = f"[failure technique noted, not structured: {s.failure_technique_raw}]"
+                    notes = f"{notes} {marker}" if notes else marker
+                    warnings.append(
+                        f"set {s.number}: failure technique {s.failure_technique_raw!r} was not "
+                        f"the compact notation -- kept in notes, not structured"
+                    )
+                else:
+                    try:
+                        failure_technique = _parse_failure(match.group(1), match.group(2))
+                    except (ValueError, IndexError) as exc:
+                        warnings.append(
+                            f"set {s.number}: failure technique {s.failure_technique_raw!r} "
+                            f"could not be read ({exc}) -- dropped"
+                        )
+                # A set only carries a failure technique at RPE 10 -- see
+                # WorkingSet.failure_technique_requires_rpe_10. Constructing WorkingSet below
+                # would raise on this combination, so it is checked here instead of crashing
+                # the whole exercise over one set.
+                if failure_technique is not None and s.rpe != 10:
+                    warnings.append(
+                        f"set {s.number}: failure technique {s.failure_technique_raw!r} noted "
+                        f"but RPE is {s.rpe!r}, not 10 -- dropped"
+                    )
+                    failure_technique = None
+
             return WorkingSet(
                 number=s.number,
                 weight_kg=s.weight_kg,
@@ -264,7 +327,9 @@ class ExerciseExtract(BaseModel):
                 rpe=s.rpe,
                 duration_seconds=s.duration_seconds,
                 distance_meters=s.distance_meters,
-                notes=s.notes,
+                notes=notes,
+                rep_quality_assessment=quality,
+                failure_technique=failure_technique,
             )
 
         def _warmup(s: SetExtract) -> WarmupSet:

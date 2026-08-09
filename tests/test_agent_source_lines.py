@@ -188,3 +188,101 @@ class TestProjectionToExercise:
     def test_source_lines_do_not_reach_the_production_model(self) -> None:
         exercise, _ = _extract().to_exercise(1)
         assert not hasattr(exercise.sets[0], "source_line")
+
+    def test_rep_quality_assessment_passes_through(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 perfect", "weight_kg": 90.0,
+             "reps": "8", "rep_quality_assessment": "perfect"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        assert exercise.sets[0].rep_quality_assessment == "perfect"
+        assert warnings == []
+
+    def test_an_unrecognised_quality_word_is_dropped_not_guessed(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 mediocre", "weight_kg": 90.0,
+             "reps": "8", "rep_quality_assessment": "mediocre"}
+        ])
+        exercise, _ = extract.to_exercise(1)
+        assert exercise.sets[0].rep_quality_assessment is None
+
+    def test_failure_technique_notation_is_structured_at_rpe_10(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 10 failure:myo(3,3,3)",
+             "weight_kg": 90.0, "reps": "8", "rpe": 10,
+             "failure_technique_raw": "failure:myo(3,3,3)"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        ft = exercise.sets[0].failure_technique
+        assert ft is not None
+        assert ft.technique_type == "MyoReps"
+        assert [m.rep_count.full for m in ft.details.mini_sets] == [3, 3, 3]
+        assert warnings == []
+
+    def test_failure_technique_is_dropped_not_crashed_when_rpe_is_not_10(self) -> None:
+        """WorkingSet itself rejects failure_technique set without rpe == 10 -- this must be
+        caught before construction, not let the ValidationError propagate and lose the whole
+        exercise over one set."""
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 9 failure:myo(3,3,3)",
+             "weight_kg": 90.0, "reps": "8", "rpe": 9,
+             "failure_technique_raw": "failure:myo(3,3,3)"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        assert exercise.sets[0].failure_technique is None
+        assert any("not 10" in w for w in warnings)
+
+    def test_a_plain_language_failure_description_is_kept_in_notes_not_dropped(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 10 did 3 myo clusters of 3",
+             "weight_kg": 90.0, "reps": "8", "rpe": 10,
+             "failure_technique_raw": "did 3 myo clusters of 3"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        assert exercise.sets[0].failure_technique is None
+        assert "did 3 myo clusters of 3" in exercise.sets[0].notes
+        assert any("not the compact notation" in w for w in warnings)
+
+    def test_a_plain_language_failure_description_is_appended_to_existing_notes(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 10 felt heavy, did 3 myo clusters",
+             "weight_kg": 90.0, "reps": "8", "rpe": 10, "notes": "felt heavy",
+             "failure_technique_raw": "did 3 myo clusters"}
+        ])
+        exercise, _ = extract.to_exercise(1)
+        assert "felt heavy" in exercise.sets[0].notes
+        assert "did 3 myo clusters" in exercise.sets[0].notes
+
+    def test_an_unknown_technique_kind_inside_the_notation_is_dropped_with_a_warning(self) -> None:
+        """The notation matches -- 'failure:kind(...)' -- but 'zzz' isn't one of the four known
+        kinds, so _parse_failure() itself raises. That must be caught, not propagate and lose
+        the whole exercise over one set."""
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 10 failure:zzz(3,3,3)",
+             "weight_kg": 90.0, "reps": "8", "rpe": 10,
+             "failure_technique_raw": "failure:zzz(3,3,3)"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        assert exercise.sets[0].failure_technique is None
+        assert any("could not be read" in w for w in warnings)
+
+    def test_empty_parens_do_not_match_the_notation_and_fall_back_to_notes(self) -> None:
+        extract = _extract(sets=[
+            {"number": 1, "source_line": "1. 90kg x 8 RPE 10 failure:myo()",
+             "weight_kg": 90.0, "reps": "8", "rpe": 10,
+             "failure_technique_raw": "failure:myo()"}
+        ])
+        exercise, warnings = extract.to_exercise(1)
+        assert exercise.sets[0].failure_technique is None
+        assert "failure:myo()" in exercise.sets[0].notes
+
+    def test_warmup_sets_do_not_carry_quality_or_failure_technique(self) -> None:
+        """WarmupSet has no such fields -- SetExtract carries them for both shapes, but the
+        warmup conversion must simply not use them, not raise for lacking somewhere to put
+        them."""
+        extract = _extract(warmup_sets=[
+            {"number": 1, "source_line": "1. 20kg x 8 good", "weight_kg": 20.0, "reps": "8",
+             "rep_quality_assessment": "good"}
+        ])
+        exercise, _ = extract.to_exercise(1)
+        assert not hasattr(exercise.warmup_sets[0], "rep_quality_assessment")

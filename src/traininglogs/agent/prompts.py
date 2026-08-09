@@ -98,9 +98,24 @@ Output:
                   "weight_kg": 200, "reps": "feel"}],
  "sets": [{"number": 1, "source_line": "1. 280 x 12 RPE 9.5 good - trying to improve depth",
            "weight_kg": 280, "reps": "12", "rpe": 9.5,
-           "notes": "good - trying to improve depth"},
+           "rep_quality_assessment": "good", "notes": "trying to improve depth"},
           {"number": 2, "source_line": "2. 280 x 12 RPE 10 perfect",
-           "weight_kg": 280, "reps": "12", "rpe": 10, "notes": "perfect"}]}
+           "weight_kg": 280, "reps": "12", "rpe": 10, "rep_quality_assessment": "perfect"}]}
+
+Input:
+**Name:** High Cable Lateral Raise
+### Working Sets
+1. 11.3 x 12 RPE 10 failure:myo(3,3,3) learning - need lower height
+
+Output:
+{"number": 1, "name": "High Cable Lateral Raise",
+ "sets": [{"number": 1,
+           "source_line": "1. 11.3 x 12 RPE 10 failure:myo(3,3,3) learning - need lower height",
+           "weight_kg": 11.3, "reps": "12", "rpe": 10, "rep_quality_assessment": "learning",
+           "failure_technique_raw": "failure:myo(3,3,3)", "notes": "need lower height"}]}
+
+The quality word and the failure-technique notation each go in their own field, never folded \
+into notes — notes is only for what is left over once those are pulled out.
 
 Input:
 **Name:** Ring Support Hold

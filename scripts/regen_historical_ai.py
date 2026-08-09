@@ -80,13 +80,25 @@ def main() -> None:
                          help="Stop before the next file once cumulative real spend crosses this (default $10).")
     parser.add_argument("--limit", type=int, default=None,
                          help="Process at most N files -- for trying the script out before a full run.")
+    parser.add_argument("--files", nargs="+", default=None,
+                         help="Process only these specific files (paths relative to the repo root "
+                              "or absolute), instead of every .md file under inputs/.")
     parser.add_argument("--output-dir", type=Path, default=None,
                          help="Defaults to output_training_logs_json_v{app version}/")
     args = parser.parse_args()
 
     output_dir = args.output_dir or (PROJECT_ROOT / f"output_training_logs_json_v{__version__}")
 
-    md_files = sorted(INPUT_DIR.rglob("*.md"))
+    if args.files:
+        md_files = [Path(f) if Path(f).is_absolute() else PROJECT_ROOT / f for f in args.files]
+        missing = [f for f in md_files if not f.is_file()]
+        if missing:
+            print("ERROR: file(s) not found:")
+            for f in missing:
+                print(f"  {f}")
+            sys.exit(1)
+    else:
+        md_files = sorted(INPUT_DIR.rglob("*.md"))
     if args.limit:
         md_files = md_files[:args.limit]
 
