@@ -178,3 +178,135 @@ def test_auth_rejects_wrong_key(client):
 def test_auth_rejects_missing_key(client):
     r = client.get("/sessions")
     assert r.status_code == 401
+
+
+class TestCreateInput:
+    """POST /inputs -- capture() then extract(), over HTTP. assemble() (the LLM boundary) is
+    monkeypatched, same seam test_ingest.py and test_cli_log_ai_path.py use -- no real API
+    calls."""
+
+    def _fake_extract(self):
+        from traininglogs.agent.schemas import TrainingLogLLMExtract
+        from traininglogs.models.models import Exercise, RepCount, WorkingSet
+
+        return TrainingLogLLMExtract(
+            date="2026-03-01",
+            focus="Legs Hypertrophy",
+            exercises=[
+                Exercise(
+                    number=1,
+                    name="Leg Press",
+                    sets=[WorkingSet(number=1, weight_kg=280.0,
+                                      rep_count=RepCount(full=12, partial=0), rpe=9.5)],
+                )
+            ],
+        )
+
+    def test_captures_and_extracts(self, client, db_conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble",
+            lambda text, provider=None: self._fake_extract(),
+        )
+        r = client.post(
+            "/inputs",
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "markdown"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 201
+        body = r.json()
+        assert body["raw_input_id"]
+        assert body["extraction_id"]
+        assert body["error"] is None
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            assert cur.fetchone()[0] == "# Leg day\n1. 280 x 12 RPE 9.5"
+            cur.execute(
+                "SELECT status FROM extractions WHERE id = %s", (body["extraction_id"],)
+            )
+            assert cur.fetchone()[0] == "pending"
+
+    def test_extraction_failure_still_returns_the_raw_input_id(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        """capture() commits before extract() is attempted -- a failed extraction must not
+        lose the text, and the caller needs raw_input_id back to retry (extract() is
+        idempotent) rather than resubmitting."""
+
+        def failing_assemble(text, provider=None):
+            raise RuntimeError("LLM unavailable")
+
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", failing_assemble)
+
+        r = client.post(
+            "/inputs",
+            json={"content": "some session text"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 502
+        body = r.json()
+        assert body["raw_input_id"]
+        assert body["extraction_id"] is None
+        assert "LLM unavailable" in body["error"]
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            assert cur.fetchone()[0] == "some session text"
+
+    def test_rejects_empty_content(self, client) -> None:
+        r = client.post(
+            "/inputs", json={"content": ""}, headers={"x-api-key": "testkey"}
+        )
+        assert r.status_code == 422
+
+    def test_requires_auth(self, client) -> None:
+        r = client.post("/inputs", json={"content": "some text"})
+        assert r.status_code == 401
+
+
+class TestGetExtractionCard:
+    """GET /extractions/{id} -- the same card the CLI's confirm loop renders to a terminal,
+    as JSON. ValidationCardBuilder is DB-free and already shared; this just adds a serializer
+    in place of TerminalRenderer."""
+
+    def _insert_extraction(self, db_conn) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, "# card test\n1. 280 x 12 RPE 9.5")
+        extract = {
+            "date": "2026-03-01",
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+        )
+
+    def test_returns_the_card(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn)
+        r = client.get(f"/extractions/{extraction_id}", headers={"x-api-key": "testkey"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["session_header"]["focus"] == "Legs Hypertrophy"
+        assert len(body["exercises"]) == 1
+        assert body["exercises"][0]["header"]["name"] == "Leg Press"
+        assert body["exercises"][0]["working_set_rows"][0]["weight_kg"] == 280.0
+
+    def test_not_found(self, client) -> None:
+        r = client.get("/extractions/does-not-exist", headers={"x-api-key": "testkey"})
+        assert r.status_code == 404
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn)
+        r = client.get(f"/extractions/{extraction_id}")
+        assert r.status_code == 401

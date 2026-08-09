@@ -4,12 +4,14 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg2.pool import SimpleConnectionPool
 
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
 from traininglogs.api.schemas import (
+    CaptureIn,
+    CaptureOut,
     ExerciseHistoryRow,
     SessionDetail,
     SessionSummary,
@@ -65,8 +67,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS if ALLOWED_ORIGINS != [""] else [],
     allow_credentials=True,
-    allow_methods=["GET"],
-    allow_headers=["X-Api-Key"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["X-Api-Key", "Content-Type"],
 )
 
 
@@ -96,3 +98,50 @@ def exercise_history(name: str, conn=Depends(_db), _=Depends(_auth)):
     if not rows:
         raise HTTPException(status_code=404, detail="No history found for this exercise")
     return rows
+
+
+@app.post("/inputs", response_model=CaptureOut)
+def create_input(body: CaptureIn, response: Response, conn=Depends(_db), _=Depends(_auth)):
+    """capture() then extract() -- the same two ingest/ functions cli/log.py calls, over HTTP.
+
+    capture() commits before extract() is ever attempted, so a failed extraction still leaves
+    `raw_input_id` in the response -- the text is not lost, and the caller can retry extraction
+    against the same raw input (extract() is idempotent) rather than resubmitting it.
+    """
+    from traininglogs.agent.providers import AnthropicProvider
+    from traininglogs.ingest.capture import capture
+    from traininglogs.ingest.extract import extract
+
+    raw_input_id = capture(
+        conn, body.content, source_kind=body.source_kind, source_file=body.source_file
+    )
+
+    try:
+        provider = AnthropicProvider()
+        extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)
+    except Exception as exc:
+        response.status_code = 502
+        return CaptureOut(raw_input_id=raw_input_id, error=str(exc))
+
+    response.status_code = 201
+    return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
+
+
+@app.get("/extractions/{extraction_id}")
+def get_extraction_card(extraction_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """The same card the CLI's confirm loop renders to a terminal, as JSON instead --
+    ValidationCardBuilder is DB-free and shared by both, only the renderer differs.
+    """
+    from fastapi.encoders import jsonable_encoder
+
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.agent.validation_card_builder import ValidationCardBuilder
+    from traininglogs.db.fetch import get_extraction
+
+    stored = get_extraction(conn, extraction_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+
+    extract_obj = TrainingLogLLMExtract.model_validate(stored["extract"])
+    card = ValidationCardBuilder().build(extract_obj)
+    return jsonable_encoder(card)

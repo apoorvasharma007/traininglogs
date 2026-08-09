@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SessionSummary(BaseModel):
@@ -95,6 +95,18 @@ class SessionDetail(BaseModel):
     warmup: list[MovementOut] = []
     cooldown: list[MovementOut] = []
     exercises: list[ExerciseOut] = []
+
+
+class CaptureIn(BaseModel):
+    content: str = Field(min_length=1, description="The session text, as written.")
+    source_kind: str = "markdown"
+    source_file: Optional[str] = None
+
+
+class CaptureOut(BaseModel):
+    raw_input_id: str
+    extraction_id: Optional[str] = None
+    error: Optional[str] = None
 
 
 class ExerciseHistoryRow(BaseModel):
