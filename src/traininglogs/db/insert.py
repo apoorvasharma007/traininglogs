@@ -87,6 +87,66 @@ def insert_extraction(
     return new_id
 
 
+def insert_llm_calls(
+    conn: Connection,
+    raw_input_id: str,
+    calls: list[dict],
+) -> None:
+    """Persist the per-step call records a provider accumulated during one extract() run
+    (roadmap D4). `calls` is whatever shape `AnthropicProvider.calls` produces -- a list of
+    dicts with step/model/attempts/input_tokens/output_tokens/cost_usd/ms/cached/failed/
+    raw_payload. Empty list is a normal, silent no-op: a provider stub with no `.calls`
+    attribute (most test doubles) means nothing to record, not an error.
+    """
+    if not calls:
+        return
+    with conn.cursor() as cur:
+        for call in calls:
+            cur.execute(
+                """
+                INSERT INTO llm_calls (
+                    raw_input_id, step, model, attempts, input_tokens, output_tokens,
+                    cost_usd, ms, cached, failed, raw_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    raw_input_id,
+                    call["step"],
+                    call["model"],
+                    call["attempts"],
+                    call.get("input_tokens", 0),
+                    call.get("output_tokens", 0),
+                    call.get("cost_usd", 0),
+                    call["ms"],
+                    call.get("cached", False),
+                    call.get("failed"),
+                    json.dumps(call.get("raw_payload")) if call.get("raw_payload") is not None else None,
+                ),
+            )
+    conn.commit()
+
+
+def confirm_extraction(
+    conn: Connection,
+    extraction_id: str,
+    corrections: list[dict] | None = None,
+) -> None:
+    """Mark an extraction confirmed, and record what changed to get there.
+
+    status and confirmed_at are set in the same statement rather than left for the caller to
+    keep in agreement -- the same reasoning as insert_extraction's CASE WHEN."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE extractions
+            SET status = 'confirmed', confirmed_at = now(), corrections = %s
+            WHERE id = %s
+            """,
+            (json.dumps(corrections or []), extraction_id),
+        )
+    conn.commit()
+
+
 def _rest_minutes(rest: Rest | None) -> float | None:
     return rest.minutes if rest is not None else None
 

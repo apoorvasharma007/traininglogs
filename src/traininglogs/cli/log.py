@@ -97,6 +97,74 @@ def _resolve_targets(
     sys.exit(1)
 
 
+_UNSET = object()
+
+
+def _process_ai_file(md_path: Path, conn, provider=None, orchestrator=None, output_dir=_UNSET):
+    """capture -> extract -> confirm, driven straight from the ingest/ module.
+
+    This is the only place the interactive confirm loop runs -- deliberately not inside
+    ingest/extract.py, since that call has to be safe to make from an HTTP request, which
+    cannot block on a terminal prompt (roadmap D8). `ingest.extract()` itself never waits on a
+    human; the loop below is CLI-specific glue around it.
+
+    `provider` and `orchestrator` exist so a test can drive this without an API call or a real
+    terminal, the same reason `process_md_file_with_ai`'s `orchestrator` param used to.
+    `output_dir` defaults to `processor.OUTPUT_DIR`; pass `None` to skip the JSON write (tests
+    do, so they do not write into the tracked `output_training_logs_json/` directory).
+    """
+    from traininglogs.agent.llm_orchestrator import LLMOrchestrator
+    from traininglogs.agent.providers import AnthropicProvider
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.db.fetch import get_extraction
+    from traininglogs.db.insert import insert_llm_calls
+    from traininglogs.ingest.capture import capture
+    from traininglogs.ingest.confirm import confirm
+    from traininglogs.ingest.extract import extract
+    from traininglogs.processor.processor import (
+        OUTPUT_DIR,
+        relative_source_file,
+        write_session_json,
+    )
+
+    if output_dir is _UNSET:
+        output_dir = OUTPUT_DIR
+
+    md_text = md_path.read_text(encoding="utf-8")
+    source_file = relative_source_file(md_path)
+    print(f">>> Loaded training log: {md_path}\n")
+
+    raw_input_id = capture(conn, md_text, source_kind="markdown", source_file=source_file)
+
+    provider = provider or AnthropicProvider()
+    extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)
+
+    stored = get_extraction(conn, extraction_id)
+    pending_extract = TrainingLogLLMExtract.model_validate(stored["extract"])
+
+    orchestrator = orchestrator or LLMOrchestrator(correction_provider=provider)
+    # extract() already drained and persisted provider.calls up to this point. The confirm
+    # loop below can make more (each correction is its own LLM call, via the same provider
+    # instance when the caller shares one) -- those happen after extract() has already
+    # returned, so nothing else will ever persist them unless this does.
+    calls_recorded_so_far = len(getattr(provider, "calls", []))
+    final_extract = orchestrator.confirm_loop(pending_extract)
+    insert_llm_calls(conn, raw_input_id, getattr(provider, "calls", [])[calls_recorded_so_far:])
+
+    session = confirm(
+        conn,
+        extraction_id,
+        final_extract,
+        md_path=md_path,
+        corrections=orchestrator.corrections,
+        source_file=source_file,
+    )
+
+    print(f">>> Inserted into DB: {session.session_id}\n")
+    write_session_json(session, output_dir)
+    return session
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     import argparse
 
@@ -159,10 +227,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     import psycopg2
     from traininglogs.db.db import get_connection
     from traininglogs.db.insert import insert_session
-    from traininglogs.processor.processor import (
-        process_md_file,
-        process_md_file_with_ai,
-    )
+    from traininglogs.processor.processor import process_md_file
 
     conn = get_connection(database_url)
 
@@ -178,7 +243,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     try:
         for md_path in md_files:
             if args.parser == "ai":
-                session = process_md_file_with_ai(md_path, conn)
+                session = _process_ai_file(md_path, conn)
             else:
                 session = process_md_file(md_path, conn)
             if local_conn:

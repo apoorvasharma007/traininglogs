@@ -228,6 +228,50 @@ _EXERCISE_RAW_BY_POSITION: dict[int, dict[str, Any]] = {
 }
 
 
+class TestConfirmLoop:
+    """confirm_loop() is the half of run() that does not call assemble() -- the seam
+    ingest/extract.py's callers use once they already have an extract from the database
+    (Phase 3, D2). run() above still exercises it end-to-end; these drive it directly."""
+
+    def test_immediate_confirm_returns_the_extract_unchanged(self) -> None:
+        extract = TrainingLogLLMExtract.model_validate(
+            {"date": "2026-05-12", "focus": "Upper", "exercises": []}
+        )
+        orch = LLMOrchestrator(
+            correction_provider=_no_edits(), renderer=_stub_renderer(), input_fn=lambda: "y",
+        )
+        result = orch.confirm_loop(extract)
+        assert result is extract
+        assert orch.corrections == []
+
+    def test_a_correction_is_applied_and_recorded(self) -> None:
+        extract = TrainingLogLLMExtract.model_validate(
+            {"date": "2026-05-12", "focus": "Upper", "exercises": []}
+        )
+        answers = iter(["change focus to Lower", "y"])
+        orch = LLMOrchestrator(
+            correction_provider=StubProvider({"edits": [{"path": "focus", "value": "Lower"}]}),
+            renderer=_stub_renderer(),
+            input_fn=lambda: next(answers),
+        )
+        result = orch.confirm_loop(extract)
+        assert result.focus == "Lower"
+        assert len(orch.corrections) == 1
+        assert orch.corrections[0]["instruction"] == "change focus to Lower"
+
+    def test_does_not_require_a_parser_provider(self) -> None:
+        """No assemble() call happens here, so no parser_provider is needed -- unlike run()."""
+        extract = TrainingLogLLMExtract.model_validate(
+            {"date": "2026-05-12", "focus": "Upper", "exercises": []}
+        )
+        orch = LLMOrchestrator(
+            correction_provider=_no_edits(), renderer=_stub_renderer(), input_fn=lambda: "y",
+        )
+        assert orch._parser_provider is None
+        result = orch.confirm_loop(extract)
+        assert result.focus == "Upper"
+
+
 class TestLLMOrchestratorDefaultsToSplitExtraction:
     def test_default_calls_segment_shell_and_worker_not_the_monolithic_tool(self) -> None:
         provider = ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
