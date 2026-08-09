@@ -385,60 +385,70 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-10.** Phase 3 is merged and pushed. `dev` has since moved on with real
-Anthropic verification and a real extraction bug found and fixed — not yet pushed.
+**Last session: 2026-08-10.** Phase 3 merged and pushed at session start. Since then: a real
+extraction bug found and fixed and verified live, `session_id` identity unified onto content,
+and Phase 4 is three-quarters done. Two commits not yet pushed (`8e24654` is the tip).
 
-- `cff8f70` — merge: Phase 3, ingest core (D1–D8), `--no-ff`, 608 tests green on `dev` after.
-- `586f285` — `docs/design.html` brought up to date with the actual pipeline, reviewed and
-  approved section by section.
-- `ba8588e` — resume pointer update (pushed).
-- `8ef5b45` — **fix, not yet pushed:** `SetExtract` never had fields for
-  `rep_quality_assessment` or `failure_technique` — every AI-path session since the split
-  pipeline shipped has both silently unset. Fixed (`agent/schemas.py`, `agent/prompts.py`), 9
-  new unit tests, **and verified against 3 real live sessions** (push/pull/legs, run through
-  the real Anthropic pipeline against a reset `db_regen`, diffed field-by-field against the
-  existing rules-parser JSON). Every difference found across all 26 exercises was the *old*
-  data being wrong, never the new extraction. 617 tests, 0 skipped.
+- `8ef5b45` — **fix:** `SetExtract` never had fields for `rep_quality_assessment` or
+  `failure_technique` — every AI-path session since the split pipeline shipped had both
+  silently unset. Fixed, verified against 3 real live sessions (push/pull/legs) diffed against
+  the existing rules-parser JSON — every difference found was the *old* data being wrong,
+  never the new extraction.
+- `3c2bacd` — **feat:** `POST /inputs`, `GET /extractions/{id}`.
+- `8b38995` — **refactor:** `session_id` derived from content, not file path. Building
+  `/confirm` surfaced that `ingest.confirm()` structurally required a file path, which the API
+  can't provide. Considered keeping two schemes (path for CLI, content for API); decided to
+  unify onto one, accepting the real trade that editing a file and rerunning no longer updates
+  a session in place — it makes a new one. 11 new tests including the property this was
+  actually about: identical content confirmed twice collides instead of duplicating.
+- `8e24654` — **feat:** `POST /extractions/{id}/confirm`. Also fixed a real connection-pool
+  bug found while testing it: `_db()` never rolled back before returning a connection to the
+  pool, so a request that never explicitly committed (every `GET` endpoint; the early
+  "already exists" return in `insert_session()`) leaked its open transaction into the *next*,
+  unrelated request. Separately (not a product bug): the new tests failed only in the full
+  suite, never in isolation — root cause was test hygiene, not the pool fix: `session_id` being
+  content-derived now means these tests collide with their *own* previous run's rows if nothing
+  cleans up between runs. Added a cleanup fixture. Verified stable across two consecutive full
+  runs before trusting it.
 
-**`ANTHROPIC_API_KEY` is now valid** — updated this session. The historical smoke-test gap
-noted previously (Anthropic's own retry/rate-limit branches never exercised live) is closed:
-this session ran 3 real Haiku extractions successfully. Real spend this session: **~$0.21**
-(3 live extractions). Cumulative project spend not recomputed here — check `llm_calls` /
-prior session notes if it matters before the next paid run.
+**`ANTHROPIC_API_KEY` is now valid** — updated this session, closing the previously-open gap
+(Anthropic's own retry/rate-limit branches were only proven by mocked unit test before this
+session). Real spend this session: **~$0.21** across 3 live Haiku extractions (the
+push/pull/legs verification above). Cumulative project spend not recomputed here.
 
-**`scripts/regen_historical_ai.py`** (built this session, see Phase 3's own resume notes for
-why it's separate from the rules-parser regen) also gained `--files`, to target specific
-sessions instead of the first N alphabetically.
+**`scripts/regen_historical_ai.py`** (built this session) gained `--files`, to target specific
+sessions instead of the first N alphabetically — used for the push/pull/legs run above.
 
-**Full 122-file historical regen: deferred, not abandoned.** The 3-file spot-check above is
-strong evidence the pipeline is ready for it — explicitly deferred by request to prioritize
-Phase 4 (below) instead: the goal is a hosted app with a UI other people can try, and the
-regen doesn't block that. `db_regen` currently holds only the 3 test sessions;
-`output_training_logs_json_v3.0.0/` (untracked, not gitignored, 3 files) is scratch output
-from the same test, not committed.
+**Full 122-file historical regen: deferred, not abandoned.** The 3-file spot-check is strong
+evidence the pipeline is ready; explicitly deferred by request to prioritize Phase 4 instead —
+the goal is a hosted app with a UI other people can try, and the regen doesn't block that.
+`db_regen` currently holds only the 3 test sessions; `output_training_logs_json_v3.0.0/`
+(untracked, not gitignored) is scratch output from the same test, not committed.
+
+**640 tests passing, 0 skipped** (started the session at 608).
 
 ### Start here next session
 
-**Phase 4 — Write API** is next, and nothing blocks starting it:
+**Phase 4 — Write API, one endpoint left:**
 
-- [ ] `POST /inputs` → `{raw_input_id, extraction_id}` — calls `ingest.capture()` then
-      `ingest.extract()` directly. This is the first real caller of `ingest/` from `api/app.py`
-      — D2's own scoping note (Phase 3) was waiting on exactly this.
-- [ ] `GET /extractions/{id}` → validation-card JSON. Reuse `ValidationCardBuilder` (already
-      DB-free, already used by the CLI's confirm loop); swap `TerminalRenderer` for a JSON
-      serializer — a new, small piece.
-- [ ] `POST /extractions/{id}/confirm` → calls `ingest.confirm()` directly.
-- [ ] `POST /extractions/{id}/correct` → runs one correction (the same `LLMExtractValidator`
-      path `LLMOrchestrator.confirm_loop()` already drives), returns the updated card. This is
-      the one endpoint with no existing non-interactive entry point — `confirm_loop()` is built
-      around a blocking `input_fn`, so this needs a single-correction call extracted from it
-      (or reimplemented directly against `LLMExtractValidator.apply_correction()`).
-- [ ] `api/app.py` currently has no ingest-calling logic at all — check `src/traininglogs/api/`
-      for its current shape before starting; it was last touched long before Phase 2/3.
+- [x] `POST /inputs` → `{raw_input_id, extraction_id}` (`3c2bacd`)
+- [x] `GET /extractions/{id}` → validation-card JSON (`3c2bacd`)
+- [x] `POST /extractions/{id}/confirm` (`8e24654`)
+- [ ] `POST /extractions/{id}/correct` — the one endpoint with no existing non-interactive
+      entry point. **Design question to settle before writing code, not during:** should the
+      server hold any state between a `/correct` call and the eventual `/confirm`, or should it
+      stay fully stateless — client sends `{extract, instruction}` (the current extract state,
+      round-tripped from a prior `GET`/`POST .../correct` response), server applies one
+      correction via `LLMExtractValidator.apply_correction()` and returns `{extract, card,
+      edits}`, and the client accumulates the growing `corrections` list itself to eventually
+      pass to `/confirm`. Leaning stateless — matches the roadmap's own "no queue, no cache
+      before measuring" posture, and `/confirm`'s body (`{extract, corrections}`) was already
+      shaped this session specifically so it composes with this design.
 
-Suggested first step: `POST /inputs` alone, tested against `TEST_DATABASE_URL`, before adding
-the other three — same reasoning as Phase 3's D1 (smallest safe slice, prove the wiring, then
-build on it).
+Once `/correct` lands, Phase 4 is done and Phase 5 (Confirm UI) is next — the actual "friends
+can try this" surface.
+
+### Before pushing, and before the AI path is next run against prod
 
 ### Before the AI path is next run against prod — required
 
