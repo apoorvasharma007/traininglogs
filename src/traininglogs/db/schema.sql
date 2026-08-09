@@ -12,6 +12,9 @@
 -- normalized tables drop: `uncertain_fields` (what the model was unsure of) and `warnings`
 -- (what the checks found). Those were being computed and then discarded, which threw away the
 -- only signal about how much to trust a row.
+--
+-- Every child table's foreign key cascades on delete -- deleting a session removes its
+-- exercises, sets, and warmups with it; deleting a raw_input removes its extractions.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS raw_inputs (

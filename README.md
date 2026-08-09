@@ -33,6 +33,9 @@ docker compose up -d
 traininglogs log inputs/programs/<slug>/phase_N/week_N/<session>.md
 ```
 
+Session IDs are derived from the file path and date. Processing the same file twice raises
+an error rather than silently overwriting — fix the date and re-run.
+
 **Process all sessions in a directory:**
 
 ```bash

@@ -136,13 +136,15 @@
     overflow-x: auto;
     color: var(--ink);
   }
-  .callout {
-    border-left: 3px solid var(--muted);
-    padding: 0.5rem 0 0.5rem 1.2rem;
-    color: var(--muted);
-    margin: 1.5rem 0;
-    font-style: italic;
+  summary {
+    margin: 3.5rem 0 1rem;
+    cursor: pointer;
   }
+  summary::marker {
+    color: var(--accent);
+  }
+  summary h2 { margin: 0; }
+  details[open] summary { margin-bottom: 1.5rem; }
   blockquote {
     margin: 1.5rem 0;
     padding-left: 1.2rem;
@@ -183,9 +185,9 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-08-07 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-08-09 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
-  <p class="subtitle">A pipeline for turning workout notes into a queryable, chartable training history.</p>
+  <p class="subtitle">An app that turns workout notes into a queryable, chartable training history.</p>
 </header>
 
 <section>
@@ -197,33 +199,36 @@
 
 <section>
   <h2 id="vision">Vision</h2>
-  <p>traininglogs today is a post-workout pipeline: write a markdown file, parse it, store it. The direction it is heading is a live, in-workout agent that captures sets as they happen, on mobile, by voice or tap, with the same data fidelity. Three principles guide that evolution.</p>
-
-  <h3>Predict the row, don't capture it</h3>
-  <p>Most data in a workout is predictable. The program says set 2 of bench press should be 90&nbsp;kg × 8; the agent already knows that. The interaction should default to <em>confirmation</em>, not capture. A pre-filled row with one big tap to accept handles the majority of sets. Increment/decrement and inline edits cover small adjustments. Voice is reserved for the qualitative tax — RPE, partials, "left shoulder felt off", a drop set the program didn't predict, a new exercise added on the fly. The friction floor of an app used at 160&nbsp;bpm with sweaty hands is "tap to confirm"; anything more is a cost paid for richer data, and should be optional.</p>
-
-  <h3>The agent's job is to translate loose input into strong fields</h3>
-  <p>A user can say "8 plus 2 partials at 7 RPE, felt good" without thinking about schemas. The agent's job is to turn that sentence into <code>{reps_full: 8, reps_partial: 2, rpe: 7.0, rep_quality_assessment: "good"}</code>. Notes are the residue — they exist for the parts of a sentence that don't map to a typed field, not as a dumping ground. This principle keeps the data model strict where it matters (queryable, chartable, comparable across sessions and users) without forcing users to learn it.</p>
-
-  <h3>Rich primitives, loose context</h3>
-  <p>The numbers you want to do math on must be numbers. The words you want to read can be words. There is no in-between. Weight, reps, RPE, duration, distance, heart rate — strongly typed and validated. Tags, modality, form cues, notes — free text. When new sports or training styles are added, the test for each candidate field is: <em>would a user ever want to chart, filter, sum, or compare this?</em> Yes → typed column. No → notes. Most fitness apps fail at the extremes — either everything is structured (and the model breaks on the first unfamiliar workout) or everything is loose (and nothing is queryable). The sweet spot is rich primitives plus loose context, expanded conservatively as new modalities arrive.</p>
+  <p>traininglogs today is a post-workout pipeline: write a markdown file, parse it, store it. The direction it is heading is a live, in-workout agent that captures sets as they happen, on mobile, by voice or tap, with the same data fidelity.</p>
 </section>
 
 <section>
   <h2 id="shape">The shape of the system</h2>
-  <p>Five things, in order:</p>
-  <div class="diagram">markdown  →  parser (--parser rules)  ──┐
-  files                                    ├→  Pydantic  →  PostgreSQL  →  dashboard
-free-text  →  agent  (--parser ai)   ──┘   models       (truth)       (HTML)
-  drafts      └─ ConfirmationCard                           ↓
-                  (confirm / correct)                    FastAPI
-                                                         (REST)</div>
-  <p>Each step is a boundary. Markdown is what I write. Pydantic is what the rest of the system trusts. Postgres is the source of truth for everything queryable. The API and the dashboard both read from Postgres; nothing writes back through them.</p>
-  <p>This separation means I can rewrite any one stage without disturbing the others. The Pydantic model and the database schema are the stable contract between stages — everything upstream of Pydantic can change without touching storage or the API. The rule-based parser remains available via <code>--parser rules</code>; the default path is the AI agent.</p>
+  <div class="diagram">input text
+      │
+      ▼
+  capture()   →   raw_inputs        saved
+      │
+      ▼
+  extract()   →   extractions       saved, pending
+      │
+      ▼
+ confirm loop     card shown, user confirms or corrects
+      │
+      ▼
+  confirm()   →   Pydantic models   →   PostgreSQL
+                                              │
+                                    ┌─────────┴─────────┐
+                                    ▼                   ▼
+                              dashboard (HTML)     FastAPI (REST)</div>
+  <p>Four steps. <code>capture()</code> saves the raw text. <code>extract()</code> runs the LLM and saves the result as pending. The card is shown; the user confirms or corrects it. <code>confirm()</code> writes the normalized session to Postgres. Each step saves before returning, so a crash or a rejected extraction never loses what was captured.</p>
+  <p>These three functions live in <code>ingest/</code>. <code>cli/log.py</code> calls them directly, and the API will too.</p>
+  <p>Postgres is the source of truth. The dashboard and the API both read from it; neither writes back. A rule-based parser is also available via <code>--parser rules</code>.</p>
 </section>
 
 <section>
-  <h2 id="data">The data model</h2>
+  <details>
+  <summary><h2 id="data" style="display:inline">Pydantic Data Model</h2></summary>
   <p>A <strong>session</strong> is one workout on one day. A session has three ordered groups of movements: an optional session-level warmup, the main work (<strong>exercises</strong>), and an optional session-level cooldown. Session warmup/cooldown movements are lightweight (name, reps or duration, notes) and use their own models — they are not exercises. An exercise has <strong>sets</strong> and, separately, its own optional <strong>warmup sets</strong> (e.g. ramp-up sets before a lift's working weight) — a different thing from the session-level warmup despite the shared name. A working set may carry a <strong>failure technique</strong> (myo-reps, lengthened-partials, static hold, drop set) when it's taken to RPE 10.</p>
   <pre><code>TrainingSession
 ├── data_model_version, data_model_type, session_id, user_id, user_name
@@ -289,80 +294,300 @@ WorkingSet                    one flat model — every measurement field optiona
     ├── LLP        → partial_rep_count
     ├── Static     → hold_duration_seconds
     └── DropSet    → drop_sets[]        {number, weight_kg, rep_count}</code></pre>
-  <p class="callout">Fields marked <code>= None</code> are optional — absent means the value wasn't recorded for this session/exercise/set, not that it was zero.</p>
-  <p>A set that has both <code>weight_kg</code> and <code>duration_seconds</code> is valid — this covers timed strength work (e.g. max reps in 60s with load). There is no <code>set_type</code> discriminator; the fields present describe the set. Exercise classification uses free-text <code>tags</code> and <code>modality</code> rather than a fixed enum — adding a new sport or training style requires no code change.</p>
-  <p>Working sets are first-class; an exercise's own warmup sets are lower-resolution because they rarely need to be queried later. RPE is optional because it is not always logged. The model is permissive at the edges and strict in the middle — exactly the parts that get queried.</p>
-  <p>A few invariants the model enforces:</p>
-  <ul class="body">
-    <li><code>failure_technique</code> is only valid on sets where <code>rpe == 10</code>.</li>
-    <li>Exercise <code>number</code> fields must be sequential starting at 1 — same rule for session-level warmup and cooldown movement numbers.</li>
-    <li><code>week</code> must be between 1 and <code>program_length_weeks</code> (when both are set).</li>
-    <li>RPE is a whole or half step between 1 and 10.</li>
-  </ul>
-  <p><strong>Movement-skill conventions.</strong> Calisthenics, gymnastics rings, juggling, reaction drills, shadow boxing, and kettlebell/dumbbell work needed no model changes — only extraction conventions in the LLM <code>SYSTEM_PROMPT</code>, since the flat <code>Set</code> model already covers every shape involved, whether the session is ad-hoc or part of a real structured program. Skill-practice runs (juggling catches, drill attempt counts) and skill attempts (e.g. muscle-up tries) map to <code>rep_count</code> — for skill attempts specifically, clean completions are <code>full</code> and failed tries are <code>partial</code>, the same distinction an ordinary working set already makes (ordinary reps with varying form quality stay <code>full</code> — only explicit attempt/clean phrasing triggers the split). Static holds and timed rounds map to <code>duration_seconds</code>; measured reaction times (milliseconds) are never numeric — they go in a set's <code>notes</code>. Ad-hoc sessions (no program, no phase/week) leave <code>program</code>/<code>phase</code>/<code>week</code> all unset — no pseudo-program name is invented; these live at <code>inputs/sessions/</code>, mirroring the pre-existing "standalone session" concept. A session with phase/week but no stated program name also leaves <code>program</code> unset rather than guessing, since it belongs to a real program whose name is usually known from the file's directory path, not its text. <code>inputs/programs/</code> stays reserved for real structured programs.</p>
-  <p><strong>Remarks and unmapped text.</strong> Free-prose input often has remarks that don't map cleanly onto one field — an aside before the first exercise, an RPE stated once after a whole block of sets rather than per set. The rule: attach it as a note at the most specific level it's clearly tied to (a named set, then a named exercise or movement), and only fall back to the session-level <code>notes</code> field when nothing more specific applies. Nothing is silently dropped. A single RPE value stated once for a whole exercise defaults to the <em>last</em> set (upper bound if it's a range stated as text), flagged uncertain — never spread across every set in the exercise. An explicitly named set ("top set RPE 9") overrides the default. This replaces trying to maintain a growing dictionary of user-specific field aliases (e.g. a personal "Movement:" label): unmapped labels just fall through to the notes rule instead, since chasing every user's vocabulary doesn't scale and undermines the point of using an LLM for semantic understanding in the first place.</p>
+  </details>
 </section>
 
 <section>
-  <h2 id="parser">The parser</h2>
-  <p>Markdown in, <code>TrainingSession</code> out. Two stages: <code>parser/extract.py</code> walks the markdown into an intermediate dict; <code>parser/parse.py</code> turns that dict into a plain dict shaped directly for Pydantic. The processor injects the <code>session_id</code>, runs lbs→kg conversion if needed, then calls <code>TrainingSession.model_validate()</code> — that's where validation fires. One model layer, no translation step.</p>
-  <p>The rule-based parser is deterministic, free to run, and has full test coverage against historical sessions. It stays available via <code>--parser rules</code> for debugging, offline use, and regression comparison. The default path is the AI agent described in the next section.</p>
+  <h2 id="storage">How it works</h2>
+  <p>PostgreSQL is the source of truth: nine tables. Here is what happens to one submission, table by table.</p>
+
+  <h3>What happens when a session is submitted</h3>
+
+  <svg viewBox="0 0 640 370" style="width:100%; max-width:640px; margin:1.5rem 0; display:block;" role="img" aria-label="Pipeline diagram: input text flows through capture, extract, the confirm loop, and confirm, writing to nine PostgreSQL tables along the way">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#6b6b6b"/>
+      </marker>
+      <g id="dbicon">
+        <path d="M -15 0 L -15 20 A 15 5 0 0 0 15 20 L 15 0" fill="#f0efe9" stroke="#b8460e" stroke-width="1.3"/>
+        <ellipse cx="0" cy="20" rx="15" ry="5" fill="none" stroke="#b8460e" stroke-width="1.3"/>
+        <ellipse cx="0" cy="0" rx="15" ry="5" fill="#f0efe9" stroke="#b8460e" stroke-width="1.3"/>
+      </g>
+    </defs>
+    <style>
+      .step { fill: #ffffff; stroke: #1a1a1a; stroke-width: 1.3; }
+      .step-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; fill: #1a1a1a; text-anchor: middle; }
+      .table-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; fill: #1a1a1a; }
+      .flow-line { stroke: #6b6b6b; stroke-width: 1.3; fill: none; marker-end: url(#arrow); }
+      .input-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; fill: #6b6b6b; text-anchor: middle; }
+    </style>
+
+    <text x="110" y="16" class="input-label">input text</text>
+    <line x1="110" y1="24" x2="110" y2="58" class="flow-line"/>
+
+    <rect x="40" y="60" width="140" height="38" rx="6" class="step"/>
+    <text x="110" y="84" class="step-label">capture()</text>
+    <line x1="180" y1="79" x2="255" y2="79" class="flow-line"/>
+    <use href="#dbicon" xlink:href="#dbicon" x="280" y="70"/>
+    <text x="310" y="84" class="table-label">raw_inputs (table 1)</text>
+    <line x1="110" y1="98" x2="110" y2="133" class="flow-line"/>
+
+    <rect x="40" y="135" width="140" height="38" rx="6" class="step"/>
+    <text x="110" y="159" class="step-label">extract()</text>
+    <line x1="180" y1="154" x2="255" y2="154" class="flow-line"/>
+    <use href="#dbicon" xlink:href="#dbicon" x="280" y="145"/>
+    <text x="310" y="150" class="table-label">llm_calls (table 2)</text>
+    <text x="310" y="167" class="table-label">extractions (table 3)</text>
+    <line x1="110" y1="173" x2="110" y2="208" class="flow-line"/>
+
+    <rect x="25" y="210" width="170" height="38" rx="6" class="step"/>
+    <text x="110" y="234" class="step-label">confirm loop</text>
+    <line x1="195" y1="229" x2="255" y2="229" class="flow-line"/>
+    <use href="#dbicon" xlink:href="#dbicon" x="280" y="220"/>
+    <text x="310" y="225" class="table-label">llm_calls (table 2)</text>
+    <text x="310" y="242" class="table-label">extractions.corrections (table 3)</text>
+    <line x1="110" y1="248" x2="110" y2="283" class="flow-line"/>
+
+    <rect x="40" y="285" width="140" height="38" rx="6" class="step"/>
+    <text x="110" y="309" class="step-label">confirm()</text>
+    <line x1="180" y1="304" x2="255" y2="304" class="flow-line"/>
+    <use href="#dbicon" xlink:href="#dbicon" x="280" y="295"/>
+    <text x="310" y="291" class="table-label">sessions (table 4)</text>
+    <text x="310" y="307" class="table-label">warmups (5) &middot; cooldowns (6)</text>
+    <text x="310" y="323" class="table-label">exercises (table 7)</text>
+    <text x="310" y="339" class="table-label">working_sets (8) &middot; warmup_sets (9)</text>
+  </svg>
+
+  <p>The person writes a session, as markdown or free text. <code>capture()</code> saves it
+  before anything else happens &mdash; <code>raw_inputs</code> (table 1) gets one row:
+  <code>content</code> (the raw text, untouched), <code>source_kind</code> (markdown, photo, or
+  speech), <code>source_file</code>, <code>checksum</code>, <code>captured_at</code>.</p>
+
+  <p><code>extract()</code> reads that row and calls the model. The work is split into several
+  calls &mdash; segmenting the exercises, reading the session's shell (date, focus, program),
+  then one call per exercise. Each call writes one row to <code>llm_calls</code> (table 2):
+  <code>step</code> (which call this was), <code>model</code>, <code>attempts</code>,
+  <code>input_tokens</code>, <code>output_tokens</code>, <code>cost_usd</code>, <code>ms</code>,
+  <code>failed</code>, <code>raw_payload</code> (the last thing the model actually returned, kept
+  even if it failed validation). Once every call returns, the assembled reading is saved as one
+  row in <code>extractions</code> (table 3): <code>raw_input_id</code>, <code>model</code>,
+  <code>prompt_version</code>, the whole reading as <code>extract</code> (JSONB),
+  <code>uncertain_fields</code>, <code>warnings</code>, <code>status</code> set to
+  <code>pending</code>.</p>
+
+  <p>The confirmation card is built from that extraction and shown to the person. Typing
+  <code>y</code> moves on. Describing a correction makes another model call &mdash; another
+  <code>llm_calls</code> (table 2) row &mdash; and the edit it produces is
+  appended to <code>extractions.corrections</code> (table 3), a JSONB list.
+  <code>extractions.extract</code> is never rewritten; only <code>corrections</code> grows. This
+  repeats until the person confirms.</p>
+
+  <p><code>confirm()</code> then writes the final reading &mdash; the original extract plus every
+  correction &mdash; as a normalized session. <code>sessions</code> (table 4) gets one row
+  (<code>date</code>, <code>program</code>, <code>phase</code>, <code>week</code>,
+  <code>focus</code>, <code>weight_unit</code>, <code>source_file</code>,
+  <code>extraction_id</code> linking back to the reading that produced it). Session-level
+  warmup/cooldown movements go to <code>warmups</code> (table 5)/<code>cooldowns</code>
+  (table 6). Each exercise goes to <code>exercises</code> (table 7); each exercise's sets go to
+  <code>working_sets</code> (table 8) and <code>warmup_sets</code> (table 9).
+  <code>extractions.status</code> flips to <code>confirmed</code>, <code>confirmed_at</code> is
+  set.</p>
+
+  <p>After the DB insert succeeds, the same session is written to
+  <code>output_training_logs_json/</code> as JSON &mdash; a cheap, diffable copy for checking the
+  parser without touching the database.</p>
+
+  <p>The rule-based parser skips all of this: markdown goes straight to <code>sessions</code>
+  (table 4) with no <code>raw_inputs</code> (table 1), <code>extractions</code> (table 3), or
+  <code>llm_calls</code> (table 2) rows at all.</p>
+
+  <h3>Table reference</h3>
+  <div class="diagram">raw_inputs                              (table 1)
+  id             TEXT PK
+  content        TEXT
+  source_kind    TEXT          markdown | photo | speech
+  source_file    TEXT
+  checksum       TEXT
+  captured_at    TIMESTAMPTZ
+
+extractions                             (table 3)
+  id                TEXT PK
+  raw_input_id      TEXT        → raw_inputs.id
+  model             TEXT
+  prompt_version    TEXT
+  extract           JSONB
+  uncertain_fields  TEXT[]
+  warnings          TEXT[]
+  status            TEXT        pending | confirmed | rejected
+  corrections       JSONB
+  created_at        TIMESTAMPTZ
+  confirmed_at      TIMESTAMPTZ
+
+llm_calls                               (table 2)
+  id             SERIAL PK
+  raw_input_id   TEXT          → raw_inputs.id
+  step           TEXT
+  model          TEXT
+  attempts       INT
+  input_tokens   INT
+  output_tokens  INT
+  cost_usd       NUMERIC
+  ms             INT
+  cached         BOOLEAN
+  failed         TEXT
+  raw_payload    JSONB
+  created_at     TIMESTAMPTZ
+
+sessions                                (table 4)
+  session_id            TEXT PK
+  date                  DATE
+  program               TEXT
+  program_author        TEXT
+  program_length_weeks  INT
+  phase                 INT
+  week                  INT
+  is_deload_week        BOOLEAN
+  focus                 TEXT
+  duration_minutes      INT
+  weight_unit           TEXT
+  user_id               TEXT
+  user_name             TEXT
+  source_file           TEXT
+  notes                 TEXT
+  extraction_id         TEXT        → extractions.id
+  created_at            TIMESTAMPTZ
+
+warmups (table 5) / cooldowns (table 6)   (identical shape, two separate tables)
+  id                SERIAL PK
+  session_id        TEXT          → sessions.session_id
+  number            INT
+  name              TEXT
+  reps              INT
+  duration_seconds  INT
+  notes             TEXT
+
+exercises                               (table 7)
+  id                        SERIAL PK
+  session_id                TEXT        → sessions.session_id
+  number                    INT
+  name                      TEXT
+  tags                      TEXT[]
+  modality                  TEXT
+  movement_pattern          TEXT[]
+  notes                     TEXT
+  warmup_notes              TEXT
+  form_cues                 TEXT[]
+  goal_weight_kg            NUMERIC
+  goal_sets                 INT
+  goal_rep_min              INT
+  goal_rep_max              INT
+  goal_rest_min             INT
+  goal_rest_seconds         INT
+  goal_distance_meters      NUMERIC
+  goal_target_duration_sec  INT
+  target_muscle_groups      TEXT[]
+  rep_tempo                 TEXT
+
+working_sets                            (table 8)
+  id                  SERIAL PK
+  exercise_id         INT          → exercises.id
+  number              INT
+  weight_kg           NUMERIC
+  reps_full           INT
+  reps_partial        INT
+  left_reps_full      INT
+  left_reps_partial   INT
+  right_reps_full     INT
+  right_reps_partial  INT
+  rpe                 NUMERIC
+  rep_quality         TEXT
+  rest_minutes        NUMERIC
+  rest_seconds        INT
+  duration_seconds    INT
+  distance_meters     NUMERIC
+  heart_rate_bpm      INT
+  notes               TEXT
+  failure_technique   JSONB
+
+warmup_sets                             (table 9)
+  id            SERIAL PK
+  exercise_id   INT        → exercises.id
+  number        INT
+  weight_kg     NUMERIC
+  rep_count     INT
+  notes         TEXT</div>
 </section>
 
 <section>
-  <h2 id="storage">Storage</h2>
-  <p>Two artifacts, one source of truth.</p>
-  <ul class="body">
-    <li><strong>PostgreSQL</strong> is the source of truth. Eight tables. Two hold what came in and how it was read &mdash; <code>raw_inputs</code>, <code>extractions</code> (see Capture and interpretation below) &mdash; and six hold the normalized result: <code>sessions</code>, <code>warmups</code>, <code>cooldowns</code>, <code>exercises</code>, <code>working_sets</code>, <code>warmup_sets</code>. <code>warmups</code>/<code>cooldowns</code> hold session-level movements (one row per <code>SessionWarmup</code>/<code>SessionCooldown</code>); <code>warmup_sets</code> holds an exercise's own ramp-up sets. Foreign keys cascade on delete. <code>failure_technique</code> is stored as <code>JSONB</code> with <code>technique_type</code> as the discriminator. No ORM; raw SQL via <code>psycopg2</code>. Notable columns: <code>sessions.weight_unit</code>, <code>sessions.source_file</code> (path, used by dashboard program auto-discovery), <code>sessions.notes</code>; <code>exercises.tags</code> (<code>TEXT[]</code>), <code>exercises.modality</code> (<code>TEXT</code>), <code>exercises.movement_pattern</code> (<code>TEXT[]</code>); <code>working_sets.weight_kg</code>, <code>duration_seconds</code>, <code>distance_meters</code>, <code>heart_rate_bpm</code>, unilateral rep columns (<code>left_reps_full</code>, <code>left_reps_partial</code>, <code>right_reps_full</code>, <code>right_reps_partial</code>). There is no <code>set_type</code> column — the measurement fields present on a row describe the set. <code>data_model_version</code>/<code>data_model_type</code> are not stored as DB columns — they exist only in the JSON snapshot (see Versioning below).</li>
-    <li><strong>JSON snapshots</strong> are written to <code>output_training_logs_json/</code> alongside the markdown, after the DB insert succeeds. They come from <code>session.model_dump(mode="json")</code>. Cheap, diffable, version-controllable — useful for sanity-checking the parser without touching the database.</li>
-  </ul>
+  <details>
+  <summary><h2 id="ai-capture" style="display:inline">Inside the AI agent</h2></summary>
+  <p>The default parsing path. The user writes freely — during or after the workout — and the pipeline maps the draft to a <code>TrainingSession</code>. Nothing is written to the database until the person confirms the reading.</p>
 
+  <h3>The flow</h3>
+  <div class="diagram">input text
+      │
+      ▼
+  capture()                saved to raw_inputs
+      │
+      ▼
+  extract()                segment the exercises, read the session shell,
+      │                    then one call per exercise — each call logged
+      │                    to llm_calls
+      ▼
+  extractions (pending)    the assembled reading, saved
+      │
+      ▼
+  confirmation card        built and rendered
+      │
+      ▼
+  user: "y" or a correction
+      │
+      ├── "y"         →  confirm()  →  sessions
+      │
+      └── correction  →  model returns edits, not a rewrite
+                          edits applied, correction appended
+                          card rebuilt, shown again</div>
+  <p><code>TrainingSession.model_validate()</code> always runs on the final result. The model produces input to Pydantic, never a bypass around it.</p>
 
-  <h3>Capture and interpretation</h3>
-  <p><code>raw_inputs</code> stores what the person actually produced &mdash; the markdown they
-  typed today, the text off a photograph or a speech transcript later. It is never edited.
-  Columns: <code>id</code>, <code>content</code>, <code>source_kind</code>
-  (<code>markdown</code>|<code>photo</code>|<code>speech</code>), <code>source_file</code>,
-  <code>checksum</code> (sha256 of the content), <code>captured_at</code>.</p>
+  <h3>ConfirmationCard architecture</h3>
+  <p>The card is a tree of dataclasses defined in <code>agent/validation_card_data.py</code>, built from a <code>TrainingLogLLMExtract</code> by <code>agent/validation_card_builder.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
+  <pre><code>UserValidationCard
+  SessionHeader              date · focus · duration · program / phase / week
+  NotePreview = None         session-level note, shown right after the header
+  SessionMovementSection[]   warmup / cooldown, each a MovementRow[]
+  ExerciseCard[]
+    ExerciseHeader           number · name · goal (plain English)
+    WarmupRow[]               weight · reps
+    WorkingSetRow[]           weight · reps · RPE · quality · failure (plain English)
+    NotePreview = None        first ~40 chars of note + "…" if truncated
+    NotePreview = None        same, for the exercise's own warmup notes</code></pre>
+  <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (dot-path format, e.g. <code>"exercises[1].sets[0].weight_kg"</code>). The renderer marks those positions with <code>?</code>. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
+  <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes (session-level and exercise-level) are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
 
-  <p><code>extractions</code> stores one attempt at reading a raw input: <code>raw_input_id</code>,
-  <code>model</code>, <code>prompt_version</code>, the whole <code>extract</code> as
-  <code>JSONB</code>, <code>uncertain_fields</code>, <code>warnings</code>, <code>status</code>
-  (<code>pending</code>|<code>confirmed</code>|<code>rejected</code>), <code>created_at</code>,
-  <code>confirmed_at</code>. Deliberately many-to-one: a better model or a fixed prompt should be
-  able to re-read the same text without the person writing anything twice.</p>
+  <h3>Correction loop</h3>
+  <p>After the card is printed, the person sees one prompt: confirm, or say what's wrong. Anything other than <code>y</code>/<code>yes</code> is a correction. The model is sent the current extract and the correction, and returns a list of edits &mdash; <code>{path, value}</code> pairs &mdash; not a rewritten extract. The edits are applied in Python; a field the correction doesn't name cannot change, because Python only touches the paths it's given. Measured on a real ten-exercise session: the old whole-document shape needed roughly 5,410 output tokens against a 4,096 ceiling, so it could not have returned a correction for a session that size at all.</p>
+  <p>Each correction is appended to <code>extractions.corrections</code>. <code>extractions.extract</code> itself is never rewritten. The card is rebuilt from the edited extract and shown again. This repeats until the person confirms.</p>
 
-  <p>Two consequences worth stating. An extraction is a <em>derived</em> artifact, so it can be
-  regenerated; and the confidence signals travel with it. <code>uncertain_fields</code> (what the
-  model was unsure of) and <code>warnings</code> (what the deterministic checks found) were
-  previously computed and then discarded on the way to the normalized tables, leaving no record of
-  how much to trust a row.</p>
+  <h3>LLM call design</h3>
+  <table>
+    <thead><tr><th>Call</th><th>Tool</th><th>Input</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td>Segment</td><td><code>split_exercises</code></td><td>raw session text</td><td>exercise positions and anchors</td></tr>
+      <tr><td>Session shell</td><td><code>extract_session_shell</code></td><td>raw session text</td><td>date, focus, program, phase, week</td></tr>
+      <tr><td>Exercise worker</td><td><code>extract_exercise</code></td><td>one exercise's isolated text, or the full text as a fallback</td><td>one exercise, with its sets</td></tr>
+      <tr><td>Correction</td><td><code>edit_extraction</code></td><td>current extract + the correction</td><td>a list of edits</td></tr>
+    </tbody>
+  </table>
+  <p>All four use <code>claude-haiku-4-5</code>, structured tool-call output, and a schema derived from the Pydantic models &mdash; no separate schema to keep in sync. A worker gets an isolated chunk when the segmenter's anchor for that exercise can be found verbatim in the text; when it can't, the worker falls back to the full text with a warning noting lower reliability, not a failure. A worker that raises becomes a flagged placeholder exercise plus a warning &mdash; never a crash.</p>
 
-  <p><code>prompt_version</code> is a short hash of the three live prompts, recomputed on import
-  rather than declared by hand &mdash; a version constant is only correct while someone remembers
-  to bump it.</p>
+  <h3>CLI interface</h3>
+  <pre><code># AI parser (default) — free-text input, confirmation card
+traininglogs log draft.md
 
-  <p>Corrections are stored as edits, not as rewritten documents.
-  <code>extractions.extract</code> holds the model's own reading and is never altered;
-  <code>extractions.corrections</code> is a JSONB list appended to once per correction, each entry
-  carrying what the person said and the <code>{path, value}</code> edits it produced. So three
-  facts stay separable: what the model read, what the person changed, and what reached the
-  normalized tables. It also makes &ldquo;which fields do I correct most often?&rdquo; a query
-  rather than a guess.</p>
-
-  <p>The model is asked for the edits rather than for a corrected extract, which means fields it
-  does not name cannot change &mdash; a property of the code, not of the prompt. Measured on a
-  real ten-exercise session, the previous whole-document shape needed roughly 5,410 output tokens
-  against a 4,096 ceiling, so it could not have returned a correction for a session that size.</p>
-
-  <p><code>sessions.extraction_id</code> links a stored session back to the reading that produced
-  it, and through that to the text it was read from. Nullable: sessions written before these
-  layers existed have nothing to point at, and the rules parser has no extraction at all.
-  <code>sessions.source_file</code> is now written by both parser paths at insert time &mdash; it
-  was previously patched in afterwards by the rules path only, so every AI-parsed session in the
-  database has no link to its input. Existing rows are not backfilled.</p>
-
-  <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
+# Rule-based parser — structured markdown, no confirmation card
+traininglogs log session.md --parser rules</code></pre>
+  <p>All log flags (<code>--no-commit</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical. Use <code>traininglogs validate</code> to test parsing with no DB or git side effects.</p>
+  </details>
 </section>
 
 <section>
@@ -415,83 +640,28 @@ WorkingSet                    one flat model — every measurement field optiona
 
 <section>
   <h2 id="versioning">Versioning</h2>
-  <p>Each session carries <code>data_model_version</code> and <code>data_model_type</code> fields in the JSON snapshot (not stored as DB columns — see Storage above). Schema and parser changes are tracked in <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a> (Keep a Changelog format). The app version is stamped in the eyebrow of this document and auto-synced by CI on merge to <code>main</code>.</p>
-  <p>Schema changes to date have been additive (new columns with defaults). <code>db/schema.sql</code> is the authoritative schema; <code>db/db.py:apply_schema()</code> is run explicitly by migration/import scripts (not automatically on app startup). Breaking migrations will be documented here when they land.</p>
-</section>
-
-<section>
-  <h2 id="ai-capture">Track B — AI capture</h2>
-  <p>The default parsing path. Instead of a structured markdown format, the user writes freely — during or after the workout — and the agent maps the draft to <code>TrainingSession</code>. Data correctness is the top priority: nothing is written to the database until the user confirms the agent's interpretation.</p>
-
-  <h3>The flow</h3>
-  <div class="diagram">free-text .md
-      ↓
-  agent/llm_parser.py          LLM call: free text → TrainingSession dict
-      │                                          + uncertain_fields[]
-      ↓
-  agent/card.py                build ConfirmationCard from dict
-      │                        mark uncertain fields with ?
-      ↓
-  agent/renderer.py            TerminalRenderer (rich) prints card
-      │
-      ↓
-  user: "y" or correction text
-      │
-      ├── "y"  →  TrainingSession.model_validate()  →  DB write
-      │
-      └── correction  →  agent/patcher.py  →  LLM patches dict
-                             ↓
-                         re-render card  →  back to user prompt</div>
-  <p><code>TrainingSession.model_validate()</code> always runs on the final dict regardless of path. The LLM produces input to Pydantic, never a bypass around it.</p>
-
-  <h3>ConfirmationCard architecture</h3>
-  <p>The card is a tree of dataclasses defined in <code>agent/validation_card_data.py</code>, built from a confirmed <code>TrainingLogLLMExtract</code> by <code>agent/validation_card_builder.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
-  <pre><code>UserValidationCard
-  SessionHeader              date · focus · duration · program / phase / week
-  NotePreview = None         session-level note, shown right after the header
-  SessionMovementSection[]   warmup / cooldown, each a MovementRow[]
-  ExerciseCard[]
-    ExerciseHeader           number · name · goal (plain English)
-    WarmupRow[]               weight · reps
-    WorkingSetRow[]           weight · reps · RPE · quality · failure (plain English)
-    NotePreview = None        first ~40 chars of note + "…" if truncated
-    NotePreview = None        same, for the exercise's own warmup notes</code></pre>
-  <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (dot-path format, e.g. <code>"exercises[1].sets[0].weight_kg"</code>). The renderer marks those positions with <code>?</code>. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
-  <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes (session-level and exercise-level) are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
-
-  <h3>Correction loop</h3>
-  <p>After the card is printed, the user sees a single consistent prompt: <code>Confirm, or say what's wrong:</code>. Any input other than <code>y</code> / <code>yes</code> is treated as a natural-language correction. The patcher sends the current dict and the correction to the LLM, which returns the updated dict. The card is rebuilt and re-rendered. This repeats until the user confirms.</p>
-  <p>The correction model receives the full current <code>TrainingSession</code> dict as context, so it can apply relative corrections ("second exercise, not the first") without the user specifying field paths.</p>
-
-  <h3>LLM call design</h3>
-  <table>
-    <thead><tr><th>Call</th><th>Model</th><th>Input</th><th>Output</th></tr></thead>
-    <tbody>
-      <tr><td>Parse</td><td>claude-haiku-4-5</td><td>raw session text + schema description</td><td><code>TrainingSession</code> dict + <code>uncertain_fields[]</code></td></tr>
-      <tr><td>Patch</td><td>claude-haiku-4-5</td><td>current dict + user correction text</td><td>updated <code>TrainingSession</code> dict</td></tr>
-    </tbody>
-  </table>
-  <p>Both calls use structured output (JSON mode). The schema passed to the LLM is derived from the Pydantic models — single source of truth, no duplication. Failure techniques are described in natural language in the prompt and mapped back to their structured types by the LLM.</p>
-
-  <h3>CLI interface</h3>
-  <pre><code># AI parser (default) — free-text input, confirmation card
-traininglogs log draft.md
-
-# Rule-based parser — structured markdown, no confirmation card
-traininglogs log session.md --parser rules</code></pre>
-  <p>All log flags (<code>--no-commit</code>, <code>--pr</code>) apply to both parser modes. The <code>--parser</code> flag only controls the parse stage; everything downstream is identical. Use <code>traininglogs validate</code> to test parsing with no DB or git side effects.</p>
+  <p>Four things are versioned, each a different way.</p>
+  <ul class="body">
+    <li><strong>App version.</strong> <code>pyproject.toml</code>'s <code>version</code> field (currently <code>3.0.0</code>), semver, bumped by hand when cutting a release. CI syncs it into this document's eyebrow on merge to <code>main</code> &mdash; that span is never hand-edited.</li>
+    <li><strong>Data model version.</strong> <code>data_model_version</code> on every <code>TrainingSession</code>, written into the JSON snapshot only, not a DB column. A hand-set constant in <code>processor.py</code>, bumped when the Pydantic model's shape changes in a way worth marking.</li>
+    <li><strong>Prompt version.</strong> <code>extractions.prompt_version</code>, a hash of the three live extraction prompts, recomputed automatically on import. Never hand-bumped &mdash; a hand-maintained constant is only correct while someone remembers to update it, and a hash can't go stale.</li>
+    <li><strong>Schema version.</strong> No version number. <code>db/schema.sql</code> is the authoritative current shape; every change so far has been additive (<code>CREATE TABLE IF NOT EXISTS</code>, <code>ADD COLUMN IF NOT EXISTS</code>) and recorded in <code>CHANGELOG.md</code>. <code>db/db.py:apply_schema()</code> applies it explicitly, run by migration/import scripts &mdash; never automatically on app startup. A breaking migration, when one lands, will be documented here.</li>
+  </ul>
 </section>
 
 <section>
   <h2 id="next">What's next</h2>
   <ul class="body">
-    <li><strong>PWA capture.</strong> Offline draft capture on mobile, synced on reconnect. Feeds directly into the AI agent flow described above.</li>
+    <li><strong>Write API.</strong> <code>POST /inputs</code>, <code>GET /extractions/{id}</code>, <code>POST /extractions/{id}/confirm</code> and <code>/correct</code> — the same <code>ingest/</code> functions this document describes, called over HTTP instead of from a terminal.</li>
+    <li><strong>Confirm UI.</strong> A minimal web surface — textarea, rendered card, confirm button — so a session can be logged from a browser, not just a terminal.</li>
+    <li><strong>Deploy.</strong> The API hosted on Fly, against the Supabase database already live.</li>
+    <li><strong>Mobile capture.</strong> Offline draft capture on a phone, synced on reconnect, feeding the same pipeline. Further out — photo and speech input follow the same pattern once this lands.</li>
   </ul>
   <p>This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
 </section>
 
 <footer>
-  Last updated 2026-07-26
+  Last updated 2026-08-09
 </footer>
 
 </main>
@@ -502,13 +672,12 @@ traininglogs log session.md --parser rules</code></pre>
     <li><a href="#why">Why this exists</a></li>
     <li><a href="#vision">Vision</a></li>
     <li><a href="#shape">The shape of the system</a></li>
-    <li><a href="#data">The data model</a></li>
-    <li><a href="#parser">The parser</a></li>
-    <li><a href="#storage">Storage</a></li>
+    <li><a href="#data">Pydantic Data Model</a></li>
+    <li><a href="#storage">How it works</a></li>
+    <li><a href="#ai-capture">Inside the AI agent</a></li>
     <li><a href="#api">The API</a></li>
     <li><a href="#dashboard">The dashboard</a></li>
     <li><a href="#versioning">Versioning</a></li>
-    <li><a href="#ai-capture">Track B — AI capture</a></li>
     <li><a href="#next">What's next</a></li>
   </ul>
 </aside>
