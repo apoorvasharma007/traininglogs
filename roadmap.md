@@ -374,14 +374,35 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-09.** Phase 1 and Phase 2 are complete and merged to `dev` (`c4cf1e0`,
-pushed). **584 tests passing, 0 skipped.** Working tree clean, only `dev` and `main` exist as
-branches. **Spend: $1.71 of $5.00.**
+**Last session: 2026-08-09.** Phase 3 is underway on branch `phase-3-ingest-core` (cut from
+`dev`, not yet merged). **D1 done** (`7f6b48c`): the `ingest/` module exists —
+`capture(text) -> raw_input_id`, `extract(raw_input_id) -> extraction_id`,
+`confirm(extraction_id, final_extract) -> session_id` — each tested against the real test DB,
+`extract()` idempotent per D3 (a pending/confirmed extraction short-circuits a re-run; a
+rejected one does not). Purely additive — nothing existing was rewired yet, so risk was low.
+**592 tests passing, 0 skipped** (was 584). **Spend: $1.71 of $5.00** (unchanged — assemble()
+is faked out in the new tests).
+
+Session ended here **by request**, to review D1 before D2 touches the live CLI path.
 
 ### Start here next session
 
-**Phase 3 — ingest core.** Nothing blocks it, and like Phase 2 it should need little or no API
-spend. See the Phase 3 section above for its items.
+**Phase 3, D2 — wire `cli/log.py` to `ingest/`.** This is the step that changes real behavior:
+`LLMOrchestrator.run()` currently bundles extraction and the interactive confirm loop into one
+blocking call. D2 has to split that apart — `ingest/extract.py` must stay non-interactive (it
+already does), so the render-card / ask / apply-correction loop moves out of the orchestrator
+and into `cli/log.py` directly, calling `ingest.extract()` then looping locally with
+`LLMExtractValidator.apply_correction()` until confirmed, then calling `ingest.confirm()`.
+`processor.process_md_file_with_ai` and its existing tests
+(`tests/test_processor_ai_path.py`) are the behavior contract to preserve — every one of those
+tests should still pass once the logic lives in `cli/log.py` + `ingest/` instead of
+`processor.py`. Decide there whether `process_md_file_with_ai` is deleted once `cli/log.py`
+calls `ingest/` directly, or kept as a thin compatibility wrapper — the roadmap doesn't commit
+to either.
+
+After D2: D3 is already satisfied by `extract()`'s idempotency check, so what's left is D4
+(`llm_calls` table — new migration), D5–D7 (structured logging), D8 (confirm git/dashboard
+work is already confined to `cli/log.py` — verify once D2 lands rather than assume it).
 
 ### Before the AI path is next run against prod — required
 
