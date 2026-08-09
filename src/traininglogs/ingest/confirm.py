@@ -12,6 +12,7 @@ from psycopg2.extensions import connection as Connection
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.db.fetch import get_extraction
 from traininglogs.db.insert import confirm_extraction, insert_session
+from traininglogs.models.models import TrainingSession
 from traininglogs.processor.processor import build_session_from_extract
 
 
@@ -23,7 +24,7 @@ def confirm(
     corrections: list[dict] | None = None,
     inputs_root: Path | None = None,
     source_file: str | None = None,
-) -> str:
+) -> TrainingSession:
     """Build and insert the session from a confirmed extract, and mark the extraction that
     produced it confirmed.
 
@@ -50,4 +51,4 @@ def confirm(
 
     confirm_extraction(conn, extraction_id, corrections=corrections)
 
-    return session.session_id
+    return session

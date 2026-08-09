@@ -155,15 +155,44 @@ class TestConfirm:
         md_path = tmp_path / "leg_press.md"
         md_path.write_text(MARKDOWN)
 
-        session_id = confirm(conn, "x1", make_extract(), md_path=md_path)
+        session = confirm(conn, "x1", make_extract(), md_path=md_path)
 
         with conn.cursor() as cur:
-            cur.execute("SELECT extraction_id FROM sessions WHERE session_id = %s", (session_id,))
+            cur.execute(
+                "SELECT extraction_id FROM sessions WHERE session_id = %s", (session.session_id,)
+            )
             assert cur.fetchone()[0] == "x1"
 
         stored = get_extraction(conn, "x1")
         assert stored["status"] == "confirmed"
         assert stored["confirmed_at"] is not None
+
+    def test_returns_the_full_session_not_just_its_id(self, conn, tmp_path) -> None:
+        """The caller (cli/log.py) needs the whole object to re-insert into the local DB
+        mirror -- returning a bare id would force it to re-fetch what it already just built."""
+        from traininglogs.models.models import TrainingSession
+
+        raw_input_id = capture(conn, MARKDOWN)
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
+                "VALUES ('x3', %s, 'm', 'v1', '{}')",
+                (raw_input_id,),
+            )
+        conn.commit()
+
+        md_path = tmp_path / "leg_press.md"
+        md_path.write_text(MARKDOWN)
+
+        session = confirm(conn, "x3", make_extract(), md_path=md_path, source_file="a.md")
+
+        assert isinstance(session, TrainingSession)
+        assert session.focus == "Legs Hypertrophy"
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT source_file FROM sessions WHERE session_id = %s", (session.session_id,)
+            )
+            assert cur.fetchone()[0] == "a.md"
 
     def test_records_corrections_on_the_extraction(self, conn, tmp_path) -> None:
         raw_input_id = capture(conn, MARKDOWN)

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — ingest/ module (Phase 3, step 1)
+
+- `ingest/capture.py`, `ingest/extract.py`, `ingest/confirm.py` — three single-job functions,
+  each reading its input from the database and saving its own output before returning:
+  `capture(text) -> raw_input_id`, `extract(raw_input_id) -> extraction_id`,
+  `confirm(extraction_id, final_extract) -> session`. Restartable by construction — nothing is
+  passed in memory between them.
+- `extract()` is idempotent (D3): a `raw_input_id` with an existing pending or confirmed
+  extraction returns that id instead of paying for a second model call. A rejected extraction
+  does not count, since rejecting one is how a person asks for another attempt.
+- `db.insert.confirm_extraction()` — marks an extraction confirmed and records its corrections
+  in one statement, so `status` and `confirmed_at` cannot disagree (same reasoning as
+  `insert_extraction`'s existing `CASE WHEN`).
+
+### Changed — cli/log.py drives ingest/ directly (Phase 3, step 2)
+
+- `LLMOrchestrator.run()` split into `confirm_loop(extract)` (new — the render/ask/apply-
+  correction loop, no model call to produce the initial extract) and `run(text)` (unchanged
+  behavior: `assemble()` then `confirm_loop()`). This is what lets extraction happen without
+  ever blocking on a terminal: `ingest.extract()` calls `assemble()` directly, and the
+  interactive loop that used to be bundled into the same call now lives only where a human is
+  actually present.
+- `cli/log.py`'s `--parser ai` path now calls `ingest.capture` → `ingest.extract` →
+  `LLMOrchestrator.confirm_loop` → `ingest.confirm`, instead of one function that did all four
+  steps inline. `processor.write_session_json()` is new, factored out of what used to be two
+  copies of the same JSON-write block.
+- **Removed** `processor.process_md_file_with_ai()` — superseded by the above; its logic now
+  lives in `ingest/` and `cli/log.py`'s `_process_ai_file`. `cli/validate.py` is unaffected (it
+  never touched the database and still calls `LLMOrchestrator.run()` directly).
+
 ### Removed — the monolithic extraction path (Phase 2, step 5)
 
 - `SYSTEM_PROMPT` (7,295 chars), `MOVEMENT_SKILL_CONVENTIONS` (2,692 chars),

@@ -121,6 +121,26 @@ def _convert_lbs_to_kg(obj):
     return obj
 
 
+def write_session_json(session: TrainingSession, output_dir: Path | None) -> Path | None:
+    """Write a session's JSON alongside the DB row, filed under program/phase/week.
+
+    Shared by both parser paths so the same file lands in the same place regardless of which
+    one produced it. Returns the path written, or None if `output_dir` is None.
+    """
+    if output_dir is None:
+        return None
+    if session.program and session.phase is not None and session.week is not None:
+        week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
+    else:
+        week_dir = output_dir / "sessions"
+    week_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = week_dir / f"{session.session_id}.json"
+    output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
+    print(f">>> JSON written to: {output_path}\n")
+    return output_path
+
+
 def process_md_file(
     md_path: Path,
     conn,
@@ -169,103 +189,5 @@ def process_md_file(
     print(f">>> Inserted into DB: {session.session_id}\n")
 
     # JSON write second — only after the DB confirms this is a new session
-    if output_dir is not None:
-        if session.program and session.phase is not None and session.week is not None:
-            week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
-        else:
-            week_dir = output_dir / "sessions"
-        week_dir.mkdir(parents=True, exist_ok=True)
-
-        output_path = week_dir / f"{session.session_id}.json"
-        output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
-
-        print(f">>> JSON written to: {output_path}\n")
-    return session
-
-
-def process_md_file_with_ai(
-    md_path: Path,
-    conn,
-    orchestrator=None,
-    model: str | None = None,
-    inputs_root: Path | None = None,
-    output_dir: Path | None = OUTPUT_DIR,
-) -> TrainingSession:
-    """The AI parser path: capture the text, extract from it, store both, then the session.
-
-    Lives here beside process_md_file rather than nested inside the CLI, where it had no test.
-    That is not incidental — `source_file` was set by the rules path and silently never set by
-    this one, so every AI-parsed session in the database has no link to the text it came from,
-    and nothing could have caught it.
-
-    `orchestrator` and `model` exist so a test can drive this without an API call. Left unset,
-    the real provider is built here so that the model which actually did the work is what gets
-    recorded.
-    """
-    import json
-
-    from traininglogs.agent.prompts import PROMPT_VERSION
-    from traininglogs.db.insert import insert_extraction, insert_raw_input
-
-    _inputs_root = inputs_root if inputs_root is not None else INPUTS_DIR
-    md_text = md_path.read_text(encoding="utf-8")
-    source_file = relative_source_file(md_path)
-
-    # Stored before anything is asked of the model. If extraction fails, or the session is
-    # rejected at the confirmation card, what the person wrote is already kept — a capture layer
-    # that depends on interpretation succeeding is not a capture layer.
-    raw_input_id = insert_raw_input(
-        conn, md_text, source_kind="markdown", source_file=source_file
-    )
-
-    if orchestrator is None:
-        from traininglogs.agent.llm_orchestrator import LLMOrchestrator
-        from traininglogs.agent.providers import AnthropicProvider
-
-        provider = AnthropicProvider()
-        orchestrator = LLMOrchestrator(parser_provider=provider)
-        model = model or provider.model
-
-    extract = orchestrator.run(md_text)
-
-    # What is stored as `extract` is the model's own reading, not the corrected one. The
-    # corrections are recorded beside it, so the three facts stay separable: what the model
-    # said, what the person changed, and what was written to the normalized tables below.
-    original = getattr(orchestrator, "original_extract", None) or extract
-
-    # run() only returns once the card has been confirmed, so this is not pending.
-    extraction_id = insert_extraction(
-        conn,
-        raw_input_id=raw_input_id,
-        model=model or "unknown",
-        prompt_version=PROMPT_VERSION,
-        extract=original.model_dump(mode="json"),
-        corrections=list(getattr(orchestrator, "corrections", []) or []),
-        uncertain_fields=list(extract.uncertain_fields or []),
-        warnings=list(extract.warnings or []),
-        status="confirmed",
-    )
-
-    session = build_session_from_extract(extract, md_path, _inputs_root)
-
-    if not insert_session(
-        conn, session, source_file=source_file, extraction_id=extraction_id
-    ):
-        raise SystemExit(
-            f"\nERROR: session_id '{session.session_id}' already exists in the DB.\n"
-            f"The date in '{md_path.name}' is likely wrong. Fix it and re-run.\n"
-        )
-
-    print(f">>> Inserted into DB: {session.session_id}\n")
-
-    if output_dir is not None:
-        if session.program and session.phase is not None and session.week is not None:
-            week_dir = output_dir / session.program / f"phase {session.phase}" / f"week {session.week}"
-        else:
-            week_dir = output_dir / "sessions"
-        week_dir.mkdir(parents=True, exist_ok=True)
-        output_path = week_dir / f"{session.session_id}.json"
-        output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
-        print(f">>> JSON written to: {output_path}\n")
-
+    write_session_json(session, output_dir)
     return session
