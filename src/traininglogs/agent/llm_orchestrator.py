@@ -39,7 +39,25 @@ class LLMOrchestrator:
         self._use_monolithic_parser = use_monolithic_parser
 
     def run(self, text: str) -> TrainingLogLLMExtract:
+        """Extract, show the card, apply corrections until confirmed.
+
+        Every correction is recorded in `self.corrections` -- what the person said, and the
+        edits it produced. The caller stores that alongside the extraction, which keeps three
+        facts permanently separable: what the model read, what the person changed, and what was
+        stored. It also turns "which fields do I correct most often?" into a query, which is a
+        prompt-improvement backlog generated from real use rather than guesswork.
+
+        Deliberately no database access here. The orchestrator drives a conversation; the
+        caller owns storage.
+        """
+        from datetime import datetime, timezone
+
         from traininglogs.agent.providers import AnthropicProvider
+
+        self.corrections: list[dict] = []
+        # The model's own reading, before any human correction. Kept so the three facts stay
+        # separable forever: what the model said, what the person changed, what was stored.
+        self.original_extract: TrainingLogLLMExtract | None = None
 
         parser_provider = self._parser_provider or AnthropicProvider()
         correction_provider = self._correction_provider or parser_provider
@@ -50,6 +68,8 @@ class LLMOrchestrator:
         else:
             extract = assemble(text, provider=parser_provider)
 
+        self.original_extract = extract
+
         while True:
             card = self._builder.build(extract)
             self._renderer.render(card)
@@ -58,4 +78,11 @@ class LLMOrchestrator:
             if answer.lower() in {"y", "yes"}:
                 return extract
             if answer:
-                extract = validator.apply_correction(extract, answer)
+                extract, edits = validator.apply_correction(extract, answer)
+                self.corrections.append(
+                    {
+                        "at": datetime.now(timezone.utc).isoformat(),
+                        "instruction": answer,
+                        "edits": [e.model_dump(mode="json") for e in edits],
+                    }
+                )

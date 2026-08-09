@@ -225,3 +225,81 @@ class TestPlaceholdersRemainQueryable:
         with conn.cursor() as cur:
             cur.execute("SELECT count(*) FROM extractions WHERE warnings <> '{}'")
             assert cur.fetchone()[0] == 1
+
+
+class TestCorrectionsAreKeptBesideTheModelsReading:
+    """C7. Three facts stay separable forever: what the model said, what the person changed,
+    and what was written to the normalized tables. Storing only the corrected extract would
+    collapse the first two into one and lose the disagreement."""
+
+    class CorrectingOrchestrator:
+        """Returns a corrected extract, and reports the original plus the edits — the shape
+        LLMOrchestrator presents after a confirmation loop with corrections in it."""
+
+        def __init__(self, original, corrected, corrections):
+            self.original_extract = original
+            self._corrected = corrected
+            self.corrections = corrections
+
+        def run(self, text: str):
+            return self._corrected
+
+    def _run(self, conn, md_file):
+        original = make_extract(focus="Legs Hypertrophy")
+        corrected = make_extract(focus="Legs Strength")
+        corrections = [
+            {
+                "at": "2026-08-09T10:00:00+00:00",
+                "instruction": "it was a strength session not hypertrophy",
+                "edits": [{"path": "focus", "value": "Legs Strength"}],
+            }
+        ]
+        session = process_md_file_with_ai(
+            md_file, conn,
+            orchestrator=self.CorrectingOrchestrator(original, corrected, corrections),
+            model="m", output_dir=None,
+        )
+        with conn.cursor() as cur:
+            cur.execute("SELECT extraction_id FROM sessions WHERE session_id = %s",
+                        (session.session_id,))
+            return session, get_extraction(conn, cur.fetchone()[0])
+
+    def test_the_stored_extract_is_what_the_model_read(self, conn, md_file) -> None:
+        _, extraction = self._run(conn, md_file)
+        assert extraction["extract"]["focus"] == "Legs Hypertrophy"
+
+    def test_the_correction_is_recorded_next_to_it(self, conn, md_file) -> None:
+        _, extraction = self._run(conn, md_file)
+        assert len(extraction["corrections"]) == 1
+        entry = extraction["corrections"][0]
+        assert entry["instruction"] == "it was a strength session not hypertrophy"
+        assert entry["edits"] == [{"path": "focus", "value": "Legs Strength"}]
+
+    def test_what_was_stored_is_the_corrected_version(self, conn, md_file) -> None:
+        session, _ = self._run(conn, md_file)
+        with conn.cursor() as cur:
+            cur.execute("SELECT focus FROM sessions WHERE session_id = %s", (session.session_id,))
+            assert cur.fetchone()[0] == "Legs Strength"
+
+    def test_corrected_fields_become_a_query(self, conn, md_file) -> None:
+        """"Which fields do I correct most often?" is a prompt-improvement backlog generated
+        from real use, rather than a guess."""
+        self._run(conn, md_file)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT edit->>'path', count(*)
+                FROM extractions, jsonb_array_elements(corrections) AS c,
+                     jsonb_array_elements(c->'edits') AS edit
+                GROUP BY 1
+            """)
+            assert cur.fetchall() == [("focus", 1)]
+
+    def test_no_corrections_stores_an_empty_list_not_null(self, conn, md_file) -> None:
+        session = process_md_file_with_ai(
+            md_file, conn, orchestrator=FakeOrchestrator(make_extract()),
+            model="m", output_dir=None,
+        )
+        with conn.cursor() as cur:
+            cur.execute("SELECT extraction_id FROM sessions WHERE session_id = %s",
+                        (session.session_id,))
+            assert get_extraction(conn, cur.fetchone()[0])["corrections"] == []

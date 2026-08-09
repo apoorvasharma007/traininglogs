@@ -259,14 +259,22 @@ See the open hypothesis at the end of `extraction-design-principles.md`.
       `warnings` are stored on the `extractions` row, which is the layer they describe.
       `TrainingSession` is unchanged: they are statements *about* a reading, not part of the
       normalized session.
-- [ ] **C6 — Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
+- [x] **C6 — DONE 2026-08-09. Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
       the whole extract and asks for the whole extract back, with "keep all unchanged fields
       exactly as they are" as the only guarantee — a hope, not a mechanism. It also uses
       `SYSTEM_PROMPT`/`TOOL_NAME`, i.e. the monolithic path that hit `max_tokens=4096` and
       truncated on 2 of 6 files in the evaluation. Replace with a patch: the model returns
-      `[{path, value}]`, Python applies it. ~40x cheaper (~$0.028 -> ~$0.0007 per correction),
-      and fields not named in the patch cannot change *by construction*.
-- [ ] **C7 — `corrections` JSONB, append-only; `extract` stays immutable.** Keeps three facts
+      `[{path, value}]`, Python applies it. Fields not named in the patch cannot change *by
+      construction* — that guarantee is now a property of the code rather than a sentence in a
+      prompt.
+
+      **Measured, not estimated.** On a real 10-exercise session the old shape needed ~5,410
+      output tokens against `max_tokens=4096` — it *could not have returned* a correction for a
+      session that size, only a truncated one. That is the finding; cost is secondary. The
+      saving is **5.9x** ($0.0368 -> $0.0062), not the 40x guessed here: the extract is still
+      sent as context, so input barely moves. Output drops 90x, and output is priced at 5x
+      input, which is where the money goes.
+- [x] **C7 — DONE 2026-08-09. `corrections` JSONB, append-only; `extract` stays immutable.** Keeps three facts
       forever: what the model said, what the human changed, what was stored. Byproduct: "which
       fields do I correct most often?" becomes a SQL query — the prompt-improvement backlog,
       generated from real use.

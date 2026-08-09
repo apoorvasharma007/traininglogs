@@ -40,6 +40,11 @@ CREATE TABLE IF NOT EXISTS extractions (
     uncertain_fields TEXT[] NOT NULL DEFAULT '{}',
     warnings         TEXT[] NOT NULL DEFAULT '{}',
     status           TEXT NOT NULL DEFAULT 'pending',
+    -- Appended to, never rewritten. `extract` stays the model's own reading; each entry here is
+    -- one thing the person said and the edits it produced. Keeps three facts permanently
+    -- separable -- what the model said, what the person changed, what was stored -- and makes
+    -- "which fields do I correct most often?" a query rather than a guess.
+    corrections      JSONB NOT NULL DEFAULT '[]',
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     confirmed_at     TIMESTAMPTZ,
     CONSTRAINT extractions_status_check
@@ -70,6 +75,8 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- already there, and would silently skip the new column. Nullable because sessions written
 -- before this existed have no extraction to point at, and because the rules parser has none.
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS extraction_id TEXT REFERENCES extractions(id);
+-- For databases where `extractions` was created before this column existed.
+ALTER TABLE extractions ADD COLUMN IF NOT EXISTS corrections JSONB NOT NULL DEFAULT '[]';
 
 CREATE TABLE IF NOT EXISTS warmups (
     id               SERIAL PRIMARY KEY,

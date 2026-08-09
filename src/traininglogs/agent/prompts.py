@@ -266,6 +266,26 @@ That last one matters: a remark about one side is a note, not a per-side rep cou
 did 13 reps. Only write reps like "left 8, right 7" when the text really gives two counts."""
 
 
+CORRECTION_SYSTEM_PROMPT = """You apply one person's correction to a workout extraction.
+
+You are given the current extraction and what the person said is wrong with it. Return only the
+fields that need to change, each as a path and its new value.
+
+Rules:
+
+- Change only what the correction asks for. Anything you do not list stays exactly as it is.
+- Paths are dot-separated and list positions are zero-based numbers, exactly as they appear in
+  the extraction you were given: `exercises.2.sets.0.rpe`, `exercises.1.name`, `focus`.
+- The path must already exist in the extraction. Do not invent one.
+- To change how many items a list has -- a set that was missed, a set that was not really
+  performed -- give the path of the whole list and the complete new list as the value.
+- Use null to clear a field.
+- If the correction asks for nothing that maps to a field, return no edits.
+
+The person is describing their own training, so take their word for what happened. They are
+correcting a reading of their notes, not being asked to justify it."""
+
+
 def _prompt_version() -> str:
     """A short fingerprint of the live prompts, recomputed on import.
 

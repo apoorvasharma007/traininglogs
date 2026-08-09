@@ -111,9 +111,9 @@ class TestLLMOrchestrator:
         assert result.date == "2026-05-12"
 
     def test_one_correction_then_confirm(self) -> None:
-        # First parse returns base, first correction returns updated
+        # Corrections come back as edits now, not as a rewritten extract.
         parser_provider = StubProvider(_BASE_RAW)
-        correction_provider = StubProvider(_UPDATED_RAW)
+        correction_provider = StubProvider({"edits": [{"path": "focus", "value": "Lower"}]})
         renderer = _stub_renderer()
         answers = iter(["change focus to Lower", "y"])
         orch = LLMOrchestrator(
@@ -127,10 +127,11 @@ class TestLLMOrchestrator:
         assert result.focus == "Lower"
 
     def test_multiple_corrections(self) -> None:
-        raw_v2: dict[str, Any] = dict(_BASE_RAW, focus="Push")
-        raw_v3: dict[str, Any] = dict(_BASE_RAW, focus="Pull")
         parser_provider = StubProvider(_BASE_RAW)
-        correction_provider = StubProvider(raw_v2, raw_v3)
+        correction_provider = StubProvider(
+            {"edits": [{"path": "focus", "value": "Push"}]},
+            {"edits": [{"path": "focus", "value": "Pull"}]},
+        )
         renderer = _stub_renderer()
         answers = iter(["fix 1", "fix 2", "y"])
         orch = LLMOrchestrator(
@@ -144,7 +145,7 @@ class TestLLMOrchestrator:
         assert result.focus == "Pull"
 
     def test_renderer_called_each_iteration(self) -> None:
-        provider = StubProvider(_BASE_RAW, _UPDATED_RAW)
+        provider = StubProvider(_BASE_RAW, {"edits": [{"path": "focus", "value": "Lower"}]})
         mock_renderer = MagicMock(spec=TerminalRenderer)
         mock_renderer.console = _null_console()
         answers = iter(["correction", "y"])
@@ -301,12 +302,11 @@ class TestLLMOrchestratorDefaultsToSplitExtraction:
         result = orch.run("session text")
         assert result.date == "2026-05-12"
 
-    def test_correction_after_split_extraction_uses_the_monolithic_correction_tool(self) -> None:
-        """Corrections always go through LLMExtractValidator's single-call tool regardless of
-        which path produced the initial extract — a different provider (or the same one, in
-        real usage) can serve both shapes."""
+    def test_correction_after_split_extraction_uses_the_patch_tool(self) -> None:
+        """Corrections go through LLMExtractValidator's patch tool regardless of which path
+        produced the initial extract."""
         parser_provider = ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
-        correction_provider = StubProvider(dict(_BASE_RAW, focus="Lower"))
+        correction_provider = StubProvider({"edits": [{"path": "focus", "value": "Lower"}]})
         renderer = _stub_renderer()
         answers = iter(["change focus to Lower", "y"])
         orch = LLMOrchestrator(

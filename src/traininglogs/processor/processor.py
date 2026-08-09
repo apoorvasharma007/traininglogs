@@ -228,13 +228,19 @@ def process_md_file_with_ai(
 
     extract = orchestrator.run(md_text)
 
+    # What is stored as `extract` is the model's own reading, not the corrected one. The
+    # corrections are recorded beside it, so the three facts stay separable: what the model
+    # said, what the person changed, and what was written to the normalized tables below.
+    original = getattr(orchestrator, "original_extract", None) or extract
+
     # run() only returns once the card has been confirmed, so this is not pending.
     extraction_id = insert_extraction(
         conn,
         raw_input_id=raw_input_id,
         model=model or "unknown",
         prompt_version=PROMPT_VERSION,
-        extract=extract.model_dump(mode="json"),
+        extract=original.model_dump(mode="json"),
+        corrections=list(getattr(orchestrator, "corrections", []) or []),
         uncertain_fields=list(extract.uncertain_fields or []),
         warnings=list(extract.warnings or []),
         status="confirmed",

@@ -184,7 +184,7 @@ def find_raw_inputs_by_checksum(conn: Connection, checksum: str) -> list[dict]:
 
 _EXTRACTION_COLUMNS = (
     "id", "raw_input_id", "model", "prompt_version", "extract",
-    "uncertain_fields", "warnings", "status", "created_at", "confirmed_at",
+    "uncertain_fields", "warnings", "status", "corrections", "created_at", "confirmed_at",
 )
 
 

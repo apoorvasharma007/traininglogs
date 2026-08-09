@@ -48,6 +48,7 @@ def insert_extraction(
     uncertain_fields: list[str] | None = None,
     warnings: list[str] | None = None,
     status: str = "pending",
+    corrections: list[dict] | None = None,
     extraction_id: str | None = None,
 ) -> str:
     """Store one attempt at reading a raw input, and return its id.
@@ -62,11 +63,11 @@ def insert_extraction(
             """
             INSERT INTO extractions (
                 id, raw_input_id, model, prompt_version, extract,
-                uncertain_fields, warnings, status, confirmed_at
+                uncertain_fields, warnings, status, corrections, confirmed_at
             )
             -- confirmed_at follows from status rather than being a second thing to remember.
             -- Two fields that must agree, set independently, eventually disagree.
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
                     CASE WHEN %s = 'confirmed' THEN now() ELSE NULL END)
             """,
             (
@@ -78,6 +79,7 @@ def insert_extraction(
                 uncertain_fields or [],
                 warnings or [],
                 status,
+                json.dumps(corrections or []),
                 status,
             ),
         )

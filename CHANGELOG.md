@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — corrections are edits, not rewrites (Phase 2, step 4)
+
+- **C6.** `LLMExtractValidator.apply_correction` asks the model for a list of
+  `{path, value}` edits and applies them in Python, instead of sending the whole extract and
+  asking for the whole extract back. Fields the correction does not name **cannot** change —
+  previously the only guarantee was the sentence "keep all unchanged fields exactly as they are"
+  in a prompt, and nothing would have detected a quietly altered set.
+
+  Measured on a real 10-exercise session: the old shape needed **~5,410 output tokens against
+  `max_tokens=4096`**, so it could not have returned a correction for a session that size, only
+  a truncated one. Cost is secondary and the roadmap's 40x estimate was wrong — it is **5.9x**
+  ($0.0368 → $0.0062), because the extract is still sent as context so input barely moves.
+  Output drops 90x, and output is priced at 5x input.
+
+  New: `agent/patch.py` (`FieldEdit`, `ExtractPatch`, `apply_edits`, `PatchError`) and
+  `CORRECTION_SYSTEM_PROMPT`. A path that does not resolve raises rather than silently doing
+  nothing — a typo'd path that changes nothing is worse than a failure, because the person
+  believes their correction landed.
+
+  The correction path no longer uses `SYSTEM_PROMPT`/`extract_workout`, which was its last
+  caller outside the deprecated monolithic parser.
+
+- **C7.** `extractions.corrections` (JSONB, appended to, never rewritten) and
+  `extractions.extract` now holds **the model's own reading**, not the corrected one. Three facts
+  stay separable: what the model said, what the person changed, what was stored. Byproduct:
+  "which fields do I correct most often?" is a SQL query over `corrections`, which is a
+  prompt-improvement backlog generated from real use rather than guesswork.
+  `LLMOrchestrator` exposes `original_extract` and `corrections` after `run()`; it does no
+  database work itself.
+
 ### Added — the ingest path writes all three layers (Phase 2, step 2)
 
 - `sessions.extraction_id` — nullable FK to `extractions`, so a stored session can be traced
