@@ -444,6 +444,44 @@ cache. Confirm with the free token-counting endpoint before revisiting. **Phase 
 exercises against $3.29 remaining. Revisit after Phase 2, so the regeneration is re-runnable and
 versioned rather than a one-shot that might be repeated.
 
-### Next action — Phase 2
+### Phase 2 — done 2026-08-09
 
-**Spend: $1.71 of $5.00.** Phase 2 needs no API credits.
+Steps 1, 2, 4 and 5 landed. Step 3 (re-keying) deferred by decision — see the Phase 2 list above.
+
+| Step | What |
+|---|---|
+| 1 | `raw_inputs` + `extractions` tables, purely additive |
+| 2 | ingest path writes all three layers; **C8 fixed**; the AI path moved out of the CLI so it is testable |
+| 4 | **C6** patch-based corrections, **C7** append-only `corrections` |
+| 5 | monolithic path deleted — `SYSTEM_PROMPT`, `parse()`, the mono switch, env var and eval arm |
+
+**584 tests.** No API spend: Phase 2 cost $0.00. Total remains **$1.71 of $5.00**.
+
+**C6, measured rather than estimated.** On a real 10-exercise session the old whole-document
+correction needed ~5,410 output tokens against `max_tokens=4096` — it could not have returned a
+correction for a session that size. That is the finding; the 5.9x cost saving is secondary, and
+the roadmap's original 40x guess was wrong.
+
+### Open decision — movement-skill conventions, deferred 2026-08-09
+
+Six of the eight domain conventions that lived in `SYSTEM_PROMPT` are absent from the three live
+prompts: juggling/skill-run counts, reaction-time drills, static holds, clean-vs-failed attempt
+mapping, ordinary reps with varying quality staying whole, and one exercise-level RPE applying to
+the last set only. They stopped being applied when the split path became the default, not when
+the constant was deleted.
+
+**Deferred by decision — not important right now.** Preserved verbatim in
+`docs/extraction-conventions.md`. Fixtures exist
+(`tests/fixtures/valid/adhoc_movement_skills_session.md`, `adhoc_calisthenics_rings_session.md`)
+for whenever it is picked up. Cost when it is: a live prompt change moves `PROMPT_VERSION`,
+invalidates the eval cache, and needs a ~$0.10 measurement run.
+
+### Next action
+
+Phase 3 — ingest core. Nothing outstanding blocks it.
+
+Not yet applied to prod: the `raw_inputs`/`extractions` tables, `sessions.extraction_id` and
+`extractions.corrections`. All additive (`CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT
+EXISTS`), so applying the schema touches no existing row — but nothing has been run against
+`DATABASE_URL`, per `.claude/db-migration.md`. Needed before the AI path is next used against
+prod, since it now writes those tables.
