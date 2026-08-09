@@ -335,13 +335,19 @@ status column is the queue), no microservices, no retry framework (the SDK retri
 abstraction layer (one provider, one model), no caching before measuring. The point is that the
 *shape* is queue-ready, not that a queue exists.
 
-## Phase 4 — Write API
+## Phase 4 — Write API ✅ complete (2026-08-10)
 
-- [ ] `POST /inputs` → `{raw_input_id, extraction_id}`
-- [ ] `GET /extractions/{id}` → validation-card JSON (reuse `ValidationCardBuilder`; swap
-      `TerminalRenderer` for a JSON serializer)
-- [ ] `POST /extractions/{id}/confirm` → writes the normalized session
-- [ ] `POST /extractions/{id}/correct` → re-runs correction, returns updated card
+- [x] `POST /inputs` → `{raw_input_id, extraction_id}` (`3c2bacd`)
+- [x] `GET /extractions/{id}` → validation-card JSON, `ValidationCardBuilder` +
+      `jsonable_encoder` in place of `TerminalRenderer` (`3c2bacd`)
+- [x] `POST /extractions/{id}/confirm` → writes the normalized session, `409` on a
+      `session_id` collision instead of an unhandled `SystemExit` (`8e24654`)
+- [x] `POST /extractions/{id}/correct` → one correction per call, fully stateless --
+      the client round-trips `extract` between calls, the server holds nothing (`c32fa76`)
+
+Landed alongside: `session_id` unified onto content hashing (was file-path-only, which had no
+answer for API-submitted content with no file at all — `8b38995`), and a real connection-pool
+bug in `_db()` that left transactions leaking between unrelated pooled requests (`8e24654`).
 
 ## Phase 5 — Confirm UI
 
@@ -385,31 +391,28 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-10.** Phase 3 merged and pushed at session start. Since then: a real
-extraction bug found and fixed and verified live, `session_id` identity unified onto content,
-and Phase 4 is three-quarters done. Two commits not yet pushed (`8e24654` is the tip).
+**Last session: 2026-08-10.** Phase 3 merged and pushed at session start. By the end of the
+session: a real extraction bug found and fixed and verified live, `session_id` identity
+unified onto content, and **Phase 4 (Write API) is complete.** Six commits, all pushed
+(`c32fa76` is the tip).
 
 - `8ef5b45` — **fix:** `SetExtract` never had fields for `rep_quality_assessment` or
   `failure_technique` — every AI-path session since the split pipeline shipped had both
-  silently unset. Fixed, verified against 3 real live sessions (push/pull/legs) diffed against
-  the existing rules-parser JSON — every difference found was the *old* data being wrong,
-  never the new extraction.
+  silently unset. Verified against 3 real live sessions (push/pull/legs) diffed against the
+  existing rules-parser JSON — every difference found was the *old* data being wrong, never
+  the new extraction.
 - `3c2bacd` — **feat:** `POST /inputs`, `GET /extractions/{id}`.
 - `8b38995` — **refactor:** `session_id` derived from content, not file path. Building
   `/confirm` surfaced that `ingest.confirm()` structurally required a file path, which the API
   can't provide. Considered keeping two schemes (path for CLI, content for API); decided to
   unify onto one, accepting the real trade that editing a file and rerunning no longer updates
-  a session in place — it makes a new one. 11 new tests including the property this was
-  actually about: identical content confirmed twice collides instead of duplicating.
+  a session in place — it makes a new one.
 - `8e24654` — **feat:** `POST /extractions/{id}/confirm`. Also fixed a real connection-pool
-  bug found while testing it: `_db()` never rolled back before returning a connection to the
-  pool, so a request that never explicitly committed (every `GET` endpoint; the early
-  "already exists" return in `insert_session()`) leaked its open transaction into the *next*,
-  unrelated request. Separately (not a product bug): the new tests failed only in the full
-  suite, never in isolation — root cause was test hygiene, not the pool fix: `session_id` being
-  content-derived now means these tests collide with their *own* previous run's rows if nothing
-  cleans up between runs. Added a cleanup fixture. Verified stable across two consecutive full
-  runs before trusting it.
+  bug: `_db()` never rolled back before returning a connection to the pool, so a request that
+  never explicitly committed (every `GET` endpoint; the early "already exists" return in
+  `insert_session()`) leaked its open transaction into the *next*, unrelated request.
+- `c32fa76` — **feat:** `POST /extractions/{id}/correct`, fully stateless — settled and built
+  in the same session. Client round-trips `extract` between calls; server holds nothing.
 
 **`ANTHROPIC_API_KEY` is now valid** — updated this session, closing the previously-open gap
 (Anthropic's own retry/rate-limit branches were only proven by mocked unit test before this
@@ -425,30 +428,23 @@ the goal is a hosted app with a UI other people can try, and the regen doesn't b
 `db_regen` currently holds only the 3 test sessions; `output_training_logs_json_v3.0.0/`
 (untracked, not gitignored) is scratch output from the same test, not committed.
 
-**640 tests passing, 0 skipped** (started the session at 608).
+**646 tests passing, 0 skipped** (started the session at 608), verified stable across two
+consecutive full-suite runs (a real gap surfaced mid-session: `session_id` being
+content-derived means tests that create sessions must clean up after themselves now, or a
+second run collides with the first's own leftover rows — worth remembering for any future
+test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 4 — Write API, one endpoint left:**
+**Phase 5 — Confirm UI** is next: a new surface in `traininglogs`, deliberately minimal —
+textarea, rendered card, confirm button. This is the actual "friends can try this" surface;
+Phase 4's four endpoints are what it calls. No steps broken out yet — start by deciding the
+stack (plain HTML/JS hitting the API directly is enough for v1; no framework needed yet) and
+where it lives (a new `web/` or similar, separate from `docs/` which is the read-only
+dashboard).
 
-- [x] `POST /inputs` → `{raw_input_id, extraction_id}` (`3c2bacd`)
-- [x] `GET /extractions/{id}` → validation-card JSON (`3c2bacd`)
-- [x] `POST /extractions/{id}/confirm` (`8e24654`)
-- [ ] `POST /extractions/{id}/correct` — the one endpoint with no existing non-interactive
-      entry point. **Design question to settle before writing code, not during:** should the
-      server hold any state between a `/correct` call and the eventual `/confirm`, or should it
-      stay fully stateless — client sends `{extract, instruction}` (the current extract state,
-      round-tripped from a prior `GET`/`POST .../correct` response), server applies one
-      correction via `LLMExtractValidator.apply_correction()` and returns `{extract, card,
-      edits}`, and the client accumulates the growing `corrections` list itself to eventually
-      pass to `/confirm`. Leaning stateless — matches the roadmap's own "no queue, no cache
-      before measuring" posture, and `/confirm`'s body (`{extract, corrections}`) was already
-      shaped this session specifically so it composes with this design.
-
-Once `/correct` lands, Phase 4 is done and Phase 5 (Confirm UI) is next — the actual "friends
-can try this" surface.
-
-### Before pushing, and before the AI path is next run against prod
+Before that, or before this branch touches prod either way — same blocker as before, still
+unresolved:
 
 ### Before the AI path is next run against prod — required
 
