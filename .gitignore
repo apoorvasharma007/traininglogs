@@ -8,7 +8,6 @@ src/tests/__pycache__/
 .DS_Store
 .env
 *.egg-info/
-output_training_logs_json/
 
 # Model eval runs and response cache (scripts/eval_ab.py)
 eval_runs/
