@@ -375,34 +375,49 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 ## ▶ Resume here
 
 **Last session: 2026-08-09.** Phase 3 is underway on branch `phase-3-ingest-core` (cut from
-`dev`, not yet merged). **D1 done** (`7f6b48c`): the `ingest/` module exists —
-`capture(text) -> raw_input_id`, `extract(raw_input_id) -> extraction_id`,
-`confirm(extraction_id, final_extract) -> session_id` — each tested against the real test DB,
-`extract()` idempotent per D3 (a pending/confirmed extraction short-circuits a re-run; a
-rejected one does not). Purely additive — nothing existing was rewired yet, so risk was low.
-**592 tests passing, 0 skipped** (was 584). **Spend: $1.71 of $5.00** (unchanged — assemble()
-is faked out in the new tests).
+`dev`, not yet merged, not pushed). **D1 and D2 done.**
 
-Session ended here **by request**, to review D1 before D2 touches the live CLI path.
+- **D1** (`7f6b48c`): the `ingest/` module — `capture`, `extract`, `confirm` — each reading its
+  input from the DB and saving its own output before returning. `extract()` idempotent per D3
+  (pending/confirmed short-circuits a re-run; rejected does not).
+- **D2** (`245e059`): `cli/log.py`'s `--parser ai` path now calls
+  `ingest.capture → ingest.extract → LLMOrchestrator.confirm_loop → ingest.confirm` directly.
+  `LLMOrchestrator.run()` split into `confirm_loop(extract)` (new, reusable, no model call, no
+  DB) and `run(text)` (unchanged — `assemble()` then `confirm_loop()`); `cli/validate.py` still
+  uses `run()` and needed no changes. `processor.process_md_file_with_ai` is **deleted** — its
+  logic is now split between `ingest/` and `cli/log.py._process_ai_file`, which takes
+  injectable `provider`/`orchestrator`/`output_dir` for testability, same reason the old
+  function's `orchestrator` param did. `tests/test_processor_ai_path.py` replaced by
+  `tests/test_cli_log_ai_path.py`, same assertions against the new call path.
+  **D8 confirmed, not assumed:** grepped `ingest/*.py` and `cli/log.py` — no `git`, no
+  dashboard rebuild, and no `input()` anywhere below `cli/log.py`'s own `main()` /
+  `_ensure_feature_branch()` / the confirm loop it drives. `ingest/` is clean.
+
+**591 tests passing, 0 skipped** (started this session at 584). **Spend: $1.71 of $5.00**
+(unchanged — `assemble()` is monkeypatched throughout both steps' tests, $0 spent).
+
+Not yet done: local end-to-end smoke test of `traininglogs log --parser ai --no-commit` against
+a real file with a real API call — everything so far is verified through the test suite with
+`assemble()` faked out, not through actually running the CLI command a person types.
 
 ### Start here next session
 
-**Phase 3, D2 — wire `cli/log.py` to `ingest/`.** This is the step that changes real behavior:
-`LLMOrchestrator.run()` currently bundles extraction and the interactive confirm loop into one
-blocking call. D2 has to split that apart — `ingest/extract.py` must stay non-interactive (it
-already does), so the render-card / ask / apply-correction loop moves out of the orchestrator
-and into `cli/log.py` directly, calling `ingest.extract()` then looping locally with
-`LLMExtractValidator.apply_correction()` until confirmed, then calling `ingest.confirm()`.
-`processor.process_md_file_with_ai` and its existing tests
-(`tests/test_processor_ai_path.py`) are the behavior contract to preserve — every one of those
-tests should still pass once the logic lives in `cli/log.py` + `ingest/` instead of
-`processor.py`. Decide there whether `process_md_file_with_ai` is deleted once `cli/log.py`
-calls `ingest/` directly, or kept as a thin compatibility wrapper — the roadmap doesn't commit
-to either.
+**Phase 3, D4–D8 remain** (D3 already satisfied by `extract()`'s idempotency check):
 
-After D2: D3 is already satisfied by `extract()`'s idempotency check, so what's left is D4
-(`llm_calls` table — new migration), D5–D7 (structured logging), D8 (confirm git/dashboard
-work is already confined to `cli/log.py` — verify once D2 lands rather than assume it).
+- **D4 — `llm_calls` table.** New migration: `raw_input_id, step, model, input/output tokens,
+  cost_usd, ms, cached`. Already prototyped as `calls.jsonl` in the eval harness — check there
+  for the shape before inventing a new one. Needs `db/schema.sql` changed and a provider-level
+  call site to write the row (`AnthropicProvider.extract()` is the natural place).
+- **D5 — structured logs carrying `raw_input_id`** on every line through `ingest/`.
+- **D6 — save the raw LLM response before parsing it**, so a validation failure doesn't also
+  cost the response. Touches `agent/providers.py` / `agent/extraction.py`.
+- **D7 — log "call succeeded" vs "result usable" separately.** Same area as D6.
+- **D8 is done** (see above) — nothing left to build, just keep it true as D4–D7 land near the
+  same files.
+
+Before merging `phase-3-ingest-core` to `dev`: run the real E2E smoke test noted above
+(`traininglogs log --parser ai --no-commit` against a `tests/fixtures/` file, one real API
+call, ~$0.05), per `.claude/testing-guide.md`.
 
 ### Before the AI path is next run against prod — required
 
