@@ -14,6 +14,8 @@ from traininglogs.api.schemas import (
     CaptureOut,
     ConfirmIn,
     ConfirmOut,
+    CorrectIn,
+    CorrectOut,
     ExerciseHistoryRow,
     SessionDetail,
     SessionSummary,
@@ -187,3 +189,52 @@ def confirm_extraction_endpoint(
 
     response.status_code = 201
     return ConfirmOut(session_id=session.session_id)
+
+
+@app.post("/extractions/{extraction_id}/correct", response_model=CorrectOut)
+def correct_extraction(
+    extraction_id: str, body: CorrectIn, conn=Depends(_db), _=Depends(_auth)
+):
+    """Apply one correction and hand back the result -- fully stateless, same as every other
+    endpoint here. `body.extract` (the previous response's own `extract`) carries state
+    between calls instead of the server holding any; the extraction's own stored reading is
+    the starting point when it's omitted, on the first correction.
+    """
+    from datetime import datetime, timezone
+
+    from fastapi.encoders import jsonable_encoder
+
+    from traininglogs.agent.llm_extract_validator import LLMExtractValidator
+    from traininglogs.agent.patch import PatchError
+    from traininglogs.agent.providers import AnthropicProvider
+    from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
+    from traininglogs.agent.validation_card_builder import ValidationCardBuilder
+    from traininglogs.db.fetch import get_extraction
+
+    stored = get_extraction(conn, extraction_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+
+    extract_dict = body.extract if body.extract is not None else stored["extract"]
+    current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
+
+    validator = LLMExtractValidator(AnthropicProvider())
+    try:
+        updated_extract, edits = validator.apply_correction(current_extract, body.instruction)
+    except PatchError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except LLMParserError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    correction = {
+        "at": datetime.now(timezone.utc).isoformat(),
+        "instruction": body.instruction,
+        "edits": [e.model_dump(mode="json") for e in edits],
+    }
+    card = ValidationCardBuilder().build(updated_extract)
+
+    return CorrectOut(
+        extract=updated_extract.model_dump(mode="json"),
+        card=jsonable_encoder(card),
+        correction=correction,
+    )

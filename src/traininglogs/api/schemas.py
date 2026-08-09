@@ -129,6 +129,30 @@ class ConfirmOut(BaseModel):
     session_id: str
 
 
+class CorrectIn(BaseModel):
+    extract: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "The extract to correct, if it differs from the extraction's own stored reading "
+            "-- the `extract` field from a prior /correct call, when applying a second "
+            "correction on top of the first. Omit on the first correction."
+        ),
+    )
+    instruction: str = Field(min_length=1, description="What's wrong, in plain language.")
+
+
+class CorrectOut(BaseModel):
+    extract: dict[str, Any] = Field(
+        description="The corrected extract, in full -- round-trip this back as `extract` on "
+        "the next /correct call, or as `extract` on /confirm once done."
+    )
+    card: dict[str, Any] = Field(description="The same state, rendered as a card for display.")
+    correction: dict[str, Any] = Field(
+        description="{at, instruction, edits} -- accumulate these into a list to pass as "
+        "`corrections` on /confirm."
+    )
+
+
 class ExerciseHistoryRow(BaseModel):
     date: date
     phase: Optional[int]

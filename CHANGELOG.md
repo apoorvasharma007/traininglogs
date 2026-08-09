@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — Phase 4, write API (POST /inputs, GET /extractions/{id}, POST .../confirm)
+### Added — Phase 4, write API — complete (POST /inputs, GET /extractions/{id}, POST .../confirm, POST .../correct)
 
 - `POST /inputs` — `ingest.capture()` then `ingest.extract()` over HTTP, the first real
   caller of `ingest/` from `api/app.py`. Returns `{raw_input_id, extraction_id}` (201) on
@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   omitted, the extraction's own stored reading is confirmed as-is. The `SystemExit` `confirm()`
   raises on a `session_id` collision (fine for a CLI process to exit on, wrong for a request)
   is caught here and returned as `409`.
+- `POST /extractions/{id}/correct` — applies one correction and hands back the result.
+  Deliberately, fully stateless, like every other endpoint here: the server holds nothing
+  between calls. The client sends `{extract, instruction}` (`extract` is the previous
+  response's own `extract`, or omitted on the first correction to use the extraction's stored
+  reading), and gets back `{extract, card, correction}` — `extract` to round-trip into the next
+  `/correct` or into `/confirm`, `card` to render, `correction` (`{at, instruction, edits}`) to
+  accumulate into the list `/confirm` eventually takes. `PatchError` (an edit names a field
+  path that doesn't resolve) returns `400`; an LLM failure returns `502`.
 - CORS `allow_methods` extended from `["GET"]` to `["GET", "POST"]`.
 - Fixed a real connection-pool bug surfaced while adding these: `_db()`'s dependency handed
   connections back to the pool without rolling back, so a request that never explicitly

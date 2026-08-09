@@ -413,3 +413,131 @@ class TestConfirmExtraction:
         extraction_id = self._insert_extraction(db_conn, "2026-05-05", "auth test content")
         r = client.post(f"/extractions/{extraction_id}/confirm")
         assert r.status_code == 401
+
+
+class TestCorrectExtraction:
+    """POST /extractions/{id}/correct -- fully stateless. LLMExtractValidator.apply_correction
+    (the actual LLM boundary) is monkeypatched at the class method level, since AnthropicProvider
+    is constructed inside the endpoint itself, not injectable -- no real API calls."""
+
+    def _insert_extraction(self, db_conn, date: str, content: str) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, content)
+        extract = {
+            "date": date,
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+        )
+
+    def _stub_correction(self, monkeypatch, new_focus: str) -> None:
+        from traininglogs.agent.patch import FieldEdit
+
+        def fake_apply_correction(self_, extract, instruction):
+            updated = extract.model_copy(update={"focus": new_focus})
+            return updated, [FieldEdit(path="focus", value=new_focus)]
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+
+    def test_corrects_the_extraction_own_reading_when_no_extract_given(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-01", "correct test content 1")
+        self._stub_correction(monkeypatch, "Corrected Focus")
+
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "it was actually a different focus"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["extract"]["focus"] == "Corrected Focus"
+        assert body["card"]["session_header"]["focus"] == "Corrected Focus"
+        assert body["correction"]["instruction"] == "it was actually a different focus"
+        assert body["correction"]["edits"] == [{"path": "focus", "value": "Corrected Focus"}]
+
+    def test_a_second_correction_builds_on_the_extract_the_client_sends_back(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        """Statelessness, proven: the server never remembers the first correction -- it only
+        knows about it because the client sent `extract` back."""
+        extraction_id = self._insert_extraction(db_conn, "2026-06-02", "correct test content 2")
+
+        self._stub_correction(monkeypatch, "First Correction")
+        r1 = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix 1"},
+            headers={"x-api-key": "testkey"},
+        )
+        first_extract = r1.json()["extract"]
+
+        self._stub_correction(monkeypatch, "Second Correction")
+        r2 = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"extract": first_extract, "instruction": "fix 2"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r2.json()["extract"]["focus"] == "Second Correction"
+
+        # The extraction's own stored reading was never touched by either call.
+        from traininglogs.db.fetch import get_extraction
+        assert get_extraction(db_conn, extraction_id)["extract"]["focus"] == "Legs Hypertrophy"
+
+    def test_an_unresolvable_path_returns_400_not_a_crash(self, client, db_conn, monkeypatch) -> None:
+        def fake_apply_correction(self_, extract, instruction):
+            from traininglogs.agent.patch import PatchError
+            raise PatchError("'nonexistent_field' is not a field here")
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+        extraction_id = self._insert_extraction(db_conn, "2026-06-03", "correct test content 3")
+
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "change the nonexistent field"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 400
+
+    def test_not_found(self, client) -> None:
+        r = client.post(
+            "/extractions/does-not-exist/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 404
+
+    def test_rejects_empty_instruction(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-04", "correct test content 4")
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": ""},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 422
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-05", "correct test content 5")
+        r = client.post(
+            f"/extractions/{extraction_id}/correct", json={"instruction": "fix it"}
+        )
+        assert r.status_code == 401
