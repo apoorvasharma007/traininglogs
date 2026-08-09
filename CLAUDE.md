@@ -10,15 +10,14 @@ Capture happens offline during the workout (draft saved locally in a PWA). Proce
 
 ## Active plans
 
-No active plans. Completed plans are archived in `archived/`.
+[`roadmap.md`](roadmap.md) is the single forward plan — six phases from local CLI to hosted app.
+**Start at its `▶ Resume here` section**, which carries the current state, what is safe to run,
+and the conventions that cost money to forget.
 
----
+`extraction-design-principles.md` sits beside it as reference findings, not a plan.
 
-## Deferred design decisions
-
-**Exercise type inference (input UX)**
-
-Currently the user must write `exercise_type: activity` explicitly in the markdown, and the parser routes to the right set parser based on it. Deferred decision: infer the exercise/set type from the content of the set line itself (e.g. `min`, `km`, `HR` signals → ActivitySet; `kg x reps` → StrengthSet) so the user never has to specify a type. LLM-assisted classification and an exercise registry are also options. Keep `exercise_type` as an explicit override escape hatch. Revisit when touching the input format or parser next.
+Superseded plans live in [`archived/plans/`](archived/plans/) with a note on what each one
+settled and, where relevant, what was later reversed.
 
 ---
 
@@ -98,7 +97,7 @@ main  ←  stable, releases cut from here
 
 1. **Unit tests first.** Model, validation, and pure-logic changes get unit tests before any pipeline code is touched. Run them green before proceeding to the next phase.
 2. **Integration tests second.** Parser, processor, and DB insert changes get integration tests against a real test DB (Docker). Never mock the DB.
-3. **E2E last.** Manual validation using `traininglogs validate`, `--dry-run`, and `--no-commit` against files in `tests/fixtures/` before opening a PR. See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full protocol.
+3. **E2E last.** Manual validation using `traininglogs validate` (no DB write) and `traininglogs log --no-commit` (DB write, no git) against files in `tests/fixtures/` before opening a PR. See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full protocol.
 
 ### Breaking changes
 
@@ -119,7 +118,7 @@ main  ←  stable, releases cut from here
 
 ### Test fixtures
 
-- Sample session files live in `tests/fixtures/` — three canonical inputs covering strength, activity, and unilateral sessions. Use these for E2E validation.
+- Sample session files live in `tests/fixtures/valid/` and `tests/fixtures/invalid/`. See `tests/fixtures/README.md` for the full, current table — don't duplicate it here. Use these for E2E validation.
 - New feature tests create their own in-code fixtures or sample JSON using the new schema. Do not modify existing output JSON files during feature development.
 - Existing JSON in `output_training_logs_json/` is historical data — treated as read-only until `chore/historical-data-regen` runs.
 - DB tests use a real Postgres test DB via Docker Compose. Never mocks.
@@ -164,9 +163,7 @@ traininglogs validate inputs/programs/<slug>/phase_N/week_N/<session>.md
 traininglogs validate tests/fixtures/strength_session.md   # quick smoke test
 
 # Flags (work with any invocation form)
-traininglogs log <target> --dry-run       # full pipeline preview, no DB write
 traininglogs log <target> --no-commit     # insert to DB, skip git commit
-traininglogs log <target> --publish       # insert, commit, push dashboard to website
 traininglogs log <target> --pr            # insert, commit, open a PR
 
 # Start the API server

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+
 from traininglogs.db.db import apply_schema, get_connection
 from traininglogs.processor.processor import _convert_lbs_to_kg, compute_session_id, process_md_file
 
@@ -58,7 +59,44 @@ def md_file(tmp_path) -> Path:
 
 
 def _session_id(md_path: Path, date: str) -> str:
-    return compute_session_id(md_path, md_path.parent, date)
+    return compute_session_id(md_path.read_text(encoding="utf-8"), date)
+
+
+class TestComputeSessionId:
+    """Identity is the content, not where it came from -- roadmap decision 2026-08-10."""
+
+    def test_the_same_content_produces_the_same_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-01")
+        assert a == b
+
+    def test_a_trailing_newline_does_not_change_the_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8\n", "2026-01-01")
+        assert a == b
+
+    def test_different_line_endings_do_not_change_the_id(self) -> None:
+        a = compute_session_id("line one\nline two", "2026-01-01")
+        b = compute_session_id("line one\r\nline two", "2026-01-01")
+        assert a == b
+
+    def test_extra_internal_whitespace_does_not_change_the_id(self) -> None:
+        a = compute_session_id("1.  90kg   x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-01")
+        assert a == b
+
+    def test_different_content_produces_a_different_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 95kg x 8", "2026-01-01")
+        assert a != b
+
+    def test_the_same_content_on_a_different_date_produces_a_different_id(self) -> None:
+        a = compute_session_id("1. 90kg x 8", "2026-01-01")
+        b = compute_session_id("1. 90kg x 8", "2026-01-02")
+        assert a != b
+
+    def test_starts_with_the_date(self) -> None:
+        assert compute_session_id("1. 90kg x 8", "2026-01-01").startswith("2026-01-01-")
 
 
 def test_process_inserts_to_db(md_file, conn, tmp_path):
@@ -270,7 +308,7 @@ def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT set_type, duration_seconds, distance_meters, heart_rate_bpm
+            SELECT duration_seconds, distance_meters, heart_rate_bpm
             FROM working_sets ws
             JOIN exercises e ON e.id = ws.exercise_id
             WHERE e.session_id = %s
@@ -283,31 +321,14 @@ def test_activity_sets_stored_in_db(activity_md_file, conn, tmp_path):
     assert len(rows) == 2
 
     # set 1: 20 min → 1200 s, 2.5 km → 2500 m, HR 145
-    assert rows[0][0] == "activity"
-    assert rows[0][1] == 1200
-    assert float(rows[0][2]) == pytest.approx(2500.0)
-    assert rows[0][3] == 145
+    assert rows[0][0] == 1200
+    assert float(rows[0][1]) == pytest.approx(2500.0)
+    assert rows[0][2] == 145
 
     # set 2: 5 min → 300 s, 500 m, HR 160
-    assert rows[1][0] == "activity"
-    assert rows[1][1] == 300
-    assert float(rows[1][2]) == pytest.approx(500.0)
-    assert rows[1][3] == 160
-
-
-def test_activity_exercise_type_stored_in_db(activity_md_file, conn, tmp_path):
-    activity_id = _session_id(activity_md_file, "2099-07-01")
-    process_md_file(activity_md_file, conn, inputs_root=activity_md_file.parent, output_dir=tmp_path)
-
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT exercise_type FROM exercises WHERE session_id = %s AND number = 1",
-            (activity_id,),
-        )
-        row = cur.fetchone()
-
-    assert row is not None
-    assert row[0] == "activity"
+    assert rows[1][0] == 300
+    assert float(rows[1][1]) == pytest.approx(500.0)
+    assert rows[1][2] == 160
 
 
 # --- standalone session (no program/phase/week) ---
@@ -399,7 +420,7 @@ def test_unilateral_sets_stored_in_db(unilateral_md_file, conn, tmp_path):
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT set_type, left_reps_full, left_reps_partial, right_reps_full, right_reps_partial
+            SELECT left_reps_full, left_reps_partial, right_reps_full, right_reps_partial
             FROM working_sets ws
             JOIN exercises e ON e.id = ws.exercise_id
             WHERE e.session_id = %s
@@ -412,15 +433,13 @@ def test_unilateral_sets_stored_in_db(unilateral_md_file, conn, tmp_path):
     assert len(rows) == 2
 
     # set 1: 8L/7R, no partials
-    assert rows[0][0] == "strength"
-    assert rows[0][1] == 8
-    assert rows[0][2] == 0
-    assert rows[0][3] == 7
-    assert rows[0][4] == 0
+    assert rows[0][0] == 8
+    assert rows[0][1] == 0
+    assert rows[0][2] == 7
+    assert rows[0][3] == 0
 
     # set 2: 8L+1/7R+1
-    assert rows[1][0] == "strength"
-    assert rows[1][1] == 8
-    assert rows[1][2] == 1
-    assert rows[1][3] == 7
-    assert rows[1][4] == 1
+    assert rows[1][0] == 8
+    assert rows[1][1] == 1
+    assert rows[1][2] == 7
+    assert rows[1][3] == 1

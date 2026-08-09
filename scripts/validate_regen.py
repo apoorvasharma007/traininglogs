@@ -88,13 +88,13 @@ def _parse_file(md_path: Path) -> dict:
 
 
 def _compute_session_id(md_path: Path) -> str:
-    from traininglogs.processor.processor import compute_session_id, INPUTS_DIR as PROC_INPUTS
+    from traininglogs.processor.processor import compute_session_id
     from traininglogs.parser.extract import TrainingMarkdownParser
 
     md_text = md_path.read_text(encoding="utf-8")
     intermediate = TrainingMarkdownParser(md_text).parse()
     date_str = intermediate["metadata"].get("date", "")
-    return compute_session_id(md_path.resolve(), PROC_INPUTS, date_str)
+    return compute_session_id(md_text, date_str)
 
 
 def main() -> int:

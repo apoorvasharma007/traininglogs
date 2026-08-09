@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -5,12 +7,10 @@ import pytest
 from pydantic import ValidationError
 
 from traininglogs.models.models import (
-    ActivitySet,
-    AnySet,
-    DropSet,
     DropSetDetails,
     DropSetTechnique,
     Exercise,
+    FailureTechnique,
     Goal,
     LLPDetails,
     LLPTechnique,
@@ -21,9 +21,10 @@ from traininglogs.models.models import (
     RepQualityAssessment,
     RepRange,
     Rest,
+    SessionCooldown,
+    SessionWarmup,
     StaticDetails,
     StaticTechnique,
-    StrengthSet,
     TrainingSession,
     UnilateralReps,
     WarmupSet,
@@ -37,536 +38,513 @@ OUTPUT_JSON_DIR = (
 )
 
 
-# --- RepCount ---
+# ---------------------------------------------------------------------------
+# RepCount
+# ---------------------------------------------------------------------------
 
-def test_rep_count_basic():
-    rc = RepCount(full=10, partial=2)
-    assert rc.total_reps == 12
+class TestRepCount:
+    def test_total_reps_is_sum_of_full_and_partial(self) -> None:
+        assert RepCount(full=8, partial=2).total_reps == 10
 
+    def test_partial_defaults_to_zero(self) -> None:
+        assert RepCount(full=5).partial == 0
 
-def test_rep_count_partial_none_coerced():
-    rc = RepCount.model_validate({"full": 8, "partial": None})
-    assert rc.partial == 0
+    def test_partial_none_coerced_to_zero(self) -> None:
+        assert RepCount.model_validate({"full": 8, "partial": None}).partial == 0
 
+    @pytest.mark.parametrize("full", [-1, -100])
+    def test_negative_full_rejected(self, full: int) -> None:
+        with pytest.raises(ValidationError):
+            RepCount(full=full)
 
-def test_rep_count_negative_full_raises():
-    with pytest.raises(ValidationError):
-        RepCount(full=-1)
+    @pytest.mark.parametrize("partial", [-1, -50])
+    def test_negative_partial_rejected(self, partial: int) -> None:
+        with pytest.raises(ValidationError):
+            RepCount(full=5, partial=partial)
 
-
-def test_rep_count_model_dump_snake_case():
-    d = RepCount(full=5, partial=1).model_dump()
-    assert "full" in d and "partial" in d
-
-
-# --- Rest ---
-
-def test_rest_valid_minutes():
-    r = Rest(minutes=5)
-    assert r.minutes == 5
-    assert r.seconds is None
+    def test_zero_full_is_valid(self) -> None:
+        assert RepCount(full=0).total_reps == 0
 
 
-def test_rest_valid_seconds():
-    r = Rest(seconds=90)
-    assert r.seconds == 90
-    assert r.minutes is None
+# ---------------------------------------------------------------------------
+# Rest
+# ---------------------------------------------------------------------------
+
+class TestRest:
+    def test_minutes_and_seconds_are_mutually_exclusive(self) -> None:
+        with pytest.raises(ValidationError):
+            Rest(minutes=2, seconds=90)
+
+    def test_both_none_is_valid(self) -> None:
+        r = Rest()
+        assert r.minutes is None and r.seconds is None
+
+    @pytest.mark.parametrize("minutes", [-1, 16, 100])
+    def test_minutes_out_of_range_rejected(self, minutes: int) -> None:
+        with pytest.raises(ValidationError):
+            Rest(minutes=minutes)
+
+    @pytest.mark.parametrize("seconds", [-1, 901, 9999])
+    def test_seconds_out_of_range_rejected(self, seconds: int) -> None:
+        with pytest.raises(ValidationError):
+            Rest(seconds=seconds)
+
+    @pytest.mark.parametrize("minutes", [0, 1, 15])
+    def test_minutes_boundary_values_accepted(self, minutes: int) -> None:
+        assert Rest(minutes=minutes).minutes == minutes
+
+    @pytest.mark.parametrize("seconds", [0, 1, 900])
+    def test_seconds_boundary_values_accepted(self, seconds: int) -> None:
+        assert Rest(seconds=seconds).seconds == seconds
 
 
-def test_rest_both_none_valid():
-    r = Rest()
-    assert r.minutes is None and r.seconds is None
+# ---------------------------------------------------------------------------
+# WorkingSet — flat model replacing StrengthSet + ActivitySet
+# ---------------------------------------------------------------------------
 
+class TestWorkingSet:
+    def test_all_measurement_fields_are_optional(self) -> None:
+        ws = WorkingSet(number=1)
+        assert ws.weight_kg is None
+        assert ws.rep_count is None
+        assert ws.duration_seconds is None
+        assert ws.distance_meters is None
+        assert ws.heart_rate_bpm is None
+        assert ws.failure_technique is None
 
-def test_rest_both_set_raises():
-    with pytest.raises(ValidationError):
-        Rest(minutes=2, seconds=90)
-
-
-def test_rest_minutes_too_high_raises():
-    with pytest.raises(ValidationError):
-        Rest(minutes=16)
-
-
-def test_rest_minutes_negative_raises():
-    with pytest.raises(ValidationError):
-        Rest(minutes=-1)
-
-
-def test_rest_seconds_too_high_raises():
-    with pytest.raises(ValidationError):
-        Rest(seconds=901)
-
-
-def test_rest_seconds_negative_raises():
-    with pytest.raises(ValidationError):
-        Rest(seconds=-1)
-
-
-def test_rest_minutes_zero_valid():
-    r = Rest(minutes=0)
-    assert r.minutes == 0
-
-
-def test_rest_seconds_zero_valid():
-    r = Rest(seconds=0)
-    assert r.seconds == 0
-
-
-# --- UnilateralReps ---
-
-def test_unilateral_reps_valid():
-    u = UnilateralReps(
-        left=RepCount(full=8, partial=1),
-        right=RepCount(full=8),
-    )
-    assert u.left.total_reps == 9
-    assert u.right.total_reps == 8
-
-
-def test_unilateral_reps_both_none_valid():
-    u = UnilateralReps()
-    assert u.left is None and u.right is None
-
-
-def test_unilateral_reps_one_side_only():
-    u = UnilateralReps(left=RepCount(full=6))
-    assert u.left.full == 6
-    assert u.right is None
-
-
-# --- StrengthSet ---
-
-def test_strength_set_basic():
-    ss = StrengthSet(number=1, weight_kg=60.0, rep_count=RepCount(full=10))
-    assert ss.set_type == "strength"
-    assert ss.weight_kg == 60.0
-
-
-def test_strength_set_bodyweight():
-    ss = StrengthSet(number=1, weight_kg=None)
-    assert ss.weight_kg is None
-
-
-def test_strength_set_feel_set_no_rep_count():
-    ss = StrengthSet(number=1, rep_count=None)
-    assert ss.rep_count is None
-
-
-def test_strength_set_negative_weight_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(number=1, weight_kg=-1.0)
-
-
-def test_strength_set_rpe_half_step_accepted():
-    ss = StrengthSet(number=1, rpe=7.5)
-    assert ss.rpe == 7.5
-
-
-def test_strength_set_rpe_out_of_range_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(number=1, rpe=11.0)
-
-
-def test_strength_set_rpe_bad_fraction_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(number=1, rpe=7.3)
-
-
-def test_strength_set_rest_minutes():
-    ss = StrengthSet(number=1, rest=Rest(minutes=3))
-    assert ss.rest.minutes == 3
-
-
-def test_strength_set_with_unilateral():
-    ss = StrengthSet(
-        number=1,
-        unilateral_rep_count=UnilateralReps(
-            left=RepCount(full=8),
-            right=RepCount(full=7, partial=1),
-        ),
-    )
-    assert ss.unilateral_rep_count.left.full == 8
-    assert ss.unilateral_rep_count.right.total_reps == 8
-
-
-def test_strength_set_failure_technique_without_rpe_10_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(
+    def test_strength_fields_accepted(self) -> None:
+        ws = WorkingSet(
             number=1,
-            weight_kg=60.0,
-            rep_count=RepCount(full=10),
+            weight_kg=100.0,
+            rep_count=RepCount(full=5),
             rpe=8.0,
-            failure_technique=MyoRepsTechnique(
-                technique_type="MyoReps",
-                details=MyoRepDetails(
-                    mini_sets=[MyoRep(number=1, rep_count=RepCount(full=4))]
-                ),
+            rep_quality_assessment=RepQualityAssessment.PERFECT,
+        )
+        assert ws.weight_kg == 100.0
+        assert ws.rep_count.total_reps == 5
+        assert ws.rpe == 8.0
+
+    def test_activity_fields_accepted(self) -> None:
+        ws = WorkingSet(number=1, duration_seconds=1800, distance_meters=5000.0, heart_rate_bpm=155)
+        assert ws.duration_seconds == 1800
+        assert ws.distance_meters == 5000.0
+        assert ws.heart_rate_bpm == 155
+
+    def test_mixed_strength_and_activity_fields_valid(self) -> None:
+        ws = WorkingSet(number=1, weight_kg=60.0, duration_seconds=60)
+        assert ws.weight_kg == 60.0
+        assert ws.duration_seconds == 60
+
+    def test_no_set_type_field_in_output(self) -> None:
+        ws = WorkingSet(number=1, weight_kg=80.0, rep_count=RepCount(full=8))
+        assert "set_type" not in ws.model_dump()
+
+    def test_rep_quality_serialises_as_string(self) -> None:
+        ws = WorkingSet(number=1, rep_quality_assessment=RepQualityAssessment.GOOD)
+        assert ws.model_dump(mode="json")["rep_quality_assessment"] == "good"
+
+    def test_unilateral_reps_stored_correctly(self) -> None:
+        ws = WorkingSet(
+            number=1,
+            unilateral_rep_count=UnilateralReps(
+                left=RepCount(full=8), right=RepCount(full=7, partial=1)
             ),
         )
+        assert ws.unilateral_rep_count.left.full == 8
+        assert ws.unilateral_rep_count.right.total_reps == 8
+
+    def test_failure_technique_without_rpe_10_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="Failure technique can only be used with RPE 10"):
+            WorkingSet(
+                number=1,
+                weight_kg=80.0,
+                rep_count=RepCount(full=8),
+                rpe=9.0,
+                failure_technique=LLPTechnique(
+                    technique_type="LLP", details=LLPDetails(partial_rep_count=5)
+                ),
+            )
+
+    def test_failure_technique_with_no_rpe_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(
+                number=1,
+                failure_technique=MyoRepsTechnique(
+                    technique_type="MyoReps",
+                    details=MyoRepDetails(mini_sets=[MyoRep(number=1, rep_count=RepCount(full=4))]),
+                ),
+            )
+
+    def test_failure_technique_at_rpe_10_accepted(self) -> None:
+        ws = WorkingSet(
+            number=1,
+            weight_kg=80.0,
+            rpe=10.0,
+            failure_technique=LLPTechnique(
+                technique_type="LLP", details=LLPDetails(partial_rep_count=3)
+            ),
+        )
+        assert ws.failure_technique.technique_type == "LLP"
+
+    @pytest.mark.parametrize("rpe", [0.0, 0.5, 10.5, 11.0, -1.0])
+    def test_rpe_out_of_range_rejected(self, rpe: float) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, rpe=rpe)
+
+    @pytest.mark.parametrize("rpe", [1.0, 5.0, 7.5, 8.5, 10.0])
+    def test_rpe_valid_values_accepted(self, rpe: float) -> None:
+        assert WorkingSet(number=1, rpe=rpe).rpe == rpe
+
+    def test_rpe_non_half_step_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, rpe=7.3)
+
+    def test_negative_weight_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, weight_kg=-0.1)
+
+    def test_zero_weight_accepted(self) -> None:
+        assert WorkingSet(number=1, weight_kg=0.0).weight_kg == 0.0
+
+    @pytest.mark.parametrize("duration", [0, -1])
+    def test_non_positive_duration_rejected(self, duration: int) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, duration_seconds=duration)
+
+    def test_negative_distance_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, distance_meters=-1.0)
+
+    @pytest.mark.parametrize("bpm", [0, -1])
+    def test_non_positive_heart_rate_rejected(self, bpm: int) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=1, heart_rate_bpm=bpm)
+
+    def test_number_zero_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkingSet(number=0)
 
 
-def test_strength_set_model_dump_no_camel_case():
-    ss = StrengthSet(
-        number=1,
-        weight_kg=55.0,
-        rep_count=RepCount(full=10, partial=2),
-        rpe=8.0,
-        rep_quality_assessment=RepQualityAssessment.GOOD,
-    )
-    d = ss.model_dump()
-    for key in ("weightKg", "repCount", "repQuality", "actualRestMinutes", "failureTechnique"):
-        assert key not in d, f"Unexpected camelCase key: {key}"
-    assert "weight_kg" in d
-    assert "rep_count" in d
-    assert "rep_quality_assessment" in d
+# ---------------------------------------------------------------------------
+# Failure technique discriminated union
+# ---------------------------------------------------------------------------
+
+class TestFailureTechniques:
+    def test_myo_reps_dispatches_correctly(self) -> None:
+        ft = MyoRepsTechnique.model_validate({
+            "technique_type": "MyoReps",
+            "details": {
+                "mini_sets": [
+                    {"number": 1, "rep_count": {"full": 4, "partial": 0}},
+                    {"number": 2, "rep_count": {"full": 3, "partial": 0}},
+                ]
+            },
+        })
+        assert ft.technique_type == "MyoReps"
+        assert len(ft.details.mini_sets) == 2
+
+    def test_llp_dispatches_correctly(self) -> None:
+        ft = LLPTechnique.model_validate(
+            {"technique_type": "LLP", "details": {"partial_rep_count": 5}}
+        )
+        assert ft.details.partial_rep_count == 5
+
+    def test_static_hold_dispatches_correctly(self) -> None:
+        ft = StaticTechnique.model_validate(
+            {"technique_type": "StaticHold", "details": {"hold_duration_seconds": 10}}
+        )
+        assert ft.details.hold_duration_seconds == 10
+
+    def test_drop_set_dispatches_correctly(self) -> None:
+        ft = DropSetTechnique.model_validate({
+            "technique_type": "DropSet",
+            "details": {
+                "drop_sets": [
+                    {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}}
+                ]
+            },
+        })
+        assert len(ft.details.drop_sets) == 1
+
+    def test_llp_negative_partial_count_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            LLPTechnique.model_validate(
+                {"technique_type": "LLP", "details": {"partial_rep_count": -1}}
+            )
+
+    def test_static_zero_duration_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            StaticTechnique.model_validate(
+                {"technique_type": "StaticHold", "details": {"hold_duration_seconds": 0}}
+            )
 
 
-def test_strength_set_model_dump_mode_json_enum_as_string():
-    ss = StrengthSet(
-        number=1,
-        weight_kg=55.0,
-        rep_count=RepCount(full=10),
-        rep_quality_assessment=RepQualityAssessment.PERFECT,
-    )
-    d = ss.model_dump(mode="json")
-    assert d["rep_quality_assessment"] == "perfect"
+# ---------------------------------------------------------------------------
+# Goal
+# ---------------------------------------------------------------------------
+
+class TestGoal:
+    def test_all_fields_optional(self) -> None:
+        g = Goal()
+        assert all(
+            v is None
+            for v in [g.weight_kg, g.sets, g.rep_range, g.rest, g.distance_meters, g.target_duration_seconds]
+        )
+
+    def test_rep_range_min_greater_than_max_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Goal(rep_range=RepRange(min=12, max=8))
+
+    def test_zero_sets_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Goal(sets=0)
+
+    def test_negative_weight_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Goal(weight_kg=-1.0)
+
+    def test_rest_too_high_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Goal(rest=Rest(minutes=16))
 
 
-def test_strength_set_rest_too_high_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(number=1, rest=Rest(minutes=20))
+# ---------------------------------------------------------------------------
+# Exercise
+# ---------------------------------------------------------------------------
 
+class TestExercise:
+    def test_exercise_type_field_absent_from_model(self) -> None:
+        ex = Exercise(number=1, name="Bench Press")
+        assert "exercise_type" not in ex.model_dump()
 
-def test_strength_set_rest_negative_raises():
-    with pytest.raises(ValidationError):
-        StrengthSet(number=1, rest=Rest(minutes=-1))
+    def test_tags_is_a_list_and_accepts_multiple_values(self) -> None:
+        ex = Exercise(number=1, name="Bench Press", tags=["absolute_strength", "muscle_growth"])
+        assert ex.tags == ["absolute_strength", "muscle_growth"]
 
+    def test_movement_pattern_accepts_multiple_values(self) -> None:
+        ex = Exercise(number=1, name="Trap Bar Deadlift", movement_pattern=["squat", "hip_hinge"])
+        assert set(ex.movement_pattern) == {"squat", "hip_hinge"}
 
-# --- ActivitySet ---
+    def test_all_classification_fields_optional(self) -> None:
+        ex = Exercise(number=1, name="Plank")
+        assert ex.tags is None
+        assert ex.modality is None
+        assert ex.movement_pattern is None
 
-def test_activity_set_basic():
-    a = ActivitySet(number=1, duration_seconds=300)
-    assert a.set_type == "activity"
-    assert a.duration_seconds == 300
-
-
-def test_activity_set_all_fields():
-    a = ActivitySet(
-        number=1,
-        duration_seconds=40,
-        distance_meters=40.0,
-        heart_rate_bpm=165,
-        rest=Rest(seconds=120),
-    )
-    assert a.distance_meters == 40.0
-    assert a.heart_rate_bpm == 165
-    assert a.rest.seconds == 120
-
-
-def test_activity_set_all_optional_none():
-    a = ActivitySet(number=1)
-    assert a.duration_seconds is None
-    assert a.distance_meters is None
-    assert a.heart_rate_bpm is None
-
-
-def test_activity_set_duration_zero_raises():
-    with pytest.raises(ValidationError):
-        ActivitySet(number=1, duration_seconds=0)
-
-
-def test_activity_set_distance_negative_raises():
-    with pytest.raises(ValidationError):
-        ActivitySet(number=1, distance_meters=-1.0)
-
-
-def test_activity_set_heart_rate_zero_raises():
-    with pytest.raises(ValidationError):
-        ActivitySet(number=1, heart_rate_bpm=0)
-
-
-def test_activity_set_rest_seconds():
-    a = ActivitySet(number=1, rest=Rest(seconds=90))
-    assert a.rest.seconds == 90
-
-
-# --- AnySet discriminator dispatch ---
-
-def test_anyset_dispatches_to_strength_set():
-    from pydantic import TypeAdapter
-    ta = TypeAdapter(AnySet)
-    s = ta.validate_python({"set_type": "strength", "number": 1, "weight_kg": 80.0})
-    assert isinstance(s, StrengthSet)
-
-
-def test_anyset_dispatches_to_activity_set():
-    from pydantic import TypeAdapter
-    ta = TypeAdapter(AnySet)
-    a = ta.validate_python({"set_type": "activity", "number": 1, "duration_seconds": 60})
-    assert isinstance(a, ActivitySet)
-
-
-def test_anyset_invalid_type_raises():
-    from pydantic import TypeAdapter
-    ta = TypeAdapter(AnySet)
-    with pytest.raises(ValidationError):
-        ta.validate_python({"set_type": "unknown", "number": 1})
-
-
-# --- Goal ---
-
-def test_goal_rest_too_high_raises():
-    with pytest.raises(ValidationError):
-        Goal(rest=Rest(minutes=20))
-
-
-def test_goal_rest_negative_raises():
-    with pytest.raises(ValidationError):
-        Goal(rest=Rest(minutes=-1))
-
-
-def test_goal_rest_none_accepted():
-    g = Goal(weight_kg=50.0, sets=3, rep_range=RepRange(min=8, max=12), rest=None)
-    assert g.rest is None
-
-
-def test_goal_all_optional_none():
-    g = Goal()
-    assert g.weight_kg is None
-    assert g.sets is None
-    assert g.rep_range is None
-    assert g.rest is None
-    assert g.distance_meters is None
-    assert g.target_duration_seconds is None
-
-
-def test_goal_activity_fields():
-    g = Goal(distance_meters=40.0, target_duration_seconds=5)
-    assert g.distance_meters == 40.0
-    assert g.target_duration_seconds == 5
-
-
-def test_goal_sets_zero_raises():
-    with pytest.raises(ValidationError):
-        Goal(sets=0)
-
-
-def test_goal_weight_negative_raises():
-    with pytest.raises(ValidationError):
-        Goal(weight_kg=-1.0)
-
-
-def test_goal_distance_negative_raises():
-    with pytest.raises(ValidationError):
-        Goal(distance_meters=-5.0)
-
-
-def test_goal_target_duration_zero_raises():
-    with pytest.raises(ValidationError):
-        Goal(target_duration_seconds=0)
-
-
-def test_goal_rest_seconds_accepted():
-    g = Goal(rest=Rest(seconds=45))
-    assert g.rest.seconds == 45
-
-
-# --- Failure technique discriminated union dispatch ---
-
-def test_failure_technique_myoreps_dispatch():
-    data = {
-        "technique_type": "MyoReps",
-        "details": {
-            "mini_sets": [
-                {"number": 1, "rep_count": {"full": 4, "partial": 0}},
-                {"number": 2, "rep_count": {"full": 3, "partial": 0}},
-            ]
-        },
-    }
-    ft = MyoRepsTechnique.model_validate(data)
-    assert ft.technique_type == "MyoReps"
-    assert len(ft.details.mini_sets) == 2
-
-
-def test_failure_technique_llp_dispatch():
-    data = {"technique_type": "LLP", "details": {"partial_rep_count": 5}}
-    ft = LLPTechnique.model_validate(data)
-    assert ft.details.partial_rep_count == 5
-
-
-def test_failure_technique_static_dispatch():
-    data = {"technique_type": "StaticHold", "details": {"hold_duration_seconds": 10}}
-    ft = StaticTechnique.model_validate(data)
-    assert ft.details.hold_duration_seconds == 10
-
-
-def test_failure_technique_dropset_dispatch():
-    data = {
-        "technique_type": "DropSet",
-        "details": {
-            "drop_sets": [
-                {"number": 1, "weight_kg": 40.0, "rep_count": {"full": 8, "partial": 0}},
-            ]
-        },
-    }
-    ft = DropSetTechnique.model_validate(data)
-    assert len(ft.details.drop_sets) == 1
-
-
-# --- WarmupSet null filtering ---
-
-def test_warmup_set_null_entries_filtered():
-    ex = Exercise.model_validate(
-        {
+    def test_null_warmup_sets_filtered(self) -> None:
+        ex = Exercise.model_validate({
             "number": 1,
-            "name": "Lat Pulldown",
-            "warmup_sets": [
-                {"number": 1, "weight_kg": 40.0, "rep_count": 6},
-                None,
+            "name": "Squat",
+            "warmup_sets": [{"number": 1, "weight_kg": 60.0, "rep_count": 5}, None],
+        })
+        assert len(ex.warmup_sets) == 1
+
+    def test_empty_name_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Exercise(number=1, name="   ")
+
+    def test_zero_number_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Exercise(number=0, name="Squat")
+
+    def test_sets_is_list_of_working_sets(self) -> None:
+        ex = Exercise(
+            number=1,
+            name="Bench Press",
+            tags=["absolute_strength"],
+            modality="barbell",
+            movement_pattern=["push"],
+            sets=[
+                WorkingSet(number=1, weight_kg=90.0, rep_count=RepCount(full=5), rpe=8.0),
+                WorkingSet(number=2, weight_kg=90.0, rep_count=RepCount(full=5), rpe=8.5),
             ],
+        )
+        assert len(ex.sets) == 2
+        assert "set_type" not in ex.model_dump(mode="json")["sets"][0]
+
+
+# ---------------------------------------------------------------------------
+# SessionWarmup and SessionCooldown
+# ---------------------------------------------------------------------------
+
+class TestSessionWarmup:
+    def test_name_and_number_are_required(self) -> None:
+        w = SessionWarmup(number=1, name="Ankle Rotation")
+        assert w.number == 1 and w.name == "Ankle Rotation"
+
+    def test_all_measurement_fields_optional(self) -> None:
+        w = SessionWarmup(number=1, name="Leg Swings")
+        assert w.reps is None and w.duration_seconds is None and w.notes is None
+
+    def test_reps_and_duration_accepted_together(self) -> None:
+        w = SessionWarmup(number=1, name="Neck Curls", reps=10, duration_seconds=4)
+        assert w.reps == 10 and w.duration_seconds == 4
+
+    @pytest.mark.parametrize("reps", [0, -1])
+    def test_non_positive_reps_rejected(self, reps: int) -> None:
+        with pytest.raises(ValidationError):
+            SessionWarmup(number=1, name="Circles", reps=reps)
+
+    @pytest.mark.parametrize("duration", [0, -1])
+    def test_non_positive_duration_rejected(self, duration: int) -> None:
+        with pytest.raises(ValidationError):
+            SessionWarmup(number=1, name="Hold", duration_seconds=duration)
+
+    def test_zero_number_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            SessionWarmup(number=0, name="Ankle Rotation")
+
+    def test_empty_name_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            SessionWarmup(number=1, name="  ")
+
+
+class TestSessionCooldown:
+    def test_name_and_number_are_required(self) -> None:
+        c = SessionCooldown(number=1, name="Cobra Stretch")
+        assert c.number == 1 and c.name == "Cobra Stretch"
+
+    def test_duration_accepted(self) -> None:
+        assert SessionCooldown(number=1, name="Cobra Stretch", duration_seconds=30).duration_seconds == 30
+
+    def test_empty_name_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            SessionCooldown(number=1, name="")
+
+    def test_zero_number_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            SessionCooldown(number=0, name="Stretch")
+
+
+# ---------------------------------------------------------------------------
+# TrainingSession
+# ---------------------------------------------------------------------------
+
+class TestTrainingSession:
+    def _make(self, **overrides) -> dict:
+        base = {
+            "data_model_version": "3.0.0",
+            "data_model_type": "TrainingSession",
+            "session_id": "test-001",
+            "user_id": "7",
+            "user_name": "Apoorva",
+            "date": "2026-05-13",
+            "exercises": [Exercise(number=1, name="Squat")],
         }
-    )
-    assert len(ex.warmup_sets) == 1
+        base.update(overrides)
+        return base
+
+    def test_exercises_sequential_numbering_enforced(self) -> None:
+        with pytest.raises(ValidationError, match="sequential"):
+            TrainingSession(**self._make(exercises=[
+                Exercise(number=1, name="Squat"),
+                Exercise(number=3, name="Bench Press"),
+            ]))
+
+    def test_warmup_sequential_numbering_enforced(self) -> None:
+        with pytest.raises(ValidationError, match="sequential"):
+            TrainingSession(**self._make(warmup=[
+                SessionWarmup(number=1, name="Ankle Rotation"),
+                SessionWarmup(number=3, name="Leg Swings"),
+            ]))
+
+    def test_cooldown_sequential_numbering_enforced(self) -> None:
+        with pytest.raises(ValidationError, match="sequential"):
+            TrainingSession(**self._make(cooldown=[
+                SessionCooldown(number=1, name="Cobra Stretch"),
+                SessionCooldown(number=5, name="Quad Stretch"),
+            ]))
+
+    def test_warmup_and_cooldown_number_independently_of_exercises(self) -> None:
+        s = TrainingSession(**self._make(
+            warmup=[SessionWarmup(number=1, name="A"), SessionWarmup(number=2, name="B")],
+            exercises=[Exercise(number=1, name="Squat"), Exercise(number=2, name="Bench")],
+            cooldown=[SessionCooldown(number=1, name="X"), SessionCooldown(number=2, name="Y")],
+        ))
+        assert len(s.warmup) == 2
+        assert len(s.exercises) == 2
+        assert len(s.cooldown) == 2
+
+    def test_warmup_and_cooldown_default_to_none(self) -> None:
+        s = TrainingSession(**self._make())
+        assert s.warmup is None and s.cooldown is None
+
+    def test_week_exceeds_program_length_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            TrainingSession(**self._make(program="Test", program_length_weeks=12, week=13))
+
+    def test_week_within_program_length_accepted(self) -> None:
+        s = TrainingSession(**self._make(program="Test", program_length_weeks=12, week=12))
+        assert s.week == 12
+
+    def test_week_without_program_length_accepted(self) -> None:
+        assert TrainingSession(**self._make(week=5)).week == 5
+
+    def test_whitespace_program_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            TrainingSession(**self._make(program="   "))
+
+    def test_weight_unit_defaults_to_kg(self) -> None:
+        assert TrainingSession(**self._make()).weight_unit == "kg"
+
+    def test_notes_defaults_to_none(self) -> None:
+        assert TrainingSession(**self._make()).notes is None
+
+    def test_notes_accepted(self) -> None:
+        s = TrainingSession(**self._make(notes="Legs are sore, warmup ran long."))
+        assert s.notes == "Legs are sore, warmup ran long."
+
+    def test_get_exercise_by_name_case_insensitive(self) -> None:
+        s = TrainingSession(**self._make(exercises=[
+            Exercise(number=1, name="Bench Press"),
+            Exercise(number=2, name="Squat"),
+        ]))
+        assert s.get_exercise_by_name("bench press") is not None
+        assert s.get_exercise_by_name("SQUAT") is not None
+        assert s.get_exercise_by_name("Deadlift") is None
+
+    @pytest.mark.parametrize("field", ["session_id", "user_id", "user_name", "data_model_version"])
+    def test_required_string_fields_reject_empty_string(self, field: str) -> None:
+        with pytest.raises(ValidationError):
+            TrainingSession(**self._make(**{field: ""}))
 
 
-# --- Sequential exercise numbering ---
+# ---------------------------------------------------------------------------
+# Round-trip: historical JSON must still load against the new model
+# (old JSON carries exercise_type and set_type as extra fields; Pydantic ignores them)
+# ---------------------------------------------------------------------------
 
-def test_training_session_non_sequential_exercises_raises():
-    with pytest.raises(ValidationError):
-        TrainingSession(
-            data_model_version="0.0.1",
-            data_model_type="TrainingSession",
-            session_id="test-001",
-            user_id="7",
-            user_name="Test User",
-            date="2026-01-01",
-            exercises=[
-                Exercise(number=1, name="Bench Press"),
-                Exercise(number=3, name="Overhead Press"),  # skipped 2
-            ],
-        )
+class TestRoundTrip:
+    @pytest.fixture(autouse=True)
+    def require_json_files(self) -> None:
+        if not list(OUTPUT_JSON_DIR.rglob("*.json")):
+            pytest.skip("No historical JSON files available")
 
+    def test_all_historical_sessions_load_without_error(self) -> None:
+        errors = []
+        for path in OUTPUT_JSON_DIR.rglob("*.json"):
+            try:
+                raw = json.loads(path.read_text())
+                TrainingSession.model_validate(raw)
+            except Exception as exc:
+                errors.append(f"{path.name}: {exc}")
+        assert not errors, "\n".join(errors)
 
-# --- Ad-hoc session (no program / phase / week / focus) ---
+    def test_session_identity_fields_survive_round_trip(self) -> None:
+        sample = next(OUTPUT_JSON_DIR.rglob("*.json"))
+        raw = json.loads(sample.read_text())
+        dumped = TrainingSession.model_validate(raw).model_dump(mode="json")
+        assert dumped["session_id"] == raw["session_id"]
+        assert dumped["date"] == raw["date"]
+        assert len(dumped["exercises"]) == len(raw["exercises"])
 
-def test_training_session_adhoc_no_program_fields():
-    s = TrainingSession(
-        data_model_version="2.0.0",
-        data_model_type="TrainingSession",
-        session_id="adhoc-001",
-        user_id="7",
-        user_name="Test User",
-        date="2026-05-06",
-        exercises=[Exercise(number=1, name="Pull-up")],
-    )
-    assert s.program is None
-    assert s.phase is None
-    assert s.week is None
-    assert s.focus is None
-    assert s.session_duration_minutes is None
-
-
-def test_training_session_weight_unit_default_kg():
-    s = TrainingSession(
-        data_model_version="2.0.0",
-        data_model_type="TrainingSession",
-        session_id="test-002",
-        user_id="7",
-        user_name="Test User",
-        date="2026-05-06",
-        exercises=[],
-    )
-    assert s.weight_unit == "kg"
-
-
-def test_training_session_weight_unit_lbs():
-    s = TrainingSession(
-        data_model_version="2.0.0",
-        data_model_type="TrainingSession",
-        session_id="test-003",
-        user_id="7",
-        user_name="Test User",
-        date="2026-05-06",
-        exercises=[],
-        weight_unit="lbs",
-    )
-    assert s.weight_unit == "lbs"
-
-
-def test_training_session_program_empty_string_raises():
-    with pytest.raises(ValidationError):
-        TrainingSession(
-            data_model_version="2.0.0",
-            data_model_type="TrainingSession",
-            session_id="test-004",
-            user_id="7",
-            user_name="Test User",
-            date="2026-05-06",
-            exercises=[],
-            program="   ",
-        )
-
-
-def test_training_session_week_out_of_range_raises():
-    with pytest.raises(ValidationError):
-        TrainingSession(
-            data_model_version="2.0.0",
-            data_model_type="TrainingSession",
-            session_id="test-005",
-            user_id="7",
-            user_name="Test User",
-            date="2026-05-06",
-            exercises=[],
-            program="Test",
-            program_length_weeks=12,
-            week=13,
-        )
-
-
-def test_training_session_week_without_program_length_no_error():
-    s = TrainingSession(
-        data_model_version="2.0.0",
-        data_model_type="TrainingSession",
-        session_id="test-006",
-        user_id="7",
-        user_name="Test User",
-        date="2026-05-06",
-        exercises=[],
-        week=5,
-    )
-    assert s.week == 5
-
-
-# --- Round-trip from real JSON on disk ---
-
-def test_training_session_round_trip_from_json_file():
-    json_files = list(OUTPUT_JSON_DIR.rglob("*.json"))
-    assert json_files, "No JSON files found for round-trip test"
-
-    sample = json_files[0]
-    raw = json.loads(sample.read_text())
-    session = TrainingSession.model_validate(raw)
-
-    dumped = session.model_dump(mode="json")
-    assert dumped["session_id"] == raw["session_id"]
-    assert dumped["date"] == raw["date"]
-    assert len(dumped["exercises"]) == len(raw["exercises"])
-
-
-def test_training_session_round_trip_preserves_failure_technique():
-    json_files = list(OUTPUT_JSON_DIR.rglob("*.json"))
-    for path in json_files:
-        raw = json.loads(path.read_text())
-        session = TrainingSession.model_validate(raw)
-        dumped = session.model_dump(mode="json")
-        for ex_raw, ex_dumped in zip(raw["exercises"], dumped["exercises"]):
-            for ws_raw, ws_dumped in zip(
-                ex_raw.get("working_sets") or [],
-                ex_dumped.get("sets") or [],
-            ):
-                has_ft_raw = ws_raw.get("failure_technique") is not None
-                has_ft_dumped = ws_dumped.get("failure_technique") is not None
-                assert has_ft_raw == has_ft_dumped, (
-                    f"failure_technique presence mismatch in {path.name}"
-                )
+    def test_failure_technique_survives_round_trip(self) -> None:
+        for path in OUTPUT_JSON_DIR.rglob("*.json"):
+            raw = json.loads(path.read_text())
+            session = TrainingSession.model_validate(raw)
+            dumped = session.model_dump(mode="json")
+            for ex_raw, ex_out in zip(raw["exercises"], dumped["exercises"]):
+                for ws_raw, ws_out in zip(ex_raw.get("sets") or [], ex_out.get("sets") or []):
+                    assert (ws_raw.get("failure_technique") is not None) == (
+                        ws_out.get("failure_technique") is not None
+                    ), f"failure_technique mismatch in {path.name}"

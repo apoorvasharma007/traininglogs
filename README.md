@@ -33,6 +33,11 @@ docker compose up -d
 traininglogs log inputs/programs/<slug>/phase_N/week_N/<session>.md
 ```
 
+Session IDs are derived from the session's content and date, not the file path — the same
+text submitted twice (from a file or otherwise) raises an error rather than silently creating
+a duplicate. Editing a file's content and re-running produces a new session, not an update in
+place — fix the date and re-run if you hit a collision you didn't expect.
+
 **Process all sessions in a directory:**
 
 ```bash
@@ -44,8 +49,6 @@ traininglogs log inputs/programs/<slug>/phase_N/week_N/
 ```bash
 traininglogs log --program <name> --phase <n> --week <n>
 ```
-
-Add `--publish` to also push the updated dashboard to the website.
 
 **Validate a file without writing to the DB:**
 

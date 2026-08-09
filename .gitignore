@@ -8,3 +8,9 @@ src/tests/__pycache__/
 .DS_Store
 .env
 *.egg-info/
+
+# Model eval runs and response cache (scripts/eval_ab.py)
+eval_runs/
+# Terminal captures of eval runs. eval_runs/ already stores the calls log and the raw
+# model responses; these are `tee` duplicates and go stale immediately.
+*_out.txt

@@ -7,56 +7,17 @@ from pathlib import Path
 from typing import Optional
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-WEBSITE_ROOT = PROJECT_ROOT.parent / "website"
 INPUTS_DIR = PROJECT_ROOT / "inputs"
 
 
-def _rebuild_dashboard(dry_run: bool) -> None:
+def _rebuild_dashboard() -> None:
     print("\n[rebuilding dashboard...]")
-    if dry_run:
-        print("[DRY-RUN] Would rebuild dashboard")
-        return
     from traininglogs.cli.dashboard import main as dashboard_main
     try:
         dashboard_main()
         print("✓ Dashboard updated")
     except Exception as e:
         print(f"⚠  Dashboard build failed: {e}")
-
-
-def _publish_dashboard(dry_run: bool) -> None:
-    print("\n[publishing dashboard to website...]")
-    dashboard_file = WEBSITE_ROOT / "static" / "training-almanac" / "index.html"
-
-    if dry_run:
-        print("[DRY-RUN] Would commit and push dashboard to website repo")
-        return
-
-    if not WEBSITE_ROOT.exists():
-        print(f"⊘ Website repo not found at {WEBSITE_ROOT}, skipping publish")
-        return
-
-    if not dashboard_file.exists():
-        print("⊘ Dashboard HTML not found in website repo, skipping publish")
-        return
-
-    cmds = [
-        (["git", "add", str(dashboard_file)], "stage"),
-        (["git", "diff", "--cached", "--quiet"], "check"),
-        (["git", "commit", "-m", "chore: update training dashboard"], "commit"),
-        (["git", "push"], "push"),
-    ]
-
-    for cmd, label in cmds:
-        ret, _, stderr = _run(cmd, cwd=WEBSITE_ROOT)
-        if label == "check" and ret == 0:
-            print("⊘ Dashboard unchanged, nothing to publish")
-            return
-        if label != "check" and ret != 0:
-            print(f"⚠  Website publish failed at '{label}': {stderr}")
-            return
-
-    print("✓ Dashboard published — GitHub Actions will deploy it shortly")
 
 
 def _run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
@@ -136,22 +97,102 @@ def _resolve_targets(
     sys.exit(1)
 
 
+_UNSET = object()
+
+
+def _process_ai_file(md_path: Path, conn, provider=None, orchestrator=None, output_dir=_UNSET):
+    """capture -> extract -> confirm, driven straight from the ingest/ module.
+
+    This is the only place the interactive confirm loop runs -- deliberately not inside
+    ingest/extract.py, since that call has to be safe to make from an HTTP request, which
+    cannot block on a terminal prompt (roadmap D8). `ingest.extract()` itself never waits on a
+    human; the loop below is CLI-specific glue around it.
+
+    `provider` and `orchestrator` exist so a test can drive this without an API call or a real
+    terminal, the same reason `process_md_file_with_ai`'s `orchestrator` param used to.
+    `output_dir` defaults to `processor.OUTPUT_DIR`; pass `None` to skip the JSON write (tests
+    do, so they do not write into the tracked `output_training_logs_json/` directory).
+    """
+    from traininglogs.agent.llm_orchestrator import LLMOrchestrator
+    from traininglogs.agent.providers import AnthropicProvider
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.db.fetch import get_extraction
+    from traininglogs.db.insert import insert_llm_calls
+    from traininglogs.ingest.capture import capture
+    from traininglogs.ingest.confirm import confirm
+    from traininglogs.ingest.extract import extract
+    from traininglogs.processor.processor import (
+        OUTPUT_DIR,
+        relative_source_file,
+        write_session_json,
+    )
+
+    if output_dir is _UNSET:
+        output_dir = OUTPUT_DIR
+
+    md_text = md_path.read_text(encoding="utf-8")
+    source_file = relative_source_file(md_path)
+    print(f">>> Loaded training log: {md_path}\n")
+
+    raw_input_id = capture(conn, md_text, source_kind="markdown", source_file=source_file)
+
+    provider = provider or AnthropicProvider()
+    extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)
+
+    stored = get_extraction(conn, extraction_id)
+    pending_extract = TrainingLogLLMExtract.model_validate(stored["extract"])
+
+    orchestrator = orchestrator or LLMOrchestrator(correction_provider=provider)
+    # extract() already drained and persisted provider.calls up to this point. The confirm
+    # loop below can make more (each correction is its own LLM call, via the same provider
+    # instance when the caller shares one) -- those happen after extract() has already
+    # returned, so nothing else will ever persist them unless this does.
+    calls_recorded_so_far = len(getattr(provider, "calls", []))
+    final_extract = orchestrator.confirm_loop(pending_extract)
+    insert_llm_calls(conn, raw_input_id, getattr(provider, "calls", [])[calls_recorded_so_far:])
+
+    session = confirm(
+        conn,
+        extraction_id,
+        final_extract,
+        md_path=md_path,
+        corrections=orchestrator.corrections,
+        source_file=source_file,
+    )
+
+    print(f">>> Inserted into DB: {session.session_id}\n")
+    write_session_json(session, output_dir)
+    return session
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
         prog="traininglogs log",
-        description="Process training logs, commit changes, and optionally publish dashboard.",
+        description=(
+            "Parse a training log, insert into DB, and commit. "
+            "To preview parsing without any DB or git side effects, use 'traininglogs validate' instead."
+        ),
     )
     parser.add_argument("target", nargs="?", help="Path to a .md file or directory of .md files")
     parser.add_argument("--program", help="Program name (with --phase and --week)")
     parser.add_argument("--phase", type=int, help="Phase number (used with --program)")
     parser.add_argument("--week", type=int, help="Week number (used with --program)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would happen without making changes")
-    parser.add_argument("--no-commit", action="store_true", help="Skip git commit step")
+    parser.add_argument("--no-commit", action="store_true", help="Insert to DB but skip the git commit")
     parser.add_argument("--pr", action="store_true", help="Create a pull request after committing")
     parser.add_argument("--message", default="", help="Custom commit message")
-    parser.add_argument("--publish", action="store_true", help="Push updated dashboard to website")
+    parser.add_argument(
+        "--parser",
+        choices=["ai", "rules"],
+        default="ai",
+        help="Parser backend: 'ai' (default, LLM-based) or 'rules' (deterministic rule-based).",
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Write to TEST_DATABASE_URL only; skip the local mirror. For E2E validation.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -161,7 +202,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     print("TRAINING LOG WORKFLOW")
     print("=" * 60)
 
-    if not args.dry_run and not _ensure_feature_branch():
+    if not _ensure_feature_branch():
         return 1
 
     print(f"\n[1] Found {len(md_files)} file(s) to process")
@@ -171,26 +212,28 @@ def main(argv: Optional[list[str]] = None) -> int:
     from dotenv import load_dotenv
     load_dotenv()
 
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        print("\n✗ DATABASE_URL is not set. Add your Supabase connection string to .env")
-        return 1
+    if args.test:
+        database_url = os.environ.get("TEST_DATABASE_URL")
+        if not database_url:
+            print("\n✗ TEST_DATABASE_URL is not set in .env")
+            return 1
+    else:
+        database_url = os.environ.get("DATABASE_URL")
+        if not database_url:
+            print("\n✗ DATABASE_URL is not set. Add your Supabase connection string to .env")
+            return 1
 
     print("\n[2] Running parser...")
-    if args.dry_run:
-        print(f"[DRY-RUN] Would process {len(md_files)} file(s)")
-        return 0
-
     import psycopg2
     from traininglogs.db.db import get_connection
     from traininglogs.db.insert import insert_session
     from traininglogs.processor.processor import process_md_file
 
-    conn = get_connection()
+    conn = get_connection(database_url)
 
     local_conn = None
     local_url = os.environ.get("LOCAL_DATABASE_URL")
-    if local_url:
+    if local_url and not args.test:
         try:
             local_conn = psycopg2.connect(local_url)
             print("[local db] connected")
@@ -199,7 +242,10 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     try:
         for md_path in md_files:
-            session = process_md_file(md_path, conn)
+            if args.parser == "ai":
+                session = _process_ai_file(md_path, conn)
+            else:
+                session = process_md_file(md_path, conn)
             if local_conn:
                 try:
                     inserted = insert_session(local_conn, session)
@@ -221,9 +267,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if args.no_commit:
         print("\n[3] Skipping git commit (--no-commit)")
-        _rebuild_dashboard(args.dry_run)
-        if args.publish:
-            _publish_dashboard(args.dry_run)
+        _rebuild_dashboard()
         return 0
 
     print("\n[3] Staging and committing changes...")
@@ -260,12 +304,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         print("\n[4] Skipped PR creation (use --pr to enable)")
 
-    _rebuild_dashboard(args.dry_run)
-
-    if args.publish:
-        _publish_dashboard(args.dry_run)
-    else:
-        print("\n[5] Skipped website publish (pass --publish to deploy)")
+    _rebuild_dashboard()
 
     print("\n" + "=" * 60)
     print("✓ WORKFLOW COMPLETE")

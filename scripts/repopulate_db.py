@@ -5,8 +5,11 @@ Destructive — truncates all session data and reimports from scratch.
 Normal use (prod DB):
   .venv/bin/python scripts/repopulate_db.py
 
-Regen/staging use (db_regen at port 5434):
-  .venv/bin/python scripts/repopulate_db.py --regen
+Validation use (validation DB at port 5434):
+  .venv/bin/python scripts/repopulate_db.py --regen --no-json
+
+  --no-json skips writing output_training_logs_json/ so JSON regen stays a
+  deliberate separate step (Step 7) rather than a side-effect of DB validation.
 
 Safety guards:
   - Refuses to run against the test DB (port 5433 / traininglogs_test).
@@ -37,7 +40,12 @@ def main() -> None:
     parser.add_argument(
         "--regen",
         action="store_true",
-        help="Use REGEN_DATABASE_URL (port 5434 staging DB) instead of DATABASE_URL",
+        help="Use REGEN_DATABASE_URL (port 5434 validation DB) instead of DATABASE_URL",
+    )
+    parser.add_argument(
+        "--no-json",
+        action="store_true",
+        help="Skip writing output_training_logs_json/ — use during DB validation to avoid premature JSON regen",
     )
     args = parser.parse_args()
 
@@ -74,7 +82,7 @@ def main() -> None:
     conn.commit()
     print("Truncated.\n")
 
-    md_files = sorted(INPUTS_DIR.rglob("*.md"))
+    md_files = sorted(f for f in INPUTS_DIR.rglob("*.md") if f.name != "program.md")
     print(f"Found {len(md_files)} .md files under {INPUTS_DIR}\n")
 
     inserted = 0
@@ -82,7 +90,11 @@ def main() -> None:
 
     for md_path in md_files:
         try:
-            process_md_file(md_path, conn, inputs_root=INPUTS_DIR, output_dir=OUTPUT_DIR)
+            process_md_file(
+                md_path, conn,
+                inputs_root=INPUTS_DIR,
+                output_dir=None if args.no_json else OUTPUT_DIR,
+            )
             inserted += 1
         except SystemExit as e:
             print(f"  ERROR (SystemExit): {md_path.name} — {e}")

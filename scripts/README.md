@@ -71,6 +71,38 @@ mv output_training_logs_json_regen output_training_logs_json
 
 ---
 
+## regen_historical_ai.py
+
+**Purpose:** Regenerate all historical session data through the AI ingest pipeline
+(`capture` → `extract` → `confirm`) instead of the rules parser, producing a fresh dataset
+to compare against `output_training_logs_json/`. Unlike `regen_historical.py`, this is
+interactive — each session's card is shown for confirmation or correction, same as
+`traininglogs log --parser ai` — so budget real time, not just money.
+
+Safety-isolated the same way: never targets prod or the test DB, writes JSON to a
+version-stamped directory (`output_training_logs_json_v{app version}/` by default), and
+is resumable — a `.regen_progress.json` in the output directory tracks which files are
+already confirmed, so re-running the same command skips them and picks up where you left
+off.
+
+```bash
+# See file count and an order-of-magnitude cost estimate. No API calls, no DB writes.
+.venv/bin/python scripts/regen_historical_ai.py --dry-run
+
+# Real run against an isolated target DB. Stops before the next file once cumulative
+# spend crosses --max-cost (default $10); re-run the same command to resume.
+REGEN_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5434/traininglogs_regen \
+  .venv/bin/python scripts/regen_historical_ai.py --max-cost 10
+
+# Try it on a handful of files first
+REGEN_DATABASE_URL=... .venv/bin/python scripts/regen_historical_ai.py --limit 3
+```
+
+After a full run, follow `.claude/regen-historical.md`'s comparison and sign-off steps
+before treating the new directory as anything but a side-by-side reference.
+
+---
+
 ## repopulate_db.py
 
 **Purpose:** Truncate the prod DB and repopulate it by processing all `.md` files

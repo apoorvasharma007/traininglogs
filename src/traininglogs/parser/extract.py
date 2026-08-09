@@ -33,16 +33,13 @@ class TrainingMarkdownParser:
             if re.match(r"^##\s*Exercise\s*\d+", line):
                 if current_ex:
                     self.parsed_data["exercises"].append(current_ex)
-                current_ex = {"warmup_sets": [], "working_sets": [], "activity_sets": [], "exercise_type": "strength", "cues": []}
+                current_ex = {"warmup_sets": [], "working_sets": [], "activity_sets": [], "cues": []}
                 current_section = "exercise_header"
                 continue
 
             # Section headers (### and ####)
             if line.startswith("### "):
-                new_section = line[4:].strip().lower().replace(" ", "_")
-                if new_section == "activity_sets" and current_ex is not None:
-                    current_ex["exercise_type"] = "activity"
-                current_section = new_section
+                current_section = line[4:].strip().lower().replace(" ", "_")
                 continue
             
             # Bolded key-value pairs in header

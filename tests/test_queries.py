@@ -1,6 +1,7 @@
 import os
 import pytest
 
+
 from traininglogs.db.db import get_connection, apply_schema
 from traininglogs.db.insert import insert_session
 from traininglogs.models.models import TrainingSession
@@ -56,8 +57,8 @@ SESSION_1 = {
             "current_goal": {"weight_kg": 80.0, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
             "sets": [
-                {"set_type": "strength", "number": 1, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 8.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"set_type": "strength", "number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
+                {"number": 1, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 8.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"number": 2, "weight_kg": 80.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "good", "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "MyoReps", "details": {"mini_sets": [{"number": 1, "rep_count": {"full": 3, "partial": 0}}]}}},
             ],
         }
     ],
@@ -90,8 +91,8 @@ SESSION_2 = {
             "current_goal": {"weight_kg": 82.5, "sets": 3, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
             "sets": [
-                {"set_type": "strength", "number": 1, "weight_kg": 82.5, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"set_type": "strength", "number": 2, "weight_kg": 82.5, "rep_count": {"full": 4, "partial": 1}, "rpe": 10.0, "rep_quality_assessment": None, "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "LLP", "details": {"partial_rep_count": 4}}},
+                {"number": 1, "weight_kg": 82.5, "rep_count": {"full": 5, "partial": 0}, "rpe": 10.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"number": 2, "weight_kg": 82.5, "rep_count": {"full": 4, "partial": 1}, "rpe": 10.0, "rep_quality_assessment": None, "actual_rest_minutes": None, "notes": None, "failure_technique": {"technique_type": "LLP", "details": {"partial_rep_count": 4}}},
             ],
         }
     ],
@@ -125,8 +126,8 @@ SESSION_3_DELOAD = {
             "current_goal": {"weight_kg": 70.0, "sets": 2, "rep_range": {"min": 5, "max": 6}, "rest": {"minutes": 3}},
             "warmup_sets": None,
             "sets": [
-                {"set_type": "strength", "number": 1, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
-                {"set_type": "strength", "number": 2, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.5, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"number": 1, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.0, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
+                {"number": 2, "weight_kg": 70.0, "rep_count": {"full": 5, "partial": 0}, "rpe": 6.5, "rep_quality_assessment": "perfect", "actual_rest_minutes": None, "notes": None, "failure_technique": None},
             ],
         }
     ],

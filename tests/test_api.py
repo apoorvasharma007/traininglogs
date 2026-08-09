@@ -1,5 +1,7 @@
 import os
 import pytest
+
+
 from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
@@ -50,7 +52,6 @@ SESSION_A = {
             ],
             "sets": [
                 {
-                    "set_type": "strength",
                     "number": 1,
                     "weight_kg": 80.0,
                     "rep_count": {"full": 5, "partial": 0},
@@ -177,3 +178,366 @@ def test_auth_rejects_wrong_key(client):
 def test_auth_rejects_missing_key(client):
     r = client.get("/sessions")
     assert r.status_code == 401
+
+
+class TestCreateInput:
+    """POST /inputs -- capture() then extract(), over HTTP. assemble() (the LLM boundary) is
+    monkeypatched, same seam test_ingest.py and test_cli_log_ai_path.py use -- no real API
+    calls."""
+
+    def _fake_extract(self):
+        from traininglogs.agent.schemas import TrainingLogLLMExtract
+        from traininglogs.models.models import Exercise, RepCount, WorkingSet
+
+        return TrainingLogLLMExtract(
+            date="2026-03-01",
+            focus="Legs Hypertrophy",
+            exercises=[
+                Exercise(
+                    number=1,
+                    name="Leg Press",
+                    sets=[WorkingSet(number=1, weight_kg=280.0,
+                                      rep_count=RepCount(full=12, partial=0), rpe=9.5)],
+                )
+            ],
+        )
+
+    def test_captures_and_extracts(self, client, db_conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble",
+            lambda text, provider=None: self._fake_extract(),
+        )
+        r = client.post(
+            "/inputs",
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "markdown"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 201
+        body = r.json()
+        assert body["raw_input_id"]
+        assert body["extraction_id"]
+        assert body["error"] is None
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            assert cur.fetchone()[0] == "# Leg day\n1. 280 x 12 RPE 9.5"
+            cur.execute(
+                "SELECT status FROM extractions WHERE id = %s", (body["extraction_id"],)
+            )
+            assert cur.fetchone()[0] == "pending"
+
+    def test_extraction_failure_still_returns_the_raw_input_id(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        """capture() commits before extract() is attempted -- a failed extraction must not
+        lose the text, and the caller needs raw_input_id back to retry (extract() is
+        idempotent) rather than resubmitting."""
+
+        def failing_assemble(text, provider=None):
+            raise RuntimeError("LLM unavailable")
+
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", failing_assemble)
+
+        r = client.post(
+            "/inputs",
+            json={"content": "some session text"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 502
+        body = r.json()
+        assert body["raw_input_id"]
+        assert body["extraction_id"] is None
+        assert "LLM unavailable" in body["error"]
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            assert cur.fetchone()[0] == "some session text"
+
+    def test_rejects_empty_content(self, client) -> None:
+        r = client.post(
+            "/inputs", json={"content": ""}, headers={"x-api-key": "testkey"}
+        )
+        assert r.status_code == 422
+
+    def test_requires_auth(self, client) -> None:
+        r = client.post("/inputs", json={"content": "some text"})
+        assert r.status_code == 401
+
+
+class TestGetExtractionCard:
+    """GET /extractions/{id} -- the same card the CLI's confirm loop renders to a terminal,
+    as JSON. ValidationCardBuilder is DB-free and already shared; this just adds a serializer
+    in place of TerminalRenderer."""
+
+    def _insert_extraction(self, db_conn) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, "# card test\n1. 280 x 12 RPE 9.5")
+        extract = {
+            "date": "2026-03-01",
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+        )
+
+    def test_returns_the_card(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn)
+        r = client.get(f"/extractions/{extraction_id}", headers={"x-api-key": "testkey"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["session_header"]["focus"] == "Legs Hypertrophy"
+        assert len(body["exercises"]) == 1
+        assert body["exercises"][0]["header"]["name"] == "Leg Press"
+        assert body["exercises"][0]["working_set_rows"][0]["weight_kg"] == 280.0
+
+    def test_not_found(self, client) -> None:
+        r = client.get("/extractions/does-not-exist", headers={"x-api-key": "testkey"})
+        assert r.status_code == 404
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn)
+        r = client.get(f"/extractions/{extraction_id}")
+        assert r.status_code == 401
+
+
+class TestConfirmExtraction:
+    """POST /extractions/{id}/confirm -- ingest.confirm() over HTTP. Content must be unique
+    per test: session_id is derived from it now, so two tests using identical content would
+    collide with each other, not just within a test. And because it's derived from content
+    rather than a fresh tmp_path per run, the sessions this class creates must be cleaned up
+    -- otherwise a second run of the suite against the same persistent test DB collides with
+    the *previous* run's rows, not just within itself. Dates in this class are deliberately
+    all "2026-05-0X" so teardown can find them by prefix."""
+
+    @pytest.fixture(autouse=True)
+    def _cleanup(self, db_conn):
+        yield
+        with db_conn.cursor() as cur:
+            cur.execute("DELETE FROM sessions WHERE session_id LIKE '2026-05-0%'")
+        db_conn.commit()
+
+    def _insert_extraction(self, db_conn, date: str, content: str, extraction_id=None) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, content)
+        extract = {
+            "date": date,
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+            extraction_id=extraction_id,
+        )
+
+    def test_confirms_the_extraction_as_is(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-01", "confirm test content 1")
+        r = client.post(f"/extractions/{extraction_id}/confirm", headers={"x-api-key": "testkey"})
+        assert r.status_code == 201
+        session_id = r.json()["session_id"]
+        assert session_id.startswith("2026-05-01-")
+
+        with db_conn.cursor() as cur:
+            cur.execute(
+                "SELECT extraction_id FROM sessions WHERE session_id = %s", (session_id,)
+            )
+            assert cur.fetchone()[0] == extraction_id
+
+    def test_confirms_with_an_extract_override(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-02", "confirm test content 2")
+        override = {
+            "date": "2026-05-02",
+            "focus": "Corrected Focus",
+            "exercises": [
+                {"number": 1, "name": "Leg Press", "sets": [
+                    {"number": 1, "weight_kg": 280.0,
+                     "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5},
+                ]},
+            ],
+        }
+        corrections = [{
+            "at": "2026-05-02T00:00:00Z", "instruction": "fix focus",
+            "edits": [{"path": "focus", "value": "Corrected Focus"}],
+        }]
+        r = client.post(
+            f"/extractions/{extraction_id}/confirm",
+            json={"extract": override, "corrections": corrections},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 201
+        session_id = r.json()["session_id"]
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT focus FROM sessions WHERE session_id = %s", (session_id,))
+            assert cur.fetchone()[0] == "Corrected Focus"
+
+        from traininglogs.db.fetch import get_extraction
+        assert get_extraction(db_conn, extraction_id)["corrections"] == corrections
+
+    def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
+        id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
+        r1 = client.post(f"/extractions/{id_a}/confirm", headers={"x-api-key": "testkey"})
+        assert r1.status_code == 201
+
+        id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
+        r2 = client.post(f"/extractions/{id_b}/confirm", headers={"x-api-key": "testkey"})
+        assert r2.status_code == 409
+
+    def test_not_found(self, client) -> None:
+        r = client.post("/extractions/does-not-exist/confirm", headers={"x-api-key": "testkey"})
+        assert r.status_code == 404
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-05", "auth test content")
+        r = client.post(f"/extractions/{extraction_id}/confirm")
+        assert r.status_code == 401
+
+
+class TestCorrectExtraction:
+    """POST /extractions/{id}/correct -- fully stateless. LLMExtractValidator.apply_correction
+    (the actual LLM boundary) is monkeypatched at the class method level, since AnthropicProvider
+    is constructed inside the endpoint itself, not injectable -- no real API calls."""
+
+    def _insert_extraction(self, db_conn, date: str, content: str) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, content)
+        extract = {
+            "date": date,
+            "focus": "Legs Hypertrophy",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Leg Press",
+                    "sets": [
+                        {"number": 1, "weight_kg": 280.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5}
+                    ],
+                }
+            ],
+            "uncertain_fields": [],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+        )
+
+    def _stub_correction(self, monkeypatch, new_focus: str) -> None:
+        from traininglogs.agent.patch import FieldEdit
+
+        def fake_apply_correction(self_, extract, instruction):
+            updated = extract.model_copy(update={"focus": new_focus})
+            return updated, [FieldEdit(path="focus", value=new_focus)]
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+
+    def test_corrects_the_extraction_own_reading_when_no_extract_given(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-01", "correct test content 1")
+        self._stub_correction(monkeypatch, "Corrected Focus")
+
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "it was actually a different focus"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["extract"]["focus"] == "Corrected Focus"
+        assert body["card"]["session_header"]["focus"] == "Corrected Focus"
+        assert body["correction"]["instruction"] == "it was actually a different focus"
+        assert body["correction"]["edits"] == [{"path": "focus", "value": "Corrected Focus"}]
+
+    def test_a_second_correction_builds_on_the_extract_the_client_sends_back(
+        self, client, db_conn, monkeypatch
+    ) -> None:
+        """Statelessness, proven: the server never remembers the first correction -- it only
+        knows about it because the client sent `extract` back."""
+        extraction_id = self._insert_extraction(db_conn, "2026-06-02", "correct test content 2")
+
+        self._stub_correction(monkeypatch, "First Correction")
+        r1 = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix 1"},
+            headers={"x-api-key": "testkey"},
+        )
+        first_extract = r1.json()["extract"]
+
+        self._stub_correction(monkeypatch, "Second Correction")
+        r2 = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"extract": first_extract, "instruction": "fix 2"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r2.json()["extract"]["focus"] == "Second Correction"
+
+        # The extraction's own stored reading was never touched by either call.
+        from traininglogs.db.fetch import get_extraction
+        assert get_extraction(db_conn, extraction_id)["extract"]["focus"] == "Legs Hypertrophy"
+
+    def test_an_unresolvable_path_returns_400_not_a_crash(self, client, db_conn, monkeypatch) -> None:
+        def fake_apply_correction(self_, extract, instruction):
+            from traininglogs.agent.patch import PatchError
+            raise PatchError("'nonexistent_field' is not a field here")
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+        extraction_id = self._insert_extraction(db_conn, "2026-06-03", "correct test content 3")
+
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "change the nonexistent field"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 400
+
+    def test_not_found(self, client) -> None:
+        r = client.post(
+            "/extractions/does-not-exist/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 404
+
+    def test_rejects_empty_instruction(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-04", "correct test content 4")
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": ""},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 422
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-05", "correct test content 5")
+        r = client.post(
+            f"/extractions/{extraction_id}/correct", json={"instruction": "fix it"}
+        )
+        assert r.status_code == 401

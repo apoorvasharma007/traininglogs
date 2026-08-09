@@ -1,6 +1,4 @@
 from .models import (
-    ActivitySet,
-    AnySet,
     DropSet,
     DropSetDetails,
     DropSetTechnique,
@@ -16,9 +14,10 @@ from .models import (
     RepQualityAssessment,
     RepRange,
     Rest,
+    SessionCooldown,
+    SessionWarmup,
     StaticDetails,
     StaticTechnique,
-    StrengthSet,
     TrainingSession,
     UnilateralReps,
     WarmupSet,
@@ -26,8 +25,6 @@ from .models import (
 )
 
 __all__ = [
-    "ActivitySet",
-    "AnySet",
     "DropSet",
     "DropSetDetails",
     "DropSetTechnique",
@@ -43,9 +40,10 @@ __all__ = [
     "RepQualityAssessment",
     "RepRange",
     "Rest",
+    "SessionCooldown",
+    "SessionWarmup",
     "StaticDetails",
     "StaticTechnique",
-    "StrengthSet",
     "TrainingSession",
     "UnilateralReps",
     "WarmupSet",

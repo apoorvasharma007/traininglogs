@@ -182,7 +182,6 @@ class TestParseWorkingSetLine:
     def test_standard_set_returns_dict(self):
         ws = self._parser()._parse_working_set_line("1. 80 x 9 RPE 8 good")
         assert isinstance(ws, dict)
-        assert ws["set_type"] == "strength"
         assert ws["number"] == 1
         assert ws["weight_kg"] == 80.0
         assert ws["rep_count"] == {"full": 9, "partial": 0}
@@ -198,7 +197,6 @@ class TestParseWorkingSetLine:
             "1. 30 x left: 8 + 1, right: 9 + 1 RPE 8.5 good"
         )
         assert isinstance(result, dict)
-        assert result["set_type"] == "strength"
         assert result["number"] == 1
         assert result["weight_kg"] == 30.0
         uni = result["unilateral_rep_count"]

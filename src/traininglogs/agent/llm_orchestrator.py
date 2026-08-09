@@ -1,0 +1,91 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+
+from traininglogs.agent.extraction import assemble
+from traininglogs.agent.llm_extract_validator import LLMExtractValidator
+from traininglogs.agent.providers import ExtractionProvider
+from traininglogs.agent.renderer import TerminalRenderer
+from traininglogs.agent.schemas import TrainingLogLLMExtract
+from traininglogs.agent.validation_card_builder import ValidationCardBuilder
+
+_CONFIRM_PROMPT = (
+    "\n[bold]Confirm?[/bold] [dim]Enter 'y' to accept, or describe a correction:[/dim] "
+)
+
+
+
+class LLMOrchestrator:
+    def __init__(
+        self,
+        parser_provider: ExtractionProvider | None = None,
+        correction_provider: ExtractionProvider | None = None,
+        renderer: TerminalRenderer | None = None,
+        input_fn: Callable[[], str] = input,
+    ) -> None:
+        self._parser_provider = parser_provider
+        self._correction_provider = correction_provider
+        self._renderer = renderer or TerminalRenderer()
+        self._input_fn = input_fn
+        self._builder = ValidationCardBuilder()
+
+    def confirm_loop(self, extract: TrainingLogLLMExtract) -> TrainingLogLLMExtract:
+        """Show the card, apply corrections until confirmed.
+
+        Every correction is recorded in `self.corrections` -- what the person said, and the
+        edits it produced. The caller stores that alongside the extraction, which keeps three
+        facts permanently separable: what the model read, what the person changed, and what was
+        stored. It also turns "which fields do I correct most often?" into a query, which is a
+        prompt-improvement backlog generated from real use rather than guesswork.
+
+        Deliberately no database access, and deliberately does not produce the initial extract
+        itself -- the caller already has one (from `ingest.extract()`, or from `run()` below).
+        This is the half of the old monolithic `run()` that blocks on a human at a terminal,
+        split out so it is the only half that has to: `ingest/extract.py` can now call an
+        LLM without ever waiting on `input()`.
+        """
+        from datetime import datetime, timezone
+
+        from traininglogs.agent.providers import AnthropicProvider
+
+        self.corrections: list[dict] = []
+
+        correction_provider = self._correction_provider or self._parser_provider or AnthropicProvider()
+        validator = LLMExtractValidator(correction_provider)
+
+        while True:
+            card = self._builder.build(extract)
+            self._renderer.render(card)
+            self._renderer.console.print(_CONFIRM_PROMPT, end="")
+            answer = self._input_fn().strip()
+            if answer.lower() in {"y", "yes"}:
+                return extract
+            if answer:
+                extract, edits = validator.apply_correction(extract, answer)
+                self.corrections.append(
+                    {
+                        "at": datetime.now(timezone.utc).isoformat(),
+                        "instruction": answer,
+                        "edits": [e.model_dump(mode="json") for e in edits],
+                    }
+                )
+
+    def run(self, text: str) -> TrainingLogLLMExtract:
+        """Extract, then run the confirm loop. Kept for callers that hand this raw text
+        directly rather than going through `ingest.extract()` first -- `cli/validate.py`
+        (no DB) and this class's own tests.
+
+        Deliberately no database access here. The orchestrator drives a conversation; the
+        caller owns storage.
+        """
+        from traininglogs.agent.providers import AnthropicProvider
+
+        # The model's own reading, before any human correction. Kept so the three facts stay
+        # separable forever: what the model said, what the person changed, what was stored.
+        self.original_extract: TrainingLogLLMExtract | None = None
+
+        parser_provider = self._parser_provider or AnthropicProvider()
+        extract = assemble(text, provider=parser_provider)
+        self.original_extract = extract
+
+        return self.confirm_loop(extract)
