@@ -592,7 +592,11 @@ traininglogs log session.md --parser rules</code></pre>
 
 <section>
   <h2 id="api">The API</h2>
-  <p>FastAPI, read-only. Three endpoints, mapped to the questions I actually ask:</p>
+  <p>FastAPI. Two halves: read endpoints answer questions about existing sessions; ingest
+  endpoints are capture &rarr; extract &rarr; confirm/correct, the same functions
+  <code>cli/log.py</code> already uses, reachable over HTTP.</p>
+
+  <h3>Read</h3>
   <table>
     <thead><tr><th>Endpoint</th><th>Answers</th></tr></thead>
     <tbody>
@@ -601,6 +605,18 @@ traininglogs log session.md --parser rules</code></pre>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>How has this lift moved over time? Every working set, every session.</td></tr>
     </tbody>
   </table>
+
+  <h3>Ingest</h3>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /inputs</code></td><td><code>capture()</code> then <code>extract()</code> &mdash; <code>{raw_input_id, extraction_id}</code>. A failed extraction still returns <code>raw_input_id</code>; the text isn't lost.</td></tr>
+      <tr><td><code>GET /extractions/{id}</code></td><td>The confirmation card, as JSON &mdash; the same <code>ValidationCardBuilder</code> the CLI renders to a terminal.</td></tr>
+      <tr><td><code>POST /extractions/{id}/confirm</code></td><td><code>ingest.confirm()</code> &mdash; writes the normalized session. <code>409</code> on a <code>session_id</code> collision.</td></tr>
+      <tr><td><code>POST /extractions/{id}/correct</code></td><td>One correction. Fully stateless &mdash; the client round-trips <code>extract</code> between calls; the server holds nothing.</td></tr>
+    </tbody>
+  </table>
+
   <p>Every request requires an <code>X-Api-Key</code> header. The app fails at startup if <code>API_KEY</code> is unset. Single key, no users table, no OAuth — it's mine and the dashboard's.</p>
 </section>
 
@@ -623,19 +639,6 @@ traininglogs log session.md --parser rules</code></pre>
                   (6 SQL queries)        (renders HTML +
                                           inline JSON)</div>
   <p>The HTML embeds all data as inline JSON and renders charts with Chart.js. No server is required to view it. It is committed to <code>docs/index.html</code> as part of the normal <code>traininglogs log</code> workflow, which publishes it two ways: GitHub Pages serves this repo's own <code>docs/</code> folder directly at <code>apoorvasharma007.github.io/traininglogs</code>; separately, the <a href="../../website">website</a>'s deploy workflow checks out this repo at build time and copies <code>docs/index.html</code> into the site at <code>apoorvasharma7.com/dashboard</code>. Neither requires an explicit push step from this repo beyond the normal commit — the website redeploy (automatic on its own pushes, or manual via <code>workflow_dispatch</code>) is what picks up the latest committed dashboard.</p>
-
-  <h3>Typography and palette</h3>
-  <p>Inter for body text; JetBrains Mono for labels, numbers, and monospace elements. Background <code>#ffffff</code>; ink <code>#111827</code>; accent <code>#dc2626</code> (red) for emphasis, deload bars, and the current-phase hero stat; muted <code>#6b7280</code> for secondary text.</p>
-
-  <h3>Program auto-discovery</h3>
-  <p>Each program lives at <code>inputs/programs/&lt;slug&gt;/program.md</code>. The file must have a YAML frontmatter block at the top with an <code>alias</code> field (e.g. <code>alias: Strength &amp; Hypertrophy</code>). <code>build_dashboard.py</code> scans all matching paths at build time and renders a link for each. No code change is needed to add a new program — drop the directory and file, set the alias, rebuild.</p>
-
-  <h3>Rules of the road</h3>
-  <ul>
-    <li>Never hand-edit <code>docs/index.html</code> — it is fully regenerated on every build.</li>
-    <li>Always rebuild against the real DB before judging output. Synthetic data lies.</li>
-    <li>e1RM (Epley formula) is intentionally absent — the chart plots actual top-set weight. Do not reintroduce it.</li>
-  </ul>
 </section>
 
 <section>
