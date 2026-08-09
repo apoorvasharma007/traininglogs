@@ -299,25 +299,36 @@ text ────────▶ raw_inputs ──────────▶ ex
                             calls      pending)         decides
 ```
 
-- [ ] **D1 — `ingest/` module**: `capture.py` (text -> raw_input_id), `extract.py`
-      (raw_input_id -> extraction_id), `confirm.py` (extraction_id -> session_id). One job each,
+- [x] **D1 — `ingest/` module** (`7f6b48c`): `capture.py` (text -> raw_input_id), `extract.py`
+      (raw_input_id -> extraction_id), `confirm.py` (extraction_id -> session). One job each,
       each saves before returning.
-- [ ] **D2 — `cli/` and `api/` both call `ingest/`; neither holds logic.** If logic is being
-      copied between them, it belongs in `ingest/`.
-- [ ] **D3 — `status` column is the state machine.** Gives idempotency for free: re-running
-      extract on an input that already has one must not spend money producing a second copy.
-- [ ] **D4 — `llm_calls` table**: raw_input_id, step, model, input/output tokens, cost_usd, ms,
-      cached. Makes cost a SQL query. Already prototyped as `calls.jsonl` in the eval harness.
-- [ ] **D5 — Structured logs carrying `raw_input_id`** on every line, so one id shows a
-      session's whole life.
-- [ ] **D6 — Save the raw LLM response before parsing it.** A validation failure should not also
-      cost you the response.
-- [ ] **D7 — Log "call succeeded" and "result usable" separately.** The `mono` truncation was the
-      former, not an outage; conflating them misdiagnoses failures.
-- [ ] **D8 — Strip `git`, dashboard rebuild, and `input()` out of the ingest path.** This, not
-      the Dockerfile, is what blocks hosting: a blocking terminal prompt cannot sit behind an
-      HTTP endpoint no matter where it is deployed. `cli/log.py` keeps its git/dashboard work as
-      a thin wrapper around the core.
+- [x] **D2 — `cli/` calls `ingest/`; no logic duplicated** (`245e059`). The `api/` half of this
+      item is Phase 4's own "write endpoints" work, not a Phase 3 leftover — `api/app.py` has no
+      ingest-calling logic to deduplicate yet because it doesn't ingest anything yet.
+- [x] **D3 — `status` column is the state machine** (landed as part of D1, `7f6b48c`).
+      `extract()` is idempotent: a `raw_input_id` with a pending/confirmed extraction short-
+      circuits a re-run; rejected does not, since rejecting one is how a person asks for another
+      attempt.
+- [x] **D4 — `llm_calls` table** (`1d1dbdb`): raw_input_id, step, model, attempts, input/output
+      tokens, cost_usd, ms, cached, failed, raw_payload. One row per extraction step (segment/
+      shell/worker/correction), not per raw HTTP attempt — `attempts` carries that count instead.
+- [x] **D5 — scoped down, recorded as a decision** (`1d1dbdb`): `raw_input_id` brackets
+      `assemble()` via two `[ingest]` log lines rather than being threaded through
+      `ExtractionProvider.extract()` itself, which would have meant changing the protocol and
+      every test double using it for one logging field. `llm_calls`/`raw_inputs`/`extractions`
+      are all keyed by `raw_input_id` already, which is the durable, queryable form of "one id
+      shows a session's whole life" — a SQL `WHERE raw_input_id = ...` answers it directly.
+- [x] **D6 — the raw LLM response survives a validation failure** (`1d1dbdb`).
+      `AnthropicProvider.calls[].raw_payload` holds the last tool-call payload the model
+      returned even when `validate()` rejected every attempt — previously it vanished with the
+      raised `LLMParserError`.
+- [x] **D7 — "call succeeded" and "result usable" logged separately** (`1d1dbdb`): two distinct
+      `[llm]` lines. The `mono` truncation incident was the API answering successfully with an
+      unusable result, not an outage — before this, both looked identical in the retry loop.
+- [x] **D8 — confirmed by grep, not assumed** (checked in `245e059`'s session). No `git`, no
+      dashboard rebuild, no `input()` anywhere in `ingest/*.py`. `cli/log.py` still owns all
+      three, confined to its own `main()` / `_ensure_feature_branch()` / the confirm loop it
+      drives — exactly the "thin wrapper around the core" this item asked for.
 
 **Deliberately NOT built at this scale** (~20 sessions/month): no queue (Celery/SQS/Redis — the
 status column is the queue), no microservices, no retry framework (the SDK retries), no provider
@@ -374,50 +385,38 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-09.** Phase 3 is underway on branch `phase-3-ingest-core` (cut from
-`dev`, not yet merged, not pushed). **D1 and D2 done.**
+**Last session: 2026-08-09.** Phase 3 (D1–D8) is **feature-complete** on branch
+`phase-3-ingest-core` (cut from `dev`, not yet merged, not pushed). See the checklist above for
+the commit attached to each item — all eight are checked. **604 tests passing, 0 skipped**
+(started the session at 584). **Spend: $1.71 of $5.00**, unchanged — every test this session
+mocked the client or monkeypatched `assemble()`, $0 real spend.
 
-- **D1** (`7f6b48c`): the `ingest/` module — `capture`, `extract`, `confirm` — each reading its
-  input from the DB and saving its own output before returning. `extract()` idempotent per D3
-  (pending/confirmed short-circuits a re-run; rejected does not).
-- **D2** (`245e059`): `cli/log.py`'s `--parser ai` path now calls
-  `ingest.capture → ingest.extract → LLMOrchestrator.confirm_loop → ingest.confirm` directly.
-  `LLMOrchestrator.run()` split into `confirm_loop(extract)` (new, reusable, no model call, no
-  DB) and `run(text)` (unchanged — `assemble()` then `confirm_loop()`); `cli/validate.py` still
-  uses `run()` and needed no changes. `processor.process_md_file_with_ai` is **deleted** — its
-  logic is now split between `ingest/` and `cli/log.py._process_ai_file`, which takes
-  injectable `provider`/`orchestrator`/`output_dir` for testability, same reason the old
-  function's `orchestrator` param did. `tests/test_processor_ai_path.py` replaced by
-  `tests/test_cli_log_ai_path.py`, same assertions against the new call path.
-  **D8 confirmed, not assumed:** grepped `ingest/*.py` and `cli/log.py` — no `git`, no
-  dashboard rebuild, and no `input()` anywhere below `cli/log.py`'s own `main()` /
-  `_ensure_feature_branch()` / the confirm loop it drives. `ingest/` is clean.
-
-**591 tests passing, 0 skipped** (started this session at 584). **Spend: $1.71 of $5.00**
-(unchanged — `assemble()` is monkeypatched throughout both steps' tests, $0 spent).
-
-Not yet done: local end-to-end smoke test of `traininglogs log --parser ai --no-commit` against
-a real file with a real API call — everything so far is verified through the test suite with
-`assemble()` faked out, not through actually running the CLI command a person types.
+**Blocked, not done: the live E2E smoke test.** `.claude/testing-guide.md` Stage 2
+(`traininglogs log --parser ai --test --no-commit` against a real fixture, one real API call,
+~$0.05) was attempted and got as far as proving `capture()` writes to the real test DB before
+failing — `ANTHROPIC_API_KEY` in `.env` is rejected with a 401. No spend occurred (auth
+failures aren't billed). **This has to happen, with a working key, before `phase-3-ingest-core`
+merges to `dev`** — everything else this phase built has only ever been exercised against a
+faked model.
 
 ### Start here next session
 
-**Phase 3, D4–D8 remain** (D3 already satisfied by `extract()`'s idempotency check):
-
-- **D4 — `llm_calls` table.** New migration: `raw_input_id, step, model, input/output tokens,
-  cost_usd, ms, cached`. Already prototyped as `calls.jsonl` in the eval harness — check there
-  for the shape before inventing a new one. Needs `db/schema.sql` changed and a provider-level
-  call site to write the row (`AnthropicProvider.extract()` is the natural place).
-- **D5 — structured logs carrying `raw_input_id`** on every line through `ingest/`.
-- **D6 — save the raw LLM response before parsing it**, so a validation failure doesn't also
-  cost the response. Touches `agent/providers.py` / `agent/extraction.py`.
-- **D7 — log "call succeeded" vs "result usable" separately.** Same area as D6.
-- **D8 is done** (see above) — nothing left to build, just keep it true as D4–D7 land near the
-  same files.
-
-Before merging `phase-3-ingest-core` to `dev`: run the real E2E smoke test noted above
-(`traininglogs log --parser ai --no-commit` against a `tests/fixtures/` file, one real API
-call, ~$0.05), per `.claude/testing-guide.md`.
+1. **Fix `ANTHROPIC_API_KEY`** in `.env`, then run the Stage 2 smoke test above. Confirm in the
+   test DB afterward:
+   ```bash
+   docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
+     "SELECT session_id, date FROM sessions WHERE date > '2999-01-01' ORDER BY date DESC LIMIT 3;"
+   docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
+     "SELECT step, cost_usd, ms FROM llm_calls ORDER BY created_at DESC LIMIT 10;"
+   ```
+   The second query is new — first time `llm_calls` will have a row from a real call rather
+   than a test fixture.
+2. **Merge `phase-3-ingest-core` → `dev`** once the smoke test is green, same gate as Phase 1/2
+   (`--no-ff`, suite re-verified green on `dev` after).
+3. **Phase 4 — Write API** is next after that (`POST /inputs`, `GET /extractions/{id}`,
+   `POST /extractions/{id}/confirm`, `POST /extractions/{id}/correct`) — see that section above.
+   It is the first place `api/app.py` will actually call `ingest/`, which is what D2's own
+   scoping note above is waiting on.
 
 ### Before the AI path is next run against prod — required
 
