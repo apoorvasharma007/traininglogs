@@ -385,65 +385,63 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-09.** Phase 3 (D1–D8) is **feature-complete** on branch
-`phase-3-ingest-core` (cut from `dev`, not yet merged, not pushed). See the checklist above for
-the commit attached to each item. **608 tests passing, 0 skipped** (started the session at
-584). **Spend: $1.71 of $5.00**, unchanged — every test mocked the client or monkeypatched
-`assemble()`; the two live smoke-test runs used Groq's free tier, $0 either way.
+**Last session: 2026-08-09.** Phase 3 (D1–D8) is **merged and pushed** — `dev` is even with
+`origin/dev` at `586f285`. Nothing is in flight; no open branch.
 
-**Live E2E smoke test: done, against a real model, with real llm_calls rows.**
-`ANTHROPIC_API_KEY` in `.env` is still invalid (401) — untouched, by request, rather than risk
-real spend chasing it mid-session. Ran the new wiring with `GroqProvider` (free tier) instead,
-directly against `_process_ai_file`, `tests/fixtures/valid/strength_session.md`, and
-`TEST_DATABASE_URL` (script in this session's scratchpad). Result: `capture()` → `extract()`
-(real Groq call, real card rendered) → confirm loop → `confirm()` → session inserted,
-`status=confirmed`, `source_file` correct, **and `llm_calls` populated with 3 real rows**
-(`split_exercises`, `extract_session_shell`, `extract_exercise`, real token counts, real `ms`).
+- `cff8f70` — merge: Phase 3, ingest core (D1–D8), `--no-ff`, 608 tests green on `dev` after.
+- `586f285` — `docs/design.html` brought up to date with the actual pipeline, reviewed and
+  approved section by section (it had drifted badly — described three files that don't exist
+  and a monolithic call path deleted back in Phase 2). Also touched: `README.md` (one line,
+  `session_id` collision behavior), `db/schema.sql` (one comment, FK cascade behavior).
 
-**That third part required a fix, caught by the user, not by anything automated:**
-`AnthropicProvider` had `.calls` instrumentation; `GroqProvider` did not, even though
-`ExtractionProvider` is a Protocol specifically so *any* provider can be swapped in by
-parameter and both `ingest.extract()` and `_process_ai_file()` already accept either one.
-First smoke-test run proved this the hard way — `llm_calls` came back empty for a Groq-driven
-run, silently, no error. Fixed by extracting the record-building logic into one
-`_record_call()` helper both providers now call from their own `finally` block, translating
-Groq's differently-named usage fields (`prompt_tokens`/`completion_tokens` vs Anthropic's
-`input_tokens`/`output_tokens`) to the same two ints first. Re-ran the smoke test after the fix
-— that is where the 3 real `llm_calls` rows above came from. 4 new parity tests
-(`TestGroqRecordsCallsTheSameShape`) hold both providers to the same shape going forward, not
-just the shared helper on trust.
+**608 tests passing, 0 skipped. Spend: $1.71 of $5.00**, unchanged all session — every test
+mocks the client or monkeypatches `assemble()`; the two live smoke-test runs used Groq's free
+tier, $0 either way.
 
-**What's still only proven by mock, not a live call:** `AnthropicProvider` itself — its
-retry/rate-limit branches, and whether real Anthropic SDK response objects have `.usage` in the
-exact shape the mocks assume. The Groq run proved the *ingest/cli wiring* end-to-end and the
-*instrumentation pattern* against a real model; it did not touch `AnthropicProvider`'s own code
-path, which is what actually ships to production per the locked model decision.
+**Verified live, with a real gap caught and fixed:** the new `capture → extract → confirm`
+wiring was run against a real model (Groq, free tier, not Anthropic — see below) end to end,
+including `llm_calls` getting real rows. First run came back with `llm_calls` silently empty
+for the Groq path — `AnthropicProvider` had `.calls` instrumentation, `GroqProvider` didn't,
+even though `ExtractionProvider` is a Protocol specifically so either can be swapped in by
+parameter. Fixed with one shared `_record_call()` helper both providers call from their own
+`finally` block; 4 parity tests now hold them to the same shape going forward.
+
+**Still open, not urgent:** `ANTHROPIC_API_KEY` in `.env` is invalid (401) — untouched, by
+request. `AnthropicProvider`'s own retry/rate-limit branches are proven by mocked unit test
+only, never a live call. This is what actually ships to production per the locked model
+decision, so it's worth fixing before the next real (non-`--test`) `traininglogs log` run —
+see the prod-schema blocker below, which has the same shape of risk.
 
 ### Start here next session
 
-1. **Decide: merge now, or fix `ANTHROPIC_API_KEY` first to exercise `AnthropicProvider`
-   itself against a live call.** Nothing about the code says which — risk-tolerance call, not a
-   correctness one. The instrumentation *pattern* is now proven twice (Anthropic by unit test
-   shaped like the real SDK, Groq by an actual live call); what's unproven is specifically
-   `AnthropicProvider`'s own retry/rate-limit code paths under real network conditions.
-2. If fixing the key first: rerun `.claude/testing-guide.md` Stage 2
-   (`traininglogs log --parser ai --test --no-commit`, ~$0.05), then
-   ```bash
-   docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
-     "SELECT step, model, cost_usd, ms FROM llm_calls ORDER BY created_at DESC LIMIT 10;"
-   ```
-3. **Merge `phase-3-ingest-core` → `dev`** once satisfied, same gate as Phase 1/2 (`--no-ff`,
-   suite re-verified green on `dev` after).
-4. **Phase 4 — Write API** is next after that (`POST /inputs`, `GET /extractions/{id}`,
-   `POST /extractions/{id}/confirm`, `POST /extractions/{id}/correct`) — see that section above.
-   It is the first place `api/app.py` will actually call `ingest/`, which is what D2's own
-   scoping note above is waiting on.
+**Phase 4 — Write API** is next, and nothing blocks starting it:
+
+- [ ] `POST /inputs` → `{raw_input_id, extraction_id}` — calls `ingest.capture()` then
+      `ingest.extract()` directly. This is the first real caller of `ingest/` from `api/app.py`
+      — D2's own scoping note (Phase 3) was waiting on exactly this.
+- [ ] `GET /extractions/{id}` → validation-card JSON. Reuse `ValidationCardBuilder` (already
+      DB-free, already used by the CLI's confirm loop); swap `TerminalRenderer` for a JSON
+      serializer — a new, small piece.
+- [ ] `POST /extractions/{id}/confirm` → calls `ingest.confirm()` directly.
+- [ ] `POST /extractions/{id}/correct` → runs one correction (the same `LLMExtractValidator`
+      path `LLMOrchestrator.confirm_loop()` already drives), returns the updated card. This is
+      the one endpoint with no existing non-interactive entry point — `confirm_loop()` is built
+      around a blocking `input_fn`, so this needs a single-correction call extracted from it
+      (or reimplemented directly against `LLMExtractValidator.apply_correction()`).
+- [ ] `api/app.py` currently has no ingest-calling logic at all — check `src/traininglogs/api/`
+      for its current shape before starting; it was last touched long before Phase 2/3.
+
+Suggested first step: `POST /inputs` alone, tested against `TEST_DATABASE_URL`, before adding
+the other three — same reasoning as Phase 3's D1 (smallest safe slice, prove the wiring, then
+build on it).
 
 ### Before the AI path is next run against prod — required
 
 Prod does not have the new tables or columns: `raw_inputs`, `extractions`,
-`sessions.extraction_id`, `extractions.corrections`. **The AI path now writes to them, so
-`traininglogs log --parser ai` against prod will fail until the schema is applied.**
+`sessions.extraction_id`, `extractions.corrections`, and now `llm_calls` (Phase 3). **The AI
+path now writes to all of them, so `traininglogs log --parser ai` against prod will fail until
+the schema is applied.** This also blocks Phase 4's endpoints the moment they're pointed at
+`DATABASE_URL` instead of `TEST_DATABASE_URL` — worth doing before Phase 4 needs it, not after.
 
 Everything is additive (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`), so applying
 `src/traininglogs/db/schema.sql` cannot touch an existing row. It has still not been run:
