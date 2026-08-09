@@ -385,32 +385,37 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-**Last session: 2026-08-09.** Phase 3 (D1–D8) is **merged and pushed** — `dev` is even with
-`origin/dev` at `586f285`. Nothing is in flight; no open branch.
+**Last session: 2026-08-10.** Phase 3 is merged and pushed. `dev` has since moved on with real
+Anthropic verification and a real extraction bug found and fixed — not yet pushed.
 
 - `cff8f70` — merge: Phase 3, ingest core (D1–D8), `--no-ff`, 608 tests green on `dev` after.
 - `586f285` — `docs/design.html` brought up to date with the actual pipeline, reviewed and
-  approved section by section (it had drifted badly — described three files that don't exist
-  and a monolithic call path deleted back in Phase 2). Also touched: `README.md` (one line,
-  `session_id` collision behavior), `db/schema.sql` (one comment, FK cascade behavior).
+  approved section by section.
+- `ba8588e` — resume pointer update (pushed).
+- `8ef5b45` — **fix, not yet pushed:** `SetExtract` never had fields for
+  `rep_quality_assessment` or `failure_technique` — every AI-path session since the split
+  pipeline shipped has both silently unset. Fixed (`agent/schemas.py`, `agent/prompts.py`), 9
+  new unit tests, **and verified against 3 real live sessions** (push/pull/legs, run through
+  the real Anthropic pipeline against a reset `db_regen`, diffed field-by-field against the
+  existing rules-parser JSON). Every difference found across all 26 exercises was the *old*
+  data being wrong, never the new extraction. 617 tests, 0 skipped.
 
-**608 tests passing, 0 skipped. Spend: $1.71 of $5.00**, unchanged all session — every test
-mocks the client or monkeypatches `assemble()`; the two live smoke-test runs used Groq's free
-tier, $0 either way.
+**`ANTHROPIC_API_KEY` is now valid** — updated this session. The historical smoke-test gap
+noted previously (Anthropic's own retry/rate-limit branches never exercised live) is closed:
+this session ran 3 real Haiku extractions successfully. Real spend this session: **~$0.21**
+(3 live extractions). Cumulative project spend not recomputed here — check `llm_calls` /
+prior session notes if it matters before the next paid run.
 
-**Verified live, with a real gap caught and fixed:** the new `capture → extract → confirm`
-wiring was run against a real model (Groq, free tier, not Anthropic — see below) end to end,
-including `llm_calls` getting real rows. First run came back with `llm_calls` silently empty
-for the Groq path — `AnthropicProvider` had `.calls` instrumentation, `GroqProvider` didn't,
-even though `ExtractionProvider` is a Protocol specifically so either can be swapped in by
-parameter. Fixed with one shared `_record_call()` helper both providers call from their own
-`finally` block; 4 parity tests now hold them to the same shape going forward.
+**`scripts/regen_historical_ai.py`** (built this session, see Phase 3's own resume notes for
+why it's separate from the rules-parser regen) also gained `--files`, to target specific
+sessions instead of the first N alphabetically.
 
-**Still open, not urgent:** `ANTHROPIC_API_KEY` in `.env` is invalid (401) — untouched, by
-request. `AnthropicProvider`'s own retry/rate-limit branches are proven by mocked unit test
-only, never a live call. This is what actually ships to production per the locked model
-decision, so it's worth fixing before the next real (non-`--test`) `traininglogs log` run —
-see the prod-schema blocker below, which has the same shape of risk.
+**Full 122-file historical regen: deferred, not abandoned.** The 3-file spot-check above is
+strong evidence the pipeline is ready for it — explicitly deferred by request to prioritize
+Phase 4 (below) instead: the goal is a hosted app with a UI other people can try, and the
+regen doesn't block that. `db_regen` currently holds only the 3 test sessions;
+`output_training_logs_json_v3.0.0/` (untracked, not gitignored, 3 files) is scratch output
+from the same test, not committed.
 
 ### Start here next session
 
