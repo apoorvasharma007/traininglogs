@@ -241,28 +241,44 @@ See the open hypothesis at the end of `extraction-design-principles.md`.
 
 ## Phase 2 — Three layers
 
-- [ ] `raw_inputs` table: id, content, `source_kind` (`markdown`|`photo`|`speech`), captured_at,
-      checksum. Immutable.
-- [ ] `extractions` table: id, `raw_input_id` FK, model, prompt_version, created_at, full
+- [x] `raw_inputs` table: id, content, `source_kind` (`markdown`|`photo`|`speech`), captured_at,
+      checksum. Immutable. **Done 2026-08-07.**
+- [x] `extractions` table: id, `raw_input_id` FK, model, prompt_version, created_at, full
       extract as JSONB, `uncertain_fields`, `warnings`, status
-      (`pending`|`confirmed`|`rejected`), confirmed_at.
-- [ ] `sessions.extraction_id` FK.
-- [ ] Re-key `session_id` off `raw_inputs.id`, not the file-path hash
-      (`processor.compute_session_id`). Keep the date prefix for readability.
-- [ ] Stop dropping the confidence signal — `build_session_from_extract` currently does
-      `exclude={"uncertain_fields"}` and discards `warnings` entirely.
-- [ ] **C6 — Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
+      (`pending`|`confirmed`|`rejected`), confirmed_at. **Done 2026-08-07.**
+- [x] `sessions.extraction_id` FK. **Done 2026-08-09** — nullable, so sessions predating the layers coexist with new ones.
+- [ ] **DEFERRED 2026-08-09, by decision.** Re-key `session_id` off `raw_inputs.id`, not the
+      file-path hash (`processor.compute_session_id`). Keep the date prefix for readability.
+      Deferring is safe: `extraction_id` is nullable so old and new sessions coexist, the
+      dashboard already tolerates a null `source_file`, and the only case that *needs* the
+      re-key is input with no file path — photo and speech, which is Phase 7. Historical
+      sessions keep their path-hash ids and null `extraction_id`/`source_file` until then.
+      Backfilling is free when it happens: a raw input is just text, so rows can be built from
+      the `.md` files with no API calls.
+- [x] Stop dropping the confidence signal. **Done 2026-08-09** — `uncertain_fields` and
+      `warnings` are stored on the `extractions` row, which is the layer they describe.
+      `TrainingSession` is unchanged: they are statements *about* a reading, not part of the
+      normalized session.
+- [x] **C6 — DONE 2026-08-09. Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
       the whole extract and asks for the whole extract back, with "keep all unchanged fields
       exactly as they are" as the only guarantee — a hope, not a mechanism. It also uses
       `SYSTEM_PROMPT`/`TOOL_NAME`, i.e. the monolithic path that hit `max_tokens=4096` and
       truncated on 2 of 6 files in the evaluation. Replace with a patch: the model returns
-      `[{path, value}]`, Python applies it. ~40x cheaper (~$0.028 -> ~$0.0007 per correction),
-      and fields not named in the patch cannot change *by construction*.
-- [ ] **C7 — `corrections` JSONB, append-only; `extract` stays immutable.** Keeps three facts
+      `[{path, value}]`, Python applies it. Fields not named in the patch cannot change *by
+      construction* — that guarantee is now a property of the code rather than a sentence in a
+      prompt.
+
+      **Measured, not estimated.** On a real 10-exercise session the old shape needed ~5,410
+      output tokens against `max_tokens=4096` — it *could not have returned* a correction for a
+      session that size, only a truncated one. That is the finding; cost is secondary. The
+      saving is **5.9x** ($0.0368 -> $0.0062), not the 40x guessed here: the extract is still
+      sent as context, so input barely moves. Output drops 90x, and output is priced at 5x
+      input, which is where the money goes.
+- [x] **C7 — DONE 2026-08-09. `corrections` JSONB, append-only; `extract` stays immutable.** Keeps three facts
       forever: what the model said, what the human changed, what was stored. Byproduct: "which
       fields do I correct most often?" becomes a SQL query — the prompt-improvement backlog,
       generated from real use.
-- [ ] **C8 — LIVE BUG: `source_file` is never set on the AI path.** `process_md_file` sets it
+- [x] **C8 — FIXED 2026-08-09.** `source_file` is never set on the AI path. `process_md_file` sets it
       (rules path only, `processor.py:158-168`); `_process_with_ai` in `cli/log.py` never does.
       Every AI-parsed session currently in the DB has no link to the text it came from. Fixed
       properly by C1-C3 (the `raw_input_id` FK), but worth knowing it is broken today.
@@ -428,6 +444,44 @@ cache. Confirm with the free token-counting endpoint before revisiting. **Phase 
 exercises against $3.29 remaining. Revisit after Phase 2, so the regeneration is re-runnable and
 versioned rather than a one-shot that might be repeated.
 
-### Next action — Phase 2
+### Phase 2 — done 2026-08-09
 
-**Spend: $1.71 of $5.00.** Phase 2 needs no API credits.
+Steps 1, 2, 4 and 5 landed. Step 3 (re-keying) deferred by decision — see the Phase 2 list above.
+
+| Step | What |
+|---|---|
+| 1 | `raw_inputs` + `extractions` tables, purely additive |
+| 2 | ingest path writes all three layers; **C8 fixed**; the AI path moved out of the CLI so it is testable |
+| 4 | **C6** patch-based corrections, **C7** append-only `corrections` |
+| 5 | monolithic path deleted — `SYSTEM_PROMPT`, `parse()`, the mono switch, env var and eval arm |
+
+**584 tests.** No API spend: Phase 2 cost $0.00. Total remains **$1.71 of $5.00**.
+
+**C6, measured rather than estimated.** On a real 10-exercise session the old whole-document
+correction needed ~5,410 output tokens against `max_tokens=4096` — it could not have returned a
+correction for a session that size. That is the finding; the 5.9x cost saving is secondary, and
+the roadmap's original 40x guess was wrong.
+
+### Open decision — movement-skill conventions, deferred 2026-08-09
+
+Six of the eight domain conventions that lived in `SYSTEM_PROMPT` are absent from the three live
+prompts: juggling/skill-run counts, reaction-time drills, static holds, clean-vs-failed attempt
+mapping, ordinary reps with varying quality staying whole, and one exercise-level RPE applying to
+the last set only. They stopped being applied when the split path became the default, not when
+the constant was deleted.
+
+**Deferred by decision — not important right now.** Preserved verbatim in
+`docs/extraction-conventions.md`. Fixtures exist
+(`tests/fixtures/valid/adhoc_movement_skills_session.md`, `adhoc_calisthenics_rings_session.md`)
+for whenever it is picked up. Cost when it is: a live prompt change moves `PROMPT_VERSION`,
+invalidates the eval cache, and needs a ~$0.10 measurement run.
+
+### Next action
+
+Phase 3 — ingest core. Nothing outstanding blocks it.
+
+Not yet applied to prod: the `raw_inputs`/`extractions` tables, `sessions.extraction_id` and
+`extractions.corrections`. All additive (`CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT
+EXISTS`), so applying the schema touches no existing row — but nothing has been run against
+`DATABASE_URL`, per `.claude/db-migration.md`. Needed before the AI path is next used against
+prod, since it now writes those tables.

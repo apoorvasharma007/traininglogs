@@ -10,8 +10,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
-from traininglogs.agent.extraction import parse
-from traininglogs.agent.prompts import SYSTEM_PROMPT
 from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
@@ -199,55 +197,6 @@ class TestTrainingLogLLMExtract:
 
 # --- parse() ---
 
-class TestParse:
-    def test_happy_path(self) -> None:
-        extract = parse("some workout text", provider=StubProvider(VALID_STRENGTH_RAW))
-        assert extract.date == "2026-05-12"
-        assert len(extract.exercises) == 1
-
-    def test_provider_receives_text_and_schema(self) -> None:
-        calls: list[tuple[str, dict]] = []
-
-        class CapturingProvider:
-            def extract(
-                self, text: str, tool_schema: dict, system_prompt: str, tool_name: str,
-        tool_description: str, validate=None
-            ) -> dict:
-                calls.append((text, tool_schema))
-                return VALID_STRENGTH_RAW
-
-        parse("my workout", provider=CapturingProvider())
-        assert len(calls) == 1
-        assert calls[0][0] == "my workout"
-        assert isinstance(calls[0][1], dict)
-        assert "exercises" in str(calls[0][1])
-
-    def test_provider_error_raises_llm_parser_error(self) -> None:
-        with pytest.raises(LLMParserError):
-            parse("text", provider=AlwaysFailProvider())
-
-    def test_invalid_raw_dict_raises_llm_parser_error(self) -> None:
-        bad_raw = {"date": "2026-05-12", "exercises": [{"number": 0, "name": "Squat"}]}
-        with pytest.raises(LLMParserError):
-            parse("text", provider=StubProvider(bad_raw))
-
-    def test_uncertain_fields_preserved(self) -> None:
-        raw = dict(VALID_STRENGTH_RAW, uncertain_fields=["exercises.0.sets.0.rpe"])
-        extract = parse("text", provider=StubProvider(raw))
-        assert "exercises.0.sets.0.rpe" in extract.uncertain_fields
-
-    def test_default_provider_is_anthropic(self) -> None:
-        # Just verify AnthropicProvider is used when none supplied.
-        # Don't call .extract() — just check the type.
-        with patch("traininglogs.agent.extraction.AnthropicProvider") as mock_cls:
-            mock_provider = MagicMock()
-            mock_provider.extract.return_value = VALID_STRENGTH_RAW
-            mock_cls.return_value = mock_provider
-            result = parse("text")
-            mock_cls.assert_called_once()
-            assert result.date == "2026-05-12"
-
-
 class TestProviderTemperature:
     """Extraction must be deterministic — the same input text should produce the same
     fields every time. A non-zero sampling temperature is why the same free-prose file
@@ -367,29 +316,3 @@ class TestProviderParametrization:
             assert kwargs["tool_choice"] == {"type": "function", "function": {"name": "custom_tool"}}
 
 
-class TestSystemPromptSessionNotesAndRemarks:
-    """Guard the prompt text for the session-notes / remark-attachment / no-alias-list
-    decisions (design session before v3.0.0 Step 6). If someone edits SYSTEM_PROMPT and
-    these vanish, real extraction will silently regress even though schema tests pass."""
-
-    def test_movement_is_no_longer_a_focus_alias(self) -> None:
-        assert '"Focus:", "Movement:", "Muscle Group:"' not in SYSTEM_PROMPT
-        assert '"Focus:", "Muscle Group:"' in SYSTEM_PROMPT
-
-    def test_prompt_never_maintains_a_keyword_alias_list(self) -> None:
-        assert "do not maintain a running list of every possible keyword" in SYSTEM_PROMPT
-        assert 'treat "Movement:" the same as any' in SYSTEM_PROMPT
-
-    def test_prompt_defines_top_level_session_notes_field(self) -> None:
-        assert "notes (top-level, session): remarks that don't belong to any specific exercise" in SYSTEM_PROMPT
-
-    def test_prompt_never_silently_drops_unmapped_text(self) -> None:
-        assert "Never silently drop text you cannot map to a structured field" in SYSTEM_PROMPT
-        assert "the MOST SPECIFIC level it clearly belongs to" in SYSTEM_PROMPT
-
-    def test_prompt_defines_remark_rpe_defaults_to_last_set(self) -> None:
-        assert "apply it to the LAST set of that exercise only" in SYSTEM_PROMPT
-        assert "Never apply one exercise-level RPE value to every set in the exercise" in SYSTEM_PROMPT
-
-    def test_prompt_lets_named_set_override_last_set_default(self) -> None:
-        assert "apply it to that named set instead of the last one" in SYSTEM_PROMPT

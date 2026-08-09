@@ -15,8 +15,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from traininglogs.agent.extraction import parse
-from traininglogs.agent.prompts import SYSTEM_PROMPT
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.processor.processor import build_session_from_extract
 
@@ -193,50 +191,3 @@ class TestAdhocMovementSkillsSchemaFit:
         assert extract.exercises[0].sets[0].rep_count.full == 10
 
 
-class TestParseAdhocMovementSkillsFixture:
-    def test_parse_returns_valid_extract(self) -> None:
-        extract = parse("stub text", provider=StubProvider(ADHOC_MOVEMENT_SKILLS_RAW))
-        assert len(extract.exercises) == 4
-        assert extract.program is None
-
-
-class TestSystemPromptConventions:
-    """Guard the prompt text itself — these lines are what makes the LLM produce
-    the shapes asserted above. If someone edits SYSTEM_PROMPT and these vanish,
-    the schema tests above still pass but real extraction will silently regress."""
-
-    def test_prompt_defines_ad_hoc_session_as_program_unset(self) -> None:
-        assert "it is an ad-hoc session" in SYSTEM_PROMPT
-        assert "leave program, phase, and week all unset" in SYSTEM_PROMPT
-
-    def test_prompt_defines_skill_run_as_reps(self) -> None:
-        assert "one set" in SYSTEM_PROMPT
-        assert "catches" in SYSTEM_PROMPT
-
-    def test_prompt_defines_reaction_time_in_notes(self) -> None:
-        assert "Reaction-time drills" in SYSTEM_PROMPT
-        assert "Never put milliseconds into" in SYSTEM_PROMPT
-
-    def test_prompt_disambiguates_tap_count_from_duration(self) -> None:
-        assert "it is NOT a duration" in SYSTEM_PROMPT
-
-    def test_prompt_defines_static_holds_as_duration(self) -> None:
-        assert "Static holds" in SYSTEM_PROMPT
-        assert "Do not use the StaticHold failure technique for planned holds" in SYSTEM_PROMPT
-
-    def test_prompt_defines_skill_attempt_full_partial_mapping(self) -> None:
-        assert "rep_count.full = attempts that were completed cleanly" in SYSTEM_PROMPT
-        assert "rep_count.partial = attempts that were tried but not completed" in SYSTEM_PROMPT
-
-    def test_prompt_distinguishes_skill_attempts_from_ordinary_reps(self) -> None:
-        """Regression guard for the '6 reps, depth dropped on last two' bug —
-        the prompt must explicitly tell the model not to treat quality commentary
-        on ordinary reps as a skill-attempt clean/failed split."""
-        assert "DIFFERENT thing from ordinary reps" in SYSTEM_PROMPT
-        assert "Do NOT apply this to ordinary reps whose quality varied" in SYSTEM_PROMPT
-
-    def test_prompt_does_not_default_program_when_phase_week_given(self) -> None:
-        """Regression guard: a session with phase/week but no explicit program name
-        is part of a real program whose name lives outside the file (usually the
-        directory path) — it must not get silently mislabeled or guessed."""
-        assert "also leave program unset" in SYSTEM_PROMPT

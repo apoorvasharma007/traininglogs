@@ -160,9 +160,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     from traininglogs.db.db import get_connection
     from traininglogs.db.insert import insert_session
     from traininglogs.processor.processor import (
-        INPUTS_DIR,
-        build_session_from_extract,
         process_md_file,
+        process_md_file_with_ai,
     )
 
     conn = get_connection(database_url)
@@ -176,38 +175,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         except psycopg2.OperationalError:
             print("[local db] not reachable, skipping")
 
-    def _process_with_ai(md_path: Path, conn) -> "TrainingSession":
-        from traininglogs.agent.llm_orchestrator import LLMOrchestrator
-        from traininglogs.db.insert import insert_session as _insert
-        import json
-
-        md_text = md_path.read_text(encoding="utf-8")
-        orchestrator = LLMOrchestrator()
-        extract = orchestrator.run(md_text)
-        session = build_session_from_extract(extract, md_path, INPUTS_DIR)
-
-        if not _insert(conn, session):
-            raise SystemExit(
-                f"\nERROR: session_id '{session.session_id}' already exists in the DB.\n"
-                f"The date in '{md_path.name}' is likely wrong. Fix it and re-run.\n"
-            )
-
-        from traininglogs.processor.processor import OUTPUT_DIR
-        if session.program and session.phase is not None and session.week is not None:
-            week_dir = OUTPUT_DIR / session.program / f"phase {session.phase}" / f"week {session.week}"
-        else:
-            week_dir = OUTPUT_DIR / "sessions"
-        week_dir.mkdir(parents=True, exist_ok=True)
-        output_path = week_dir / f"{session.session_id}.json"
-        output_path.write_text(json.dumps(session.model_dump(mode="json"), indent=2))
-        print(f">>> Inserted into DB: {session.session_id}\n")
-        print(f">>> JSON written to: {output_path}\n")
-        return session
-
     try:
         for md_path in md_files:
             if args.parser == "ai":
-                session = _process_with_ai(md_path, conn)
+                session = process_md_file_with_ai(md_path, conn)
             else:
                 session = process_md_file(md_path, conn)
             if local_conn:

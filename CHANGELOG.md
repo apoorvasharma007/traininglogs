@@ -7,6 +7,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — the monolithic extraction path (Phase 2, step 5)
+
+- `SYSTEM_PROMPT` (7,295 chars), `MOVEMENT_SKILL_CONVENTIONS` (2,692 chars),
+  `extraction.parse()`, `TOOL_NAME`/`TOOL_DESCRIPTION`, `LLMOrchestrator`'s
+  `use_monolithic_parser` argument, the `TRAININGLOGS_USE_MONOLITHIC_PARSER` environment
+  variable, and the `mono` arm of `scripts/eval_arms.py`.
+
+  Its last caller outside itself was the correction path, which moved to patches in step 4.
+  Keeping it runnable was to de-confound a split-vs-mono verdict that is no longer in question:
+  mono's output scales with session size and hit the `max_tokens` ceiling on 2 of 6 files, it
+  gives no per-exercise failure isolation, and it cannot survive photo or speech input.
+
+- **Discovered while deleting it, and worth stating separately: six of the eight domain
+  conventions in `SYSTEM_PROMPT` are absent from the three live prompts** — juggling and
+  skill-run counts, reaction-time drills, static holds, clean-vs-failed attempt mapping, the
+  rule that ordinary reps with varying quality stay whole, and one exercise-level RPE applying
+  to the last set only. They stopped being applied when the split path became the default, not
+  when the constant was deleted; deleting it made an existing gap visible. All of it is
+  preserved verbatim in `docs/extraction-conventions.md`, with a table of what is and is not
+  covered. Migrating them is an open decision with a cost: changing a live prompt changes
+  `PROMPT_VERSION`, invalidates the eval cache, and needs a paid run to confirm no regression.
+
+  The schema is unaffected and still supports every shape involved —
+  `TestAdhocMovementSkillsSchemaFit` tests the models rather than the prompt text and continues
+  to pass. Tests that asserted on `SYSTEM_PROMPT`'s prose were removed with the prompt; tests
+  that exercised `parse()` were removed with the function.
+
+### Changed — corrections are edits, not rewrites (Phase 2, step 4)
+
+- **C6.** `LLMExtractValidator.apply_correction` asks the model for a list of
+  `{path, value}` edits and applies them in Python, instead of sending the whole extract and
+  asking for the whole extract back. Fields the correction does not name **cannot** change —
+  previously the only guarantee was the sentence "keep all unchanged fields exactly as they are"
+  in a prompt, and nothing would have detected a quietly altered set.
+
+  Measured on a real 10-exercise session: the old shape needed **~5,410 output tokens against
+  `max_tokens=4096`**, so it could not have returned a correction for a session that size, only
+  a truncated one. Cost is secondary and the roadmap's 40x estimate was wrong — it is **5.9x**
+  ($0.0368 → $0.0062), because the extract is still sent as context so input barely moves.
+  Output drops 90x, and output is priced at 5x input.
+
+  New: `agent/patch.py` (`FieldEdit`, `ExtractPatch`, `apply_edits`, `PatchError`) and
+  `CORRECTION_SYSTEM_PROMPT`. A path that does not resolve raises rather than silently doing
+  nothing — a typo'd path that changes nothing is worse than a failure, because the person
+  believes their correction landed.
+
+  The correction path no longer uses `SYSTEM_PROMPT`/`extract_workout`, which was its last
+  caller outside the deprecated monolithic parser.
+
+- **C7.** `extractions.corrections` (JSONB, appended to, never rewritten) and
+  `extractions.extract` now holds **the model's own reading**, not the corrected one. Three facts
+  stay separable: what the model said, what the person changed, what was stored. Byproduct:
+  "which fields do I correct most often?" is a SQL query over `corrections`, which is a
+  prompt-improvement backlog generated from real use rather than guesswork.
+  `LLMOrchestrator` exposes `original_extract` and `corrections` after `run()`; it does no
+  database work itself.
+
+### Added — the ingest path writes all three layers (Phase 2, step 2)
+
+- `sessions.extraction_id` — nullable FK to `extractions`, so a stored session can be traced
+  back to the reading that produced it and the text that reading came from. Added by
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, because `CREATE TABLE IF NOT EXISTS` does nothing
+  to a table that already exists and would have skipped the column silently.
+- `processor.process_md_file_with_ai()` — the AI parser path, moved out of a nested function
+  inside the CLI. It captures the raw input, runs the confirmation loop, stores the extraction
+  with its model/prompt/uncertain_fields/warnings, then inserts the session linked to both.
+  `orchestrator` and `model` are injectable so it can be tested without an API call.
+- `processor.relative_source_file()` — one helper, used by both parser paths.
+- `insert_session()` takes `source_file` and `extraction_id`.
+
+### Fixed
+
+- **C8 — `source_file` was never set on the AI path.** The rules path set it with an `UPDATE`
+  after inserting; the AI path did not, so every AI-parsed session in the database has no link
+  to the text it came from. Both paths now pass it to `insert_session`, which writes it with the
+  row — two callers, one of which forgot, is the failure mode a parameter removes. The
+  post-insert `UPDATE` is gone. Existing rows are not backfilled by this change.
+- `extractions.confirmed_at` is derived from `status` in the insert rather than set separately.
+  Two fields that must agree, set independently, eventually disagree.
+
+Audited and unchanged: an extraction that failed for one exercise still stores a placeholder
+exercise with a sentinel in `notes`, and `insert_session` still accepts it. That is a confirmed
+choice made by the person at the card, not a silent write — but finding such sessions used to
+mean a `LIKE` against prose. It is now `WHERE warnings <> '{}'` on the extraction.
+
+### Added — capture and interpretation layers (Phase 2, step 1)
+
+- `raw_inputs` table: what the person actually produced, never edited. `id`, `content`,
+  `source_kind` (`markdown`|`photo`|`speech`, CHECK-constrained), `source_file` (null for
+  spoken or pasted input), `checksum` (sha256 of the content), `captured_at`. Identical text
+  is deliberately **not** deduplicated — repeating a session is a real thing a person does, and
+  collapsing two captures into one would make them indistinguishable. The checksum is indexed
+  so finding duplicates is a query; deciding what to do about them belongs to the ingest path.
+- `extractions` table: one attempt at reading a raw input. `raw_input_id` FK (cascading),
+  `model`, `prompt_version`, `extract` (JSONB), `uncertain_fields`, `warnings`, `status`
+  (`pending`|`confirmed`|`rejected`, CHECK-constrained), `created_at`, `confirmed_at`.
+  Many-to-one by design: re-reading the same text with a better model or a fixed prompt must not
+  require the person to write anything twice.
+- `insert_raw_input`, `insert_extraction`, `content_checksum` in `db/insert.py`; `get_raw_input`,
+  `find_raw_inputs_by_checksum`, `get_extraction`, `get_extractions_for_raw_input` in
+  `db/fetch.py`.
+- `prompts.PROMPT_VERSION` — a 12-character hash of the three live prompts, recomputed on
+  import. Derived rather than declared, because a hand-maintained version constant is only
+  correct while someone remembers to bump it.
+
+Nothing writes to these tables yet — this step is purely additive, so no existing behaviour
+changes. `schema.sql` uses `CREATE TABLE IF NOT EXISTS` throughout, so applying it to an
+existing database adds the two tables and touches nothing else.
+
+Validation rules in effect: `raw_inputs.source_kind` must be one of `markdown`/`photo`/`speech`;
+`extractions.status` must be one of `pending`/`confirmed`/`rejected`; an extraction cannot
+reference a raw input that does not exist, and is deleted with it.
+
 ### Fixed — extraction reliability (2026-08-06)
 
 A measurement run scored 215/277 on core fields, down from 98.8%. The cause was not extraction

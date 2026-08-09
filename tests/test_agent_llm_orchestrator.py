@@ -1,12 +1,9 @@
-"""Unit tests for LLMOrchestrator. No real LLM calls — stub providers and renderers.
+"""LLMOrchestrator: the confirm/correct loop.
 
-TestLLMOrchestrator below exercises the confirm/correct/render loop mechanics with
-use_monolithic_parser=True and a single-shape StubProvider — those mechanics (rendering,
-reading input, applying a correction, looping) don't depend on which extraction path produced
-the initial extract, so they're tested once against the simpler single-call shape.
-TestLLMOrchestratorDefaultsToSplitExtraction covers the actual default path (assemble()) and
-the flag/env escape hatch back to the monolithic path, per Step 8 of the orchestration
-refactor plan."""
+These drove the loop through the monolithic single-call parser, which was deleted on 2026-08-09
+along with the `use_monolithic_parser` switch. They now run against the split path, which is the
+only one. What is under test is unchanged: rendering, reading input, applying a correction, and
+looping until confirmed."""
 from __future__ import annotations
 
 import io
@@ -18,36 +15,12 @@ import pytest
 
 
 from traininglogs.agent.extraction import SEGMENT_TOOL_NAME, SHELL_TOOL_NAME, WORKER_TOOL_NAME
-from traininglogs.agent.extraction import TOOL_NAME as MONOLITHIC_TOOL_NAME
-from traininglogs.agent.llm_orchestrator import USE_MONOLITHIC_PARSER_ENV_VAR, LLMOrchestrator
+from traininglogs.agent.llm_orchestrator import LLMOrchestrator
 from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
 from traininglogs.agent.renderer import TerminalRenderer
 from rich.console import Console
 
 
-_BASE_RAW: dict[str, Any] = {
-    "date": "2026-05-12",
-    "focus": "Upper",
-    "exercises": [
-        {
-            "number": 1,
-            "name": "Bench Press",
-            "exercise_type": "strength",
-            "sets": [
-                {
-                    "set_type": "strength",
-                    "number": 1,
-                    "weight_kg": 80.0,
-                    "rep_count": {"full": 8, "partial": 0},
-                    "rpe": 8.0,
-                }
-            ],
-        }
-    ],
-    "uncertain_fields": [],
-}
-
-_UPDATED_RAW: dict[str, Any] = dict(_BASE_RAW, focus="Lower")
 
 
 class StubProvider:
@@ -82,38 +55,45 @@ def _stub_renderer() -> TerminalRenderer:
     return TerminalRenderer(console=_null_console())
 
 
+def _split_provider() -> "ScriptedProvider":
+    """Serves segment/shell/worker. These loop tests used to drive the monolithic parser with a
+    single whole-extract response; that path was deleted on 2026-08-09, so they now exercise the
+    real one. The loop mechanics under test — render, confirm, correct — are unchanged."""
+    return ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
+
+
+def _no_edits() -> "StubProvider":
+    return StubProvider({"edits": []})
+
+
 class TestLLMOrchestrator:
     def test_immediate_confirm_returns_extract(self) -> None:
-        provider = StubProvider(_BASE_RAW)
         renderer = _stub_renderer()
         orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
+            parser_provider=_split_provider(),
+            correction_provider=_no_edits(),
             renderer=renderer,
             input_fn=lambda: "y",
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert isinstance(result, TrainingLogLLMExtract)
         assert result.date == "2026-05-12"
 
     def test_yes_variant_accepted(self) -> None:
-        provider = StubProvider(_BASE_RAW)
         renderer = _stub_renderer()
         orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
+            parser_provider=_split_provider(),
+            correction_provider=_no_edits(),
             renderer=renderer,
             input_fn=lambda: "yes",
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.date == "2026-05-12"
 
     def test_one_correction_then_confirm(self) -> None:
-        # First parse returns base, first correction returns updated
-        parser_provider = StubProvider(_BASE_RAW)
-        correction_provider = StubProvider(_UPDATED_RAW)
+        # Corrections come back as edits now, not as a rewritten extract.
+        parser_provider = _split_provider()
+        correction_provider = StubProvider({"edits": [{"path": "focus", "value": "Lower"}]})
         renderer = _stub_renderer()
         answers = iter(["change focus to Lower", "y"])
         orch = LLMOrchestrator(
@@ -121,16 +101,16 @@ class TestLLMOrchestrator:
             correction_provider=correction_provider,
             renderer=renderer,
             input_fn=lambda: next(answers),
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.focus == "Lower"
 
     def test_multiple_corrections(self) -> None:
-        raw_v2: dict[str, Any] = dict(_BASE_RAW, focus="Push")
-        raw_v3: dict[str, Any] = dict(_BASE_RAW, focus="Pull")
-        parser_provider = StubProvider(_BASE_RAW)
-        correction_provider = StubProvider(raw_v2, raw_v3)
+        parser_provider = _split_provider()
+        correction_provider = StubProvider(
+            {"edits": [{"path": "focus", "value": "Push"}]},
+            {"edits": [{"path": "focus", "value": "Pull"}]},
+        )
         renderer = _stub_renderer()
         answers = iter(["fix 1", "fix 2", "y"])
         orch = LLMOrchestrator(
@@ -138,22 +118,19 @@ class TestLLMOrchestrator:
             correction_provider=correction_provider,
             renderer=renderer,
             input_fn=lambda: next(answers),
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         assert result.focus == "Pull"
 
     def test_renderer_called_each_iteration(self) -> None:
-        provider = StubProvider(_BASE_RAW, _UPDATED_RAW)
         mock_renderer = MagicMock(spec=TerminalRenderer)
         mock_renderer.console = _null_console()
         answers = iter(["correction", "y"])
         orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
+            parser_provider=_split_provider(),
+            correction_provider=StubProvider({"edits": [{"path": "focus", "value": "Lower"}]}),
             renderer=mock_renderer,
             input_fn=lambda: next(answers),
-            use_monolithic_parser=True,
         )
         orch.run("session text")
         assert mock_renderer.render.call_count == 2
@@ -166,23 +143,20 @@ class TestLLMOrchestrator:
             correction_provider=provider,
             renderer=renderer,
             input_fn=lambda: "y",
-            use_monolithic_parser=True,
         )
         with pytest.raises(LLMParserError, match="always fails"):
             orch.run("session text")
 
     def test_empty_answer_rerenders_without_correction(self) -> None:
-        provider = StubProvider(_BASE_RAW)
         mock_renderer = MagicMock(spec=TerminalRenderer)
         mock_renderer.console = _null_console()
         # Empty answer first, then confirm
         answers = iter(["", "y"])
         orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
+            parser_provider=_split_provider(),
+            correction_provider=_no_edits(),
             renderer=mock_renderer,
             input_fn=lambda: next(answers),
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         # render called twice: once for initial, once after empty answer
@@ -191,16 +165,14 @@ class TestLLMOrchestrator:
 
     def test_integration_card_built_and_rendered(self) -> None:
         """Integration: real builder + real renderer, confirm immediately."""
-        provider = StubProvider(_BASE_RAW)
         buf = io.StringIO()
         console = Console(file=buf, highlight=False, width=120)
         renderer = TerminalRenderer(console=console)
         orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
+            parser_provider=_split_provider(),
+            correction_provider=_no_edits(),
             renderer=renderer,
             input_fn=lambda: "y",
-            use_monolithic_parser=True,
         )
         result = orch.run("session text")
         output = buf.getvalue()
@@ -271,42 +243,15 @@ class TestLLMOrchestratorDefaultsToSplitExtraction:
         assert result.date == "2026-05-12"
         assert [e.name for e in result.exercises] == ["Bench Press"]
         assert provider.tool_names_called == [SEGMENT_TOOL_NAME, SHELL_TOOL_NAME, WORKER_TOOL_NAME]
-        assert MONOLITHIC_TOOL_NAME not in provider.tool_names_called
-
-    def test_use_monolithic_parser_flag_switches_back(self) -> None:
-        provider = StubProvider(_BASE_RAW)
-        renderer = _stub_renderer()
-        orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
-            renderer=renderer,
-            input_fn=lambda: "y",
-            use_monolithic_parser=True,
+        assert "extract_workout" not in provider.tool_names_called, (
+            "the monolithic single-call tool was deleted on 2026-08-09"
         )
-        result = orch.run("session text")
-        assert result.date == "2026-05-12"
 
-    def test_env_var_switches_to_monolithic_parser_without_the_constructor_flag(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv(USE_MONOLITHIC_PARSER_ENV_VAR, "1")
-        provider = StubProvider(_BASE_RAW)
-        renderer = _stub_renderer()
-        orch = LLMOrchestrator(
-            parser_provider=provider,
-            correction_provider=provider,
-            renderer=renderer,
-            input_fn=lambda: "y",
-        )
-        result = orch.run("session text")
-        assert result.date == "2026-05-12"
-
-    def test_correction_after_split_extraction_uses_the_monolithic_correction_tool(self) -> None:
-        """Corrections always go through LLMExtractValidator's single-call tool regardless of
-        which path produced the initial extract — a different provider (or the same one, in
-        real usage) can serve both shapes."""
+    def test_correction_after_split_extraction_uses_the_patch_tool(self) -> None:
+        """Corrections go through LLMExtractValidator's patch tool regardless of which path
+        produced the initial extract."""
         parser_provider = ScriptedProvider(_SPLIT_RAW, _SHELL_RAW, _EXERCISE_RAW_BY_POSITION)
-        correction_provider = StubProvider(dict(_BASE_RAW, focus="Lower"))
+        correction_provider = StubProvider({"edits": [{"path": "focus", "value": "Lower"}]})
         renderer = _stub_renderer()
         answers = iter(["change focus to Lower", "y"])
         orch = LLMOrchestrator(
