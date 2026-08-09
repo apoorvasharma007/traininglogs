@@ -1,7 +1,7 @@
 """
 Movement-skill intake (calisthenics, gymnastics rings, juggling, reaction drills,
 shadow boxing, kettlebell/dumbbell work): model-contract tests for the conventions
-these rely on (see movement-skill-plan.md). No DB, no live LLM call — these confirm
+these rely on (see archived/plans/movement-skill-plan.md). No DB, no live LLM call — these confirm
 the schema already supports the shapes the SYSTEM_PROMPT conventions produce, and
 guard the prompt text itself against silent regression.
 

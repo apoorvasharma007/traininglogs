@@ -10,7 +10,14 @@ Capture happens offline during the workout (draft saved locally in a PWA). Proce
 
 ## Active plans
 
-No active plans. Completed plans are archived in `archived/`.
+[`roadmap.md`](roadmap.md) is the single forward plan — six phases from local CLI to hosted app.
+**Start at its `▶ Resume here` section**, which carries the current state, what is safe to run,
+and the conventions that cost money to forget.
+
+`extraction-design-principles.md` sits beside it as reference findings, not a plan.
+
+Superseded plans live in [`archived/plans/`](archived/plans/) with a note on what each one
+settled and, where relevant, what was later reversed.
 
 ---
 

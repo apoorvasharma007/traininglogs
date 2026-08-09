@@ -33,7 +33,7 @@ with `--parser ai` or `--parser groq` — the deterministic `rules` parser has n
 skill-run counts, holds recorded as bare `Ns`, attempt/clean phrasing, or remark-block
 attachment, and will raise on them. See `src/traininglogs/agent/prompts.py`'s
 `SYSTEM_PROMPT` for the extraction conventions these fixtures exercise, and
-`movement-skill-plan.md` / `refactor-data-model.md` for the full design record.
+`archived/plans/movement-skill-plan.md` / `archived/plans/refactor-data-model.md` for the full design record.
 
 When adding a new parser feature or session type, add a fixture here that exercises it.
 Copy from a real input in `inputs/programs/`, change the date to `3000-MM-DD`, and strip

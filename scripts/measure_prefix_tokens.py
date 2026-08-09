@@ -1,6 +1,6 @@
 """Measure the exact token cost of each split-extraction call's prefix (system prompt + tool
 schema) via Anthropic's count_tokens endpoint. Written for Step 8.5a of
-orchestration-refactor-plan.md — replaces the char-count estimates in that plan with real
+archived/plans/orchestration-refactor-plan.md — replaces the char-count estimates in that plan with real
 numbers, and settles whether the worker prefix clears Haiku 4.5's 4,096-token minimum
 cacheable prefix.
 

@@ -1,7 +1,7 @@
 # traininglogs roadmap — from local script to hosted app
 
-Supersedes `orchestration-refactor-plan.md`, `extraction-accuracy-plan.md`, and the Cloud
-Deployment Wave in `pre-online-plan.md`. Those stay in the repo as the historical record of how
+Supersedes `archived/plans/orchestration-refactor-plan.md`, `archived/plans/extraction-accuracy-plan.md`, and the Cloud
+Deployment Wave in `archived/plans/pre-online-plan.md`. Those stay in the repo as the historical record of how
 their decisions were reached; this file is the forward plan.
 
 ---
@@ -82,7 +82,7 @@ before building it.
 | `max_tokens=4096` | **Make configurable** in `providers.py`. Fine for split calls, fatal for monolithic. |
 | Eval-set expansion | **After deploy.** The 6 real files have free ground truth; the irregular `adhoc_*` cases need hand-labels. |
 | Anthropic Citations | **Check before building B1** — may do source grounding natively, but may not compose with tool use. |
-| `movement-skill-plan.md`, `refactor-data-model.md` | **Close** — both complete. |
+| `archived/plans/movement-skill-plan.md`, `archived/plans/refactor-data-model.md` | **Close** — both complete. |
 
 ## Working backwards from the goal
 
@@ -103,7 +103,7 @@ before building it.
 The chain `refactor/split-extraction → …-wire-orchestrator → …-token-cost →
 fix/extraction-accuracy` is **linear**: the tip contains every commit from all three ancestors
 (verified `git log fix/extraction-accuracy..<each>` = 0). One merge lands all of it, and that
-automatically satisfies `extraction-accuracy-plan.md`'s constraint that token-cost reach `dev`
+automatically satisfies `archived/plans/extraction-accuracy-plan.md`'s constraint that token-cost reach `dev`
 first.
 
 - [x] Resolve the working tree — three atomic commits (`5c3a496` retry fix, `b669251` eval
@@ -121,9 +121,9 @@ first.
       misleading for squash-merged branches (`feature/ai-parser-terminal-renderer` shows 1
       "unique" commit but `agent/renderer.py` is in the tree). Clutter is cheap; deleted work
       is not.
-- [x] `orchestration-refactor-plan.md` and `extraction-accuracy-plan.md` closed with a recorded
+- [x] `archived/plans/orchestration-refactor-plan.md` and `archived/plans/extraction-accuracy-plan.md` closed with a recorded
       disposition for every open step.
-- [ ] Mark `movement-skill-plan.md` and `refactor-data-model.md` complete (both appear done;
+- [ ] Mark `archived/plans/movement-skill-plan.md` and `archived/plans/refactor-data-model.md` complete (both appear done;
       confirm before closing).
 
 ## Phase 1 — Finalize the pipeline
@@ -340,7 +340,7 @@ confirm button. Mobile capture comes later.
 ## Phase 6 — Deploy
 
 - [ ] Deploy FastAPI to Fly (`fly.toml` and `Dockerfile` already exist). Supabase is live with
-      121 sessions (`pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
+      121 sessions (`archived/plans/pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
 - [ ] Env: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`.
 - [ ] Smoke-test read + write paths.
 
@@ -370,118 +370,58 @@ confirm button. Mobile capture comes later.
 Base branch per phase, cut from `dev`. Sub-branch per step, squash-merged to the base. Base
 merges to `dev` only when the phase is complete and the suite is green (0 failed, 0 skipped).
 
----## ▶ Resume here
+---
 
-**Architecture decisions locked** from the 2026-08-02 evaluation. **Full backlog approved**
-2026-08-03. **Phase 1 reordered 2026-08-04** — schema before prompt, on evidence.
+## ▶ Resume here
 
-**Done:** Phase 0 (`dev` at `99c9fae`). Phase 1: parse-first deleted (`3afafb2`); source lines +
-their two checks (`ab2ed8d`, `9c8dbc4`); B4 rejected and B5 narrowed on measurement (`92f0073`);
-lean schema + reps.py + rewritten prompts; split core/warmup scoring (`6943efe`); **extraction
-reliability fixes (`a76f1bb`)**. Suite **546 passed / 0 failed / 0 skipped**. Nothing pushed.
+**Last session: 2026-08-09.** Phase 1 and Phase 2 are complete and merged to `dev` (`c4cf1e0`,
+pushed). **584 tests passing, 0 skipped.** Working tree clean, only `dev` and `main` exist as
+branches. **Spend: $1.71 of $5.00.**
 
-**Spend: $1.36 of $5.00.**
+### Start here next session
 
-### The 2026-08-06 measurement and what it found
+**Phase 3 — ingest core.** Nothing blocks it, and like Phase 2 it should need little or no API
+spend. See the Phase 3 section above for its items.
 
-3 files on Haiku, $0.1495. Core 215/277 (77.6%) against a 98.8% baseline — but the drop was not
-extraction quality. **On every exercise the model returned, it scored 147/147.** Five workers
-returned `{"number": 1}` and each became a placeholder.
+### Before the AI path is next run against prod — required
 
-Root cause: the provider's 3-attempt reask budget could never be spent on a schema-invalid
-payload, because it returned the tool input raw and validation lived one layer up in the
-callers. Fixed in `a76f1bb`, along with four related defects found in the same audit — the
-silent-empty-extract path, the discarded `number` field, the position instruction on isolated
-chunks, and a dead exercise-count check. See CHANGELOG `[Unreleased] → Fixed`.
+Prod does not have the new tables or columns: `raw_inputs`, `extractions`,
+`sessions.extraction_id`, `extractions.corrections`. **The AI path now writes to them, so
+`traininglogs log --parser ai` against prod will fail until the schema is applied.**
 
-**Settled while fixing it:**
+Everything is additive (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`), so applying
+`src/traininglogs/db/schema.sql` cannot touch an existing row. It has still not been run:
+`.claude/db-migration.md` requires explicit approval in the same session for anything against
+`DATABASE_URL`. Ask before running it, show the statement first, and do not use
+`repopulate_db.py` (it truncates).
 
-| Question | Answer |
+### State worth carrying, not re-derived
+
+| Fact | Where |
 |---|---|
-| Why `temperature=0`? | Extraction copies rather than composes; it keeps the eval comparable and made this diagnosis free. Keep it for attempt 1. |
-| Escalate temperature on retry? | Only if reasks still bail. Adding it now would confound the retry fix. |
-| Postgres placeholder audit | Deferred to Phase 2, which reworks the write path anyway. **Do it first if `traininglogs log` is run on real sessions before then.** |
-| Parallel workers, call timeouts | Phase 6. Workers are already independent (pinned by test); the blocker is rate limits, not ordering. |
+| Extraction scores **200/200 core** on the two hardest files, warmup 18/18 adjudicated | roadmap § Verification run |
+| **`strict: true` must stay off** — it enforces schema property order and truncates output | `providers.py` comment + `tests/test_agent_no_strict_tool_use.py` |
+| **B9 prompt caching is dropped**, not deferred — prefix is ~2,100 tokens against a 4,096 minimum | roadmap § Landed |
+| Historical JSON is missing ~15% of warmups **and is also the eval answer key**, so the model gets marked wrong for being right | roadmap § Verification run |
+| Full regeneration costs ~$6.76 against $3.29 remaining — deferred | roadmap § Landed |
+| Six of eight movement-skill conventions are **not applied** by the live prompts | `docs/extraction-conventions.md` |
+| Historical sessions keep path-hash ids, null `extraction_id`/`source_file` — re-keying deferred | Phase 2 list above |
 
-### Verification run — done, 2026-08-06
+### Conventions that cost money to forget
 
-Measured on the two files that failed hardest before the fix. Identical files, identical scorer:
+- **Never run a paid eval without a `--dry-run` first.** It shows exactly which calls are
+  uncached and spends $0.
+- **Verify on Groq first** where the change is structural — it is free. Its per-minute window
+  reserves `input + max_tokens`, so expect roughly one worker call per minute, and the provider
+  now waits out short limits and fails fast on long ones.
+- **A prompt or schema edit re-keys the eval cache.** Batch prompt changes into one measurement
+  rather than paying per change.
+- Score **core** (exercise/set counts, weights, reps, RPE) as the real signal. **Warmup** counts
+  are scored against an answer key that never read `### Warmup Notes` prose — adjudicate those
+  against the source file, never against the number.
 
-| File | before | after |
-|---|---|---|
-| legs_hypertrophy phase_3/week_3 | 68/77 (88.3%) | **77/77 (100%)** |
-| upper_strength phase_2/week_12 | 97/123 (78.9%) | **123/123 (100%)** |
-| combined core | 165/200 (82.5%) | **200/200 (100%)** |
+### Branching
 
-`dropped 0`, `fails 0`, warmup **18/18** once adjudicated against the source. Cost $0.101.
-
-Every warmup the answer key called wrong was the model reading `### Warmup Notes` prose the
-rules parser never looked at — including one warmup sitting under a mistyped `### Notes` heading,
-which no layout-based parser could get right. Measured across the corpus: ~102 weight-bearing
-prose lines in 55 of 121 files, against 647 warmup sets the rules parser stored. **The historical
-JSON is missing roughly 15% of warmup data**, and it is the answer key, so the AI is penalised for
-being correct. Regeneration is a Phase 2 job — see `.claude/regen-historical.md`.
-
-**Caveat worth keeping:** `re-ask` stayed 0 on both files. The bail-outs were *prevented* (by
-dropping `ExerciseExtract.number` and the position instruction), not *recovered*. The retry path
-is therefore still only tested against mocks, never live.
-
-**Not spent:** the third file (legs phase_3/week_5, ~$0.05). Two files at 100%, including the
-largest and the one that failed worst, answered the question.
-
-### Landed 2026-08-06
-
-Phase 1 merged to `dev` and pushed (`d3239e6`, 63 commits). Suite 555 passing, working tree
-clean. 19 stale local branches removed; each is kept as `archive/<name>` tags in case a
-squash-merge lost something — delete with `git tag -d archive/<name>` once you're satisfied.
-Only `dev` and `main` remain as branches.
-
-**B9 (prompt caching) is dropped, not deferred.** The cacheable prefix is the system prompt plus
-tool schema, ~2,100 tokens estimated. Haiku 4.5 needs 4,096 minimum, so there is nothing to
-cache. Confirm with the free token-counting endpoint before revisiting. **Phase 1 is complete.**
-
-**Historical regeneration deferred by decision, 2026-08-06.** ~$6.76 for 121 files / 1,009
-exercises against $3.29 remaining. Revisit after Phase 2, so the regeneration is re-runnable and
-versioned rather than a one-shot that might be repeated.
-
-### Phase 2 — done 2026-08-09
-
-Steps 1, 2, 4 and 5 landed. Step 3 (re-keying) deferred by decision — see the Phase 2 list above.
-
-| Step | What |
-|---|---|
-| 1 | `raw_inputs` + `extractions` tables, purely additive |
-| 2 | ingest path writes all three layers; **C8 fixed**; the AI path moved out of the CLI so it is testable |
-| 4 | **C6** patch-based corrections, **C7** append-only `corrections` |
-| 5 | monolithic path deleted — `SYSTEM_PROMPT`, `parse()`, the mono switch, env var and eval arm |
-
-**584 tests.** No API spend: Phase 2 cost $0.00. Total remains **$1.71 of $5.00**.
-
-**C6, measured rather than estimated.** On a real 10-exercise session the old whole-document
-correction needed ~5,410 output tokens against `max_tokens=4096` — it could not have returned a
-correction for a session that size. That is the finding; the 5.9x cost saving is secondary, and
-the roadmap's original 40x guess was wrong.
-
-### Open decision — movement-skill conventions, deferred 2026-08-09
-
-Six of the eight domain conventions that lived in `SYSTEM_PROMPT` are absent from the three live
-prompts: juggling/skill-run counts, reaction-time drills, static holds, clean-vs-failed attempt
-mapping, ordinary reps with varying quality staying whole, and one exercise-level RPE applying to
-the last set only. They stopped being applied when the split path became the default, not when
-the constant was deleted.
-
-**Deferred by decision — not important right now.** Preserved verbatim in
-`docs/extraction-conventions.md`. Fixtures exist
-(`tests/fixtures/valid/adhoc_movement_skills_session.md`, `adhoc_calisthenics_rings_session.md`)
-for whenever it is picked up. Cost when it is: a live prompt change moves `PROMPT_VERSION`,
-invalidates the eval cache, and needs a ~$0.10 measurement run.
-
-### Next action
-
-Phase 3 — ingest core. Nothing outstanding blocks it.
-
-Not yet applied to prod: the `raw_inputs`/`extractions` tables, `sessions.extraction_id` and
-`extractions.corrections`. All additive (`CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT
-EXISTS`), so applying the schema touches no existing row — but nothing has been run against
-`DATABASE_URL`, per `.claude/db-migration.md`. Needed before the AI path is next used against
-prod, since it now writes those tables.
+`dev` → cut `phase-3/<topic>`, then `phase-3/<topic>-N-<step>` per step. **Not**
+`<topic>/<step>` — git refuses a branch whose name is a directory prefix of another. Squash-merge
+each step to the base, regular merge the base to `dev` when green.

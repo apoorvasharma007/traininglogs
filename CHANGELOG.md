@@ -289,8 +289,8 @@ working or warmup set; `SetExtract` requires `source_line` and a positive `numbe
 - `assemble()` gained `use_parse_first` and `TRAININGLOGS_DISABLE_PARSE_FIRST` — a measurement
   escape hatch that runs the pipeline with `parse_exercise_block()` disabled. Explicitly not a
   production mode; removed together with parse-first in roadmap Phase 1.
-- `roadmap.md` — single forward plan superseding `orchestration-refactor-plan.md`,
-  `extraction-accuracy-plan.md`, and the Cloud Deployment Wave in `pre-online-plan.md`.
+- `roadmap.md` — single forward plan superseding `archived/plans/orchestration-refactor-plan.md`,
+  `archived/plans/extraction-accuracy-plan.md`, and the Cloud Deployment Wave in `archived/plans/pre-online-plan.md`.
 
 ### Fixed
 
