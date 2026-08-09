@@ -61,9 +61,12 @@ TRUTH_GLOB = str(PROJECT_ROOT / "output_training_logs_json" / "**" / "*.json")
 # arm -> (entrypoint, kwargs). The `split-pf` arm (parse-first ON) was removed with
 # parse_exercise_block itself on 2026-08-03 — it fired on 0 of 10 real exercises, so it was
 # never distinguishable from `split` on production input anyway.
+# The `mono` arm was removed with extraction.parse() on 2026-08-09. It was kept runnable to
+# de-confound a split-vs-mono verdict that is no longer in question: mono's output scales with
+# session size and hit the max_tokens ceiling on 2 of 6 files, it gives no per-exercise failure
+# isolation, and it cannot survive photo or speech input.
 ARMS = {
     "split": (extraction.assemble, {}),
-    "mono": (extraction.parse, {}),
 }
 
 
@@ -185,7 +188,7 @@ def score(truth: list[dict], got: list[dict]) -> tuple[dict[str, list[int]], lis
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--arms", nargs="+", default=["split", "mono"], choices=list(ARMS))
+    ap.add_argument("--arms", nargs="+", default=["split"], choices=list(ARMS))
     ap.add_argument("--model", default="haiku", choices=list(MODELS))
     ap.add_argument("--n", type=int, default=6, help="How many input files to sample")
     ap.add_argument("--seed", type=int, default=7, help="Sampling seed — keep it fixed across runs")

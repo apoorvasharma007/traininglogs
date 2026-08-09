@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
 
-from traininglogs.agent.extraction import assemble, parse
+from traininglogs.agent.extraction import assemble
 from traininglogs.agent.llm_extract_validator import LLMExtractValidator
 from traininglogs.agent.providers import ExtractionProvider
 from traininglogs.agent.renderer import TerminalRenderer
@@ -14,10 +13,6 @@ _CONFIRM_PROMPT = (
     "\n[bold]Confirm?[/bold] [dim]Enter 'y' to accept, or describe a correction:[/dim] "
 )
 
-# Escape hatch back to the monolithic single-call parse() for comparison against the
-# split-call assemble() path (the default). Set to "1" to use the old path without touching
-# calling code — same purpose as the constructor's use_monolithic_parser argument.
-USE_MONOLITHIC_PARSER_ENV_VAR = "TRAININGLOGS_USE_MONOLITHIC_PARSER"
 
 
 class LLMOrchestrator:
@@ -27,16 +22,12 @@ class LLMOrchestrator:
         correction_provider: ExtractionProvider | None = None,
         renderer: TerminalRenderer | None = None,
         input_fn: Callable[[], str] = input,
-        use_monolithic_parser: bool | None = None,
     ) -> None:
         self._parser_provider = parser_provider
         self._correction_provider = correction_provider
         self._renderer = renderer or TerminalRenderer()
         self._input_fn = input_fn
         self._builder = ValidationCardBuilder()
-        if use_monolithic_parser is None:
-            use_monolithic_parser = os.environ.get(USE_MONOLITHIC_PARSER_ENV_VAR) == "1"
-        self._use_monolithic_parser = use_monolithic_parser
 
     def run(self, text: str) -> TrainingLogLLMExtract:
         """Extract, show the card, apply corrections until confirmed.
@@ -63,10 +54,7 @@ class LLMOrchestrator:
         correction_provider = self._correction_provider or parser_provider
         validator = LLMExtractValidator(correction_provider)
 
-        if self._use_monolithic_parser:
-            extract = parse(text, provider=parser_provider)
-        else:
-            extract = assemble(text, provider=parser_provider)
+        extract = assemble(text, provider=parser_provider)
 
         self.original_extract = extract
 

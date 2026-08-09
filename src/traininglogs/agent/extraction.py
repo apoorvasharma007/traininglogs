@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from traininglogs.agent.prompts import (
     SHELL_SYSTEM_PROMPT,
     SPLITTER_SYSTEM_PROMPT,
-    SYSTEM_PROMPT,
     WORKER_SYSTEM_PROMPT,
 )
 from traininglogs.agent.providers import AnthropicProvider, ExtractionProvider
@@ -20,9 +19,6 @@ from traininglogs.agent.schemas import (
     TrainingLogLLMExtract,
 )
 from traininglogs.models.models import Exercise
-
-TOOL_NAME = "extract_workout"
-TOOL_DESCRIPTION = "Extract structured workout data from the session text."
 
 SEGMENT_TOOL_NAME = "split_exercises"
 SEGMENT_TOOL_DESCRIPTION = (
@@ -36,27 +32,6 @@ SHELL_TOOL_DESCRIPTION = (
 
 WORKER_TOOL_NAME = "extract_exercise"
 WORKER_TOOL_DESCRIPTION = "Extract one exercise — its sets, warmup sets and notes — from the text."
-
-
-def parse(text: str, provider: ExtractionProvider | None = None) -> TrainingLogLLMExtract:
-    provider = provider or AnthropicProvider()
-    tool_schema = TrainingLogLLMExtract.model_json_schema()
-
-    raw = provider.extract(
-        text,
-        tool_schema,
-        SYSTEM_PROMPT,
-        TOOL_NAME,
-        TOOL_DESCRIPTION,
-        validate=TrainingLogLLMExtract.model_validate,
-    )
-
-    try:
-        return TrainingLogLLMExtract.model_validate(raw)
-    except ValidationError as exc:
-        raise LLMParserError(
-            f"Extracted data did not pass validation:\n{exc}"
-        ) from exc
 
 
 def segment(text: str, provider: ExtractionProvider | None = None) -> ExerciseSplit:

@@ -1,21 +1,16 @@
-"""Guard tests for the three focused prompts added by the orchestration refactor
-(splitter/shell/worker). Prose content, not logic — these exist to catch the kind of
-silent structural regression a prompt edit could introduce (e.g. the worker prompt
-losing the movement-skill conventions it's supposed to reuse)."""
+"""Guard tests for the three prompts that are actually sent (splitter/shell/worker).
+
+Prose content, not logic — these catch the kind of silent structural regression a prompt edit
+introduces. The monolithic SYSTEM_PROMPT was deleted on 2026-08-09 with the parser it belonged
+to; the conventions it carried that the live prompts do not are recorded in
+docs/extraction-conventions.md."""
 from __future__ import annotations
 
 from traininglogs.agent.prompts import (
-    MOVEMENT_SKILL_CONVENTIONS,
     SHELL_SYSTEM_PROMPT,
     SPLITTER_SYSTEM_PROMPT,
-    SYSTEM_PROMPT,
     WORKER_SYSTEM_PROMPT,
 )
-
-
-class TestSystemPromptUnchanged:
-    def test_system_prompt_still_ends_with_movement_skill_conventions(self) -> None:
-        assert SYSTEM_PROMPT.endswith(MOVEMENT_SKILL_CONVENTIONS)
 
 
 class TestSplitterPrompt:

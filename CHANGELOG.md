@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — the monolithic extraction path (Phase 2, step 5)
+
+- `SYSTEM_PROMPT` (7,295 chars), `MOVEMENT_SKILL_CONVENTIONS` (2,692 chars),
+  `extraction.parse()`, `TOOL_NAME`/`TOOL_DESCRIPTION`, `LLMOrchestrator`'s
+  `use_monolithic_parser` argument, the `TRAININGLOGS_USE_MONOLITHIC_PARSER` environment
+  variable, and the `mono` arm of `scripts/eval_arms.py`.
+
+  Its last caller outside itself was the correction path, which moved to patches in step 4.
+  Keeping it runnable was to de-confound a split-vs-mono verdict that is no longer in question:
+  mono's output scales with session size and hit the `max_tokens` ceiling on 2 of 6 files, it
+  gives no per-exercise failure isolation, and it cannot survive photo or speech input.
+
+- **Discovered while deleting it, and worth stating separately: six of the eight domain
+  conventions in `SYSTEM_PROMPT` are absent from the three live prompts** — juggling and
+  skill-run counts, reaction-time drills, static holds, clean-vs-failed attempt mapping, the
+  rule that ordinary reps with varying quality stay whole, and one exercise-level RPE applying
+  to the last set only. They stopped being applied when the split path became the default, not
+  when the constant was deleted; deleting it made an existing gap visible. All of it is
+  preserved verbatim in `docs/extraction-conventions.md`, with a table of what is and is not
+  covered. Migrating them is an open decision with a cost: changing a live prompt changes
+  `PROMPT_VERSION`, invalidates the eval cache, and needs a paid run to confirm no regression.
+
+  The schema is unaffected and still supports every shape involved —
+  `TestAdhocMovementSkillsSchemaFit` tests the models rather than the prompt text and continues
+  to pass. Tests that asserted on `SYSTEM_PROMPT`'s prose were removed with the prompt; tests
+  that exercised `parse()` were removed with the function.
+
 ### Changed — corrections are edits, not rewrites (Phase 2, step 4)
 
 - **C6.** `LLMExtractValidator.apply_correction` asks the model for a list of
