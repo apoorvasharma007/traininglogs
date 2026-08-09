@@ -387,42 +387,54 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 **Last session: 2026-08-09.** Phase 3 (D1–D8) is **feature-complete** on branch
 `phase-3-ingest-core` (cut from `dev`, not yet merged, not pushed). See the checklist above for
-the commit attached to each item — all eight are checked. **604 tests passing, 0 skipped**
-(started the session at 584). **Spend: $1.71 of $5.00**, unchanged — every test this session
-mocked the client or monkeypatched `assemble()`, $0 real spend.
+the commit attached to each item. **608 tests passing, 0 skipped** (started the session at
+584). **Spend: $1.71 of $5.00**, unchanged — every test mocked the client or monkeypatched
+`assemble()`; the two live smoke-test runs used Groq's free tier, $0 either way.
 
-**Live E2E smoke test: done, with Groq substituted for Anthropic.** `ANTHROPIC_API_KEY` in
-`.env` is still invalid (401) — untouched, by request, rather than risk real spend chasing it
-mid-session. Ran the new wiring against a real model anyway: `_process_ai_file` driven directly
-with `GroqProvider` (free tier) against `tests/fixtures/valid/strength_session.md` and
-`TEST_DATABASE_URL`, script in this session's scratchpad. Result: `capture()` →
-`extract()` (real Groq call, real card rendered with real numbers) → confirm loop → `confirm()`
-→ session inserted, extraction `status=confirmed`, `source_file` correct — the whole new path,
-proven against a real, non-scripted model response for the first time.
+**Live E2E smoke test: done, against a real model, with real llm_calls rows.**
+`ANTHROPIC_API_KEY` in `.env` is still invalid (401) — untouched, by request, rather than risk
+real spend chasing it mid-session. Ran the new wiring with `GroqProvider` (free tier) instead,
+directly against `_process_ai_file`, `tests/fixtures/valid/strength_session.md`, and
+`TEST_DATABASE_URL` (script in this session's scratchpad). Result: `capture()` → `extract()`
+(real Groq call, real card rendered) → confirm loop → `confirm()` → session inserted,
+`status=confirmed`, `source_file` correct, **and `llm_calls` populated with 3 real rows**
+(`split_exercises`, `extract_session_shell`, `extract_exercise`, real token counts, real `ms`).
 
-**One real gap this leaves open:** `GroqProvider` was never instrumented with `.calls` (only
-`AnthropicProvider` was, per the locked "Model: Claude Haiku 4.5, not Groq" decision) — the
-smoke test's `llm_calls` query correctly came back empty. So D4/D6/D7's actual persistence path
-(`AnthropicProvider.calls` → `insert_llm_calls`) is still only unit-tested against mocked
-Anthropic SDK responses shaped like the real thing, never against a live Anthropic call. Lower
-risk than the D1/D2 wiring the smoke test just confirmed, but not zero.
+**That third part required a fix, caught by the user, not by anything automated:**
+`AnthropicProvider` had `.calls` instrumentation; `GroqProvider` did not, even though
+`ExtractionProvider` is a Protocol specifically so *any* provider can be swapped in by
+parameter and both `ingest.extract()` and `_process_ai_file()` already accept either one.
+First smoke-test run proved this the hard way — `llm_calls` came back empty for a Groq-driven
+run, silently, no error. Fixed by extracting the record-building logic into one
+`_record_call()` helper both providers now call from their own `finally` block, translating
+Groq's differently-named usage fields (`prompt_tokens`/`completion_tokens` vs Anthropic's
+`input_tokens`/`output_tokens`) to the same two ints first. Re-ran the smoke test after the fix
+— that is where the 3 real `llm_calls` rows above came from. 4 new parity tests
+(`TestGroqRecordsCallsTheSameShape`) hold both providers to the same shape going forward, not
+just the shared helper on trust.
+
+**What's still only proven by mock, not a live call:** `AnthropicProvider` itself — its
+retry/rate-limit branches, and whether real Anthropic SDK response objects have `.usage` in the
+exact shape the mocks assume. The Groq run proved the *ingest/cli wiring* end-to-end and the
+*instrumentation pattern* against a real model; it did not touch `AnthropicProvider`'s own code
+path, which is what actually ships to production per the locked model decision.
 
 ### Start here next session
 
-1. **Decide: merge now, or fix the Anthropic key first for full-fidelity confirmation of
-   D4/D6/D7's llm_calls persistence.** Nothing about the code says which — it's a risk-tolerance
-   call. If merging now, note in the merge commit that `llm_calls` was proven by unit test, not
-   by a live Anthropic call.
-2. If fixing the key first: rerun the Stage 2 smoke test from `.claude/testing-guide.md`
-   (`traininglogs log --parser ai --test --no-commit`, ~$0.05), then check
+1. **Decide: merge now, or fix `ANTHROPIC_API_KEY` first to exercise `AnthropicProvider`
+   itself against a live call.** Nothing about the code says which — risk-tolerance call, not a
+   correctness one. The instrumentation *pattern* is now proven twice (Anthropic by unit test
+   shaped like the real SDK, Groq by an actual live call); what's unproven is specifically
+   `AnthropicProvider`'s own retry/rate-limit code paths under real network conditions.
+2. If fixing the key first: rerun `.claude/testing-guide.md` Stage 2
+   (`traininglogs log --parser ai --test --no-commit`, ~$0.05), then
    ```bash
    docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_test -c \
-     "SELECT step, cost_usd, ms FROM llm_calls ORDER BY created_at DESC LIMIT 10;"
+     "SELECT step, model, cost_usd, ms FROM llm_calls ORDER BY created_at DESC LIMIT 10;"
    ```
-   for real rows.
 3. **Merge `phase-3-ingest-core` → `dev`** once satisfied, same gate as Phase 1/2 (`--no-ff`,
    suite re-verified green on `dev` after).
-3. **Phase 4 — Write API** is next after that (`POST /inputs`, `GET /extractions/{id}`,
+4. **Phase 4 — Write API** is next after that (`POST /inputs`, `GET /extractions/{id}`,
    `POST /extractions/{id}/confirm`, `POST /extractions/{id}/correct`) — see that section above.
    It is the first place `api/app.py` will actually call `ingest/`, which is what D2's own
    scoping note above is waiting on.

@@ -14,10 +14,50 @@ DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 _MAX_RETRIES = 2
 
 # Per-million-token USD price (input, output). Used only to populate llm_calls.cost_usd -- an
-# observability number, never a gate the way scripts/eval_ab.py's --max-cost is.
+# observability number, never a gate the way scripts/eval_ab.py's --max-cost is. Groq's free
+# tier prices at 0 -- if that changes, this is the one place to update, not every call site.
 PRICING: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5-20251001": (1.00, 5.00),
+    "llama-3.3-70b-versatile": (0.0, 0.0),
 }
+
+
+def _record_call(
+    calls: list[dict],
+    step: str,
+    model: str,
+    attempts: int,
+    input_tokens: int,
+    output_tokens: int,
+    elapsed_ms: int,
+    failed: str | None,
+    raw_payload: dict | None,
+) -> None:
+    """Append one llm_calls-shaped record, the same shape from every provider.
+
+    Every `ExtractionProvider` is meant to be swappable by passing a different one in -- the
+    whole point of the Protocol below -- so the bookkeeping around a call cannot live only in
+    whichever provider was instrumented first. One function, called from every provider's
+    `finally` block, is what keeps `AnthropicProvider.calls` and `GroqProvider.calls` (and
+    whatever provider comes after them) the same shape without a second copy to drift out of
+    sync with the first.
+    """
+    price_in, price_out = PRICING.get(model, (0.0, 0.0))
+    cost_usd = round(input_tokens / 1e6 * price_in + output_tokens / 1e6 * price_out, 6)
+    calls.append(
+        {
+            "step": step,
+            "model": model,
+            "attempts": attempts,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": cost_usd,
+            "ms": elapsed_ms,
+            "cached": False,
+            "failed": failed,
+            "raw_payload": raw_payload,
+        }
+    )
 
 # Ceiling on a single call's output. Shared by both providers so they cannot drift apart --
 # GroqProvider previously set none at all, and OpenAI-compatible APIs reserve
@@ -182,6 +222,12 @@ def _tool_error_turns(tool_use_id: str, tool_name: str, sent_input: dict, error:
 # instead of silently truncating every good one.
 
 
+# Not part of the Protocol's method signature (isinstance checks on a runtime_checkable
+# Protocol only see methods, and test doubles across the suite duck-type `extract()` alone,
+# with no `.calls` at all -- ingest/extract.py already treats that as "nothing to record", not
+# an error). But every *real* provider -- one actually meant to be handed to ingest.extract()
+# and swapped in by parameter -- carries `self.calls: list[dict]`, appended to via
+# `_record_call()` above, in the same shape. Anthropic and Groq both do; the next one should.
 @runtime_checkable
 class ExtractionProvider(Protocol):
     def extract(
@@ -334,22 +380,16 @@ class AnthropicProvider:
                 f"Last error: {last_error}"
             )
         finally:
-            elapsed_ms = round((time.time() - t0) * 1000)
-            price_in, price_out = PRICING.get(self.model, (0.0, 0.0))
-            cost_usd = round(input_tokens / 1e6 * price_in + output_tokens / 1e6 * price_out, 6)
-            self.calls.append(
-                {
-                    "step": tool_name,
-                    "model": self.model,
-                    "attempts": attempt,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost_usd": cost_usd,
-                    "ms": elapsed_ms,
-                    "cached": False,
-                    "failed": None if succeeded else (last_error or "unknown"),
-                    "raw_payload": raw_payload,
-                }
+            _record_call(
+                self.calls,
+                step=tool_name,
+                model=self.model,
+                attempts=attempt,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                elapsed_ms=round((time.time() - t0) * 1000),
+                failed=None if succeeded else (last_error or "unknown"),
+                raw_payload=raw_payload,
             )
 
 
@@ -362,6 +402,10 @@ class GroqProvider:
         self.model = model
         self.max_tokens = max_tokens
         self._client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        # Same shape as AnthropicProvider.calls, via the same _record_call() -- see the note
+        # above ExtractionProvider. A provider swapped in by parameter must not silently drop
+        # cost/failure visibility just because it was the second one instrumented.
+        self.calls: list[dict] = []
 
     def extract(
         self,
@@ -392,101 +436,142 @@ class GroqProvider:
         tool_choice = {"type": "function", "function": {"name": tool_name}}
         last_error: str = ""
         rate_limit_waits = 0
-
         attempt = 0
-        while attempt <= _MAX_RETRIES:
-            try:
-                response = self._client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    tools=tools,
-                    tool_choice=tool_choice,
-                    max_tokens=self.max_tokens,
-                    # Extraction, not creative writing — see the note in AnthropicProvider.
-                    # Grammar-constrained decoding is not used on either provider — see the
-                    # note above AnthropicProvider. `validate` below is what guards the payload.
-                    temperature=0,
-                )
-            except groq.RateLimitError as exc:
-                # The free tier meters tokens per minute and reserves `input + max_tokens` on
-                # every call, so a handful of worker calls saturates the window. Waiting it out
-                # is the correct response and costs only wall-clock time; failing the file is
-                # what used to happen, and it made the free verification path unusable.
-                wait = _rate_limit_wait_seconds(exc)
-                if wait is None:
-                    raise LLMParserError(
-                        f"Rate limited, and the window does not reopen for "
-                        f"{_describe_wait(exc)} — too long to wait out. This is a quota, not a "
-                        f"busy moment. Full response: {exc}"
-                    ) from exc
-                rate_limit_waits += 1
-                if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
-                    raise LLMParserError(
-                        f"Rate limited {rate_limit_waits} times without the window reopening. "
-                        f"Full response: {exc}"
-                    ) from exc
-                time.sleep(wait)
-                continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
-            except groq.BadRequestError as exc:
-                # The API's own server-side schema check rejected the tool call before
-                # returning a response — there's nothing to inspect, only the error to reask
-                # with. Same reask budget as a validation failure we catch ourselves.
-                last_error = str(exc)
-                if not _is_retryable_bad_request(last_error):
-                    raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
-                messages.append(_reask_message(last_error))
+        input_tokens = 0
+        output_tokens = 0
+        raw_payload: dict | None = None
+        succeeded = False
+        t0 = time.time()
+
+        try:
+            while attempt <= _MAX_RETRIES:
+                try:
+                    response = self._client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        tools=tools,
+                        tool_choice=tool_choice,
+                        max_tokens=self.max_tokens,
+                        # Extraction, not creative writing — see the note in AnthropicProvider.
+                        # Grammar-constrained decoding is not used on either provider — see the
+                        # note above AnthropicProvider. `validate` below guards the payload.
+                        temperature=0,
+                    )
+                except groq.RateLimitError as exc:
+                    # The free tier meters tokens per minute and reserves `input + max_tokens`
+                    # on every call, so a handful of worker calls saturates the window. Waiting
+                    # it out is the correct response and costs only wall-clock time; failing
+                    # the file is what used to happen, and it made the free verification path
+                    # unusable.
+                    wait = _rate_limit_wait_seconds(exc)
+                    if wait is None:
+                        last_error = (
+                            f"Rate limited, and the window does not reopen for "
+                            f"{_describe_wait(exc)} — too long to wait out. This is a quota."
+                        )
+                        raise LLMParserError(f"{last_error} Full response: {exc}") from exc
+                    rate_limit_waits += 1
+                    if rate_limit_waits > _MAX_RATE_LIMIT_WAITS:
+                        last_error = (
+                            f"Rate limited {rate_limit_waits} times without the window "
+                            f"reopening."
+                        )
+                        raise LLMParserError(f"{last_error} Full response: {exc}") from exc
+                    time.sleep(wait)
+                    continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
+                except groq.BadRequestError as exc:
+                    # The API's own server-side schema check rejected the tool call before
+                    # returning a response — there's nothing to inspect, only the error to
+                    # reask with. Same reask budget as a validation failure we catch ourselves.
+                    last_error = str(exc)
+                    if not _is_retryable_bad_request(last_error):
+                        raise LLMParserError(f"Non-retryable API error: {last_error}") from exc
+                    messages.append(_reask_message(last_error))
+                    attempt += 1
+                    continue
+
                 attempt += 1
-                continue
+                usage = getattr(response, "usage", None)
+                if usage is not None:
+                    # OpenAI-compatible naming (prompt/completion), not Anthropic's
+                    # (input/output) -- same two numbers, different attribute names.
+                    input_tokens += getattr(usage, "prompt_tokens", 0) or 0
+                    output_tokens += getattr(usage, "completion_tokens", 0) or 0
 
-            attempt += 1
-            tool_calls = response.choices[0].message.tool_calls
+                tool_calls = response.choices[0].message.tool_calls
 
-            if not tool_calls:
-                last_error = "No tool call in response."
-                messages.append(_reask_message(last_error))
-                continue
+                if not tool_calls:
+                    last_error = "No tool call in response."
+                    print(f"[llm] {tool_name}: call succeeded, no tool call in response — reasking")
+                    messages.append(_reask_message(last_error))
+                    continue
 
-            call = tool_calls[0]
-            try:
-                payload = json.loads(call.function.arguments)
-            except Exception as exc:
-                last_error = str(exc)
-                messages.append(_reask_message(last_error))
-                continue
+                call = tool_calls[0]
+                try:
+                    payload = json.loads(call.function.arguments)
+                except Exception as exc:
+                    last_error = str(exc)
+                    messages.append(_reask_message(last_error))
+                    continue
 
-            if validate is None:
-                return payload
-            try:
-                validate(payload)
-                return payload
-            except Exception as exc:
-                last_error = str(exc)
-                # OpenAI-compatible equivalent of replaying the call and answering it with an
-                # error: the assistant turn carrying tool_calls, then a `tool` role turn keyed
-                # to the same id.
-                messages.extend(
-                    [
-                        {
-                            "role": "assistant",
-                            "tool_calls": [
-                                {
-                                    "id": call.id,
-                                    "type": "function",
-                                    "function": {
-                                        "name": call.function.name,
-                                        "arguments": call.function.arguments,
-                                    },
-                                }
-                            ],
-                        },
-                        {
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "content": f"{last_error}\n\nCall the tool again with this corrected.",
-                        },
-                    ]
-                )
+                # Kept even if `validate` rejects it below, same reasoning as
+                # AnthropicProvider -- a validation failure must not also cost the response
+                # that triggered it (D6).
+                raw_payload = payload
+                if validate is None:
+                    succeeded = True
+                    return payload
+                try:
+                    validate(payload)
+                    succeeded = True
+                    return payload
+                except Exception as exc:
+                    last_error = str(exc)
+                    print(
+                        f"[llm] {tool_name}: call succeeded, result not usable — "
+                        f"{last_error.splitlines()[0][:160]}"
+                    )
+                    # OpenAI-compatible equivalent of replaying the call and answering it with
+                    # an error: the assistant turn carrying tool_calls, then a `tool` role turn
+                    # keyed to the same id.
+                    messages.extend(
+                        [
+                            {
+                                "role": "assistant",
+                                "tool_calls": [
+                                    {
+                                        "id": call.id,
+                                        "type": "function",
+                                        "function": {
+                                            "name": call.function.name,
+                                            "arguments": call.function.arguments,
+                                        },
+                                    }
+                                ],
+                            },
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "content": (
+                                    f"{last_error}\n\nCall the tool again with this corrected."
+                                ),
+                            },
+                        ]
+                    )
 
-        raise LLMParserError(
-            f"Groq extraction failed after {_MAX_RETRIES + 1} attempts. Last error: {last_error}"
-        )
+            raise LLMParserError(
+                f"Groq extraction failed after {_MAX_RETRIES + 1} attempts. "
+                f"Last error: {last_error}"
+            )
+        finally:
+            _record_call(
+                self.calls,
+                step=tool_name,
+                model=self.model,
+                attempts=attempt,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                elapsed_ms=round((time.time() - t0) * 1000),
+                failed=None if succeeded else (last_error or "unknown"),
+                raw_payload=raw_payload,
+            )

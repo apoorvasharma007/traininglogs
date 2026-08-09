@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — GroqProvider had no call instrumentation
+
+- `AnthropicProvider.calls` was added below (D4/D6/D7) without the matching change to
+  `GroqProvider` — a real gap, since `ExtractionProvider` is a Protocol precisely so any
+  provider can be swapped in by parameter, and `ingest.extract()` / `_process_ai_file()` both
+  already accept either one. `GroqProvider` now carries `self.calls` too, in the identical
+  shape, via a new shared `_record_call()` helper both providers call from their own `finally`
+  block (Groq's own token-usage fields are named differently — `prompt_tokens`/
+  `completion_tokens` vs Anthropic's `input_tokens`/`output_tokens` — translated to the same
+  two ints before the shared helper ever sees them). `PRICING` gained an entry for Groq's
+  default model at `(0.0, 0.0)`. Verified against a real (free-tier) Groq call, not just
+  mocked: `llm_calls` now gets three real rows — `split_exercises`, `extract_session_shell`,
+  `extract_exercise` — with real token counts and timings, where it previously stayed empty
+  for any Groq-driven run.
+
 ### Added — cost and call visibility (Phase 3, step 3: D4, D6, D7)
 
 - `llm_calls` table — one row per extraction step (segment/shell/worker/correction), not per
