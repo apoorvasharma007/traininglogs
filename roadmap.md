@@ -241,16 +241,24 @@ See the open hypothesis at the end of `extraction-design-principles.md`.
 
 ## Phase 2 — Three layers
 
-- [ ] `raw_inputs` table: id, content, `source_kind` (`markdown`|`photo`|`speech`), captured_at,
-      checksum. Immutable.
-- [ ] `extractions` table: id, `raw_input_id` FK, model, prompt_version, created_at, full
+- [x] `raw_inputs` table: id, content, `source_kind` (`markdown`|`photo`|`speech`), captured_at,
+      checksum. Immutable. **Done 2026-08-07.**
+- [x] `extractions` table: id, `raw_input_id` FK, model, prompt_version, created_at, full
       extract as JSONB, `uncertain_fields`, `warnings`, status
-      (`pending`|`confirmed`|`rejected`), confirmed_at.
-- [ ] `sessions.extraction_id` FK.
-- [ ] Re-key `session_id` off `raw_inputs.id`, not the file-path hash
-      (`processor.compute_session_id`). Keep the date prefix for readability.
-- [ ] Stop dropping the confidence signal — `build_session_from_extract` currently does
-      `exclude={"uncertain_fields"}` and discards `warnings` entirely.
+      (`pending`|`confirmed`|`rejected`), confirmed_at. **Done 2026-08-07.**
+- [x] `sessions.extraction_id` FK. **Done 2026-08-09** — nullable, so sessions predating the layers coexist with new ones.
+- [ ] **DEFERRED 2026-08-09, by decision.** Re-key `session_id` off `raw_inputs.id`, not the
+      file-path hash (`processor.compute_session_id`). Keep the date prefix for readability.
+      Deferring is safe: `extraction_id` is nullable so old and new sessions coexist, the
+      dashboard already tolerates a null `source_file`, and the only case that *needs* the
+      re-key is input with no file path — photo and speech, which is Phase 7. Historical
+      sessions keep their path-hash ids and null `extraction_id`/`source_file` until then.
+      Backfilling is free when it happens: a raw input is just text, so rows can be built from
+      the `.md` files with no API calls.
+- [x] Stop dropping the confidence signal. **Done 2026-08-09** — `uncertain_fields` and
+      `warnings` are stored on the `extractions` row, which is the layer they describe.
+      `TrainingSession` is unchanged: they are statements *about* a reading, not part of the
+      normalized session.
 - [ ] **C6 — Patch-based corrections.** `LLMExtractValidator.apply_correction` currently sends
       the whole extract and asks for the whole extract back, with "keep all unchanged fields
       exactly as they are" as the only guarantee — a hope, not a mechanism. It also uses
@@ -262,7 +270,7 @@ See the open hypothesis at the end of `extraction-design-principles.md`.
       forever: what the model said, what the human changed, what was stored. Byproduct: "which
       fields do I correct most often?" becomes a SQL query — the prompt-improvement backlog,
       generated from real use.
-- [ ] **C8 — LIVE BUG: `source_file` is never set on the AI path.** `process_md_file` sets it
+- [x] **C8 — FIXED 2026-08-09.** `source_file` is never set on the AI path. `process_md_file` sets it
       (rules path only, `processor.py:158-168`); `_process_with_ai` in `cli/log.py` never does.
       Every AI-parsed session currently in the DB has no link to the text it came from. Fixed
       properly by C1-C3 (the `raw_input_id` FK), but worth knowing it is broken today.
