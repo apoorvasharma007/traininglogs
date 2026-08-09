@@ -87,6 +87,27 @@ def insert_extraction(
     return new_id
 
 
+def confirm_extraction(
+    conn: Connection,
+    extraction_id: str,
+    corrections: list[dict] | None = None,
+) -> None:
+    """Mark an extraction confirmed, and record what changed to get there.
+
+    status and confirmed_at are set in the same statement rather than left for the caller to
+    keep in agreement -- the same reasoning as insert_extraction's CASE WHEN."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE extractions
+            SET status = 'confirmed', confirmed_at = now(), corrections = %s
+            WHERE id = %s
+            """,
+            (json.dumps(corrections or []), extraction_id),
+        )
+    conn.commit()
+
+
 def _rest_minutes(rest: Rest | None) -> float | None:
     return rest.minutes if rest is not None else None
 
