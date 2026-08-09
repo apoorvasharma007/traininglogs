@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the ingest path writes all three layers (Phase 2, step 2)
+
+- `sessions.extraction_id` — nullable FK to `extractions`, so a stored session can be traced
+  back to the reading that produced it and the text that reading came from. Added by
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, because `CREATE TABLE IF NOT EXISTS` does nothing
+  to a table that already exists and would have skipped the column silently.
+- `processor.process_md_file_with_ai()` — the AI parser path, moved out of a nested function
+  inside the CLI. It captures the raw input, runs the confirmation loop, stores the extraction
+  with its model/prompt/uncertain_fields/warnings, then inserts the session linked to both.
+  `orchestrator` and `model` are injectable so it can be tested without an API call.
+- `processor.relative_source_file()` — one helper, used by both parser paths.
+- `insert_session()` takes `source_file` and `extraction_id`.
+
+### Fixed
+
+- **C8 — `source_file` was never set on the AI path.** The rules path set it with an `UPDATE`
+  after inserting; the AI path did not, so every AI-parsed session in the database has no link
+  to the text it came from. Both paths now pass it to `insert_session`, which writes it with the
+  row — two callers, one of which forgot, is the failure mode a parameter removes. The
+  post-insert `UPDATE` is gone. Existing rows are not backfilled by this change.
+- `extractions.confirmed_at` is derived from `status` in the insert rather than set separately.
+  Two fields that must agree, set independently, eventually disagree.
+
+Audited and unchanged: an extraction that failed for one exercise still stores a placeholder
+exercise with a sentinel in `notes`, and `insert_session` still accepts it. That is a confirmed
+choice made by the person at the card, not a silent write — but finding such sessions used to
+mean a `LIKE` against prose. It is now `WHERE warnings <> '{}'` on the extraction.
+
 ### Added — capture and interpretation layers (Phase 2, step 1)
 
 - `raw_inputs` table: what the person actually produced, never edited. `id`, `content`,

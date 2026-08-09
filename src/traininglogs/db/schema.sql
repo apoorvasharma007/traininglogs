@@ -65,6 +65,12 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Added after `sessions` already existed in real databases, so it is an ALTER rather than a
+-- column in the CREATE above: `CREATE TABLE IF NOT EXISTS` does nothing to a table that is
+-- already there, and would silently skip the new column. Nullable because sessions written
+-- before this existed have no extraction to point at, and because the rules parser has none.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS extraction_id TEXT REFERENCES extractions(id);
+
 CREATE TABLE IF NOT EXISTS warmups (
     id               SERIAL PRIMARY KEY,
     session_id       TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,

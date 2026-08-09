@@ -62,9 +62,12 @@ def insert_extraction(
             """
             INSERT INTO extractions (
                 id, raw_input_id, model, prompt_version, extract,
-                uncertain_fields, warnings, status
+                uncertain_fields, warnings, status, confirmed_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            -- confirmed_at follows from status rather than being a second thing to remember.
+            -- Two fields that must agree, set independently, eventually disagree.
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
+                    CASE WHEN %s = 'confirmed' THEN now() ELSE NULL END)
             """,
             (
                 new_id,
@@ -74,6 +77,7 @@ def insert_extraction(
                 json.dumps(extract),
                 uncertain_fields or [],
                 warnings or [],
+                status,
                 status,
             ),
         )
@@ -89,10 +93,20 @@ def _rest_seconds(rest: Rest | None) -> int | None:
     return rest.seconds if rest is not None else None
 
 
-def insert_session(conn: Connection, session: TrainingSession) -> bool:
+def insert_session(
+    conn: Connection,
+    session: TrainingSession,
+    source_file: str | None = None,
+    extraction_id: str | None = None,
+) -> bool:
     """Insert a full training session and all child records.
 
     Returns True if inserted, False if session_id already existed (skipped).
+
+    `source_file` and `extraction_id` are written here rather than patched in afterwards. They
+    used to be the caller's job: the rules path ran an UPDATE after inserting, and the AI path
+    simply never did, so every AI-parsed session in the database has no link to the text it came
+    from. Two callers, one of which forgot, is the failure mode a parameter removes.
     """
     with conn.cursor() as cur:
         cur.execute(
@@ -106,8 +120,8 @@ def insert_session(conn: Connection, session: TrainingSession) -> bool:
             INSERT INTO sessions (
                 session_id, date, program, program_author, program_length_weeks,
                 phase, week, is_deload_week, focus, duration_minutes,
-                weight_unit, user_id, user_name, notes
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                weight_unit, user_id, user_name, notes, source_file, extraction_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session.session_id,
@@ -124,6 +138,8 @@ def insert_session(conn: Connection, session: TrainingSession) -> bool:
                 session.user_id,
                 session.user_name,
                 session.notes,
+                source_file,
+                extraction_id,
             ),
         )
 

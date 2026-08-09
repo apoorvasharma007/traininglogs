@@ -342,6 +342,13 @@ WorkingSet                    one flat model — every measurement field optiona
   rather than declared by hand &mdash; a version constant is only correct while someone remembers
   to bump it.</p>
 
+  <p><code>sessions.extraction_id</code> links a stored session back to the reading that produced
+  it, and through that to the text it was read from. Nullable: sessions written before these
+  layers existed have nothing to point at, and the rules parser has no extraction at all.
+  <code>sessions.source_file</code> is now written by both parser paths at insert time &mdash; it
+  was previously patched in afterwards by the rules path only, so every AI-parsed session in the
+  database has no link to its input. Existing rows are not backfilled.</p>
+
   <p>The processor is <strong>DB-first, JSON-second</strong>: a <code>session_id</code> collision raises <code>SystemExit</code> rather than silently overwriting. Session IDs are derived from the file path (<code>YYYY-MM-DD-sha256[:6]</code>), so a collision means the same file was already processed.</p>
 </section>
 
