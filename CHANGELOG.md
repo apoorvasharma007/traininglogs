@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5 Step 1, confirm UI skeleton
+
+- `web/` — new surface, plain HTML/JS, no build step (matches `docs/`'s own approach). A
+  textarea and "Extract" button wired to `POST /inputs` then `GET /extractions/{id}`, rendering
+  the raw card JSON. Proves the round-trip before the card gets a real layout (Step 2). API
+  base URL and `X-Api-Key` are entered in the page and kept in `localStorage`; no styling pass
+  yet, that's Step 5.
+- `web/README.md` — how to run the API against `TEST_DATABASE_URL` and serve `web/` locally for
+  development.
+
 ### Added — Phase 4, write API — complete (POST /inputs, GET /extractions/{id}, POST .../confirm, POST .../correct)
 
 - `POST /inputs` — `ingest.capture()` then `ingest.extract()` over HTTP, the first real

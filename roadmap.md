@@ -361,9 +361,13 @@ Single-user throughout this phase — runs against the existing hardcoded `_DEFA
 the test DB. Multi-user identity is its own phase (5.5, below), deliberately sequenced *after*
 the UI works end-to-end, not before.
 
-- [ ] **Step 1 — skeleton + capture → extract.** Textarea, "Extract" button, wired to
+- [x] **Step 1 — skeleton + capture → extract.** Textarea, "Extract" button, wired to
       `POST /inputs` then `GET /extractions/{id}` against `TEST_DATABASE_URL`. No visual polish
-      yet — proves the round-trip before the card is built on top of it.
+      yet — proves the round-trip before the card is built on top of it. **Done.** `web/index.html`
+      + `web/app.js`, API base URL and `X-Api-Key` entered in-page and kept in `localStorage`.
+      Verified live in a real (headless, puppeteer-core-driven) Chrome against the API pointed at
+      `TEST_DATABASE_URL`: `POST /inputs` → real Haiku extraction → `GET /extractions/{id}` →
+      full card JSON rendered on the page, no console errors besides a harmless favicon 404.
 - [ ] **Step 2 — render the card.** Turn the `GET /extractions/{id}` response into the mockup's
       review screen: session header, exercise blocks, uncertain-field flags.
 - [ ] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
@@ -481,12 +485,29 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Step 1.** Mockup reviewed and approved 2026-08-13 (phone-frame
-walkthrough of capture → extract → review/correct → confirm, styled to match `docs/index.html`'s
-palette). Stack + location decided: `web/`, plain HTML/JS, no build step. Five steps broken out
-above; start at Step 1 (skeleton + capture → extract, wired to `TEST_DATABASE_URL`). Not yet
-cut: `phase-5/confirm-ui` base branch, or its first sub-branch
-(`phase-5/confirm-ui-1-skeleton`).
+**Phase 5 — Confirm UI, Step 1 — done, not yet committed.** Still on
+`phase-5/confirm-ui-1-skeleton` (cut from `phase-5/confirm-ui`, cut from `dev` at `2d3a0dd`).
+`web/index.html`, `web/app.js`, `web/README.md` written and the round-trip verified live
+(`POST /inputs` → real Haiku extraction → `GET /extractions/{id}`, rendered as raw JSON on the
+page) against the API pointed at `TEST_DATABASE_URL`, using a headless Chrome driven by
+puppeteer-core (no `chromium-cli` in this environment — installed `puppeteer-core` fresh into
+the session scratchpad; nothing added to the repo). CHANGELOG and this file updated in the same
+session. **Next action: commit, then squash-merge this step branch into `phase-5/confirm-ui`,
+then start Step 2** — turn the `GET /extractions/{id}` response into the mockup's review screen
+(session header, exercise blocks, uncertain-field flags). Re-read the mockup at
+https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c before starting — it's the
+only place the approved layout exists. Screen 3 ("Review") is the one to build against; its
+markup/CSS (`.session-head`, `.ex-card`, `.set-row`, `.flag`) is the real spec, not just a
+description.
+
+Mockup reviewed and approved 2026-08-13 — phone-frame walkthrough of
+capture → extract → review/correct → confirm, styled to match `docs/index.html`'s palette
+(Inter/JetBrains Mono, red accent, added amber for "uncertain" and green for "corrected/success").
+Live at https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c — **only place
+it exists**; the source file was written to this machine's session scratchpad, which does not
+persist, so that URL is the sole reference for what was approved. Re-read it before Step 2
+(card rendering) so the layout it built against isn't reconstructed from memory. Stack +
+location already decided from it: `web/`, plain HTML/JS, no build step.
 
 Phase 5.5 (per-user identity) is planned but explicitly **not** next — it's gated on Phase 5
 being done end-to-end single-user first.
