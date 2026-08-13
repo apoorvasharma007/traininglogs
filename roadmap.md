@@ -386,9 +386,16 @@ the UI works end-to-end, not before.
       needed no changes. Verified live with two sequential corrections on one extraction (RPE
       fix, then a multi-set weight fix): both persisted after the second call, confirming state
       carries forward correctly rather than resetting — the specific risk called out above.
-- [ ] **Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, the confirmed
+- [x] **Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, the confirmed
       screen, and the real failures the API already returns surfaced as UI states, not console
       errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch).
+      **Done.** Confirm sends `extract` + accumulated `corrections`; success shows the real
+      `session_id` and a "Log another" reset. Along the way, fixed a real Step 1 bug: `/inputs`'
+      502 response has a valid `{raw_input_id, error}` body, but the original code checked
+      `response.ok` first and never reached it, losing the raw_input_id and real error behind a
+      generic message. On any confirm failure the card/composer stay in place (not cleared) so
+      the person can correct and retry. Verified live: full round trip with a real `session_id`,
+      plus a deliberate 409 by confirming identical content twice.
 - [ ] **Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
       viewport.
 
@@ -498,24 +505,27 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Steps 1–3 done.** Step 1 (`c718e78`) and Step 2 (`86fac13`, a squash
-that also carries two pipeline bugs found while testing Step 2 — see below) are merged into
-`phase-5/confirm-ui`. Step 3 is built on `phase-5/confirm-ui-3-correct` (cut from
-`phase-5/confirm-ui`) but **not yet committed or merged** — commit it before starting Step 4.
+**Phase 5 — Confirm UI, Steps 1–4 done.** Steps 1–3 are merged into `phase-5/confirm-ui`
+(`c718e78`, `86fac13`, `3dbffb2`). Step 4 is built on `phase-5/confirm-ui-4-confirm` (cut from
+`phase-5/confirm-ui`) but **not yet committed or merged** — commit it before starting Step 5.
 Everything verified live the same way all session — headless Chrome via puppeteer-core (still
 no `chromium-cli` in this environment; `puppeteer-core` lives in the session scratchpad only,
 nothing added to the repo).
 
-**Step 3, the correction loop:** composer wired to `POST /extractions/{id}/correct`. Client
-holds `currentExtract` (previous response's `extract`, `null` before the first correction) and
-sends it back every call — server holds nothing. Card re-rendered from the response's own
-`card` each time (same shape as `GET /extractions/{id}`, so `renderCard()` needed no changes).
-Verified with two sequential corrections on one extraction (an RPE fix, then a multi-set weight
-fix) — both persisted after the second call, confirming state carries forward rather than
-resetting, which was the step's specific risk.
+**Step 4, confirm + error states:** "Looks good — Confirm" sends `extract` and every
+accumulated correction to `POST /extractions/{id}/confirm`; success shows the real
+`session_id` and a "Log another" reset. All three of the API's real failure modes are now UI
+states, not console errors — **409** (session_id collision: server's own actionable message,
+composer left visible so the person can correct the date and retry, nothing cleared), **502**
+(`/inputs` extraction failure — also fixed a real Step 1 bug here: the 502 response has a valid
+`{raw_input_id, error}` body, but the old code checked `response.ok` first and never reached it,
+losing both behind a generic message), **400** (`/correct` bad patch — already surfaced since
+Step 3, wording now distinguishes it from 502). Verified live: a full extract → correct →
+confirm round trip with a real returned `session_id`, and a deliberate 409 by confirming
+identical content twice.
 
 **Two real pipeline bugs landed inside Step 2's squash, worth knowing about before touching
-`agent/` again:**
+`agent/` again** (unrelated to Step 4, carried forward from last write-up):
 1. **Date fix** (`SHELL_SYSTEM_PROMPT` + `ingest.extract()`): a missing date used to be
    invented (`2024-01-01`, seen live) instead of flagged `uncertain_fields` and backfilled from
    `raw_inputs.captured_at`. Applies to the CLI path too, not just the web UI.
@@ -526,20 +536,23 @@ resetting, which was the step's specific risk.
    curly-quote/dash/NBSP drift, with boundaries computed from where anchors were actually found
    rather than the position label the model gave them.
 
-**Neither has been run through `scripts/eval_arms.py` — deliberately deferred by request, but
+**Neither has been run through `scripts/eval_arms.py` — still deliberately deferred, still
 gated: run this before `phase-5/confirm-ui` reaches `main`.** `--dry-run` showed
 `split_exercises` still cache-hits (chunking touches no prompt) but `extract_session_shell`
 doesn't (the date fix changed `SHELL_SYSTEM_PROMPT`'s text) — so a verification run costs the
 usual ~$0.45, one pass covers both fixes.
 
-**Next: Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, a confirmed
-screen, and the real failures the API already returns surfaced as UI states rather than console
-errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch — Step
-3's composer currently just prints `result.body.detail` on failure, not a dedicated state).
-`corrections` accumulated across Step 3's calls (currently only shown in the on-page log, not
-collected into a list) will need collecting into the `{at, instruction, edits}` array
-`/confirm`'s `corrections` field expects. Re-read the mockup at
-https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c, Screen 4, before starting.
+**Live testing against `TEST_DATABASE_URL` writes real rows.** This session's verification
+(Steps 1–4, repeatedly) caused one incidental test failure —
+`test_api.py::test_exercise_history_not_found` briefly failed because a live-confirmed "Squat"
+session existed when it ran. Not a bug: `test_ingest.py`'s own per-test `TRUNCATE sessions
+CASCADE` cleans this up as a side effect of running the suite, confirmed stable across two
+consecutive full runs afterward. Worth knowing if a similar one-off failure shows up again after
+a session of live UI testing — rerun before assuming it's a regression.
+
+**Next: Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
+viewport. This is the first step that's primarily visual rather than functional — re-read the
+mockup closely (not from memory) before starting, since it's the actual design spec.
 
 **Standing correction, still true:** the mockup's Screen 3 markup (`.ex-head .tag` for
 modality, e.g. "barbell") does **not** match `UserValidationCard`'s real fields —

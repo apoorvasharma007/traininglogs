@@ -11,6 +11,15 @@
   const corrSendBtn = document.getElementById("corrSend");
   const correctionsLogEl = document.getElementById("correctionsLog");
   const corrStatusEl = document.getElementById("corrStatus");
+  const confirmBarEl = document.getElementById("confirmBar");
+  const confirmBtn = document.getElementById("confirmBtn");
+  const editNoteBtn = document.getElementById("editNoteBtn");
+  const errorBoxEl = document.getElementById("errorBox");
+  const errorTitleEl = document.getElementById("errorTitle");
+  const errorDetailEl = document.getElementById("errorDetail");
+  const confirmedScreenEl = document.getElementById("confirmedScreen");
+  const confirmedSidEl = document.getElementById("confirmedSid");
+  const logAnotherBtn = document.getElementById("logAnotherBtn");
 
   // The extraction being reviewed, and the client's current copy of its extract -- null means
   // "use the extraction's own stored reading," which is only true before the first correction.
@@ -18,6 +27,9 @@
   // endpoint's statelessness was designed for: the server holds nothing between calls.
   let currentExtractionId = null;
   let currentExtract = null;
+  // {at, instruction, edits} per applied correction -- accumulated here and sent as
+  // ConfirmIn.corrections on /confirm, which records them alongside the extraction.
+  let corrections = [];
 
   apiBaseInput.value = localStorage.getItem("tl_apiBase") || apiBaseInput.value;
   apiKeyInput.value = localStorage.getItem("tl_apiKey") || "";
@@ -31,6 +43,16 @@
 
   function showRawOutput(data) {
     outputEl.textContent = JSON.stringify(data, null, 2);
+  }
+
+  function showError(title, detail) {
+    errorTitleEl.textContent = title;
+    errorDetailEl.textContent = detail || "";
+    errorBoxEl.className = "error-box active";
+  }
+
+  function hideError() {
+    errorBoxEl.className = "error-box";
   }
 
   async function apiFetch(path, options) {
@@ -60,9 +82,13 @@
     outputEl.textContent = "";
     correctionsLogEl.innerHTML = "";
     composerEl.style.display = "none";
+    confirmBarEl.style.display = "none";
+    confirmedScreenEl.className = "";
     corrStatusEl.textContent = "";
+    hideError();
     currentExtractionId = null;
     currentExtract = null;
+    corrections = [];
     setStatus("Saving...");
 
     const capture = await apiFetch("/inputs", {
@@ -70,8 +96,17 @@
       body: JSON.stringify({ content }),
     });
 
-    if (!capture.ok) {
-      setStatus(`POST /inputs failed (${capture.status}).`, true);
+    // capture()'s response always carries raw_input_id once the text is saved, even when
+    // extraction then fails (HTTP 502) -- checking capture.ok first would treat that case as an
+    // opaque request failure and lose both the raw_input_id and the actual error message, which
+    // is exactly the "console error instead of a UI state" this step exists to fix.
+    if (!capture.body || !capture.body.raw_input_id) {
+      setStatus(
+        `POST /inputs failed (${capture.status}): ${
+          capture.body && capture.body.detail ? capture.body.detail : "unknown error"
+        }`,
+        true
+      );
       showRawOutput(capture.body);
       extractBtn.disabled = false;
       return;
@@ -80,7 +115,10 @@
     const { raw_input_id, extraction_id, error } = capture.body;
 
     if (error || !extraction_id) {
-      setStatus(`Saved (raw_input_id: ${raw_input_id}) but extraction failed: ${error}`, true);
+      setStatus(
+        `Saved (raw_input_id: ${raw_input_id}) but extraction failed (${capture.status}): ${error}`,
+        true
+      );
       extractBtn.disabled = false;
       return;
     }
@@ -101,6 +139,7 @@
     renderCard(extraction.body);
     currentExtractionId = extraction_id;
     composerEl.style.display = "flex";
+    confirmBarEl.style.display = "flex";
     extractBtn.disabled = false;
   });
 
@@ -124,15 +163,16 @@
     corrSendBtn.disabled = false;
 
     if (!result.ok) {
-      corrStatusEl.textContent = `Correction failed (${result.status}): ${
-        result.body && result.body.detail ? result.body.detail : "unknown error"
-      }`;
+      const detail = result.body && result.body.detail ? result.body.detail : "unknown error";
+      const prefix = result.status === 400 ? "Couldn't apply that correction" : "Correction service failed";
+      corrStatusEl.textContent = `${prefix} (${result.status}): ${detail}`;
       corrStatusEl.className = "status error";
       return;
     }
 
     corrStatusEl.textContent = "";
     currentExtract = result.body.extract;
+    corrections.push(result.body.correction);
     showRawOutput(result.body);
     renderCard(result.body.card);
     appendCorrectionRow(result.body.correction);
@@ -155,6 +195,70 @@
   corrSendBtn.addEventListener("click", applyCorrection);
   corrInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") applyCorrection();
+  });
+
+  // ---- confirm ----
+
+  confirmBtn.addEventListener("click", async () => {
+    hideError();
+    confirmBtn.disabled = true;
+    editNoteBtn.disabled = true;
+    setStatus("Confirming...");
+
+    const result = await apiFetch(`/extractions/${currentExtractionId}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({
+        extract: currentExtract,
+        corrections: corrections.length ? corrections : undefined,
+      }),
+    });
+
+    confirmBtn.disabled = false;
+    editNoteBtn.disabled = false;
+
+    if (!result.ok) {
+      const detail = result.body && result.body.detail ? result.body.detail : "unknown error";
+      if (result.status === 409) {
+        showError(
+          "This session already exists",
+          `${detail} Use the correction box above to fix the date, then confirm again.`
+        );
+      } else {
+        showError(`Confirm failed (${result.status})`, detail);
+      }
+      setStatus("");
+      return;
+    }
+
+    setStatus("");
+    cardEl.className = "";
+    composerEl.style.display = "none";
+    confirmBarEl.style.display = "none";
+    correctionsLogEl.innerHTML = "";
+    confirmedSidEl.textContent = result.body.session_id;
+    confirmedScreenEl.className = "active";
+  });
+
+  editNoteBtn.addEventListener("click", () => {
+    contentInput.focus();
+    contentInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  logAnotherBtn.addEventListener("click", () => {
+    contentInput.value = "";
+    cardEl.innerHTML = "";
+    cardEl.className = "";
+    correctionsLogEl.innerHTML = "";
+    outputEl.textContent = "";
+    composerEl.style.display = "none";
+    confirmBarEl.style.display = "none";
+    confirmedScreenEl.className = "";
+    hideError();
+    setStatus("");
+    currentExtractionId = null;
+    currentExtract = null;
+    corrections = [];
+    contentInput.focus();
   });
 
   // ---- card rendering ----

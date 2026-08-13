@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5 Step 4, confirm UI's confirm + error states
+
+- "Looks good — Confirm" button wired to `POST /extractions/{id}/confirm`, sending the current
+  `extract` and every correction accumulated across Step 3's calls (`{at, instruction, edits}`
+  each) as `corrections`. On success, shows a confirmed screen with the real `session_id` and a
+  "Log another" button that resets the whole page back to a blank capture.
+- The three real failures the API returns are now surfaced as actual UI states instead of
+  silently failing or dumping to the console:
+  - **409** (`/confirm`, session_id collision) — the server's own message (which already names
+    the likely cause: date is wrong, or this exact content was already confirmed) plus a
+    pointer to use the still-visible correction box and retry. Card and composer are left in
+    place on any confirm failure, not cleared — the person can fix and re-confirm without
+    starting over.
+  - **502** (`/inputs`, LLM extraction failure) — fixed a real bug from Step 1: `capture()`
+    returns HTTP 502 with a valid body (`{raw_input_id, error}`) when extraction fails, but the
+    original code checked `response.ok` *before* looking at the body, so that branch never ran
+    and the useful detail (raw_input_id, actual error) was lost behind a generic "POST /inputs
+    failed (502)." Now checks for `raw_input_id` in the body first, regardless of HTTP status.
+  - **400** (`/correct`, bad correction patch) — already surfaced via `result.body.detail`
+    since Step 3; wording now distinguishes "couldn't apply that correction" (400) from "the
+    correction service failed" (502) rather than one generic message for both.
+- Verified live against `TEST_DATABASE_URL`: a full extract → correct → confirm round trip
+  (real session written, real `session_id` returned), and a deliberate 409 by confirming
+  identical content twice — the error box showed the real server message and the page stayed
+  usable, not blank or console-only. Full suite 652 passing, 0 skipped (verified stable across
+  two consecutive runs — an early failure in this session was test-DB pollution from live
+  testing against the shared `TEST_DATABASE_URL`, self-cleaned by `test_ingest.py`'s own
+  per-test truncation, not a regression).
+
 ### Added — Phase 5 Step 3, confirm UI's correction loop
 
 - Composer (`web/index.html`/`app.js`) wired to `POST /extractions/{id}/correct`, round-tripping

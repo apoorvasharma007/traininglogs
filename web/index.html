@@ -245,6 +245,59 @@
   }
   .composer button:disabled { background: var(--border-strong); cursor: not-allowed; }
 
+  .confirm-bar { display: flex; gap: 0.6rem; margin-top: 1rem; }
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border-strong);
+    color: var(--ink-2);
+    border-radius: 100px;
+    padding: 0.6rem 1.1rem;
+    font-family: var(--f-sans);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 0.6rem 1.1rem;
+    font-family: var(--f-sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .btn-primary:disabled, .btn-ghost:disabled { background: var(--border-strong); color: var(--muted); cursor: not-allowed; }
+
+  #confirmedScreen {
+    display: none;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: flex-start;
+    border: 1px solid var(--green-border);
+    background: var(--green-bg);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+  #confirmedScreen.active { display: flex; }
+  #confirmedScreen .title { font-weight: 700; color: var(--green); font-size: 1.05rem; }
+  #confirmedScreen .sid { font-family: var(--f-mono); font-size: 0.8rem; background: var(--bg-3); color: var(--ink-2); padding: 0.35rem 0.7rem; border-radius: var(--radius); }
+
+  .error-box {
+    display: none;
+    border: 1px solid var(--amber-border);
+    background: var(--amber-bg);
+    color: var(--amber);
+    border-radius: var(--radius);
+    padding: 0.75rem 0.9rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-top: 1rem;
+  }
+  .error-box.active { display: block; }
+  .error-box .e-title { font-weight: 700; margin-bottom: 0.2rem; }
+
   .raw-toggle { margin-top: 1rem; }
   .raw-toggle summary { cursor: pointer; font-size: 0.78rem; color: var(--muted); }
   pre {
@@ -293,6 +346,22 @@
     <button id="corrSend" aria-label="Send correction">→</button>
   </div>
   <div id="corrStatus" class="status"></div>
+
+  <div id="confirmBar" class="confirm-bar" style="display:none">
+    <button id="editNoteBtn" class="btn-ghost">Edit note</button>
+    <button id="confirmBtn" class="btn-primary">Looks good — Confirm</button>
+  </div>
+
+  <div id="errorBox" class="error-box">
+    <div class="e-title" id="errorTitle"></div>
+    <div id="errorDetail"></div>
+  </div>
+
+  <div id="confirmedScreen">
+    <div class="title">✓ Session saved</div>
+    <div class="sid" id="confirmedSid"></div>
+    <button id="logAnotherBtn" class="btn-primary">Log another</button>
+  </div>
 
   <details class="raw-toggle">
     <summary>Raw JSON</summary>
