@@ -351,15 +351,60 @@ bug in `_db()` that left transactions leaking between unrelated pooled requests 
 
 ## Phase 5 — Confirm UI
 
-New surface in `traininglogs`. **v1 is deliberately minimal**: a textarea, a rendered card, a
-confirm button. Mobile capture comes later.
+New surface: `web/`, plain HTML/JS, no build step (matches `docs/`'s own approach — nothing in
+this repo has npm tooling yet and a v1 confirm card doesn't need it). Mockup approved
+2026-08-13. **v1 is deliberately minimal** — textarea, rendered card, confirm button. Local
+draft storage, mic/dictation, and offline persistence are the mockup's "capture" screen telling
+the full story, but are explicitly **mobile capture, deferred** — not part of v1.
+
+Single-user throughout this phase — runs against the existing hardcoded `_DEFAULT_USER_ID` and
+the test DB. Multi-user identity is its own phase (5.5, below), deliberately sequenced *after*
+the UI works end-to-end, not before.
+
+- [ ] **Step 1 — skeleton + capture → extract.** Textarea, "Extract" button, wired to
+      `POST /inputs` then `GET /extractions/{id}` against `TEST_DATABASE_URL`. No visual polish
+      yet — proves the round-trip before the card is built on top of it.
+- [ ] **Step 2 — render the card.** Turn the `GET /extractions/{id}` response into the mockup's
+      review screen: session header, exercise blocks, uncertain-field flags.
+- [ ] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
+      round-tripping `extract` between calls the way the endpoint's statelessness was designed
+      for. Gets its own step — it's the trickiest state-handling in the UI.
+- [ ] **Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, the confirmed
+      screen, and the real failures the API already returns surfaced as UI states, not console
+      errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch).
+- [ ] **Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
+      viewport.
+
+## Phase 5.5 — Per-user identity
+
+**Gate: only after Phase 5 is working end-to-end single-user.** Right now `user_id`/`user_name`
+are hardcoded constants (`_DEFAULT_USER_ID`/`_DEFAULT_USER_NAME` in `processor.py`) and the API
+has one shared `API_KEY` — every friend would read and write as *you*, and anyone holding the
+key spends *your* Anthropic credits. This is what turns it from "my tool" into "an app other
+people use on my bill," so it has to land before Phase 6 deploy, not after.
+
+Proportionate fix, not a real auth system:
+
+- [ ] `users` table: `id`, `name`, `api_key` (per person, not shared).
+- [ ] `_db()`/auth dependency resolves `X-Api-Key` → `user_id` instead of trusting one global
+      key; every write scopes to the resolved user, not the hardcoded constant.
+- [ ] `llm_calls.user_id` (or join through `raw_input_id`) — cost is already tracked per call
+      (Phase 3), this just makes "who spent what" a `GROUP BY` instead of assumed to be you.
+- [ ] No passwords, no sessions, no OAuth provider — you hand each friend their own key once.
 
 ## Phase 6 — Deploy
 
+Deploying the **app**, not just the API — `web/` and the FastAPI service ship together.
+
 - [ ] Deploy FastAPI to Fly (`fly.toml` and `Dockerfile` already exist). Supabase is live with
       121 sessions (`archived/plans/pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
-- [ ] Env: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`.
-- [ ] Smoke-test read + write paths.
+- [ ] Mount `web/` as static files on the same Fly app (`StaticFiles`), same origin as the API —
+      avoids standing up a second host and sidesteps CORS for the write endpoints. Distinct from
+      how `docs/`'s dashboard reaches the public: that's a static pull into a separate personal
+      website at *its* deploy time, which doesn't fit a page that calls a live write API.
+- [ ] Env: `DATABASE_URL`, `API_KEY` → per-user keys (Phase 5.5), `ALLOWED_ORIGINS`.
+- [ ] Smoke-test read + write paths, and that a second `api_key` actually gets a second
+      `user_id`'s data back, not yours.
 
 ## After end-to-end works
 
@@ -436,29 +481,27 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI** is next: a new surface in `traininglogs`, deliberately minimal —
-textarea, rendered card, confirm button. This is the actual "friends can try this" surface;
-Phase 4's four endpoints are what it calls. No steps broken out yet — start by deciding the
-stack (plain HTML/JS hitting the API directly is enough for v1; no framework needed yet) and
-where it lives (a new `web/` or similar, separate from `docs/` which is the read-only
-dashboard).
+**Phase 5 — Confirm UI, Step 1.** Mockup reviewed and approved 2026-08-13 (phone-frame
+walkthrough of capture → extract → review/correct → confirm, styled to match `docs/index.html`'s
+palette). Stack + location decided: `web/`, plain HTML/JS, no build step. Five steps broken out
+above; start at Step 1 (skeleton + capture → extract, wired to `TEST_DATABASE_URL`). Not yet
+cut: `phase-5/confirm-ui` base branch, or its first sub-branch
+(`phase-5/confirm-ui-1-skeleton`).
 
-Before that, or before this branch touches prod either way — same blocker as before, still
-unresolved:
+Phase 5.5 (per-user identity) is planned but explicitly **not** next — it's gated on Phase 5
+being done end-to-end single-user first.
 
-### Before the AI path is next run against prod — required
+### Prod schema migration — explicitly deferred, not blocking
 
-Prod does not have the new tables or columns: `raw_inputs`, `extractions`,
-`sessions.extraction_id`, `extractions.corrections`, and now `llm_calls` (Phase 3). **The AI
-path now writes to all of them, so `traininglogs log --parser ai` against prod will fail until
-the schema is applied.** This also blocks Phase 4's endpoints the moment they're pointed at
-`DATABASE_URL` instead of `TEST_DATABASE_URL` — worth doing before Phase 4 needs it, not after.
-
-Everything is additive (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`), so applying
-`src/traininglogs/db/schema.sql` cannot touch an existing row. It has still not been run:
-`.claude/db-migration.md` requires explicit approval in the same session for anything against
-`DATABASE_URL`. Ask before running it, show the statement first, and do not use
-`repopulate_db.py` (it truncates).
+Prod still does not have `raw_inputs`, `extractions`, `sessions.extraction_id`,
+`extractions.corrections`, or `llm_calls` (Phase 3) — `--parser ai` and Phase 4's endpoints will
+fail against `DATABASE_URL` until `src/traininglogs/db/schema.sql` is applied (additive only,
+`CREATE TABLE IF NOT EXISTS`/`ADD COLUMN IF NOT EXISTS`, cannot touch an existing row). **User
+decision 2026-08-13: deferred on purpose** — the full historical regen this would eventually be
+paired with costs real Haiku money, and isn't needed to keep building. Phase 5 runs entirely
+against `TEST_DATABASE_URL`, so this isn't a blocker for it. Still requires explicit
+same-session approval per `.claude/db-migration.md` whenever it does happen — ask first, show
+the statement, never `repopulate_db.py` (it truncates).
 
 ### State worth carrying, not re-derived
 
