@@ -377,9 +377,15 @@ the UI works end-to-end, not before.
       chips, and per-row notes all rendered correctly against a real extraction. Desktop-width
       layout, light theme only — phone frame and dark mode are Step 5. Raw JSON kept behind a
       collapsed `<details>` for debugging, not shown by default.
-- [ ] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
+- [x] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
       round-tripping `extract` between calls the way the endpoint's statelessness was designed
-      for. Gets its own step — it's the trickiest state-handling in the UI.
+      for. Gets its own step — it's the trickiest state-handling in the UI. **Done.** Client
+      holds `currentExtract` (previous response's `extract`, or `null` before the first
+      correction) and sends it back every call; server holds nothing. Card re-rendered from the
+      response's own `card` each time — same shape as `GET /extractions/{id}`, so `renderCard()`
+      needed no changes. Verified live with two sequential corrections on one extraction (RPE
+      fix, then a multi-set weight fix): both persisted after the second call, confirming state
+      carries forward correctly rather than resetting — the specific risk called out above.
 - [ ] **Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, the confirmed
       screen, and the real failures the API already returns surfaced as UI states, not console
       errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch).
@@ -492,59 +498,53 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Steps 1 and 2 done, plus two real pipeline bugs found and fixed along
-the way.** Step 1 squash-merged into `phase-5/confirm-ui` (`c718e78`). Step 2 (`4e0d2b0`), the
-date fix (`9f69c75`), and the chunking fix (uncommitted as of this write-up — commit before
-starting Step 3) are on `phase-5/confirm-ui-2-card` (cut from `phase-5/confirm-ui`) but **not
-yet merged up** — last session's pattern was commit-then-pause-for-review each step rather than
-auto-merge; confirm that's still wanted before squashing this branch in. All verified live the
-same way — headless Chrome via puppeteer-core (still no `chromium-cli` in this environment;
-`puppeteer-core` lives in the session scratchpad only, nothing added to the repo).
+**Phase 5 — Confirm UI, Steps 1–3 done.** Step 1 (`c718e78`) and Step 2 (`86fac13`, a squash
+that also carries two pipeline bugs found while testing Step 2 — see below) are merged into
+`phase-5/confirm-ui`. Step 3 is built on `phase-5/confirm-ui-3-correct` (cut from
+`phase-5/confirm-ui`) but **not yet committed or merged** — commit it before starting Step 4.
+Everything verified live the same way all session — headless Chrome via puppeteer-core (still
+no `chromium-cli` in this environment; `puppeteer-core` lives in the session scratchpad only,
+nothing added to the repo).
 
-**The date fix, worth knowing about going in:** `date` is required on `TrainingLogLLMExtract`,
-and when the web-capture text had no date at all, the model invented one (`2024-01-01`, seen
-live) instead of using `uncertain_fields` the way every other unsure field already does. Fixed
-in `SHELL_SYSTEM_PROMPT` (flag it instead of guessing) + `ingest.extract()` (backfill from
-`raw_inputs.captured_at`, deterministically, still flagged — "captured today" isn't "the
-workout was today"). This is a **prompt change**, so it applies to the CLI path too, not just
-the web UI.
+**Step 3, the correction loop:** composer wired to `POST /extractions/{id}/correct`. Client
+holds `currentExtract` (previous response's `extract`, `null` before the first correction) and
+sends it back every call — server holds nothing. Card re-rendered from the response's own
+`card` each time (same shape as `GET /extractions/{id}`, so `renderCard()` needed no changes).
+Verified with two sequential corrections on one extraction (an RPE fix, then a multi-set weight
+fix) — both persisted after the second call, confirming state carries forward rather than
+resetting, which was the step's specific risk.
 
-**The chunking fix, the bigger one:** exercise isolation (`_locate_anchor_lines`/
-`_chunk_exercises` in `agent/extraction.py`) matched anchors per physical *line*, advancing
-strictly forward to the next line after each match. A short, casual capture with **no line
-breaks at all** — e.g. "Push day. Bench press 60kg for 8. Incline db press 22kg for 10." — has
-only one line, so a second exercise on it could never be located, regardless of input length.
-Found live-testing the confirm UI (`warnings` showed "could not isolate its text" on ordinary
-two-exercise input) — this is exactly the input shape mobile capture will produce a lot of.
-Rewritten as `_locate_anchors`, matching on character offset instead of line number (fixes the
-same-line case), tolerant of the same curly-quote/dash/NBSP drift `_comparable()` already
-handles elsewhere in the file (a model asked to copy an anchor "verbatim" still silently
-retypes these), and computing chunk boundaries by where anchors were actually *found* rather
-than the *position number* the model labeled them with (prevents a slice from crossing into a
-neighboring exercise's content if declared labels and list order ever disagree — not yet
-observed, but reachable, and now structurally prevented rather than merely guarded against). 13
-new/rewritten unit tests, pure functions, no LLM calls. Verified live: the exact input that
-produced the warning above now extracts both exercises cleanly, zero warnings.
+**Two real pipeline bugs landed inside Step 2's squash, worth knowing about before touching
+`agent/` again:**
+1. **Date fix** (`SHELL_SYSTEM_PROMPT` + `ingest.extract()`): a missing date used to be
+   invented (`2024-01-01`, seen live) instead of flagged `uncertain_fields` and backfilled from
+   `raw_inputs.captured_at`. Applies to the CLI path too, not just the web UI.
+2. **Chunking fix** (`agent/extraction.py`, `_locate_anchor_lines` → `_locate_anchors`):
+   exercise isolation matched anchors per physical *line*; a short capture with no line breaks
+   at all (e.g. "Push day. Bench press 60kg for 8. Incline db press 22kg for 10.") could only
+   ever have its *first* exercise located. Rewritten to character-offset matching, tolerant of
+   curly-quote/dash/NBSP drift, with boundaries computed from where anchors were actually found
+   rather than the position label the model gave them.
 
-**Both are prompt-or-pipeline-adjacent changes on the shared extraction path (CLI and API
-both), not yet run through the formal eval harness (`scripts/eval_arms.py`) — deliberately
-deferred by request.** `--dry-run` shows `split_exercises` still cache-hits (the chunking fix
-touches no prompt), but `extract_session_shell` no longer does for any of the 6-file set, since
-the date fix changed `SHELL_SYSTEM_PROMPT`'s text — so a verification run costs the usual
-**~$0.45** regardless of running one fix or both. **Run this before either commit reaches
-`main`** — both fixes together in one pass, not twice.
+**Neither has been run through `scripts/eval_arms.py` — deliberately deferred by request, but
+gated: run this before `phase-5/confirm-ui` reaches `main`.** `--dry-run` showed
+`split_exercises` still cache-hits (chunking touches no prompt) but `extract_session_shell`
+doesn't (the date fix changed `SHELL_SYSTEM_PROMPT`'s text) — so a verification run costs the
+usual ~$0.45, one pass covers both fixes.
 
-**Next: Step 3 — the correction loop.** Composer wired to `POST /extractions/{id}/correct`,
-round-tripping `extract` between calls. Card-rendering code from Step 2 (`renderCard()` in
-`web/app.js`) should be directly reusable — `/correct` returns the same `card` shape
-`GET /extractions/{id}` does, including the session-header flags added in the date fix. Re-read
-the mockup at https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c for the
-composer's shape (`.composer`, `.corrections-log`, `.corr-row`) before starting.
+**Next: Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, a confirmed
+screen, and the real failures the API already returns surfaced as UI states rather than console
+errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch — Step
+3's composer currently just prints `result.body.detail` on failure, not a dedicated state).
+`corrections` accumulated across Step 3's calls (currently only shown in the on-page log, not
+collected into a list) will need collecting into the `{at, instruction, edits}` array
+`/confirm`'s `corrections` field expects. Re-read the mockup at
+https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c, Screen 4, before starting.
 
-**Correction for the next session:** the mockup's Screen 3 markup (`.ex-head .tag` for
+**Standing correction, still true:** the mockup's Screen 3 markup (`.ex-head .tag` for
 modality, e.g. "barbell") does **not** match `UserValidationCard`'s real fields —
 `ExerciseHeader` has no modality/tag, only `number`, `name`, `goal`, `uncertain_fields`,
-`failed` (`validation_card_data.py`). Step 2 renders `Goal: …` in that slot instead. Don't
+`failed` (`validation_card_data.py`). The UI renders `Goal: …` in that slot instead. Don't
 reconstruct the tag from memory of the mockup; check the dataclass.
 
 Mockup reviewed and approved 2026-08-13 — phone-frame walkthrough of

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5 Step 3, confirm UI's correction loop
+
+- Composer (`web/index.html`/`app.js`) wired to `POST /extractions/{id}/correct`, round-tripping
+  `extract` between calls the way the endpoint's own statelessness was designed for — the client
+  holds `currentExtract` (the previous response's `extract`, or `null` before the first
+  correction, meaning "use the extraction's own stored reading") and sends it back on every
+  call; the server holds nothing.
+- Each correction re-renders the card from the response's own `card` (identical shape to
+  `GET /extractions/{id}`, so `renderCard()` from Step 2 needed no changes) and appends a log
+  row summarizing the applied edits (`path → value`, comma-joined for multi-field corrections).
+- Verified live against `TEST_DATABASE_URL` with two sequential corrections on the same
+  extraction (an RPE fix, then a weight fix across three sets): both persisted correctly after
+  the second call, confirming the round-trip carries state forward rather than resetting it —
+  the specific risk the roadmap flagged this step for.
+
 ### Fixed — exercise chunking could only ever locate the first of several exercises packed onto one line
 
 - `_locate_anchor_lines`/`_chunk_exercises` (`agent/extraction.py`) isolated each exercise's

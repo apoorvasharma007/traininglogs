@@ -6,6 +6,18 @@
   const statusEl = document.getElementById("status");
   const outputEl = document.getElementById("output");
   const cardEl = document.getElementById("card");
+  const composerEl = document.getElementById("composer");
+  const corrInputEl = document.getElementById("corrInput");
+  const corrSendBtn = document.getElementById("corrSend");
+  const correctionsLogEl = document.getElementById("correctionsLog");
+  const corrStatusEl = document.getElementById("corrStatus");
+
+  // The extraction being reviewed, and the client's current copy of its extract -- null means
+  // "use the extraction's own stored reading," which is only true before the first correction.
+  // Every /correct response's own `extract` becomes the new value, exactly the round-trip the
+  // endpoint's statelessness was designed for: the server holds nothing between calls.
+  let currentExtractionId = null;
+  let currentExtract = null;
 
   apiBaseInput.value = localStorage.getItem("tl_apiBase") || apiBaseInput.value;
   apiKeyInput.value = localStorage.getItem("tl_apiKey") || "";
@@ -46,6 +58,11 @@
     cardEl.className = "";
     cardEl.innerHTML = "";
     outputEl.textContent = "";
+    correctionsLogEl.innerHTML = "";
+    composerEl.style.display = "none";
+    corrStatusEl.textContent = "";
+    currentExtractionId = null;
+    currentExtract = null;
     setStatus("Saving...");
 
     const capture = await apiFetch("/inputs", {
@@ -82,7 +99,62 @@
     setStatus(`Done. extraction_id: ${extraction_id}`);
     showRawOutput(extraction.body);
     renderCard(extraction.body);
+    currentExtractionId = extraction_id;
+    composerEl.style.display = "flex";
     extractBtn.disabled = false;
+  });
+
+  // ---- correction loop ----
+
+  async function applyCorrection() {
+    const instruction = corrInputEl.value.trim();
+    if (!instruction) return;
+
+    corrInputEl.disabled = true;
+    corrSendBtn.disabled = true;
+    corrStatusEl.textContent = "Applying correction...";
+    corrStatusEl.className = "status";
+
+    const result = await apiFetch(`/extractions/${currentExtractionId}/correct`, {
+      method: "POST",
+      body: JSON.stringify({ extract: currentExtract, instruction }),
+    });
+
+    corrInputEl.disabled = false;
+    corrSendBtn.disabled = false;
+
+    if (!result.ok) {
+      corrStatusEl.textContent = `Correction failed (${result.status}): ${
+        result.body && result.body.detail ? result.body.detail : "unknown error"
+      }`;
+      corrStatusEl.className = "status error";
+      return;
+    }
+
+    corrStatusEl.textContent = "";
+    currentExtract = result.body.extract;
+    showRawOutput(result.body);
+    renderCard(result.body.card);
+    appendCorrectionRow(result.body.correction);
+    corrInputEl.value = "";
+    corrInputEl.focus();
+  }
+
+  function appendCorrectionRow(correction) {
+    const row = document.createElement("div");
+    row.className = "corr-row";
+    const editSummary = (correction.edits || [])
+      .map((e) => `${e.path} → ${JSON.stringify(e.value)}`)
+      .join(", ");
+    row.innerHTML = `<span class="ico">✓</span><span>"${esc(correction.instruction)}"${
+      editSummary ? ` — ${esc(editSummary)}` : ""
+    }</span>`;
+    correctionsLogEl.appendChild(row);
+  }
+
+  corrSendBtn.addEventListener("click", applyCorrection);
+  corrInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") applyCorrection();
   });
 
   // ---- card rendering ----

@@ -207,6 +207,44 @@
     border-top: 1px solid var(--border);
   }
 
+  .corrections-log { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
+  .corr-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.82rem;
+    color: var(--ink-2);
+    padding: 0.5rem 0.7rem;
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    border-radius: var(--radius);
+  }
+  .corr-row .ico { color: var(--green); flex-shrink: 0; font-family: var(--f-mono); font-size: 0.78rem; }
+
+  .composer { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .composer input {
+    flex: 1;
+    border: 1px solid var(--border-strong);
+    border-radius: 100px;
+    padding: 0.6rem 1rem;
+    font-family: var(--f-sans);
+    font-size: 0.9rem;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .composer button {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: none;
+    background: var(--ink);
+    color: var(--bg);
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .composer button:disabled { background: var(--border-strong); cursor: not-allowed; }
+
   .raw-toggle { margin-top: 1rem; }
   .raw-toggle summary { cursor: pointer; font-size: 0.78rem; color: var(--muted); }
   pre {
@@ -247,6 +285,14 @@
   <div id="status" class="status"></div>
 
   <div id="card"></div>
+
+  <div id="correctionsLog" class="corrections-log"></div>
+
+  <div id="composer" class="composer" style="display:none">
+    <input type="text" id="corrInput" placeholder="Tell it what to fix…" aria-label="Correction">
+    <button id="corrSend" aria-label="Send correction">→</button>
+  </div>
+  <div id="corrStatus" class="status"></div>
 
   <details class="raw-toggle">
     <summary>Raw JSON</summary>
