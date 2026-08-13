@@ -481,12 +481,21 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Step 1.** Mockup reviewed and approved 2026-08-13 (phone-frame
-walkthrough of capture → extract → review/correct → confirm, styled to match `docs/index.html`'s
-palette). Stack + location decided: `web/`, plain HTML/JS, no build step. Five steps broken out
-above; start at Step 1 (skeleton + capture → extract, wired to `TEST_DATABASE_URL`). Not yet
-cut: `phase-5/confirm-ui` base branch, or its first sub-branch
-(`phase-5/confirm-ui-1-skeleton`).
+**Phase 5 — Confirm UI, Step 1 — not yet started, branch is cut and empty.** Currently on
+`phase-5/confirm-ui-1-skeleton` (cut from `phase-5/confirm-ui`, cut from `dev` at `2d3a0dd`),
+zero commits on it yet. Next action: build `web/` — a textarea + "Extract" button wired to
+`POST /inputs` then `GET /extractions/{id}` against `TEST_DATABASE_URL`, no styling yet. That's
+Step 1 of the 5 broken out above; do not skip ahead to Step 2 (card rendering) until Step 1's
+round-trip is proven.
+
+Mockup reviewed and approved 2026-08-13 — phone-frame walkthrough of
+capture → extract → review/correct → confirm, styled to match `docs/index.html`'s palette
+(Inter/JetBrains Mono, red accent, added amber for "uncertain" and green for "corrected/success").
+Live at https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c — **only place
+it exists**; the source file was written to this machine's session scratchpad, which does not
+persist, so that URL is the sole reference for what was approved. Re-read it before Step 2
+(card rendering) so the layout it built against isn't reconstructed from memory. Stack +
+location already decided from it: `web/`, plain HTML/JS, no build step.
 
 Phase 5.5 (per-user identity) is planned but explicitly **not** next — it's gated on Phase 5
 being done end-to-end single-user first.
