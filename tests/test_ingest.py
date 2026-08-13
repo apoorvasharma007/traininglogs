@@ -140,6 +140,39 @@ class TestExtract:
         with pytest.raises(ValueError):
             extract(conn, "does-not-exist")
 
+    def test_a_date_the_model_flagged_uncertain_is_backfilled_from_captured_at(
+        self, conn, monkeypatch
+    ) -> None:
+        """The model can't know the real date if the text doesn't state one -- the prompt has
+        it write a placeholder and flag "date" uncertain instead of inventing something
+        plausible. Python replaces the placeholder with when this was actually captured, and
+        leaves it flagged: "captured today" isn't the same claim as "the workout was today"."""
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble",
+            lambda text, provider=None: make_extract(date="2000-01-01", uncertain_fields=["date"]),
+        )
+
+        raw_input_id = capture(conn, MARKDOWN)
+        raw = get_raw_input(conn, raw_input_id)
+        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
+
+        stored = get_extraction(conn, extraction_id)
+        assert stored["extract"]["date"] == raw["captured_at"].strftime("%Y-%m-%d")
+        assert "date" in stored["uncertain_fields"]
+
+    def test_a_date_the_model_is_confident_about_is_left_alone(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "traininglogs.ingest.extract.assemble",
+            lambda text, provider=None: make_extract(date="2026-03-01"),
+        )
+
+        raw_input_id = capture(conn, MARKDOWN)
+        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
+
+        stored = get_extraction(conn, extraction_id)
+        assert stored["extract"]["date"] == "2026-03-01"
+        assert "date" not in stored["uncertain_fields"]
+
 
 class FakeProviderWithCalls:
     """A provider whose `.calls` is already populated, standing in for what

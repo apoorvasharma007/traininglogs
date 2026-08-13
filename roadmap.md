@@ -368,8 +368,15 @@ the UI works end-to-end, not before.
       Verified live in a real (headless, puppeteer-core-driven) Chrome against the API pointed at
       `TEST_DATABASE_URL`: `POST /inputs` → real Haiku extraction → `GET /extractions/{id}` →
       full card JSON rendered on the page, no console errors besides a harmless favicon 404.
-- [ ] **Step 2 — render the card.** Turn the `GET /extractions/{id}` response into the mockup's
-      review screen: session header, exercise blocks, uncertain-field flags.
+- [x] **Step 2 — render the card.** Turn the `GET /extractions/{id}` response into the mockup's
+      review screen: session header, exercise blocks, uncertain-field flags. **Done.** `renderCard()`
+      in `web/app.js` builds the card from `UserValidationCard`'s actual shape (`validation_card_data.py`)
+      rather than the mockup's fictional fields — no `modality`/tag data exists on the card, so
+      exercise headers show number + name + a `Goal: …` summary instead. Verified live: session
+      header, warnings banner, session- and exercise-level warmup blocks, RPE/quality/failure-technique
+      chips, and per-row notes all rendered correctly against a real extraction. Desktop-width
+      layout, light theme only — phone frame and dark mode are Step 5. Raw JSON kept behind a
+      collapsed `<details>` for debugging, not shown by default.
 - [ ] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
       round-tripping `extract` between calls the way the endpoint's statelessness was designed
       for. Gets its own step — it's the trickiest state-handling in the UI.
@@ -485,20 +492,60 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Step 1 — done, not yet committed.** Still on
-`phase-5/confirm-ui-1-skeleton` (cut from `phase-5/confirm-ui`, cut from `dev` at `2d3a0dd`).
-`web/index.html`, `web/app.js`, `web/README.md` written and the round-trip verified live
-(`POST /inputs` → real Haiku extraction → `GET /extractions/{id}`, rendered as raw JSON on the
-page) against the API pointed at `TEST_DATABASE_URL`, using a headless Chrome driven by
-puppeteer-core (no `chromium-cli` in this environment — installed `puppeteer-core` fresh into
-the session scratchpad; nothing added to the repo). CHANGELOG and this file updated in the same
-session. **Next action: commit, then squash-merge this step branch into `phase-5/confirm-ui`,
-then start Step 2** — turn the `GET /extractions/{id}` response into the mockup's review screen
-(session header, exercise blocks, uncertain-field flags). Re-read the mockup at
-https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c before starting — it's the
-only place the approved layout exists. Screen 3 ("Review") is the one to build against; its
-markup/CSS (`.session-head`, `.ex-card`, `.set-row`, `.flag`) is the real spec, not just a
-description.
+**Phase 5 — Confirm UI, Steps 1 and 2 done, plus two real pipeline bugs found and fixed along
+the way.** Step 1 squash-merged into `phase-5/confirm-ui` (`c718e78`). Step 2 (`4e0d2b0`), the
+date fix (`9f69c75`), and the chunking fix (uncommitted as of this write-up — commit before
+starting Step 3) are on `phase-5/confirm-ui-2-card` (cut from `phase-5/confirm-ui`) but **not
+yet merged up** — last session's pattern was commit-then-pause-for-review each step rather than
+auto-merge; confirm that's still wanted before squashing this branch in. All verified live the
+same way — headless Chrome via puppeteer-core (still no `chromium-cli` in this environment;
+`puppeteer-core` lives in the session scratchpad only, nothing added to the repo).
+
+**The date fix, worth knowing about going in:** `date` is required on `TrainingLogLLMExtract`,
+and when the web-capture text had no date at all, the model invented one (`2024-01-01`, seen
+live) instead of using `uncertain_fields` the way every other unsure field already does. Fixed
+in `SHELL_SYSTEM_PROMPT` (flag it instead of guessing) + `ingest.extract()` (backfill from
+`raw_inputs.captured_at`, deterministically, still flagged — "captured today" isn't "the
+workout was today"). This is a **prompt change**, so it applies to the CLI path too, not just
+the web UI.
+
+**The chunking fix, the bigger one:** exercise isolation (`_locate_anchor_lines`/
+`_chunk_exercises` in `agent/extraction.py`) matched anchors per physical *line*, advancing
+strictly forward to the next line after each match. A short, casual capture with **no line
+breaks at all** — e.g. "Push day. Bench press 60kg for 8. Incline db press 22kg for 10." — has
+only one line, so a second exercise on it could never be located, regardless of input length.
+Found live-testing the confirm UI (`warnings` showed "could not isolate its text" on ordinary
+two-exercise input) — this is exactly the input shape mobile capture will produce a lot of.
+Rewritten as `_locate_anchors`, matching on character offset instead of line number (fixes the
+same-line case), tolerant of the same curly-quote/dash/NBSP drift `_comparable()` already
+handles elsewhere in the file (a model asked to copy an anchor "verbatim" still silently
+retypes these), and computing chunk boundaries by where anchors were actually *found* rather
+than the *position number* the model labeled them with (prevents a slice from crossing into a
+neighboring exercise's content if declared labels and list order ever disagree — not yet
+observed, but reachable, and now structurally prevented rather than merely guarded against). 13
+new/rewritten unit tests, pure functions, no LLM calls. Verified live: the exact input that
+produced the warning above now extracts both exercises cleanly, zero warnings.
+
+**Both are prompt-or-pipeline-adjacent changes on the shared extraction path (CLI and API
+both), not yet run through the formal eval harness (`scripts/eval_arms.py`) — deliberately
+deferred by request.** `--dry-run` shows `split_exercises` still cache-hits (the chunking fix
+touches no prompt), but `extract_session_shell` no longer does for any of the 6-file set, since
+the date fix changed `SHELL_SYSTEM_PROMPT`'s text — so a verification run costs the usual
+**~$0.45** regardless of running one fix or both. **Run this before either commit reaches
+`main`** — both fixes together in one pass, not twice.
+
+**Next: Step 3 — the correction loop.** Composer wired to `POST /extractions/{id}/correct`,
+round-tripping `extract` between calls. Card-rendering code from Step 2 (`renderCard()` in
+`web/app.js`) should be directly reusable — `/correct` returns the same `card` shape
+`GET /extractions/{id}` does, including the session-header flags added in the date fix. Re-read
+the mockup at https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c for the
+composer's shape (`.composer`, `.corrections-log`, `.corr-row`) before starting.
+
+**Correction for the next session:** the mockup's Screen 3 markup (`.ex-head .tag` for
+modality, e.g. "barbell") does **not** match `UserValidationCard`'s real fields —
+`ExerciseHeader` has no modality/tag, only `number`, `name`, `goal`, `uncertain_fields`,
+`failed` (`validation_card_data.py`). Step 2 renders `Goal: …` in that slot instead. Don't
+reconstruct the tag from memory of the mockup; check the dataclass.
 
 Mockup reviewed and approved 2026-08-13 — phone-frame walkthrough of
 capture → extract → review/correct → confirm, styled to match `docs/index.html`'s palette

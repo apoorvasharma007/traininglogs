@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — exercise chunking could only ever locate the first of several exercises packed onto one line
+
+- `_locate_anchor_lines`/`_chunk_exercises` (`agent/extraction.py`) isolated each exercise's
+  text by finding its anchor **line** and searching strictly forward from the *next* line for
+  the following exercise's anchor. A short, casual capture with no line breaks at all —
+  `"Push day. Bench press 60kg for 8. Incline db press 22kg for 10."`, exactly the shape of
+  input the Phase 5 confirm UI's own testing produced — has only one line, so the second
+  exercise's anchor could never be found there, regardless of how much text there was. Found
+  live-testing the confirm UI: `warnings` showed "Exercise 2: could not isolate its text — used
+  the full document instead" on ordinary two-exercise input.
+- Rewrote `_locate_anchor_lines` → `_locate_anchors`, matching on **character offset** into the
+  whole document instead of line number, searching forward from the end of the previous match
+  rather than the next line. This is what lets two exercises share one physical line — the
+  first chunk now ends and the second begins exactly at the second anchor's own offset, rather
+  than requiring each to own a line no one else can touch.
+- Anchor matching now runs through a new position-preserving normalizer
+  (`_normalize_for_anchor_matching`) tolerant of the same drift `_comparable()` already handles
+  elsewhere in this file — curly quotes, em/en dashes, non-breaking spaces — a model asked to
+  copy an anchor "verbatim" can still silently retype these even when told not to, which
+  previously failed the match outright. Deliberately narrower than `_comparable()` (no NFKC, no
+  whitespace collapsing): both of those can change a string's length, which would break the
+  character-offset positions this function returns.
+- `_chunk_exercises` now computes chunk boundaries in the order anchors were actually **found**
+  in the text, not the order the model **labeled** them (`position`). Nothing enforces that a
+  model's declared position numbers match its own list order; sorting boundaries by the label
+  instead of the offset could pair one exercise's start with a different, wrongly-matched
+  exercise's end, slicing into a neighbor's content instead of stopping at it. Not yet observed
+  in practice, but reachable and now structurally prevented (a chunk's content is always exactly
+  one anchor to the next, by construction) rather than merely guarded against.
+- Verified live against `TEST_DATABASE_URL`: the exact two-exercise-one-line input that
+  previously produced the warning now extracts both exercises cleanly, zero warnings. 13 new/
+  rewritten unit tests in `test_agent_chunking.py`, all pure functions, no LLM calls. Full suite
+  652 passing, 0 skipped.
+- **Not yet run through `scripts/eval_arms.py`** — deliberately deferred (this is deterministic
+  Python, not a prompt change, but the date fix above already re-keyed the shell-call cache, so
+  a verification run costs the usual ~$0.45 either way). Do this before the branch reaches
+  `main`.
+
+### Fixed — a missing date was silently invented instead of defaulted and flagged
+
+- `date` is a required field on `TrainingLogLLMExtract`, so when the input text had no date at
+  all (only reachable in practice through the web capture path — every existing `.md` fixture
+  carries a `**Date:**` line), the model filled it with a plausible-looking guess and never
+  marked it `uncertain_fields`, even though that mechanism exists for exactly this. Found while
+  testing Phase 5's confirm UI with undated pasted text.
+- `SHELL_SYSTEM_PROMPT` (`agent/prompts.py`) now tells the model to flag `date` uncertain
+  whenever the text doesn't state one, instead of guessing silently.
+- `ingest.extract()` backfills a flagged `date` with the raw input's own `captured_at`
+  (already stored, Phase 2) rather than trusting the model's placeholder — deterministic, and a
+  real fact instead of another guess. Still left flagged: "captured today" isn't the same claim
+  as "the workout happened today" (logging yesterday's session needs to stay correctable).
+- `web/app.js`'s card renderer now shows a flag for any session-header-level uncertain field
+  (`date`, but also `focus`/`program`/`phase`/`week`/`duration_minutes` if the model ever flags
+  those) — Step 2 had only wired flags for per-set rows, not the header.
+
+### Added — Phase 5 Step 2, confirm UI renders the card
+
+- `renderCard()` in `web/app.js` turns the `GET /extractions/{id}` response into the review
+  screen from the approved mockup: session header, warnings banner, session- and exercise-level
+  warmup/cooldown blocks, per-set rows with weight/reps/RPE/quality/failure-technique, and an
+  "AI inferred" flag on any row `uncertain_fields` names. Built directly against
+  `UserValidationCard`'s real shape (`agent/validation_card_data.py`), not the mockup's
+  fictional fields — the mockup's exercise-header "tag" (e.g. "barbell") doesn't exist on the
+  card, so exercise headers show a `Goal: …` summary instead. Desktop-width, light theme only;
+  phone frame and dark mode are Step 5. Raw JSON still available behind a collapsed `<details>`.
+
 ### Added — Phase 5 Step 1, confirm UI skeleton
 
 - `web/` — new surface, plain HTML/JS, no build step (matches `docs/`'s own approach). A
