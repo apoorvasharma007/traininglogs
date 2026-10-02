@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — stale copy of the historical session JSON
+
+- `output_training_logs_json/BODYBUILDING TRANSFORMATION SYSTEM/` — an older generation of the
+  121 historical sessions with wrong values (e.g. RPE null and 0 kg where the current copy has
+  RPE 8 and 30 kg). `eval_arms.py` globbed it alongside the current
+  `bodybuilding_transformation_system/` copy as its answer key, and `test_models.py`'s
+  round-trip tests read only the stale one; they now read the current copy.
+
+### Changed — historical sessions corrected by hand (data, not code)
+
+- Prod and `output_training_logs_json/bodybuilding_transformation_system/`: 77 working sets'
+  missing quality, RPE or notes restored, 88 lost warmup sets added (non-standard headings and
+  warmups written as prose), 2 working sets typed under Warmup Notes added. Every change is
+  logged in `historical-review/batch1.md` / `batch2.md` with its source line.
+
 ## [3.1.0] - 2026-10-03
 
 ### Added — Phase 5b Step 7, repeat a past session

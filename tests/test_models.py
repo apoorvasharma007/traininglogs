@@ -34,7 +34,7 @@ from traininglogs.models.models import (
 OUTPUT_JSON_DIR = (
     Path(__file__).parent.parent
     / "output_training_logs_json"
-    / "BODYBUILDING TRANSFORMATION SYSTEM"
+    / "bodybuilding_transformation_system"
 )
 
 
