@@ -652,7 +652,7 @@ open questions, test list), reviewed by Apoorva, then implementation.
       - **Historical sessions** (imported from markdown, no extraction) repeat the same way:
         the repeat reads the normalized tables, not an old extract.
 
-- [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** No
+- [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** *Deferred 2026-10-03 as a good enhancement, not a current problem: a read-only scan of all 76 stored model answers in prod (`llm_calls.raw_payload`: 13 split, 13 shell, 50 exercise) found 0 fields the schema would drop. Re-run that scan before picking this up.* No
       Pydantic model sets `extra`, so the default (`ignore`) discards any field the model
       returns that the schema lacks. The prompt's notes rule (`prompts.py:74`) usually catches
       unmappable text first, but nothing enforces it. Make the extraction-side models reject
