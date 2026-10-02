@@ -638,3 +638,36 @@ class TestEditExtraction:
             {"path": "", "field": "focus", "value": "x"},
         ]}, auth=False)
         assert r.status_code == 401
+
+    def test_add_set_op_returns_created_path_and_records_the_op(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 7")
+        r = self._post(client, extraction_id, {"op": {"op": "add_set", "path": "exercises.0"}})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["created_path"] == "exercises.0.sets.1"
+        rows = body["card"]["exercises"][0]["working_set_rows"]
+        assert [(row["number"], row["path"]) for row in rows] == [
+            (1, "exercises.0.sets.0"), (2, "exercises.0.sets.1"),
+        ]
+        assert (body["correction"]["op"], body["correction"]["path"]) == ("add_set", "exercises.0")
+        assert body["correction"]["edits"][0]["path"] == "exercises.0.sets"
+
+    def test_remove_op(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 8")
+        r = self._post(client, extraction_id, {"op": {"op": "remove", "path": "exercises.0.sets.0"}})
+        assert r.status_code == 200
+        assert r.json()["card"]["exercises"][0]["working_set_rows"] == []
+        assert r.json()["created_path"] is None
+
+    def test_op_on_wrong_line_returns_400(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 9")
+        r = self._post(client, extraction_id, {"op": {"op": "remove", "path": ""}})
+        assert r.status_code == 400
+
+    def test_edits_and_op_together_rejected(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 10")
+        r = self._post(client, extraction_id, {
+            "edits": [{"path": "", "field": "focus", "value": "x"}],
+            "op": {"op": "add_set", "path": "exercises.0"},
+        })
+        assert r.status_code == 422

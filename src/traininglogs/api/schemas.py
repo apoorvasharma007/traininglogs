@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from traininglogs.agent.card_edits import CardEdit
+from traininglogs.agent.card_edits import CardEdit, CardOp
 
 
 class SessionSummary(BaseModel):
@@ -152,8 +152,14 @@ class CorrectOut(BaseModel):
     )
     card: dict[str, Any] = Field(description="The same state, rendered as a card for display.")
     correction: dict[str, Any] = Field(
-        description="{at, source, edits} plus `instruction` when source is \"ai\" -- "
-        "accumulate these into a list to pass as `corrections` on /confirm."
+        description="{at, source, edits} plus `instruction` when source is \"ai\", or `op` "
+        "and `path` for an add/remove -- accumulate these into a list to pass as "
+        "`corrections` on /confirm."
+    )
+    created_path: Optional[str] = Field(
+        default=None,
+        description="The new line's path after an add (/edit with `op`), so the client can open "
+        "it for editing; null otherwise.",
     )
 
 
@@ -166,10 +172,21 @@ class EditIn(BaseModel):
         ),
     )
     edits: list[CardEdit] = Field(
-        min_length=1,
+        default_factory=list,
         description="Values changed on the card: each card element's own `path`, the card "
         "field name, and the new value. An empty string clears a value.",
     )
+    op: Optional[CardOp] = Field(
+        default=None,
+        description="Add or remove one line instead: `add_set`, `add_warmup_set`, "
+        "`add_exercise` or `remove`, on the `path` of the line it applies to.",
+    )
+
+    @model_validator(mode="after")
+    def edits_or_op(self) -> EditIn:
+        if bool(self.edits) == (self.op is not None):
+            raise ValueError("send either `edits` or `op`, exactly one")
+        return self
 
 
 class ExerciseHistoryRow(BaseModel):

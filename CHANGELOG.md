@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 4, add and remove sets, warmup sets and exercises
+
+- `/edit` also takes one `op` instead of `edits`: `add_set` / `add_warmup_set` (on an exercise:
+  append; on a set of that kind: insert after it), `add_exercise` (on `""`: append; on an
+  exercise: insert after it), `remove` (a set, warmup set, exercise, or warmup/cooldown
+  movement). Exactly one of `edits` or `op` per call.
+- A new set copies weight and reps from its neighbour; RPE, quality, notes and failure
+  technique start empty. A new exercise is named "New exercise".
+- The changed list is renumbered 1..n, and `uncertain_fields` shift with the positions
+  (entries under a removed line are dropped).
+- The reply gains `created_path`; the correction record gains `op` and `path`.
+- UI: `+ Set` / `+ Warmup set` under each exercise, `+ Exercise` at the end of the card,
+  add-after and `Remove` (asks once more inline) in each line's form. A new line opens straight
+  into its form.
+
 ### Added — Phase 5b Step 3, tap a card line to edit it
 
 - Tapping a line on the confirm card (session header, exercise name or notes, set, warmup set,

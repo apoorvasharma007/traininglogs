@@ -244,14 +244,15 @@ def correct_extraction(
 
 @app.post("/extractions/{extraction_id}/edit", response_model=CorrectOut)
 def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depends(_auth)):
-    """Apply values changed directly on the card -- no LLM call. Stateless and round-tripped
-    exactly like /correct, and replies in the same shape, so a client treats both alike.
+    """Apply values changed directly on the card, or add/remove one line -- no LLM call.
+    Stateless and round-tripped exactly like /correct, and replies in the same shape, so a
+    client treats both alike.
     """
     from datetime import datetime, timezone
 
     from fastapi.encoders import jsonable_encoder
 
-    from traininglogs.agent.card_edits import CardEditError, apply_card_edits
+    from traininglogs.agent.card_edits import CardEditError, apply_card_edits, apply_card_op
     from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
     from traininglogs.db.fetch import get_extraction
@@ -263,14 +264,19 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
 
+    created_path = None
     try:
-        updated_extract, edits = apply_card_edits(current_extract, body.edits)
+        if body.op is not None:
+            updated_extract, edits, created_path = apply_card_op(current_extract, body.op)
+        else:
+            updated_extract, edits = apply_card_edits(current_extract, body.edits)
     except CardEditError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
     correction = {
         "at": datetime.now(timezone.utc).isoformat(),
         "source": "manual",
+        **({"op": body.op.op, "path": body.op.path} if body.op is not None else {}),
         "edits": [e.model_dump(mode="json") for e in edits],
     }
     card = ValidationCardBuilder().build(updated_extract)
@@ -278,4 +284,5 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
         extract=updated_extract.model_dump(mode="json"),
         card=jsonable_encoder(card),
         correction=correction,
+        created_path=created_path,
     )

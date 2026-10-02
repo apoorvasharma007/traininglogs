@@ -544,10 +544,39 @@ open questions, test list), reviewed by Apoorva, then implementation.
         real API on the test DB, drive the real page headless (puppeteer-core + system
         Chrome) through edit, bad value, cancel, add-a-missing-RPE and confirm, in light and
         dark at desktop and 390px widths. Screenshots back to Apoorva.
-- [ ] **Step 4 — Add and remove sets and exercises.** Server-side operations in
+- [x] **Step 4 — Add and remove sets and exercises.** Verified by Apoorva on real sessions (9 logged). Server-side operations in
       `card_edits.py` (add set defaults to a copy of the previous set; remove; add/remove
       exercise), each producing list-level `FieldEdit`s, with `number` renumbered by the
       server. UI buttons on the card.
+
+      *Design note (2026-10-03), prompted by a real session that missed a whole set:*
+      - **Same endpoint.** `/edit` takes either `edits` (Step 2) or one `op`
+        `{op, path}` — exactly one of the two per call, so each call is one undoable step in
+        the corrections log.
+      - **Ops**, all in `card_edits.py`, all pure:
+        - `add_set` — `path` is an exercise → append; `path` is a set → insert right after
+          it (a missed set 2 of 4). The new set copies weight and reps from its neighbour
+          (the set it follows, or the last one); RPE, quality, notes and failure technique
+          start empty — copying a failure technique would also be invalid without RPE 10.
+        - `add_warmup_set` — same, for warmup sets.
+        - `add_exercise` — `path` `""` → append; an exercise path → insert after it. Name
+          `"New exercise"` (the model requires a non-empty name), everything else empty.
+        - `remove` — any set, warmup set, exercise or warmup/cooldown movement path.
+      - **Renumbering.** After any add or remove, the affected list's `number`s become
+        1…n by position. This also tidies a list the model numbered out of order.
+      - **Positions shift, so everything keyed by position shifts with them.** An insert or
+        remove re-indexes `uncertain_fields` (and, once Step 5 lands, `sources`); entries
+        under a removed element are dropped. This is the one real correctness risk in the
+        step and gets the most tests.
+      - **Corrections log:** the op is recorded as one list-level `FieldEdit` (the whole new
+        list), the format `patch.py` already documents, plus `op` for readability.
+      - **Reply:** `CorrectOut` gains `created_path` (null except after an add), so the UI
+        opens the new line's form without counting positions itself.
+      - **UI:** each exercise gets `+ Set` and `+ Warmup set` under its sets; the card gets
+        `+ Exercise` at the end; a set's form gets `+ Set after this`; every set, warmup set,
+        exercise and movement form gets `Remove`, which asks once more inline before
+        sending. After an add, the new line's form opens straight away.
+      - **Not in this step:** adding warmup/cooldown movements (remove only), reordering.
 - [ ] **Step 5 — Show where a value came from.** `source_line` is checked during extraction
       but dropped when `ExerciseExtract` becomes `Exercise`. Keep it: a `sources` map
       (path → line) on `TrainingLogLLMExtract`, default empty so stored extracts still

@@ -78,6 +78,16 @@
     ],
   };
 
+  // Add/remove buttons shown in each kind of line's form: [op, label]. The server decides
+  // what each op may be applied to (card_edits.apply_card_op).
+  const FORM_OPS = {
+    session: [],
+    exercise: [["remove", "Remove exercise"]],
+    set: [["add_set", "+ Set after this"], ["remove", "Remove set"]],
+    warmup_set: [["add_warmup_set", "+ Warmup set after"], ["remove", "Remove"]],
+    movement: [["remove", "Remove"]],
+  };
+
   // path -> {kind, values, uncertain} for every editable line in the current render. Rebuilt
   // by renderCard, read when a line is tapped.
   let editables = new Map();
@@ -256,6 +266,11 @@
 
   cardEl.addEventListener("click", (e) => {
     if (e.target.closest(".edit-form")) return;
+    const opBtn = e.target.closest("[data-op]");
+    if (opBtn) {
+      runOp(opBtn.dataset.op, opBtn.dataset.opPath, null);
+      return;
+    }
     const line = e.target.closest("[data-path]");
     if (!line) return;
     const tapped = e.target.closest("[data-field]");
@@ -306,6 +321,10 @@
         .join("")}</div>
       <div class="edit-error" role="alert"></div>
       <div class="edit-actions">
+        ${FORM_OPS[entry.kind]
+          .map(([op, label]) => `<button type="button" class="btn-ghost${op === "remove" ? " danger" : ""}" data-form-op="${op}">${label}</button>`)
+          .join("")}
+        <span class="spacer"></span>
         <button type="button" class="btn-ghost" data-action="cancel">Cancel</button>
         <button type="button" class="btn-primary" data-action="save">Save</button>
       </div>`;
@@ -317,6 +336,15 @@
       const action = e.target.dataset && e.target.dataset.action;
       if (action === "cancel") closeEditor();
       if (action === "save") saveEditor();
+      const op = e.target.dataset && e.target.dataset.formOp;
+      if (!op) return;
+      // Remove asks once more, in place, before anything is sent.
+      if (op === "remove" && e.target.dataset.armed !== "1") {
+        e.target.dataset.armed = "1";
+        e.target.textContent = "Really remove?";
+        return;
+      }
+      runOp(op, openForm.path, form.querySelector(".edit-error"));
     });
     form.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeEditor();
@@ -378,6 +406,31 @@
 
     openForm = null;
     applyUpdate(result.body);
+  }
+
+  // Add or remove one line. `errorEl` is the open form's error line when the op came from a
+  // form; otherwise errors go to the status line under the corrections box.
+  async function runOp(op, path, errorEl) {
+    const show = (text) => {
+      if (errorEl) errorEl.textContent = text;
+      else { corrStatusEl.textContent = text; corrStatusEl.className = text ? "status error" : "status"; }
+    };
+    show("");
+    const result = await apiFetch(`/extractions/${currentExtractionId}/edit`, {
+      method: "POST",
+      body: JSON.stringify({ extract: currentExtract, op: { op, path } }),
+    });
+    if (!result.ok) {
+      const detail = result.body && result.body.detail;
+      show(typeof detail === "string" ? detail : `Couldn't change the card (${result.status})`);
+      return;
+    }
+    applyUpdate(result.body);
+    // A new line opens straight into its form, ready for its real values.
+    if (result.body.created_path != null) {
+      const line = cardEl.querySelector(`[data-path="${CSS.escape(result.body.created_path)}"]`);
+      if (line) openEditor(line, null);
+    }
   }
 
   corrSendBtn.addEventListener("click", applyCorrection);
@@ -606,6 +659,11 @@
         ${warmupNoteHtml}
         ${setsHtml}
         ${noteHtml}
+        ${h.path != null ? `
+        <div class="add-row">
+          <button type="button" class="btn-ghost btn-small" data-op="add_set" data-op-path="${esc(h.path)}">+ Set</button>
+          <button type="button" class="btn-ghost btn-small" data-op="add_warmup_set" data-op-path="${esc(h.path)}">+ Warmup set</button>
+        </div>` : ""}
       </div>`;
   }
 
@@ -655,6 +713,7 @@
     });
 
     html += movementSectionHtml(card.cooldown_section);
+    html += `<div class="add-row"><button type="button" class="btn-ghost btn-small" data-op="add_exercise" data-op-path="">+ Exercise</button></div>`;
     html += `<div class="edit-hint">Tap any line to edit it. For a change across many lines, describe it below.</div>`;
 
     cardEl.innerHTML = html;
