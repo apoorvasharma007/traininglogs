@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-03
+
 ### Removed — stale copy of the historical session JSON
 
 - `output_training_logs_json/BODYBUILDING TRANSFORMATION SYSTEM/` — an older generation of the
@@ -21,8 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   missing quality, RPE or notes restored, 88 lost warmup sets added (non-standard headings and
   warmups written as prose), 2 working sets typed under Warmup Notes added. Every change is
   logged in `historical-review/batch1.md` / `batch2.md` with its source line.
-
-## [3.1.0] - 2026-10-03
 
 ### Added — Phase 5b Step 7, repeat a past session
 
