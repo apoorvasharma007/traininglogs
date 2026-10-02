@@ -729,6 +729,32 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
+### Session 2026-10-03 (late) — read this first
+
+- **Phase 5b is on `dev` and pushed.** Release **v3.1.0** is PR #32 (`chore/release-3.1.0` →
+  `main`, CI green), blocked only on `main`'s required review: Apoorva merges it in the browser
+  (merge commit, not squash), or OKs `gh pr merge 32 --merge --admin`. After it merges, bring
+  `dev` up to `main`.
+- **Direction changed (Apoorva, 2026-10-03):** per-friend API keys (Phase 5.5 as written) are
+  dropped. Next, in order: (1) **deploy** API + `web/` together on Fly — move
+  `primary_region` from `sjc` to `sin` (Supabase is `ap-southeast-1`), serve `web/` via
+  `StaticFiles`, default the page's API base to its own origin, set secrets incl.
+  `ANTHROPIC_WORKSPACE_ID`; (2) **installable PWA** (manifest, icon, iOS meta) so it lives on the
+  phone's home screen; (3) after a week of phone use, **rebuild the UI as screens** (Home /
+  Review / History / Settings) with **htmx + server-rendered templates** — chosen over React
+  for keeping logic in Python; Svelte is the fallback if offline capture becomes central;
+  (4) friends later via **Supabase Auth** (magic link / Google). Write these as a plan file
+  before starting.
+- **Historical data review in progress** on `chore/historical-review` (pushed) — its own plan
+  and resume pointer are in `historical-review/plan.md`. Batch 1 applied to prod with approval
+  (77 sets' missing quality/RPE/notes, 24 lost warmup sets); batch 2 (prose warmups) awaits
+  approval. Backup in `backups/` (gitignored, local only).
+- Prod also has: the 9 Starting Strength sessions backfilled (`starting_strength_phase_4`,
+  phase 1, weeks 2–4; two dates corrected to 15 and 17 Sep), 4 duplicate pending extractions
+  marked `rejected`.
+- Found, not fixed: `output_training_logs_json/` holds two generations of the 121 sessions
+  (uppercase dir is older and wrong); `eval_arms.py` globs both as its answer key.
+
 ### Session 2026-10-02 — read this first, it supersedes parts of the 2026-08-10 notes below
 
 - **Prod is migrated.** With approval, applied `schema.sql` plus four `ADD COLUMN`s it can't
