@@ -1,11 +1,13 @@
 import os
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from psycopg2.pool import SimpleConnectionPool
 
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
@@ -314,3 +316,21 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
         correction=correction,
         created_path=created_path,
     )
+
+
+class _NoCacheStaticFiles(StaticFiles):
+    """The web UI, revalidated on every load. A browser serving a cached app.js after a deploy
+    is how an old UI kept appearing locally (and cost two paid extractions)."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+# Serve web/ from the same origin as the API -- one deploy, no CORS. Mounted last so every API
+# route above takes precedence. WEB_DIR is set in the container image; locally the repo's web/
+# is found from the working directory.
+_web_dir = Path(os.environ.get("WEB_DIR", "web"))
+if _web_dir.is_dir():
+    app.mount("/", _NoCacheStaticFiles(directory=_web_dir, html=True), name="web")

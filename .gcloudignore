@@ -1,0 +1,11 @@
+# What `gcloud run deploy --source .` uploads to Cloud Build. Allowlist: everything is excluded
+# except what the image is built from -- above all, never .env (secrets) or backups/ (prod data).
+*
+!Dockerfile
+!pyproject.toml
+!src/
+!src/**
+!web/
+!web/**
+src/**/__pycache__/
+src/*.egg-info/

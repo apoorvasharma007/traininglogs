@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the web UI is served by the API (deploy prep)
+
+- The API serves `web/` at `/`, mounted after every API route, with `Cache-Control: no-cache`
+  so a deploy is never hidden behind a cached `app.js`. The page's API base now defaults to its
+  own origin. `WEB_DIR` points at it in the container image.
+- Docker image includes `web/` and listens on `$PORT` (Cloud Run), default 8080.
+- `.gcloudignore` / `.dockerignore`: allowlists, so a source upload or build context is only
+  `Dockerfile`, `pyproject.toml`, `src/` and `web/` — never `.env` or `backups/`.
+
 ## [3.1.0] - 2026-10-03
 
 ### Removed — stale copy of the historical session JSON
