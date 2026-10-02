@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 3, tap a card line to edit it
+
+- Tapping a line on the confirm card (session header, exercise name or notes, set, warmup set,
+  warmup/cooldown movement) opens an inline form with every editable field for that line,
+  filled in, the tapped value focused. Save sends only the changed fields to `/edit`; Enter
+  saves, Escape cancels, a rejected value keeps the form open with the server's message.
+  Empty values can be filled in (a missing RPE), which tapping single values couldn't do.
+- Fields the model flagged as uncertain are outlined in the form.
+- `/edit` and `/correct` replies share one handler; manual edits show in the corrections log
+  as "Edited".
+
 ### Added — Phase 5b Step 2, edit a card value without an AI call
 
 - `POST /extractions/{id}/edit` takes `{extract?, edits: [{path, field, value}]}` — the card

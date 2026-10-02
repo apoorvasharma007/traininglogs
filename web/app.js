@@ -27,9 +27,61 @@
   // endpoint's statelessness was designed for: the server holds nothing between calls.
   let currentExtractionId = null;
   let currentExtract = null;
-  // {at, instruction, edits} per applied correction -- accumulated here and sent as
-  // ConfirmIn.corrections on /confirm, which records them alongside the extraction.
+  // {at, source, edits} (+ instruction for AI corrections) per applied change -- typed
+  // corrections and direct edits alike -- accumulated here and sent as ConfirmIn.corrections on
+  // /confirm, which records them alongside the extraction.
   let corrections = [];
+
+  // Editable fields per kind of card line, for building the edit form. Presentation only --
+  // labels and input types. The server's EDITABLE_FIELDS (agent/card_edits.py) decides what
+  // can actually be edited; a field listed here but not there gets a 400 and nothing is saved.
+  // `aliases` are the extract names the model may have flagged as uncertain for this field.
+  const FIELD_SPECS = {
+    session: [
+      { field: "focus", label: "Focus", type: "text" },
+      { field: "date", label: "Date", type: "date" },
+      { field: "duration_minutes", label: "Duration (min)", type: "int",
+        aliases: ["session_duration_minutes"] },
+      { field: "program", label: "Program", type: "text" },
+      { field: "phase", label: "Phase", type: "int" },
+      { field: "week", label: "Week", type: "int" },
+      { field: "is_deload_week", label: "Deload week", type: "checkbox" },
+      { field: "notes", label: "Session notes", type: "text", wide: true },
+    ],
+    exercise: [
+      { field: "name", label: "Name", type: "text", wide: true },
+      { field: "notes", label: "Notes", type: "text", wide: true },
+      { field: "warmup_notes", label: "Warmup notes", type: "text", wide: true },
+    ],
+    set: [
+      { field: "weight_kg", label: "Weight (kg)", type: "number" },
+      { field: "reps", label: "Reps", type: "text", placeholder: "8, 8+1, L8/R7",
+        aliases: ["rep_count", "unilateral_rep_count"] },
+      { field: "rpe", label: "RPE", type: "number" },
+      { field: "quality", label: "Quality", type: "select",
+        options: ["", "perfect", "good", "learning", "bad"], aliases: ["rep_quality_assessment"] },
+      { field: "duration_seconds", label: "Duration (s)", type: "int" },
+      { field: "distance_meters", label: "Distance (m)", type: "number" },
+      { field: "heart_rate_bpm", label: "Heart rate", type: "int" },
+      { field: "notes", label: "Notes", type: "text", wide: true },
+    ],
+    warmup_set: [
+      { field: "weight_kg", label: "Weight (kg)", type: "number" },
+      { field: "rep_count", label: "Reps", type: "int" },
+      { field: "notes", label: "Notes", type: "text", wide: true },
+    ],
+    movement: [
+      { field: "name", label: "Name", type: "text", wide: true },
+      { field: "reps", label: "Reps", type: "int" },
+      { field: "duration_seconds", label: "Duration (s)", type: "int" },
+      { field: "notes", label: "Notes", type: "text", wide: true },
+    ],
+  };
+
+  // path -> {kind, values, uncertain} for every editable line in the current render. Rebuilt
+  // by renderCard, read when a line is tapped.
+  let editables = new Map();
+  let openForm = null;
 
   apiBaseInput.value = localStorage.getItem("tl_apiBase") || apiBaseInput.value;
   apiKeyInput.value = localStorage.getItem("tl_apiKey") || "";
@@ -171,13 +223,18 @@
     }
 
     corrStatusEl.textContent = "";
-    currentExtract = result.body.extract;
-    corrections.push(result.body.correction);
-    showRawOutput(result.body);
-    renderCard(result.body.card);
-    appendCorrectionRow(result.body.correction);
+    applyUpdate(result.body);
     corrInputEl.value = "";
     corrInputEl.focus();
+  }
+
+  // A /correct or /edit reply -- both share one shape (CorrectOut) and are handled identically.
+  function applyUpdate(body) {
+    currentExtract = body.extract;
+    corrections.push(body.correction);
+    showRawOutput(body);
+    renderCard(body.card);
+    appendCorrectionRow(body.correction);
   }
 
   function appendCorrectionRow(correction) {
@@ -186,10 +243,141 @@
     const editSummary = (correction.edits || [])
       .map((e) => `${e.path} → ${JSON.stringify(e.value)}`)
       .join(", ");
-    row.innerHTML = `<span class="ico">✓</span><span>"${esc(correction.instruction)}"${
+    const label = correction.source === "manual"
+      ? "Edited"
+      : `"${esc(correction.instruction)}"`;
+    row.innerHTML = `<span class="ico">✓</span><span>${label}${
       editSummary ? ` — ${esc(editSummary)}` : ""
     }</span>`;
     correctionsLogEl.appendChild(row);
+  }
+
+  // ---- direct editing ----
+
+  cardEl.addEventListener("click", (e) => {
+    if (e.target.closest(".edit-form")) return;
+    const line = e.target.closest("[data-path]");
+    if (!line) return;
+    const tapped = e.target.closest("[data-field]");
+    openEditor(line, tapped ? tapped.dataset.field : null);
+  });
+
+  function inputValue(spec, value) {
+    if (value === null || value === undefined) return "";
+    return String(value);
+  }
+
+  function fieldHtml(spec, value, uncertain) {
+    const id = `edit-${spec.field}`;
+    const cls = ["edit-field", spec.wide ? "wide" : "", uncertain ? "uncertain" : ""].join(" ");
+    let control;
+    if (spec.type === "checkbox") {
+      control = `<input id="${id}" data-field="${spec.field}" type="checkbox"${value ? " checked" : ""}>`;
+    } else if (spec.type === "select") {
+      const current = inputValue(spec, value);
+      control = `<select id="${id}" data-field="${spec.field}">${spec.options
+        .map((o) => `<option value="${esc(o)}"${o === current ? " selected" : ""}>${esc(o || "—")}</option>`)
+        .join("")}</select>`;
+    } else {
+      const typeAttr = spec.type === "date" ? "date" : "text";
+      const mode = spec.type === "int" ? ' inputmode="numeric"'
+        : spec.type === "number" ? ' inputmode="decimal"' : "";
+      const ph = spec.placeholder ? ` placeholder="${esc(spec.placeholder)}"` : "";
+      control = `<input id="${id}" data-field="${spec.field}" type="${typeAttr}"${mode}${ph} value="${esc(inputValue(spec, value))}">`;
+    }
+    return `<div class="${cls}"><label for="${id}">${esc(spec.label)}${
+      uncertain ? ' <span class="flag">AI inferred</span>' : ""
+    }</label>${control}</div>`;
+  }
+
+  function openEditor(line, focusField) {
+    closeEditor();
+    const entry = editables.get(line.dataset.path);
+    if (!entry) return;
+    const specs = FIELD_SPECS[entry.kind];
+    const isUncertain = (spec) =>
+      [spec.field, ...(spec.aliases || [])].some((f) => entry.uncertain.includes(f));
+
+    const form = document.createElement("div");
+    form.className = "edit-form";
+    form.innerHTML = `
+      <div class="edit-fields">${specs
+        .map((s) => fieldHtml(s, entry.values[s.field], isUncertain(s)))
+        .join("")}</div>
+      <div class="edit-error" role="alert"></div>
+      <div class="edit-actions">
+        <button type="button" class="btn-ghost" data-action="cancel">Cancel</button>
+        <button type="button" class="btn-primary" data-action="save">Save</button>
+      </div>`;
+    line.after(form);
+    line.hidden = true;
+    openForm = { form, line, entry, path: line.dataset.path };
+
+    form.addEventListener("click", (e) => {
+      const action = e.target.dataset && e.target.dataset.action;
+      if (action === "cancel") closeEditor();
+      if (action === "save") saveEditor();
+    });
+    form.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeEditor();
+      if (e.key === "Enter" && e.target.tagName !== "BUTTON") { e.preventDefault(); saveEditor(); }
+    });
+
+    const target = (focusField && form.querySelector(`[data-field="${focusField}"]`))
+      || form.querySelector(".uncertain [data-field]")
+      || form.querySelector("[data-field]");
+    target.focus();
+    if (target.select) target.select();
+  }
+
+  function closeEditor() {
+    if (!openForm) return;
+    openForm.form.remove();
+    openForm.line.hidden = false;
+    openForm = null;
+  }
+
+  function changedEdits() {
+    const { form, entry, path } = openForm;
+    const edits = [];
+    FIELD_SPECS[entry.kind].forEach((spec) => {
+      const input = form.querySelector(`[data-field="${spec.field}"]`);
+      const before = entry.values[spec.field];
+      if (spec.type === "checkbox") {
+        if (input.checked !== Boolean(before)) edits.push({ path, field: spec.field, value: input.checked });
+      } else if (input.value.trim() !== inputValue(spec, before)) {
+        edits.push({ path, field: spec.field, value: input.value.trim() });
+      }
+    });
+    return edits;
+  }
+
+  async function saveEditor() {
+    const { form } = openForm;
+    const edits = changedEdits();
+    if (!edits.length) { closeEditor(); return; }
+
+    const errorEl = form.querySelector(".edit-error");
+    const controls = form.querySelectorAll("input, select, button");
+    controls.forEach((c) => { c.disabled = true; });
+    errorEl.textContent = "Saving...";
+
+    const result = await apiFetch(`/extractions/${currentExtractionId}/edit`, {
+      method: "POST",
+      body: JSON.stringify({ extract: currentExtract, edits }),
+    });
+
+    if (!result.ok) {
+      controls.forEach((c) => { c.disabled = false; });
+      const detail = result.body && result.body.detail;
+      errorEl.textContent = typeof detail === "string"
+        ? detail
+        : `Couldn't save (${result.status})`;
+      return;
+    }
+
+    openForm = null;
+    applyUpdate(result.body);
   }
 
   corrSendBtn.addEventListener("click", applyCorrection);
@@ -303,34 +491,47 @@
     return parts.length ? "Goal: " + parts.join(" · ") : "";
   }
 
+  // Marks a line as editable: `data-path` finds it in `editables` when tapped. Lines without a
+  // path (none, from the builder -- but rows built by hand could) stay plain text.
+  function editable(path, kind, values, uncertain) {
+    if (path === null || path === undefined) return "";
+    editables.set(path, { kind, values, uncertain: uncertain || [] });
+    return ` data-path="${esc(path)}"`;
+  }
+
+  // Wraps one displayed value so a tap on it focuses that field in the edit form.
+  function val(field, html) {
+    return `<span data-field="${field}">${html}</span>`;
+  }
+
   function setValsHtml(row) {
     const parts = [];
-    if (row.weight_kg != null) parts.push(`${row.weight_kg}kg`);
-    if (row.reps != null) parts.push(`× ${esc(row.reps)}`);
-    if (row.duration_seconds != null) parts.push(fmtDuration(row.duration_seconds));
-    if (row.distance_meters != null) parts.push(`${row.distance_meters}m`);
-    if (row.heart_rate_bpm != null) parts.push(`${row.heart_rate_bpm}bpm`);
-    let html = esc(parts.join(" "));
-    if (row.rpe != null) html += ` <span class="chip">RPE ${row.rpe}</span>`;
-    if (row.quality) html += ` <span class="chip">${esc(row.quality)}</span>`;
+    if (row.weight_kg != null) parts.push(val("weight_kg", `${esc(row.weight_kg)}kg`));
+    if (row.reps != null) parts.push(val("reps", `× ${esc(row.reps)}`));
+    if (row.duration_seconds != null) parts.push(val("duration_seconds", fmtDuration(row.duration_seconds)));
+    if (row.distance_meters != null) parts.push(val("distance_meters", `${esc(row.distance_meters)}m`));
+    if (row.heart_rate_bpm != null) parts.push(val("heart_rate_bpm", `${esc(row.heart_rate_bpm)}bpm`));
+    let html = parts.join(" ");
+    if (row.rpe != null) html += ` <span class="chip" data-field="rpe">RPE ${esc(row.rpe)}</span>`;
+    if (row.quality) html += ` <span class="chip" data-field="quality">${esc(row.quality)}</span>`;
     if (row.failure_technique) html += ` <span class="chip">${esc(row.failure_technique)}</span>`;
     return html;
   }
 
   function warmupValsHtml(row) {
     const parts = [];
-    if (row.weight_kg != null) parts.push(`${row.weight_kg}kg`);
-    if (row.rep_count != null) parts.push(`× ${row.rep_count}`);
-    return esc(parts.join(" "));
+    if (row.weight_kg != null) parts.push(val("weight_kg", `${esc(row.weight_kg)}kg`));
+    if (row.rep_count != null) parts.push(val("rep_count", `× ${esc(row.rep_count)}`));
+    return parts.join(" ");
   }
 
   function setRowHtml(row, valsHtml) {
     const flag = row.uncertain_fields && row.uncertain_fields.length
       ? '<span class="flag">AI inferred</span>' : "<span></span>";
     const note = row.notes
-      ? `<span class="note">${esc(row.notes)}</span>` : "";
+      ? `<span class="note" data-field="notes">${esc(row.notes)}</span>` : "";
     return `
-      <div class="set-row">
+      <div class="set-row"${editable(row.path, "set", row, row.uncertain_fields)}>
         <span class="idx">${row.number}</span>
         <span class="vals">${valsHtml}</span>
         ${flag}
@@ -341,9 +542,9 @@
   function movementSectionHtml(section) {
     if (!section) return "";
     const rows = section.movements.map((m) => `
-      <div class="movement-row">
-        ${m.number}. ${esc(m.name)}${m.reps != null ? ` — × ${m.reps}` : ""}${m.duration_seconds != null ? ` — ${fmtDuration(m.duration_seconds)}` : ""}
-        ${m.notes ? `<div class="m-note">${esc(m.notes)}</div>` : ""}
+      <div class="movement-row"${editable(m.path, "movement", m)}>
+        ${m.number}. ${val("name", esc(m.name))}${m.reps != null ? ` — ${val("reps", `× ${esc(m.reps)}`)}` : ""}${m.duration_seconds != null ? ` — ${val("duration_seconds", fmtDuration(m.duration_seconds))}` : ""}
+        ${m.notes ? `<div class="m-note" data-field="notes">${esc(m.notes)}</div>` : ""}
       </div>`).join("");
     return `
       <div class="movement-block">
@@ -371,26 +572,33 @@
         <div class="sub-block">
           <div class="sb-title">Warmup</div>
           ${ex.warmup_rows.map((r) => `
-            <div class="sub-row">
+            <div class="sub-row"${editable(r.path, "warmup_set", r, r.uncertain_fields)}>
               ${r.number}. ${warmupValsHtml(r)}
               ${r.uncertain_fields && r.uncertain_fields.length ? '<span class="flag">AI inferred</span>' : ""}
-              ${r.notes ? `<div class="note">${esc(r.notes)}</div>` : ""}
+              ${r.notes ? `<div class="note" data-field="notes">${esc(r.notes)}</div>` : ""}
             </div>`).join("")}
         </div>` : "";
 
+    // The header, notes and warmup notes are all the exercise's own fields: one path, one form.
+    const exAttr = editable(h.path, "exercise", {
+      name: h.name,
+      notes: ex.note_preview ? ex.note_preview.full_text : null,
+      warmup_notes: ex.warmup_note_preview ? ex.warmup_note_preview.full_text : null,
+    }, h.uncertain_fields);
+
     const warmupNoteHtml = ex.warmup_note_preview
-      ? `<div class="ex-note">Warmup notes: ${esc(ex.warmup_note_preview.full_text)}</div>` : "";
+      ? `<div class="ex-note"${exAttr} data-field="warmup_notes">Warmup notes: ${esc(ex.warmup_note_preview.full_text)}</div>` : "";
 
     const setsHtml = (ex.working_set_rows || [])
       .map((r) => setRowHtml(r, setValsHtml(r)))
       .join("");
 
     const noteHtml = ex.note_preview
-      ? `<div class="ex-note">${esc(ex.note_preview.full_text)}</div>` : "";
+      ? `<div class="ex-note"${exAttr} data-field="notes">${esc(ex.note_preview.full_text)}</div>` : "";
 
     return `
       <div class="ex-card">
-        <div class="ex-head">
+        <div class="ex-head"${exAttr} data-field="name">
           <span class="name">${h.number}. ${esc(h.name)}</span>
           ${goalHtml ? `<span class="goal">${esc(goalHtml)}</span>` : ""}
         </div>
@@ -402,7 +610,14 @@
   }
 
   function renderCard(card) {
+    // innerHTML below replaces every line, so any open form and the old lookup go with it.
+    openForm = null;
+    editables = new Map();
     const sh = card.session_header;
+    const shAttr = editable(sh.path, "session", {
+      ...sh,
+      notes: card.note_preview ? card.note_preview.full_text : null,
+    }, sh.uncertain_fields);
     const metaParts = [sh.date];
     if (sh.phase != null) metaParts.push(`Phase ${sh.phase}`);
     if (sh.week != null) metaParts.push(`Week ${sh.week}`);
@@ -415,7 +630,7 @@
       : "";
 
     let html = `
-      <div class="session-head">
+      <div class="session-head"${shAttr}>
         <div class="focus">${esc(sh.focus || "Session")}</div>
         <div class="meta">${esc(metaParts.join(" · "))}</div>
         ${shFlags}
@@ -432,7 +647,7 @@
     html += movementSectionHtml(card.warmup_section);
 
     if (card.note_preview) {
-      html += `<div class="ex-note">Session notes: ${esc(card.note_preview.full_text)}</div>`;
+      html += `<div class="ex-note"${shAttr} data-field="notes">Session notes: ${esc(card.note_preview.full_text)}</div>`;
     }
 
     (card.exercises || []).forEach((ex) => {
@@ -440,6 +655,7 @@
     });
 
     html += movementSectionHtml(card.cooldown_section);
+    html += `<div class="edit-hint">Tap any line to edit it. For a change across many lines, describe it below.</div>`;
 
     cardEl.innerHTML = html;
     cardEl.className = "active";

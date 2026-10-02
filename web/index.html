@@ -65,7 +65,7 @@
   }
   h1 .accent { color: var(--red); }
   label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
-  input, textarea {
+  input, textarea, select {
     width: 100%;
     font: inherit;
     padding: 0.55rem 0.65rem;
@@ -75,7 +75,7 @@
     background: var(--bg);
     color: var(--ink);
   }
-  input:focus-visible, textarea:focus-visible {
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
     outline: 2px solid var(--red);
     outline-offset: 1px;
   }
@@ -254,6 +254,34 @@
     font-style: italic;
     border-top: 1px solid var(--border);
   }
+
+  /* ---- direct editing (tap a line) ---- */
+  [data-path] { cursor: pointer; border-radius: 4px; }
+  [data-path]:hover { background: var(--bg-3); }
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    background: var(--bg-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    margin: 0.25rem 0;
+  }
+  .edit-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.6rem; }
+  .edit-field.wide { grid-column: 1 / -1; }
+  .edit-field label { display: flex; gap: 0.4rem; align-items: center; }
+  .edit-field input:not([type="checkbox"]), .edit-field select { min-height: 44px; }
+  .edit-field input[type="checkbox"] { width: 22px; height: 22px; margin: 11px 0; }
+  .edit-field.uncertain input, .edit-field.uncertain select {
+    border-color: var(--amber);
+    background: var(--amber-bg);
+  }
+  .edit-error { color: var(--red); font-size: 0.82rem; min-height: 1em; }
+  .edit-error:empty { display: none; }
+  .edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .edit-actions button { min-height: 44px; }
+  .edit-hint { font-size: 0.78rem; color: var(--muted); }
 
   .corrections-log { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
   .corr-row {

@@ -513,11 +513,37 @@ open questions, test list), reviewed by Apoorva, then implementation.
         empty-string clear, unknown field, unknown path shape, a validator rejection (RPE 85),
         `uncertain_fields` removal; API tests against the test DB for 200, 400 and 404. Zero
         LLM calls.
-- [ ] **Step 3 — Click-to-edit in the UI.** Tap a value → inline input → Enter or blur sends
+- [x] **Step 3 — Click-to-edit in the UI.** Verified by Apoorva on 2–3 real sessions. Tap a value → inline input → Enter or blur sends
       the edit, Escape cancels, the card re-renders from the response. Fields in
       `uncertain_fields` are highlighted as the first things to check. Phone-sized tap
       targets, numeric keyboard for numbers. Typed corrections stay for changes that span many
       fields ("all squat sets were 100 kg").
+
+      *Design note (2026-10-02):*
+      - **Tap a line, not a single value.** The card hides empty values (no RPE → no chip), so
+        per-value tapping could never *add* a missing RPE. Tapping a line (session header,
+        exercise header, set, warmup set, movement) instead opens a small inline form for that
+        line with every editable field, filled with current values, the tapped value focused.
+        Save sends all changed fields as one `/edit` call; unchanged fields aren't sent.
+      - **One form open at a time.** Opening another closes the first without saving. Enter
+        saves, Escape cancels. While saving, the form is disabled; on 400 it stays open with
+        the server's message under it; on success the card re-renders from the reply.
+      - **Field lists in the UI are presentation only:** label, card field name, input type
+        (`inputmode="decimal"` for numbers, a select for quality, a checkbox for deload). The
+        server's `EDITABLE_FIELDS` stays the authority; if the two drift, the server answers
+        400 and nothing is saved. No JS test setup exists to enforce the match, so the
+        Step 3 browser check exercises every field in the UI list once.
+      - **"AI inferred" fields** are outlined in the form and the line's flag stays visible,
+        so they're what you check first. After a save the server has cleared them.
+      - **State:** `/edit` replies are handled exactly like `/correct` replies:
+        `currentExtract` ← reply `extract`, reply `correction` pushed to `corrections`, card
+        re-rendered. The corrections log shows manual edits as "Edited: field → value".
+      - **Phone:** form inputs ≥ 44px tall, stacked under 480px.
+      - **Not editable:** a failed (placeholder) exercise's sets, failure technique, goal.
+      - **Verification, $0:** insert an extraction straight into the test DB (no LLM), run the
+        real API on the test DB, drive the real page headless (puppeteer-core + system
+        Chrome) through edit, bad value, cancel, add-a-missing-RPE and confirm, in light and
+        dark at desktop and 390px widths. Screenshots back to Apoorva.
 - [ ] **Step 4 — Add and remove sets and exercises.** Server-side operations in
       `card_edits.py` (add set defaults to a copy of the previous set; remove; add/remove
       exercise), each producing list-level `FieldEdit`s, with `number` renumbered by the
