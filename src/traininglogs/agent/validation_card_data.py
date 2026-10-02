@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 
 NOTE_PREVIEW_CHARS = 40
 
+# Every `path` field below: where that card element lives in the extract, as a dot-path by list
+# position (e.g. "exercises.1.sets.0"). A value's full path is this plus its extract field name;
+# "" is the extract's top level. None means not editable -- rows built by hand for the terminal
+# renderer have no path; ValidationCardBuilder always sets one.
+
 
 @dataclass
 class NotePreview:
@@ -39,6 +44,7 @@ class SessionHeader:
     focus: str | None = None
     duration_minutes: int | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
+    path: str | None = None
 
 
 @dataclass
@@ -48,6 +54,7 @@ class MovementRow:
     reps: int | None = None
     duration_seconds: int | None = None
     notes: str | None = None
+    path: str | None = None
 
 
 @dataclass
@@ -63,6 +70,7 @@ class WarmupRow:
     rep_count: int | None = None
     notes: str | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
+    path: str | None = None
 
 
 @dataclass
@@ -81,6 +89,7 @@ class WorkingSetRow:
     # common
     notes: str | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
+    path: str | None = None
 
 
 @dataclass
@@ -90,6 +99,7 @@ class ExerciseHeader:
     goal: GoalSummary | None = None
     uncertain_fields: frozenset[str] = field(default_factory=frozenset)
     failed: bool = False
+    path: str | None = None
 
 
 @dataclass

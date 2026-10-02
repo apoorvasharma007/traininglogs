@@ -5,6 +5,21 @@ the installable package — run them directly with `.venv/bin/python scripts/<na
 
 ---
 
+## correction_stats.py
+
+**Purpose:** Show which fields get corrected most before confirming, from confirmed
+extractions' `corrections` log: field edits by path pattern (`exercises.*.sets.*.rpe`), split
+into edited on the card (`manual`) vs typed corrections (`ai`), plus how many lines were added
+or removed. Every `add_set` is a set the model missed. Read-only.
+
+```bash
+.venv/bin/python scripts/correction_stats.py
+```
+
+Reads from `DATABASE_URL` (or `--db-url`).
+
+---
+
 ## build_dashboard.py
 
 **Purpose:** Rebuild `docs/index.html` from the current database.

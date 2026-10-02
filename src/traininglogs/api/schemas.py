@@ -3,7 +3,9 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from traininglogs.agent.card_edits import CardEdit, CardOp
 
 
 class SessionSummary(BaseModel):
@@ -16,6 +18,7 @@ class SessionSummary(BaseModel):
     duration_minutes: Optional[int]
     is_deload_week: Optional[bool]
     weight_unit: str
+    exercises: list[str] = Field(default_factory=list, description="Exercise names, in order.")
 
 
 class MovementOut(BaseModel):
@@ -142,15 +145,49 @@ class CorrectIn(BaseModel):
 
 
 class CorrectOut(BaseModel):
+    """Returned by both /correct and /edit, so a client handles either reply the same way."""
+
     extract: dict[str, Any] = Field(
         description="The corrected extract, in full -- round-trip this back as `extract` on "
-        "the next /correct call, or as `extract` on /confirm once done."
+        "the next /correct or /edit call, or as `extract` on /confirm once done."
     )
     card: dict[str, Any] = Field(description="The same state, rendered as a card for display.")
     correction: dict[str, Any] = Field(
-        description="{at, instruction, edits} -- accumulate these into a list to pass as "
+        description="{at, source, edits} plus `instruction` when source is \"ai\", or `op` "
+        "and `path` for an add/remove -- accumulate these into a list to pass as "
         "`corrections` on /confirm."
     )
+    created_path: Optional[str] = Field(
+        default=None,
+        description="The new line's path after an add (/edit with `op`), so the client can open "
+        "it for editing; null otherwise.",
+    )
+
+
+class EditIn(BaseModel):
+    extract: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "The extract to edit, if it differs from the extraction's own stored reading -- "
+            "the `extract` from a prior /correct or /edit call. Omit on the first change."
+        ),
+    )
+    edits: list[CardEdit] = Field(
+        default_factory=list,
+        description="Values changed on the card: each card element's own `path`, the card "
+        "field name, and the new value. An empty string clears a value.",
+    )
+    op: Optional[CardOp] = Field(
+        default=None,
+        description="Add or remove one line instead: `add_set`, `add_warmup_set`, "
+        "`add_exercise` or `remove`, on the `path` of the line it applies to.",
+    )
+
+    @model_validator(mode="after")
+    def edits_or_op(self) -> EditIn:
+        if bool(self.edits) == (self.op is not None):
+            raise ValueError("send either `edits` or `op`, exactly one")
+        return self
 
 
 class ExerciseHistoryRow(BaseModel):

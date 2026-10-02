@@ -65,7 +65,7 @@
   }
   h1 .accent { color: var(--red); }
   label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
-  input, textarea {
+  input, textarea, select {
     width: 100%;
     font: inherit;
     padding: 0.55rem 0.65rem;
@@ -75,7 +75,7 @@
     background: var(--bg);
     color: var(--ink);
   }
-  input:focus-visible, textarea:focus-visible {
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
     outline: 2px solid var(--red);
     outline-offset: 1px;
   }
@@ -255,6 +255,75 @@
     border-top: 1px solid var(--border);
   }
 
+  /* ---- direct editing (tap a line) ---- */
+  [data-path] { cursor: pointer; border-radius: 4px; }
+  [data-path]:hover { background: var(--bg-3); }
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    background: var(--bg-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    margin: 0.25rem 0;
+  }
+  .edit-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.6rem; }
+  .edit-field.wide { grid-column: 1 / -1; }
+  .edit-field label { display: flex; gap: 0.4rem; align-items: center; }
+  .edit-field input:not([type="checkbox"]), .edit-field select { min-height: 44px; }
+  .edit-field input[type="checkbox"] { width: 22px; height: 22px; margin: 11px 0; }
+  .edit-field.uncertain input, .edit-field.uncertain select {
+    border-color: var(--amber);
+    background: var(--amber-bg);
+  }
+  .edit-error { color: var(--red); font-size: 0.82rem; min-height: 1em; }
+  .edit-error:empty { display: none; }
+  .edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .edit-actions button { min-height: 44px; }
+  .edit-hint { font-size: 0.78rem; color: var(--muted); }
+
+  /* ---- repeat a past session ---- */
+  .repeat-box { margin-bottom: 1.5rem; }
+  .repeat-box summary { cursor: pointer; font-size: 0.85rem; color: var(--ink-2); padding: 0.4rem 0; }
+  .repeat-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+  .repeat-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.6rem;
+    align-items: baseline;
+    text-align: left;
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 0.6rem 0.8rem;
+    min-height: 44px;
+    background: var(--bg-2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .repeat-item:hover { border-color: var(--border-strong); }
+  .repeat-item .r-date { font-family: var(--f-mono); font-size: 0.74rem; color: var(--muted); }
+  .repeat-item .r-focus { font-weight: 600; }
+  .repeat-item .r-ex { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .repeat-item { grid-template-columns: auto 1fr; }
+    .repeat-item .r-ex { grid-column: 1 / -1; white-space: normal; }
+  }
+  .last-time {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-style: italic;
+    border-bottom: 1px dashed var(--border);
+  }
+  .edit-actions { flex-wrap: wrap; }
+  .edit-actions .spacer { flex: 1; }
+  .btn-ghost.danger { color: var(--red); border-color: var(--red); }
+  .add-row { display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0.9rem; }
+  .btn-small { padding: 0.35rem 0.8rem; font-size: 0.8rem; min-height: 36px; }
+
   .corrections-log { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
   .corr-row {
     display: flex;
@@ -360,6 +429,11 @@
   <div class="row">
     <button id="extractBtn" class="btn-primary">Extract</button>
   </div>
+
+  <details class="repeat-box">
+    <summary>Or repeat a past session</summary>
+    <div id="repeatList" class="repeat-list"></div>
+  </details>
 
   <div id="status" class="status"></div>
 

@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 7, repeat a past session
+
+- `POST /sessions/{session_id}/repeat` starts a new pending extraction from a stored session,
+  with no LLM call, and returns the same ids as `POST /inputs`; the card is then edited and
+  confirmed as usual. Exercises, goals, cues, warmup sets and each set's weight and reps carry
+  over; RPE, quality, failure technique, rest, heart rate, duration and every note don't. The
+  date is today and flagged uncertain. Works for imported historical sessions too.
+- `ingest/repeat.py`. The raw input is `source_kind = 'repeat'`, `source_file` = the source
+  session id, content one line naming the source, start time and raw input id (keeps each
+  repeat's content-derived `session_id` unique). Extraction `model = 'none'`,
+  `prompt_version = 'repeat'`.
+- Schema: `raw_inputs_source_kind_check` allows `'repeat'`; `schema.sql` re-states it
+  idempotently for existing databases. Applied to prod 2026-10-03 with approval.
+- `GET /sessions` gains `exercises` (names in order) per session and `limit`; ties on date
+  now order newest-created first.
+- UI: "Or repeat a past session" under Extract lists the 15 newest sessions. During a repeat,
+  the source session's notes show as a read-only "Last time" line per exercise, matched by
+  name, and for the session.
+
+### Fixed — a second app startup in one process reused a closed connection pool
+
+- The API's shutdown closed its pool but kept it, so a later startup in the same process (a
+  second test client) handed out connections from the closed pool. It now forgets the pool on
+  shutdown. A single running server never hit this.
+
+### Added — Phase 5b Step 6, which fields get corrected most
+
+- `scripts/correction_stats.py` (read-only) and `traininglogs/analytics/corrections.py`: counts
+  confirmed extractions' corrections by field pattern and source (`manual` / `ai`; records
+  from before `source` existed count as `ai`), plus added/removed lines by op. A reps edit
+  counts once as `reps`, not as its two extract fields.
+
+### Fixed — AI corrections weren't counted in `llm_calls`
+
+- `POST /extractions/{id}/correct` now records its model call in `llm_calls` (step
+  `edit_extraction`), tied to the extraction's raw input, whether the correction succeeds or
+  fails. Before, only extraction was logged, so the database total understated real spend.
+  Corrections made before this fix are not recoverable from the database; the Anthropic
+  Console has them.
+
+### Added — Phase 5b Step 4, add and remove sets, warmup sets and exercises
+
+- `/edit` also takes one `op` instead of `edits`: `add_set` / `add_warmup_set` (on an exercise:
+  append; on a set of that kind: insert after it), `add_exercise` (on `""`: append; on an
+  exercise: insert after it), `remove` (a set, warmup set, exercise, or warmup/cooldown
+  movement). Exactly one of `edits` or `op` per call.
+- A new set copies weight and reps from its neighbour; RPE, quality, notes and failure
+  technique start empty. A new exercise is named "New exercise".
+- The changed list is renumbered 1..n, and `uncertain_fields` shift with the positions
+  (entries under a removed line are dropped).
+- The reply gains `created_path`; the correction record gains `op` and `path`.
+- UI: `+ Set` / `+ Warmup set` under each exercise, `+ Exercise` at the end of the card,
+  add-after and `Remove` (asks once more inline) in each line's form. A new line opens straight
+  into its form.
+
+### Added — Phase 5b Step 3, tap a card line to edit it
+
+- Tapping a line on the confirm card (session header, exercise name or notes, set, warmup set,
+  warmup/cooldown movement) opens an inline form with every editable field for that line,
+  filled in, the tapped value focused. Save sends only the changed fields to `/edit`; Enter
+  saves, Escape cancels, a rejected value keeps the form open with the server's message.
+  Empty values can be filled in (a missing RPE), which tapping single values couldn't do.
+- Fields the model flagged as uncertain are outlined in the form.
+- `/edit` and `/correct` replies share one handler; manual edits show in the corrections log
+  as "Edited".
+
+### Added — Phase 5b Step 2, edit a card value without an AI call
+
+- `POST /extractions/{id}/edit` takes `{extract?, edits: [{path, field, value}]}` — the card
+  element's `path`, the card's own field name, the new value — applies it with no LLM call, and
+  replies in the same shape as `/correct` (`extract`, `card`, `correction`). Stateless and
+  round-tripped the same way. An invalid value (RPE 85, unreadable reps, a field that isn't
+  editable) is a 400 whose detail names the field.
+- `agent/card_edits.py`: `EDITABLE_FIELDS`, the allowlist mapping each card field to its extract
+  field per kind of card element. Reps are typed as written (`8`, `8+1`, `L8/R7`) and read by
+  `agent/reps.py`. An empty string clears a value. Failure techniques and goals are not
+  editable this way yet; a typed correction still handles them.
+- A field edited on the card is dropped from `uncertain_fields`.
+- Correction records gain `source`: `"manual"` from `/edit`, `"ai"` from `/correct`. Records
+  stored before this have no `source`.
+
+### Added — Phase 5b Step 1, card elements carry their extract path
+
+- The validation card's session header, exercise headers, set rows, warmup rows and
+  warmup/cooldown movement rows each gain `path`: where that element lives in the extract, by
+  list position (`exercises.1.sets.0`; `""` for the session header). Returned by
+  `GET /extractions/{id}` and `/correct`. Groundwork for editing a value directly without an
+  AI call. `None` on rows built by hand (the terminal renderer's tests).
+
 ### Fixed — keys not scoped to a workspace were rejected
 
 - `AnthropicProvider` sends the `anthropic-workspace-id` header when `ANTHROPIC_WORKSPACE_ID` is

@@ -29,8 +29,18 @@ CREATE TABLE IF NOT EXISTS raw_inputs (
     checksum    TEXT NOT NULL,
     captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('markdown', 'photo', 'speech'))
+        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'))
 );
+
+-- 'repeat' (a session started from a past one, ingest/repeat.py) was added after raw_inputs
+-- existed in real databases, and CREATE TABLE IF NOT EXISTS doesn't touch an existing table's
+-- constraints -- so the check is re-stated here, idempotently, for those databases too. Unlike
+-- the other three kinds, a repeat's content is a line the app wrote, not a workout to read:
+-- anything that re-reads raw inputs with a model must skip it.
+ALTER TABLE raw_inputs
+    DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check,
+    ADD CONSTRAINT raw_inputs_source_kind_check
+        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'));
 
 CREATE TABLE IF NOT EXISTS extractions (
     id               TEXT PRIMARY KEY,
