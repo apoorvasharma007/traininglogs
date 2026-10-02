@@ -7,6 +7,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — keys not scoped to a workspace were rejected
+
+- `AnthropicProvider` sends the `anthropic-workspace-id` header when `ANTHROPIC_WORKSPACE_ID` is
+  set. Keys not scoped to a workspace (`sk-ant-usr…`) are rejected by the API without it;
+  workspace-scoped keys (`sk-ant-api…`) need nothing and are unaffected. Documented in
+  `.env.example`.
+
+### Added — Phase 5 Step 5, confirm UI polish pass (visual fidelity, dark mode, phone width)
+
+- Dark mode via `@media (prefers-color-scheme: dark)`, palette matched to the approved mockup
+  and `color-scheme` set on `:root` so native form controls (scrollbars, textarea resize handle)
+  follow too. System-preference only, no manual toggle — matches the mockup, which didn't have
+  one either.
+- Responsive: the API base URL / API key row stacks vertically under 480px; exercise headers
+  and the goal summary wrap instead of overflowing; `clamp()` on the page heading and top
+  padding so the page doesn't waste space on a phone. No phone-frame chrome — that was the
+  mockup's presentational device for showing four screens side by side, not something the real
+  page should render.
+- Unified button styling: `#extractBtn` was the only element relying on a bare `button {}`
+  selector while every other action button used explicit `.btn-primary`/`.btn-ghost` classes —
+  same visual weight by accident, not by rule. Now all primary/secondary actions share one
+  definition; the composer's circular send button keeps its own distinct (intentionally
+  different) shape.
+- Added `:focus-visible` outlines (inputs, both button classes, the raw-JSON `<summary>`) —
+  present in the mockup's own CSS but not yet carried over.
+- Small wordmark treatment on the page heading (`training` + red `logs`), matching
+  `docs/index.html`'s branding instead of a plain generic title.
+- **Verified with zero API calls**, per explicit instruction not to spend money testing a pure
+  CSS/layout change: a Puppeteer harness intercepts `fetch` at the network level (`page.
+  setRequestInterception`) and returns canned responses for `/inputs`, `GET /extractions/{id}`,
+  `/correct`, and a deliberately-mocked `409` on `/confirm` — driving the real click-through UI
+  exactly as a user would, with no backend running at all. Checked across light/dark ×
+  desktop/390px-phone (4 combinations): card rendering, a correction, and the 409 error state
+  all render correctly with no console errors, no horizontal overflow, and no broken wrapping.
+  A real end-to-end pass (actual API, actual money) is left for manual verification.
+
+### Added — Phase 5 Step 4, confirm UI's confirm + error states
+
+- "Looks good — Confirm" button wired to `POST /extractions/{id}/confirm`, sending the current
+  `extract` and every correction accumulated across Step 3's calls (`{at, instruction, edits}`
+  each) as `corrections`. On success, shows a confirmed screen with the real `session_id` and a
+  "Log another" button that resets the whole page back to a blank capture.
+- The three real failures the API returns are now surfaced as actual UI states instead of
+  silently failing or dumping to the console:
+  - **409** (`/confirm`, session_id collision) — the server's own message (which already names
+    the likely cause: date is wrong, or this exact content was already confirmed) plus a
+    pointer to use the still-visible correction box and retry. Card and composer are left in
+    place on any confirm failure, not cleared — the person can fix and re-confirm without
+    starting over.
+  - **502** (`/inputs`, LLM extraction failure) — fixed a real bug from Step 1: `capture()`
+    returns HTTP 502 with a valid body (`{raw_input_id, error}`) when extraction fails, but the
+    original code checked `response.ok` *before* looking at the body, so that branch never ran
+    and the useful detail (raw_input_id, actual error) was lost behind a generic "POST /inputs
+    failed (502)." Now checks for `raw_input_id` in the body first, regardless of HTTP status.
+  - **400** (`/correct`, bad correction patch) — already surfaced via `result.body.detail`
+    since Step 3; wording now distinguishes "couldn't apply that correction" (400) from "the
+    correction service failed" (502) rather than one generic message for both.
+- Verified live against `TEST_DATABASE_URL`: a full extract → correct → confirm round trip
+  (real session written, real `session_id` returned), and a deliberate 409 by confirming
+  identical content twice — the error box showed the real server message and the page stayed
+  usable, not blank or console-only. Full suite 652 passing, 0 skipped (verified stable across
+  two consecutive runs — an early failure in this session was test-DB pollution from live
+  testing against the shared `TEST_DATABASE_URL`, self-cleaned by `test_ingest.py`'s own
+  per-test truncation, not a regression).
+
+### Added — Phase 5 Step 3, confirm UI's correction loop
+
+- Composer (`web/index.html`/`app.js`) wired to `POST /extractions/{id}/correct`, round-tripping
+  `extract` between calls the way the endpoint's own statelessness was designed for — the client
+  holds `currentExtract` (the previous response's `extract`, or `null` before the first
+  correction, meaning "use the extraction's own stored reading") and sends it back on every
+  call; the server holds nothing.
+- Each correction re-renders the card from the response's own `card` (identical shape to
+  `GET /extractions/{id}`, so `renderCard()` from Step 2 needed no changes) and appends a log
+  row summarizing the applied edits (`path → value`, comma-joined for multi-field corrections).
+- Verified live against `TEST_DATABASE_URL` with two sequential corrections on the same
+  extraction (an RPE fix, then a weight fix across three sets): both persisted correctly after
+  the second call, confirming the round-trip carries state forward rather than resetting it —
+  the specific risk the roadmap flagged this step for.
+
+### Fixed — exercise chunking could only ever locate the first of several exercises packed onto one line
+
+- `_locate_anchor_lines`/`_chunk_exercises` (`agent/extraction.py`) isolated each exercise's
+  text by finding its anchor **line** and searching strictly forward from the *next* line for
+  the following exercise's anchor. A short, casual capture with no line breaks at all —
+  `"Push day. Bench press 60kg for 8. Incline db press 22kg for 10."`, exactly the shape of
+  input the Phase 5 confirm UI's own testing produced — has only one line, so the second
+  exercise's anchor could never be found there, regardless of how much text there was. Found
+  live-testing the confirm UI: `warnings` showed "Exercise 2: could not isolate its text — used
+  the full document instead" on ordinary two-exercise input.
+- Rewrote `_locate_anchor_lines` → `_locate_anchors`, matching on **character offset** into the
+  whole document instead of line number, searching forward from the end of the previous match
+  rather than the next line. This is what lets two exercises share one physical line — the
+  first chunk now ends and the second begins exactly at the second anchor's own offset, rather
+  than requiring each to own a line no one else can touch.
+- Anchor matching now runs through a new position-preserving normalizer
+  (`_normalize_for_anchor_matching`) tolerant of the same drift `_comparable()` already handles
+  elsewhere in this file — curly quotes, em/en dashes, non-breaking spaces — a model asked to
+  copy an anchor "verbatim" can still silently retype these even when told not to, which
+  previously failed the match outright. Deliberately narrower than `_comparable()` (no NFKC, no
+  whitespace collapsing): both of those can change a string's length, which would break the
+  character-offset positions this function returns.
+- `_chunk_exercises` now computes chunk boundaries in the order anchors were actually **found**
+  in the text, not the order the model **labeled** them (`position`). Nothing enforces that a
+  model's declared position numbers match its own list order; sorting boundaries by the label
+  instead of the offset could pair one exercise's start with a different, wrongly-matched
+  exercise's end, slicing into a neighbor's content instead of stopping at it. Not yet observed
+  in practice, but reachable and now structurally prevented (a chunk's content is always exactly
+  one anchor to the next, by construction) rather than merely guarded against.
+- Verified live against `TEST_DATABASE_URL`: the exact two-exercise-one-line input that
+  previously produced the warning now extracts both exercises cleanly, zero warnings. 13 new/
+  rewritten unit tests in `test_agent_chunking.py`, all pure functions, no LLM calls. Full suite
+  652 passing, 0 skipped.
+- **Not yet run through `scripts/eval_arms.py`** — deliberately deferred (this is deterministic
+  Python, not a prompt change, but the date fix above already re-keyed the shell-call cache, so
+  a verification run costs the usual ~$0.45 either way). Do this before the branch reaches
+  `main`.
+
+### Fixed — a missing date was silently invented instead of defaulted and flagged
+
+- `date` is a required field on `TrainingLogLLMExtract`, so when the input text had no date at
+  all (only reachable in practice through the web capture path — every existing `.md` fixture
+  carries a `**Date:**` line), the model filled it with a plausible-looking guess and never
+  marked it `uncertain_fields`, even though that mechanism exists for exactly this. Found while
+  testing Phase 5's confirm UI with undated pasted text.
+- `SHELL_SYSTEM_PROMPT` (`agent/prompts.py`) now tells the model to flag `date` uncertain
+  whenever the text doesn't state one, instead of guessing silently.
+- `ingest.extract()` backfills a flagged `date` with the raw input's own `captured_at`
+  (already stored, Phase 2) rather than trusting the model's placeholder — deterministic, and a
+  real fact instead of another guess. Still left flagged: "captured today" isn't the same claim
+  as "the workout happened today" (logging yesterday's session needs to stay correctable).
+- `web/app.js`'s card renderer now shows a flag for any session-header-level uncertain field
+  (`date`, but also `focus`/`program`/`phase`/`week`/`duration_minutes` if the model ever flags
+  those) — Step 2 had only wired flags for per-set rows, not the header.
+
+### Added — Phase 5 Step 2, confirm UI renders the card
+
+- `renderCard()` in `web/app.js` turns the `GET /extractions/{id}` response into the review
+  screen from the approved mockup: session header, warnings banner, session- and exercise-level
+  warmup/cooldown blocks, per-set rows with weight/reps/RPE/quality/failure-technique, and an
+  "AI inferred" flag on any row `uncertain_fields` names. Built directly against
+  `UserValidationCard`'s real shape (`agent/validation_card_data.py`), not the mockup's
+  fictional fields — the mockup's exercise-header "tag" (e.g. "barbell") doesn't exist on the
+  card, so exercise headers show a `Goal: …` summary instead. Desktop-width, light theme only;
+  phone frame and dark mode are Step 5. Raw JSON still available behind a collapsed `<details>`.
+
+### Added — Phase 5 Step 1, confirm UI skeleton
+
+- `web/` — new surface, plain HTML/JS, no build step (matches `docs/`'s own approach). A
+  textarea and "Extract" button wired to `POST /inputs` then `GET /extractions/{id}`, rendering
+  the raw card JSON. Proves the round-trip before the card gets a real layout (Step 2). API
+  base URL and `X-Api-Key` are entered in the page and kept in `localStorage`; no styling pass
+  yet, that's Step 5.
+- `web/README.md` — how to run the API against `TEST_DATABASE_URL` and serve `web/` locally for
+  development.
+
 ### Added — Phase 4, write API — complete (POST /inputs, GET /extractions/{id}, POST .../confirm, POST .../correct)
 
 - `POST /inputs` — `ingest.capture()` then `ingest.extract()` over HTTP, the first real

@@ -14,3 +14,6 @@ eval_runs/
 # Terminal captures of eval runs. eval_runs/ already stores the calls log and the raw
 # model responses; these are `tee` duplicates and go stale immediately.
 *_out.txt
+
+# Scratch output from the 2026-08-10 3-session regen test; may predate later extraction fixes
+output_training_logs_json_v3.0.0/

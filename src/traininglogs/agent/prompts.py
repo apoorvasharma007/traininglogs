@@ -32,7 +32,9 @@ extracted separately, one at a time, by a different call. Do not attempt to list
 describe them here.
 
 Rules:
-- date: YYYY-MM-DD format.
+- date: YYYY-MM-DD format. If the text does not state an explicit date, write any valid \
+placeholder date and add "date" to uncertain_fields — the actual date this was logged on will \
+be filled in afterward and is not your job to guess.
 - focus: the session's training focus or movement type, taken from any "Focus:", "Muscle Group:", or session title field. Copy what is written — do not shorten it.
 - session_duration_minutes: total session duration as an integer in minutes. Convert any format: "1hr 30min" → 90, "1hrs 41min" → 101, "1:30" → 90, "45min" → 45.
 - program: name of the training program if stated, else omit.
