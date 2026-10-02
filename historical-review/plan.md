@@ -38,22 +38,14 @@ with every change logged here so it can be double-checked later.
 - [x] 0. Backup prod session tables (130 / 1048 / 2569 / 693).
 - [x] 1. Run `check.py` over all 121 sessions; classify every finding. 341 findings: 77 sets with missing quality/RPE/note, 19 exercises with lost warmups (non-standard headings), 245 prose paragraphs with numbers.
 - [x] 2. Batch 1 applied 2026-10-03 (`batch1.md`): 77 working sets filled (quality, RPE, notes — only where prod was empty; 0 conflicts), 24 warmup sets added. Counts 130/1048/2569/693 → 130/1048/2569/717. Re-check: 0 structured findings left.
-- [ ] 3. Remaining batches applied.
-- [ ] 4. Re-run `check.py`: only logged questions and accepted false alarms remain.
-- [ ] 5. Regenerate the lowercase JSON copy for changed sessions; verify against prod.
+- [x] 3. Batch 2 applied 2026-10-03 (`batch2.md`), approved by Apoorva: 64 warmup sets from prose, only on exercises with no warmup rows (39 exercises); 2 working sets for the 2025-10-25 Seated DB Shoulder Press, typed under Warmup Notes. Not converted by decision: goals, and "4.5 x feel … If needed" (an instruction). Counts → 130/1048/2571/781.
+- [x] 4. Re-run `check.py`: 0 value differences. Remaining findings are accounted for: 40 count differences that are exactly batch 2's additions (the checker reads only structured lists), and prose paragraphs judged as goals/commentary or as routine text on exercises that already had warmups.
+- [x] 5. `sync_json.py`: 168 values filled across 66 files in `output_training_logs_json/bodybuilding_transformation_system/`, each validated as a `TrainingSession`; a rerun finds nothing. The uppercase copy is untouched.
 
 ## ▶ Resume here
 
-**Waiting on Apoorva's approval of the prose plan (batch 2).** Proposed: convert warmups written as
-prose into warmup sets **only where the exercise has no structured warmups** (~35 exercises:
-Leg Press "Pyramid. 200 kgs power kicks", Leg Extension "36/43/50 x feel", Pec Dec "55 x 9", Seated
-DB Shoulder Press "0 x feel / 2.5 x feel", Bulgarian Split Squat and Walking Lunge lists typed
-under Notes). Leave prose where structured warmups already exist (the Incline DB Press routine
-paragraph repeated in 23 sessions; calf raise duplicates) and goals/commentary. Log as questions:
-"4.5 x feel… If needed" (instruction?), Seated DB Shoulder Press "17.5 x 13 RPE 8.5" under Warmup
-Notes (working sets in the wrong section?). Prose text stays in notes either way.
-
-Then step 5 (resync `output_training_logs_json/bodybuilding_transformation_system/`).
-
-Branch `chore/historical-review` (from `dev`). Backup: `backups/prod-before-historical-review-2026-10-03.json`.
-Release PR #32 (v3.1.0) is open, blocked on a required review: Apoorva merges it, or OKs `--admin`.
+**Done.** Prod went from 2569 working sets / 693 warmup sets to 2571 / 781, plus 77 working sets
+with restored quality, RPE or notes; the JSON copy matches. To undo any of it, restore from
+`backups/prod-before-historical-review-2026-10-03.json` (local only). Open, for Apoorva: delete
+the older uppercase `output_training_logs_json/BODYBUILDING TRANSFORMATION SYSTEM/` copy, which
+`eval_arms.py` still reads alongside the correct one.

@@ -219,7 +219,20 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 15.0,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 17.5,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
       "notes": "1. 15 x feel 2. 17.5 x feel Can go heavier than 30 too but try with perfect technique",
       "warmup_notes": "Pyramid",
       "form_cues": [
@@ -246,7 +259,7 @@
             "partial": 1
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": null
         },
         {
@@ -297,7 +310,7 @@
           "number": 1,
           "rpe": 9.5,
           "rest": null,
-          "notes": null,
+          "notes": "felt good",
           "set_type": "strength",
           "weight_kg": 15.9,
           "rep_count": {
@@ -403,7 +416,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 6.8,
+          "rep_count": 8,
+          "notes": "felt good felt in outer thighs and glutes"
+        }
+      ],
       "notes": "Perfect technique at 6.8 kg",
       "warmup_notes": "Pyramid",
       "form_cues": [
@@ -470,7 +490,20 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 80.0,
+          "rep_count": 10,
+          "notes": "fast explosive tempo"
+        },
+        {
+          "number": 2,
+          "weight_kg": 100.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
       "notes": "adjust goal by testing as you progress",
       "warmup_notes": null,
       "form_cues": [

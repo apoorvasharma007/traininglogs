@@ -171,7 +171,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 55.0,
+          "rep_count": 9,
+          "notes": "one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs, do one light warmup for resilience"
+        }
+      ],
       "notes": "100 for 10 with explosive push and controlled negatives is feeling good. Left footing on last rep on right hand so its clear a lot of strength is coming from leg drive",
       "warmup_notes": "1. pyramid warmup 2. 55 x 9 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs, do one light warmup for resilience",
       "form_cues": [
@@ -366,7 +373,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": {
             "technique_type": "LLP",
             "details": {

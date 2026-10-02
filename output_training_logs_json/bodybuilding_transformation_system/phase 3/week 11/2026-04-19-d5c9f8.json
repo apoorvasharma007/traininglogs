@@ -485,7 +485,7 @@
           "number": 2,
           "rpe": 10.0,
           "rest": null,
-          "notes": " full rom cross legs",
+          "notes": "full rom cross legs",
           "set_type": "strength",
           "weight_kg": 13.6,
           "rep_count": {
@@ -620,7 +620,7 @@
       "sets": [
         {
           "number": 1,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": null,
           "set_type": "strength",
@@ -635,7 +635,7 @@
         },
         {
           "number": 2,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": null,
           "set_type": "strength",
@@ -650,7 +650,7 @@
         },
         {
           "number": 3,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": null,
           "set_type": "strength",

@@ -160,7 +160,7 @@
           "number": 1,
           "rpe": 9.5,
           "rest": null,
-          "notes": null,
+          "notes": "used wide grip handle",
           "set_type": "strength",
           "weight_kg": 47.6,
           "rep_count": {
@@ -403,7 +403,7 @@
           "number": 2,
           "rpe": 10.0,
           "rest": null,
-          "notes": null,
+          "notes": "stand close to the machine and upright",
           "set_type": "strength",
           "weight_kg": 24.9,
           "rep_count": {
@@ -457,7 +457,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
