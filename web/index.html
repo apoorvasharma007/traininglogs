@@ -25,43 +25,90 @@
     --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
     --radius: 6px;
     --radius-lg: 12px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131417;
+      --bg-2: #1b1c20;
+      --bg-3: #232427;
+      --ink: #f3f4f6;
+      --ink-2: #cbd0d8;
+      --muted: #9298a3;
+      --border: #2c2e33;
+      --border-strong: #3a3d43;
+      --red: #f0554a;
+      --amber: #f0b849;
+      --amber-bg: #2a2313;
+      --amber-border: #4d3f17;
+      --green: #4ade80;
+      --green-bg: #132a1c;
+      --green-border: #1e4029;
+      color-scheme: dark;
+    }
   }
   * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
   body {
     font-family: var(--f-sans);
     max-width: 720px;
-    margin: 2rem auto;
-    padding: 0 1rem 4rem;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 5vw, 2rem) 1rem 4rem;
     color: var(--ink);
-    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
   }
-  h1 { font-size: 1.1rem; margin-bottom: 1.5rem; }
+  h1 {
+    font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 1.5rem;
+  }
+  h1 .accent { color: var(--red); }
   label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
   input, textarea {
     width: 100%;
     font: inherit;
-    padding: 0.5rem;
+    padding: 0.55rem 0.65rem;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
     box-sizing: border-box;
     background: var(--bg);
     color: var(--ink);
   }
+  input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 1px;
+  }
   textarea { min-height: 140px; resize: vertical; font-family: var(--f-sans); }
   .row { margin-bottom: 1rem; }
   .config { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-  .config > div { flex: 1; }
-  button {
-    padding: 0.6rem 1.2rem;
+  .config > div { flex: 1; min-width: 0; }
+  @media (max-width: 480px) {
+    .config { flex-direction: column; gap: 0.75rem; }
+  }
+  .btn-primary, .btn-ghost {
+    padding: 0.65rem 1.2rem;
     font: inherit;
     font-weight: 600;
-    background: var(--red);
-    color: #fff;
-    border: none;
     border-radius: 100px;
     cursor: pointer;
+    border: none;
   }
-  button:disabled { background: var(--border-strong); cursor: not-allowed; }
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+  }
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border-strong);
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .btn-primary:disabled, .btn-ghost:disabled { background: var(--border-strong); color: var(--muted); cursor: not-allowed; border-color: transparent; }
+  .btn-primary:focus-visible, .btn-ghost:focus-visible, .composer button:focus-visible, .raw-toggle summary:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 2px;
+  }
   .status { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
   .error { color: var(--red); }
 
@@ -130,7 +177,8 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.5rem;
   }
   .ex-head .name { font-weight: 600; font-size: 0.92rem; }
   .ex-head .goal { font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); text-align: right; }
@@ -245,29 +293,7 @@
   }
   .composer button:disabled { background: var(--border-strong); cursor: not-allowed; }
 
-  .confirm-bar { display: flex; gap: 0.6rem; margin-top: 1rem; }
-  .btn-ghost {
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: var(--ink-2);
-    border-radius: 100px;
-    padding: 0.6rem 1.1rem;
-    font-family: var(--f-sans);
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-  .btn-primary {
-    background: var(--red);
-    color: #fff;
-    border: none;
-    border-radius: 100px;
-    padding: 0.6rem 1.1rem;
-    font-family: var(--f-sans);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-  .btn-primary:disabled, .btn-ghost:disabled { background: var(--border-strong); color: var(--muted); cursor: not-allowed; }
+  .confirm-bar { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
 
   #confirmedScreen {
     display: none;
@@ -313,7 +339,7 @@
 </style>
 </head>
 <body>
-  <h1>traininglogs — confirm UI</h1>
+  <h1>training<span class="accent">logs</span> — confirm</h1>
 
   <div class="config">
     <div>
@@ -332,7 +358,7 @@
   </div>
 
   <div class="row">
-    <button id="extractBtn">Extract</button>
+    <button id="extractBtn" class="btn-primary">Extract</button>
   </div>
 
   <div id="status" class="status"></div>

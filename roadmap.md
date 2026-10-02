@@ -396,8 +396,19 @@ the UI works end-to-end, not before.
       generic message. On any confirm failure the card/composer stay in place (not cleared) so
       the person can correct and retry. Verified live: full round trip with a real `session_id`,
       plus a deliberate 409 by confirming identical content twice.
-- [ ] **Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
-      viewport.
+- [x] **Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
+      viewport. **Done.** Dark mode via `prefers-color-scheme` (mockup's palette, no manual
+      toggle), responsive stacking under 480px, unified button classes, focus-visible outlines,
+      small wordmark treatment. Verified with a Puppeteer harness that intercepts `fetch` and
+      returns canned responses — full click-through flow (extract → correct → confirm, plus a
+      mocked `409`) across light/dark × desktop/phone, zero real API calls, by explicit request
+      since this step touches no API-calling logic. Real end-to-end look left for manual
+      verification.
+
+**Phase 5's UI work (Steps 1–5) is functionally and visually complete**, pending: the deferred
+`scripts/eval_arms.py` run (date fix + chunking fix, ~$0.45, gated before `main`), and manual
+end-to-end verification against the real API. Phase 5.5 (per-user identity) is next per the
+roadmap's own sequencing, gated on that verification.
 
 ## Phase 5.5 — Per-user identity
 
@@ -505,72 +516,43 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI, Steps 1–4 done.** Steps 1–3 are merged into `phase-5/confirm-ui`
-(`c718e78`, `86fac13`, `3dbffb2`). Step 4 is built on `phase-5/confirm-ui-4-confirm` (cut from
-`phase-5/confirm-ui`) but **not yet committed or merged** — commit it before starting Step 5.
-Everything verified live the same way all session — headless Chrome via puppeteer-core (still
-no `chromium-cli` in this environment; `puppeteer-core` lives in the session scratchpad only,
-nothing added to the repo).
+**Phase 5 — Confirm UI, all five steps done.** Steps 1–4 merged into `phase-5/confirm-ui`
+(`c718e78`, `86fac13`, `3dbffb2`, `2ad804c`). Step 5 is built on `phase-5/confirm-ui-5-polish`
+(cut from `phase-5/confirm-ui`) but **not yet committed or merged** — commit it, then decide
+whether `phase-5/confirm-ui` is ready for `dev`/`main` or needs the two gates below closed
+first. Steps 1–4 verified live against the real API on `TEST_DATABASE_URL`; Step 5 (pure
+CSS/layout, no API-calling logic touched) was verified with a `fetch`-intercepting Puppeteer
+harness instead, by explicit request not to spend money testing something that couldn't have
+changed API behavior — canned responses for all four endpoints, driving the real click-through
+flow across light/dark × desktop/390px-phone, zero real calls. **A real end-to-end look at Step
+5 with actual data is still worth doing** before calling the visual pass done — the mock harness
+proves the CSS handles real card shapes correctly, not that it's *pretty*.
 
-**Step 4, confirm + error states:** "Looks good — Confirm" sends `extract` and every
-accumulated correction to `POST /extractions/{id}/confirm`; success shows the real
-`session_id` and a "Log another" reset. All three of the API's real failure modes are now UI
-states, not console errors — **409** (session_id collision: server's own actionable message,
-composer left visible so the person can correct the date and retry, nothing cleared), **502**
-(`/inputs` extraction failure — also fixed a real Step 1 bug here: the 502 response has a valid
-`{raw_input_id, error}` body, but the old code checked `response.ok` first and never reached it,
-losing both behind a generic message), **400** (`/correct` bad patch — already surfaced since
-Step 3, wording now distinguishes it from 502). Verified live: a full extract → correct →
-confirm round trip with a real returned `session_id`, and a deliberate 409 by confirming
-identical content twice.
+**Two gates before this reaches `main`, both already known, neither closed:**
+1. **`scripts/eval_arms.py` has not been run** against the date fix (`SHELL_SYSTEM_PROMPT`) or
+   the chunking fix (`agent/extraction.py`, `_locate_anchor_lines` → `_locate_anchors`) from
+   Step 2's session — both are deliberately deferred by request, ~$0.45 for one pass covering
+   both. See the CHANGELOG's "Fixed" entries for what each one does if this is a different
+   session picking it back up.
+2. **Manual end-to-end check with the real API**, now that all 5 steps exist — extract, correct,
+   confirm, and look at the confirmed session on the dashboard, not just in the API response.
 
-**Two real pipeline bugs landed inside Step 2's squash, worth knowing about before touching
-`agent/` again** (unrelated to Step 4, carried forward from last write-up):
-1. **Date fix** (`SHELL_SYSTEM_PROMPT` + `ingest.extract()`): a missing date used to be
-   invented (`2024-01-01`, seen live) instead of flagged `uncertain_fields` and backfilled from
-   `raw_inputs.captured_at`. Applies to the CLI path too, not just the web UI.
-2. **Chunking fix** (`agent/extraction.py`, `_locate_anchor_lines` → `_locate_anchors`):
-   exercise isolation matched anchors per physical *line*; a short capture with no line breaks
-   at all (e.g. "Push day. Bench press 60kg for 8. Incline db press 22kg for 10.") could only
-   ever have its *first* exercise located. Rewritten to character-offset matching, tolerant of
-   curly-quote/dash/NBSP drift, with boundaries computed from where anchors were actually found
-   rather than the position label the model gave them.
+**Housekeeping note, not a bug:** live UI testing against `TEST_DATABASE_URL` this session
+caused one incidental test failure (`test_api.py::test_exercise_history_not_found`, from a
+live-confirmed "Squat" session existing when it ran) that self-resolved via
+`test_ingest.py`'s own per-test `TRUNCATE sessions CASCADE`. If a similar one-off failure shows
+up after a session of live testing, rerun before assuming it's a regression.
 
-**Neither has been run through `scripts/eval_arms.py` — still deliberately deferred, still
-gated: run this before `phase-5/confirm-ui` reaches `main`.** `--dry-run` showed
-`split_exercises` still cache-hits (chunking touches no prompt) but `extract_session_shell`
-doesn't (the date fix changed `SHELL_SYSTEM_PROMPT`'s text) — so a verification run costs the
-usual ~$0.45, one pass covers both fixes.
+**Mockup reference, still the design spec:** reviewed and approved 2026-08-13, live at
+https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c — **only place it exists**
+(source file was written to a machine-local session scratchpad that doesn't persist). One
+standing correction: the mockup's `.ex-head .tag` (modality, e.g. "barbell") does **not** match
+`UserValidationCard`'s real fields — `ExerciseHeader` has no modality/tag, only `number`,
+`name`, `goal`, `uncertain_fields`, `failed` (`validation_card_data.py`). The UI renders
+`Goal: …` in that slot instead; don't reconstruct the tag from memory of the mockup.
 
-**Live testing against `TEST_DATABASE_URL` writes real rows.** This session's verification
-(Steps 1–4, repeatedly) caused one incidental test failure —
-`test_api.py::test_exercise_history_not_found` briefly failed because a live-confirmed "Squat"
-session existed when it ran. Not a bug: `test_ingest.py`'s own per-test `TRUNCATE sessions
-CASCADE` cleans this up as a side effect of running the suite, confirmed stable across two
-consecutive full runs afterward. Worth knowing if a similar one-off failure shows up again after
-a session of live UI testing — rerun before assuming it's a regression.
-
-**Next: Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
-viewport. This is the first step that's primarily visual rather than functional — re-read the
-mockup closely (not from memory) before starting, since it's the actual design spec.
-
-**Standing correction, still true:** the mockup's Screen 3 markup (`.ex-head .tag` for
-modality, e.g. "barbell") does **not** match `UserValidationCard`'s real fields —
-`ExerciseHeader` has no modality/tag, only `number`, `name`, `goal`, `uncertain_fields`,
-`failed` (`validation_card_data.py`). The UI renders `Goal: …` in that slot instead. Don't
-reconstruct the tag from memory of the mockup; check the dataclass.
-
-Mockup reviewed and approved 2026-08-13 — phone-frame walkthrough of
-capture → extract → review/correct → confirm, styled to match `docs/index.html`'s palette
-(Inter/JetBrains Mono, red accent, added amber for "uncertain" and green for "corrected/success").
-Live at https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c — **only place
-it exists**; the source file was written to this machine's session scratchpad, which does not
-persist, so that URL is the sole reference for what was approved. Re-read it before Step 2
-(card rendering) so the layout it built against isn't reconstructed from memory. Stack +
-location already decided from it: `web/`, plain HTML/JS, no build step.
-
-Phase 5.5 (per-user identity) is planned but explicitly **not** next — it's gated on Phase 5
-being done end-to-end single-user first.
+**Phase 5.5 (per-user identity) is next**, gated on the two items above plus the real
+end-to-end check — not started.
 
 ### Prod schema migration — explicitly deferred, not blocking
 

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5 Step 5, confirm UI polish pass (visual fidelity, dark mode, phone width)
+
+- Dark mode via `@media (prefers-color-scheme: dark)`, palette matched to the approved mockup
+  and `color-scheme` set on `:root` so native form controls (scrollbars, textarea resize handle)
+  follow too. System-preference only, no manual toggle — matches the mockup, which didn't have
+  one either.
+- Responsive: the API base URL / API key row stacks vertically under 480px; exercise headers
+  and the goal summary wrap instead of overflowing; `clamp()` on the page heading and top
+  padding so the page doesn't waste space on a phone. No phone-frame chrome — that was the
+  mockup's presentational device for showing four screens side by side, not something the real
+  page should render.
+- Unified button styling: `#extractBtn` was the only element relying on a bare `button {}`
+  selector while every other action button used explicit `.btn-primary`/`.btn-ghost` classes —
+  same visual weight by accident, not by rule. Now all primary/secondary actions share one
+  definition; the composer's circular send button keeps its own distinct (intentionally
+  different) shape.
+- Added `:focus-visible` outlines (inputs, both button classes, the raw-JSON `<summary>`) —
+  present in the mockup's own CSS but not yet carried over.
+- Small wordmark treatment on the page heading (`training` + red `logs`), matching
+  `docs/index.html`'s branding instead of a plain generic title.
+- **Verified with zero API calls**, per explicit instruction not to spend money testing a pure
+  CSS/layout change: a Puppeteer harness intercepts `fetch` at the network level (`page.
+  setRequestInterception`) and returns canned responses for `/inputs`, `GET /extractions/{id}`,
+  `/correct`, and a deliberately-mocked `409` on `/confirm` — driving the real click-through UI
+  exactly as a user would, with no backend running at all. Checked across light/dark ×
+  desktop/390px-phone (4 combinations): card rendering, a correction, and the 409 error state
+  all render correctly with no console errors, no horizontal overflow, and no broken wrapping.
+  A real end-to-end pass (actual API, actual money) is left for manual verification.
+
 ### Added — Phase 5 Step 4, confirm UI's confirm + error states
 
 - "Looks good — Confirm" button wired to `POST /extractions/{id}/confirm`, sending the current
