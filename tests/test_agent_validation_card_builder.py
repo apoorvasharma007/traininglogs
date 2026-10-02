@@ -412,3 +412,76 @@ class TestWarningsAndFailedExercise:
         assert card.exercises[0].header.failed is False
         assert card.exercises[0].failure_reason is None
         assert card.exercises[0].note_preview is not None
+
+
+class TestPaths:
+    """Every editable card element carries its dot-path into the extract (roadmap Phase 5b
+    Step 1), by list position -- never by `number`, which the model can get out of order."""
+
+    @staticmethod
+    def _extract_with_everything() -> TrainingLogLLMExtract:
+        squat = _make_extract().model_dump(mode="json")["exercises"][0]
+        # Numbered out of order on purpose: position 0 is number 2, position 1 is number 1.
+        bench = {**squat, "number": 1, "name": "Bench"}
+        squat = {**squat, "number": 2}
+        return _make_extract({
+            "exercises": [squat, bench],
+            "warmup": [{"number": 1, "name": "Jumping jacks", "reps": 20}],
+            "cooldown": [
+                {"number": 1, "name": "Stretch", "duration_seconds": 60},
+                {"number": 2, "name": "Walk", "duration_seconds": 120},
+            ],
+        })
+
+    @staticmethod
+    def _all_pathed(card: UserValidationCard) -> list[Any]:
+        items: list[Any] = [card.session_header]
+        for section in (card.warmup_section, card.cooldown_section):
+            if section:
+                items.extend(section.movements)
+        for ex in card.exercises:
+            items.append(ex.header)
+            items.extend(ex.warmup_rows)
+            items.extend(ex.working_set_rows)
+        return items
+
+    def test_session_header_path_is_top_level(self) -> None:
+        card = builder.build(_make_extract())
+        assert card.session_header.path == ""
+
+    def test_paths_use_position_not_number(self) -> None:
+        card = builder.build(self._extract_with_everything())
+        first, second = card.exercises
+        assert (first.header.number, first.header.path) == (2, "exercises.0")
+        assert (second.header.number, second.header.path) == (1, "exercises.1")
+        assert [r.path for r in second.working_set_rows] == [
+            "exercises.1.sets.0",
+            "exercises.1.sets.1",
+        ]
+        assert [r.path for r in second.warmup_rows] == [
+            "exercises.1.warmup_sets.0",
+            "exercises.1.warmup_sets.1",
+        ]
+
+    def test_movement_rows_pathed_by_section(self) -> None:
+        card = builder.build(self._extract_with_everything())
+        assert card.warmup_section is not None and card.cooldown_section is not None
+        assert [m.path for m in card.warmup_section.movements] == ["warmup.0"]
+        assert [m.path for m in card.cooldown_section.movements] == ["cooldown.0", "cooldown.1"]
+
+    def test_every_path_resolves_to_the_element_it_came_from(self) -> None:
+        """The invariant the edit endpoint relies on: following a row's path into the dumped
+        extract lands on the object that row was built from."""
+        extract = self._extract_with_everything()
+        dumped = extract.model_dump(mode="json")
+        card = builder.build(extract)
+
+        for item in self._all_pathed(card):
+            assert item.path is not None, f"{type(item).__name__} has no path"
+            target: Any = dumped
+            for step in filter(None, item.path.split(".")):
+                target = target[int(step)] if isinstance(target, list) else target[step]
+            if item.path == "":
+                assert target["date"] == item.date
+            else:
+                assert target["number"] == item.number, item.path

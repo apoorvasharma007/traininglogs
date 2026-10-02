@@ -16,6 +16,7 @@ from traininglogs.api.schemas import (
     ConfirmOut,
     CorrectIn,
     CorrectOut,
+    EditIn,
     ExerciseHistoryRow,
     SessionDetail,
     SessionSummary,
@@ -68,10 +69,14 @@ async def lifespan(app: FastAPI):
             file=sys.stderr,
         )
         sys.exit(1)
+    global _pool
     _get_pool()
     yield
     if _pool:
         _pool.closeall()
+        # Forget it, so a later startup in the same process (a second TestClient) builds a new
+        # pool instead of handing out connections from this closed one.
+        _pool = None
 
 
 app = FastAPI(title="traininglogs", lifespan=lifespan)
@@ -91,10 +96,27 @@ def list_sessions(
     week: int | None = Query(None),
     from_date: str | None = Query(None),
     to_date: str | None = Query(None),
+    limit: int | None = Query(None, ge=1, le=500),
     conn=Depends(_db),
     _=Depends(_auth),
 ):
-    return get_sessions(conn, phase=phase, week=week, from_date=from_date, to_date=to_date)
+    return get_sessions(
+        conn, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit
+    )
+
+
+@app.post("/sessions/{session_id}/repeat", response_model=CaptureOut, status_code=201)
+def repeat_session_endpoint(session_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Start a new session from a past one -- no LLM call. Returns the same ids as
+    POST /inputs, so the client loads and confirms the card exactly as after an extraction.
+    """
+    from traininglogs.ingest.repeat import repeat_session
+
+    ids = repeat_session(conn, session_id)
+    if ids is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    raw_input_id, extraction_id = ids
+    return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
 
 
 @app.get("/sessions/{session_id}", response_model=SessionDetail)
@@ -210,6 +232,7 @@ def correct_extraction(
     from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
     from traininglogs.db.fetch import get_extraction
+    from traininglogs.db.insert import insert_llm_calls
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
@@ -218,16 +241,23 @@ def correct_extraction(
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
 
-    validator = LLMExtractValidator(AnthropicProvider())
+    provider = AnthropicProvider()
+    validator = LLMExtractValidator(provider)
     try:
         updated_extract, edits = validator.apply_correction(current_extract, body.instruction)
     except PatchError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except LLMParserError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
+    finally:
+        # Logged whether the correction worked or not, same as extraction does: a failed
+        # correction still cost money. Tied to the raw input, so a session's total cost is one
+        # query across extraction and corrections alike.
+        insert_llm_calls(conn, stored["raw_input_id"], provider.calls)
 
     correction = {
         "at": datetime.now(timezone.utc).isoformat(),
+        "source": "ai",
         "instruction": body.instruction,
         "edits": [e.model_dump(mode="json") for e in edits],
     }
@@ -237,4 +267,50 @@ def correct_extraction(
         extract=updated_extract.model_dump(mode="json"),
         card=jsonable_encoder(card),
         correction=correction,
+    )
+
+
+@app.post("/extractions/{extraction_id}/edit", response_model=CorrectOut)
+def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depends(_auth)):
+    """Apply values changed directly on the card, or add/remove one line -- no LLM call.
+    Stateless and round-tripped exactly like /correct, and replies in the same shape, so a
+    client treats both alike.
+    """
+    from datetime import datetime, timezone
+
+    from fastapi.encoders import jsonable_encoder
+
+    from traininglogs.agent.card_edits import CardEditError, apply_card_edits, apply_card_op
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.agent.validation_card_builder import ValidationCardBuilder
+    from traininglogs.db.fetch import get_extraction
+
+    stored = get_extraction(conn, extraction_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+
+    extract_dict = body.extract if body.extract is not None else stored["extract"]
+    current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
+
+    created_path = None
+    try:
+        if body.op is not None:
+            updated_extract, edits, created_path = apply_card_op(current_extract, body.op)
+        else:
+            updated_extract, edits = apply_card_edits(current_extract, body.edits)
+    except CardEditError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    correction = {
+        "at": datetime.now(timezone.utc).isoformat(),
+        "source": "manual",
+        **({"op": body.op.op, "path": body.op.path} if body.op is not None else {}),
+        "edits": [e.model_dump(mode="json") for e in edits],
+    }
+    card = ValidationCardBuilder().build(updated_extract)
+    return CorrectOut(
+        extract=updated_extract.model_dump(mode="json"),
+        card=jsonable_encoder(card),
+        correction=correction,
+        created_path=created_path,
     )

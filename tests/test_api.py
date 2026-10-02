@@ -471,6 +471,7 @@ class TestCorrectExtraction:
         assert body["extract"]["focus"] == "Corrected Focus"
         assert body["card"]["session_header"]["focus"] == "Corrected Focus"
         assert body["correction"]["instruction"] == "it was actually a different focus"
+        assert body["correction"]["source"] == "ai"
         assert body["correction"]["edits"] == [{"path": "focus", "value": "Corrected Focus"}]
 
     def test_a_second_correction_builds_on_the_extract_the_client_sends_back(
@@ -518,6 +519,61 @@ class TestCorrectExtraction:
         )
         assert r.status_code == 400
 
+    def _llm_calls_for(self, db_conn, extraction_id: str) -> list[tuple]:
+        with db_conn.cursor() as cur:
+            cur.execute(
+                "SELECT l.step, l.cost_usd, l.failed FROM llm_calls l "
+                "JOIN extractions x ON x.raw_input_id = l.raw_input_id WHERE x.id = %s",
+                (extraction_id,),
+            )
+            return cur.fetchall()
+
+    def _stub_spending_correction(self, monkeypatch, fail: bool) -> None:
+        """A correction that records one call on its provider, as the real one does, then
+        either succeeds or fails the way a bad model reply would."""
+        from traininglogs.agent.patch import FieldEdit
+        from traininglogs.agent.schemas import LLMParserError
+
+        def fake_apply_correction(self_, extract, instruction):
+            self_._provider.calls.append({
+                "step": "edit_extraction", "model": "m", "attempts": 1, "input_tokens": 100,
+                "output_tokens": 10, "cost_usd": 0.0012, "ms": 5, "cached": False,
+                "failed": "bad reply" if fail else None, "raw_payload": None,
+            })
+            if fail:
+                raise LLMParserError("bad reply")
+            return extract.model_copy(update={"focus": "X"}), [FieldEdit(path="focus", value="X")]
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+
+    def test_correction_cost_is_logged(self, client, db_conn, monkeypatch) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-06", "correct test content 6")
+        self._stub_spending_correction(monkeypatch, fail=False)
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 200
+        calls = self._llm_calls_for(db_conn, extraction_id)
+        assert [(step, float(cost), failed) for step, cost, failed in calls] == [
+            ("edit_extraction", 0.0012, None)
+        ]
+
+    def test_failed_correction_cost_is_still_logged(self, client, db_conn, monkeypatch) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-07", "correct test content 7")
+        self._stub_spending_correction(monkeypatch, fail=True)
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 502
+        assert [c[2] for c in self._llm_calls_for(db_conn, extraction_id)] == ["bad reply"]
+
     def test_not_found(self, client) -> None:
         r = client.post(
             "/extractions/does-not-exist/correct",
@@ -541,3 +597,132 @@ class TestCorrectExtraction:
             f"/extractions/{extraction_id}/correct", json={"instruction": "fix it"}
         )
         assert r.status_code == 401
+
+
+class TestEditExtraction:
+    """POST /extractions/{id}/edit -- values changed on the card, applied with no LLM call.
+    Same statelessness and reply shape as /correct."""
+
+    def _insert_extraction(self, db_conn, content: str) -> str:
+        from traininglogs.db.insert import insert_extraction, insert_raw_input
+
+        raw_input_id = insert_raw_input(db_conn, content)
+        extract = {
+            "date": "2026-07-01",
+            "focus": "Push",
+            "exercises": [
+                {
+                    "number": 1,
+                    "name": "Bench",
+                    "sets": [
+                        {"number": 1, "weight_kg": 60.0,
+                         "rep_count": {"full": 12, "partial": 0}, "rpe": 8.0}
+                    ],
+                }
+            ],
+            "uncertain_fields": ["exercises.0.sets.0.rpe"],
+        }
+        return insert_extraction(
+            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
+        )
+
+    def _post(self, client, extraction_id: str, body: dict, auth: bool = True):
+        headers = {"x-api-key": "testkey"} if auth else {}
+        return client.post(f"/extractions/{extraction_id}/edit", json=body, headers=headers)
+
+    def test_applies_edit_and_returns_extract_card_and_correction(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 1")
+        r = self._post(client, extraction_id, {"edits": [
+            {"path": "exercises.0.sets.0", "field": "rpe", "value": 9},
+            {"path": "exercises.0.sets.0", "field": "reps", "value": "15"},
+        ]})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["extract"]["exercises"][0]["sets"][0]["rpe"] == 9
+        assert body["extract"]["uncertain_fields"] == []
+        row = body["card"]["exercises"][0]["working_set_rows"][0]
+        assert (row["rpe"], row["reps"], row["path"]) == (9, "15", "exercises.0.sets.0")
+        assert body["correction"]["source"] == "manual"
+        assert "instruction" not in body["correction"]
+        assert {"path": "exercises.0.sets.0.rpe", "value": 9} in body["correction"]["edits"]
+
+    def test_builds_on_the_extract_the_client_sends_back(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 2")
+        first = self._post(client, extraction_id, {"edits": [
+            {"path": "", "field": "focus", "value": "Upper"},
+        ]}).json()["extract"]
+        r = self._post(client, extraction_id, {"extract": first, "edits": [
+            {"path": "exercises.0", "field": "name", "value": "Incline Bench"},
+        ]})
+        body = r.json()
+        assert (body["extract"]["focus"], body["extract"]["exercises"][0]["name"]) == (
+            "Upper", "Incline Bench",
+        )
+
+        from traininglogs.db.fetch import get_extraction
+        assert get_extraction(db_conn, extraction_id)["extract"]["focus"] == "Push"
+
+    def test_invalid_value_returns_400_naming_the_field(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 3")
+        r = self._post(client, extraction_id, {"edits": [
+            {"path": "exercises.0.sets.0", "field": "rpe", "value": 85},
+        ]})
+        assert r.status_code == 400
+        assert "exercises.0.sets.0.rpe" in r.json()["detail"]
+
+    def test_non_editable_field_returns_400(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 4")
+        r = self._post(client, extraction_id, {"edits": [
+            {"path": "exercises.0.sets.0", "field": "failure_technique", "value": "x"},
+        ]})
+        assert r.status_code == 400
+
+    def test_rejects_empty_edit_list(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 5")
+        assert self._post(client, extraction_id, {"edits": []}).status_code == 422
+
+    def test_not_found(self, client) -> None:
+        r = self._post(client, "does-not-exist", {"edits": [
+            {"path": "", "field": "focus", "value": "x"},
+        ]})
+        assert r.status_code == 404
+
+    def test_requires_auth(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 6")
+        r = self._post(client, extraction_id, {"edits": [
+            {"path": "", "field": "focus", "value": "x"},
+        ]}, auth=False)
+        assert r.status_code == 401
+
+    def test_add_set_op_returns_created_path_and_records_the_op(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 7")
+        r = self._post(client, extraction_id, {"op": {"op": "add_set", "path": "exercises.0"}})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["created_path"] == "exercises.0.sets.1"
+        rows = body["card"]["exercises"][0]["working_set_rows"]
+        assert [(row["number"], row["path"]) for row in rows] == [
+            (1, "exercises.0.sets.0"), (2, "exercises.0.sets.1"),
+        ]
+        assert (body["correction"]["op"], body["correction"]["path"]) == ("add_set", "exercises.0")
+        assert body["correction"]["edits"][0]["path"] == "exercises.0.sets"
+
+    def test_remove_op(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 8")
+        r = self._post(client, extraction_id, {"op": {"op": "remove", "path": "exercises.0.sets.0"}})
+        assert r.status_code == 200
+        assert r.json()["card"]["exercises"][0]["working_set_rows"] == []
+        assert r.json()["created_path"] is None
+
+    def test_op_on_wrong_line_returns_400(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 9")
+        r = self._post(client, extraction_id, {"op": {"op": "remove", "path": ""}})
+        assert r.status_code == 400
+
+    def test_edits_and_op_together_rejected(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "edit test content 10")
+        r = self._post(client, extraction_id, {
+            "edits": [{"path": "", "field": "focus", "value": "x"}],
+            "op": {"op": "add_set", "path": "exercises.0"},
+        })
+        assert r.status_code == 422

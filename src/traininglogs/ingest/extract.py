@@ -60,6 +60,15 @@ def extract(
 
     print(f"[ingest] raw_input_id={raw_input_id} extract: done, {len(calls)} LLM call(s)")
 
+    # The model has no way to know the real date -- it can only read one out of the text. When
+    # the text doesn't state one, the prompt has it flag "date" in uncertain_fields rather than
+    # invent something plausible-looking. Python fills the gap deterministically with when this
+    # was captured, since that's a real fact instead of another guess -- and leaves it flagged,
+    # since "captured today" is not the same claim as "the workout happened today" (someone
+    # logging yesterday's session needs to be able to correct it).
+    if "date" in (result.uncertain_fields or []):
+        result.date = raw["captured_at"].strftime("%Y-%m-%d")
+
     return insert_extraction(
         conn,
         raw_input_id=raw_input_id,

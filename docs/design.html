@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-08-09 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.0.0</span> · 2026-10-03 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">An app that turns workout notes into a queryable, chartable training history.</p>
 </header>
@@ -213,7 +213,8 @@
   extract()   →   extractions       saved, pending
       │
       ▼
- confirm loop     card shown, user confirms or corrects
+ confirm loop     card shown; user edits it directly, describes a
+      │          correction, or confirms
       │
       ▼
   confirm()   →   Pydantic models   →   PostgreSQL
@@ -222,7 +223,7 @@
                                     ▼                   ▼
                               dashboard (HTML)     FastAPI (REST)</div>
   <p>Four steps. <code>capture()</code> saves the raw text. <code>extract()</code> runs the LLM and saves the result as pending. The card is shown; the user confirms or corrects it. <code>confirm()</code> writes the normalized session to Postgres. Each step saves before returning, so a crash or a rejected extraction never loses what was captured.</p>
-  <p>These three functions live in <code>ingest/</code>. <code>cli/log.py</code> calls them directly, and the API will too.</p>
+  <p>These three functions live in <code>ingest/</code>. <code>cli/log.py</code> calls them directly, and so does the API. A fourth, <code>repeat_session()</code> (<code>ingest/repeat.py</code>), is a second way into the same loop: it builds a pending extraction from a stored session instead of from text, with no model call, and everything after that is identical.</p>
   <p>Postgres is the source of truth. The dashboard and the API both read from it; neither writes back. A rule-based parser is also available via <code>--parser rules</code>.</p>
 </section>
 
@@ -363,6 +364,16 @@ WorkingSet                    one flat model — every measurement field optiona
   <code>content</code> (the raw text, untouched), <code>source_kind</code> (markdown, photo, or
   speech), <code>source_file</code>, <code>checksum</code>, <code>captured_at</code>.</p>
 
+  <p>A <em>repeat</em> starts here too, without any text from the person:
+  <code>source_kind</code> is <code>repeat</code>, <code>source_file</code> is the session being
+  repeated, and <code>content</code> is one line the app writes naming that session, the start
+  time and the row's own id (the id keeps each repeat's content-derived
+  <code>session_id</code> unique). The extraction is built straight from the stored session
+  &mdash; the plan carries over, how that day went and every note don't &mdash; with
+  <code>model</code> <code>none</code> and no <code>llm_calls</code> rows. Anything that re-reads
+  raw inputs with a model must skip <code>repeat</code> rows: there is no workout text in
+  them.</p>
+
   <p><code>extract()</code> reads that row and calls the model. The work is split into several
   calls &mdash; segmenting the exercises, reading the session's shell (date, focus, program),
   then one call per exercise. Each call writes one row to <code>llm_calls</code> (table 2):
@@ -375,10 +386,13 @@ WorkingSet                    one flat model — every measurement field optiona
   <code>uncertain_fields</code>, <code>warnings</code>, <code>status</code> set to
   <code>pending</code>.</p>
 
-  <p>The confirmation card is built from that extraction and shown to the person. Typing
-  <code>y</code> moves on. Describing a correction makes another model call &mdash; another
-  <code>llm_calls</code> (table 2) row &mdash; and the edit it produces is
-  appended to <code>extractions.corrections</code> (table 3), a JSONB list.
+  <p>The confirmation card is built from that extraction and shown to the person. There are
+  two ways to change it. Editing a value on the card, or adding or removing a set, warmup set or
+  exercise, makes no model call. Describing a correction in words makes one &mdash; another
+  <code>llm_calls</code> (table 2) row. Either way the change is a list of
+  <code>{path, value}</code> edits, appended as one record to
+  <code>extractions.corrections</code> (table 3), a JSONB list, marked
+  <code>source: "manual"</code> or <code>source: "ai"</code>.
   <code>extractions.extract</code> is never rewritten; only <code>corrections</code> grows. This
   repeats until the person confirms.</p>
 
@@ -405,7 +419,7 @@ WorkingSet                    one flat model — every measurement field optiona
   <div class="diagram">raw_inputs                              (table 1)
   id             TEXT PK
   content        TEXT
-  source_kind    TEXT          markdown | photo | speech
+  source_kind    TEXT          markdown | photo | speech | repeat
   source_file    TEXT
   checksum       TEXT
   captured_at    TIMESTAMPTZ
@@ -419,7 +433,7 @@ extractions                             (table 3)
   uncertain_fields  TEXT[]
   warnings          TEXT[]
   status            TEXT        pending | confirmed | rejected
-  corrections       JSONB
+  corrections       JSONB       [{at, source, edits, instruction | op + path}]
   created_at        TIMESTAMPTZ
   confirmed_at      TIMESTAMPTZ
 
@@ -552,21 +566,25 @@ warmup_sets                             (table 9)
   <h3>ConfirmationCard architecture</h3>
   <p>The card is a tree of dataclasses defined in <code>agent/validation_card_data.py</code>, built from a <code>TrainingLogLLMExtract</code> by <code>agent/validation_card_builder.py</code>. It is the stable contract between the LLM output and any renderer — terminal today, JSON/frontend later.</p>
   <pre><code>UserValidationCard
-  SessionHeader              date · focus · duration · program / phase / week
+  SessionHeader              date · focus · duration · program / phase / week · path ""
   NotePreview = None         session-level note, shown right after the header
   SessionMovementSection[]   warmup / cooldown, each a MovementRow[]
   ExerciseCard[]
-    ExerciseHeader           number · name · goal (plain English)
-    WarmupRow[]               weight · reps
+    ExerciseHeader           number · name · goal (plain English) · path "exercises.N"
+    WarmupRow[]               weight · reps · path "exercises.N.warmup_sets.M"
     WorkingSetRow[]           weight · reps · RPE · quality · failure (plain English)
+                              · path "exercises.N.sets.M"
     NotePreview = None        first ~40 chars of note + "…" if truncated
     NotePreview = None        same, for the exercise's own warmup notes</code></pre>
-  <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (dot-path format, e.g. <code>"exercises[1].sets[0].weight_kg"</code>). The renderer marks those positions with <code>?</code>. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
+  <p>Every element of the card carries <code>path</code>: where it lives in the extract, by list position, never by <code>number</code> (movement rows too: <code>warmup.M</code>, <code>cooldown.M</code>). That is how an edit made on the card reaches the right field without a model call.</p>
+  <p>Fields the LLM was uncertain about are flagged in <code>uncertain_fields: list[str]</code> (the same dot-path format, e.g. <code>"exercises.1.sets.0.weight_kg"</code>). The terminal renderer marks those positions with <code>?</code>; the web card outlines them in the edit form. The user's eyes go directly to uncertain fields; everything else can be scanned in seconds.</p>
   <p>Form cues are not shown on the card — they are stored but low-stakes if wrong, and omitting them keeps the card skimmable. Notes (session-level and exercise-level) are shown as a truncated preview. Goals and warmup sets are shown in full because they are stored data the user should verify.</p>
 
   <h3>Correction loop</h3>
   <p>After the card is printed, the person sees one prompt: confirm, or say what's wrong. Anything other than <code>y</code>/<code>yes</code> is a correction. The model is sent the current extract and the correction, and returns a list of edits &mdash; <code>{path, value}</code> pairs &mdash; not a rewritten extract. The edits are applied in Python; a field the correction doesn't name cannot change, because Python only touches the paths it's given. Measured on a real ten-exercise session: the old whole-document shape needed roughly 5,410 output tokens against a 4,096 ceiling, so it could not have returned a correction for a session that size at all.</p>
   <p>Each correction is appended to <code>extractions.corrections</code>. <code>extractions.extract</code> itself is never rewritten. The card is rebuilt from the edited extract and shown again. This repeats until the person confirms.</p>
+  <p><strong>Direct edits</strong> (web card only) skip the model. Tapping a line opens a form for every editable field on it; the changed fields go to <code>/edit</code> as card-level edits, which <code>agent/card_edits.py</code> turns into the same <code>{path, value}</code> edits through one allowlist, <code>EDITABLE_FIELDS</code> (the card's <code>reps: "8+1"</code> becomes the extract's <code>rep_count</code>, for example). Failure techniques and goals aren't in it; a typed correction still handles them. Adding or removing a set, warmup set or exercise is an <code>op</code> on the same endpoint: the changed list is renumbered and <code>uncertain_fields</code> shift with the positions. Every result is re-validated as a whole, so the model validators stay the only place range rules live, and a field the person edited is no longer marked uncertain.</p>
+  <p><code>scripts/correction_stats.py</code> reads this log back: which fields get corrected most, by source, and how many sets or exercises the model missed (every <code>add_set</code> is one).</p>
 
   <h3>LLM call design</h3>
   <table>
@@ -600,7 +618,7 @@ traininglogs log session.md --parser rules</code></pre>
   <table>
     <thead><tr><th>Endpoint</th><th>Answers</th></tr></thead>
     <tbody>
-      <tr><td><code>GET /sessions</code></td><td>What did I do, and when? (filterable by phase, week, date range)</td></tr>
+      <tr><td><code>GET /sessions</code></td><td>What did I do, and when? Newest first, each with its exercise names; filterable by phase, week, date range, and <code>limit</code>.</td></tr>
       <tr><td><code>GET /sessions/{id}</code></td><td>Full detail of one session, exercises and sets included.</td></tr>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>How has this lift moved over time? Every working set, every session.</td></tr>
     </tbody>
@@ -613,7 +631,9 @@ traininglogs log session.md --parser rules</code></pre>
       <tr><td><code>POST /inputs</code></td><td><code>capture()</code> then <code>extract()</code> &mdash; <code>{raw_input_id, extraction_id}</code>. A failed extraction still returns <code>raw_input_id</code>; the text isn't lost.</td></tr>
       <tr><td><code>GET /extractions/{id}</code></td><td>The confirmation card, as JSON &mdash; the same <code>ValidationCardBuilder</code> the CLI renders to a terminal.</td></tr>
       <tr><td><code>POST /extractions/{id}/confirm</code></td><td><code>ingest.confirm()</code> &mdash; writes the normalized session. <code>409</code> on a <code>session_id</code> collision.</td></tr>
-      <tr><td><code>POST /extractions/{id}/correct</code></td><td>One correction. Fully stateless &mdash; the client round-trips <code>extract</code> between calls; the server holds nothing.</td></tr>
+      <tr><td><code>POST /extractions/{id}/correct</code></td><td>One correction in words, one model call (logged to <code>llm_calls</code>). Fully stateless &mdash; the client round-trips <code>extract</code> between calls; the server holds nothing.</td></tr>
+      <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card (<code>edits</code>), or one line added or removed (<code>op</code>), with no model call. Same round-trip and reply as <code>/correct</code>, plus <code>created_path</code> after an add. <code>400</code> naming the field when a value is invalid.</td></tr>
+      <tr><td><code>POST /sessions/{id}/repeat</code></td><td>Start a new session from a past one, with no model call. Returns <code>{raw_input_id, extraction_id}</code>, the same as <code>POST /inputs</code>.</td></tr>
     </tbody>
   </table>
 
@@ -655,15 +675,15 @@ traininglogs log session.md --parser rules</code></pre>
 <section>
   <h2 id="next">What's next</h2>
   <ul class="body">
-    <li><strong>Confirm UI.</strong> A minimal web surface — textarea, rendered card, confirm button — so a session can be logged from a browser, not just a terminal.</li>
-    <li><strong>Deploy.</strong> The API hosted on Fly, against the Supabase database already live.</li>
+    <li><strong>Per-user identity.</strong> A key per person instead of one shared key, every write scoped to the user it resolves to, cost attributable per user &mdash; so friends can use it without reading or writing as me, or spending my credits.</li>
+    <li><strong>Deploy.</strong> The API and the web UI hosted together on Fly, against the Supabase database already live.</li>
     <li><strong>Mobile capture.</strong> Offline draft capture on a phone, synced on reconnect, feeding the same pipeline. Further out — photo and speech input follow the same pattern once this lands.</li>
   </ul>
   <p>This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
 </section>
 
 <footer>
-  Last updated 2026-08-09
+  Last updated 2026-10-03
 </footer>
 
 </main>

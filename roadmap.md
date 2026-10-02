@@ -351,15 +351,353 @@ bug in `_db()` that left transactions leaking between unrelated pooled requests 
 
 ## Phase 5 — Confirm UI
 
-New surface in `traininglogs`. **v1 is deliberately minimal**: a textarea, a rendered card, a
-confirm button. Mobile capture comes later.
+New surface: `web/`, plain HTML/JS, no build step (matches `docs/`'s own approach — nothing in
+this repo has npm tooling yet and a v1 confirm card doesn't need it). Mockup approved
+2026-08-13. **v1 is deliberately minimal** — textarea, rendered card, confirm button. Local
+draft storage, mic/dictation, and offline persistence are the mockup's "capture" screen telling
+the full story, but are explicitly **mobile capture, deferred** — not part of v1.
+
+Single-user throughout this phase — runs against the existing hardcoded `_DEFAULT_USER_ID` and
+the test DB. Multi-user identity is its own phase (5.5, below), deliberately sequenced *after*
+the UI works end-to-end, not before.
+
+- [x] **Step 1 — skeleton + capture → extract.** Textarea, "Extract" button, wired to
+      `POST /inputs` then `GET /extractions/{id}` against `TEST_DATABASE_URL`. No visual polish
+      yet — proves the round-trip before the card is built on top of it. **Done.** `web/index.html`
+      + `web/app.js`, API base URL and `X-Api-Key` entered in-page and kept in `localStorage`.
+      Verified live in a real (headless, puppeteer-core-driven) Chrome against the API pointed at
+      `TEST_DATABASE_URL`: `POST /inputs` → real Haiku extraction → `GET /extractions/{id}` →
+      full card JSON rendered on the page, no console errors besides a harmless favicon 404.
+- [x] **Step 2 — render the card.** Turn the `GET /extractions/{id}` response into the mockup's
+      review screen: session header, exercise blocks, uncertain-field flags. **Done.** `renderCard()`
+      in `web/app.js` builds the card from `UserValidationCard`'s actual shape (`validation_card_data.py`)
+      rather than the mockup's fictional fields — no `modality`/tag data exists on the card, so
+      exercise headers show number + name + a `Goal: …` summary instead. Verified live: session
+      header, warnings banner, session- and exercise-level warmup blocks, RPE/quality/failure-technique
+      chips, and per-row notes all rendered correctly against a real extraction. Desktop-width
+      layout, light theme only — phone frame and dark mode are Step 5. Raw JSON kept behind a
+      collapsed `<details>` for debugging, not shown by default.
+- [x] **Step 3 — correction loop.** Composer wired to `POST /extractions/{id}/correct`,
+      round-tripping `extract` between calls the way the endpoint's statelessness was designed
+      for. Gets its own step — it's the trickiest state-handling in the UI. **Done.** Client
+      holds `currentExtract` (previous response's `extract`, or `null` before the first
+      correction) and sends it back every call; server holds nothing. Card re-rendered from the
+      response's own `card` each time — same shape as `GET /extractions/{id}`, so `renderCard()`
+      needed no changes. Verified live with two sequential corrections on one extraction (RPE
+      fix, then a multi-set weight fix): both persisted after the second call, confirming state
+      carries forward correctly rather than resetting — the specific risk called out above.
+- [x] **Step 4 — confirm + error states.** `POST /extractions/{id}/confirm`, the confirmed
+      screen, and the real failures the API already returns surfaced as UI states, not console
+      errors: `409` (session_id collision), `502` (LLM failure), `400` (bad correction patch).
+      **Done.** Confirm sends `extract` + accumulated `corrections`; success shows the real
+      `session_id` and a "Log another" reset. Along the way, fixed a real Step 1 bug: `/inputs`'
+      502 response has a valid `{raw_input_id, error}` body, but the original code checked
+      `response.ok` first and never reached it, losing the raw_input_id and real error behind a
+      generic message. On any confirm failure the card/composer stay in place (not cleared) so
+      the person can correct and retry. Verified live: full round trip with a real `session_id`,
+      plus a deliberate 409 by confirming identical content twice.
+- [x] **Step 5 — polish pass.** Visual fidelity against the mockup, dark mode, a real phone
+      viewport. **Done.** Dark mode via `prefers-color-scheme` (mockup's palette, no manual
+      toggle), responsive stacking under 480px, unified button classes, focus-visible outlines,
+      small wordmark treatment. Verified with a Puppeteer harness that intercepts `fetch` and
+      returns canned responses — full click-through flow (extract → correct → confirm, plus a
+      mocked `409`) across light/dark × desktop/phone, zero real API calls, by explicit request
+      since this step touches no API-calling logic. Real end-to-end look left for manual
+      verification.
+
+**Phase 5's UI work (Steps 1–5) is functionally and visually complete**, pending: the deferred
+`scripts/eval_arms.py` run (date fix + chunking fix, ~$0.45, gated before `main`), and manual
+end-to-end verification against the real API. Phase 5.5 (per-user identity) is next per the
+roadmap's own sequencing, gated on that verification.
+
+## Phase 5b — Direct editing (planned 2026-10-02)
+
+**Goal.** Let the person fix the card by tapping a value and typing, instead of sending every
+fix through Haiku. Today each typed correction ("set 2 was 15 reps") is one paid call whose
+only job is to work out which field was meant; the UI already knows that. The same editing
+ability later lets a card start from a past session instead of from the model at all (Step 7),
+which is the first zero-AI way to log a session.
+
+**What already exists and gets reused, not rebuilt:**
+- `agent/patch.py` — `FieldEdit(path, value)` + `apply_edits()`. Every change in this phase,
+  manual or AI, is a list of these. One edit format, one apply function.
+- `extractions.corrections` — the append-only log `/confirm` already writes. Manual edits go
+  into the same list, marked by source, so "what the model said" vs "what the person changed"
+  stays separable (roadmap C7).
+- `TrainingLogLLMExtract.model_validate()` — the single place a bad value (RPE 85, negative
+  reps) gets rejected. Edits are validated by re-validating the whole extract, never by a
+  second set of rules in the UI.
+- The fetch-intercepting Puppeteer harness from Phase 5 Step 5 — UI steps are verified with
+  canned responses, $0.
+
+**Design rules for every step:**
+- The server owns the mapping from a card value to an extract path. The UI never counts list
+  positions or knows that card `reps: "8+1"` is extract `rep_count: {full: 8, partial: 1}`.
+- Stateless, like `/correct`: the client round-trips `extract`; the server holds nothing
+  between calls.
+- Allowlist, not blocklist: one `EDITABLE_FIELDS` table says which card fields can be edited
+  and how each maps to the extract. Adding an editable field later is one row plus a test.
+- No paid calls anywhere in this phase. No prod schema change except Step 7, which needs
+  same-session approval per `.claude/db-migration.md`.
+
+**Branching.** Base `phase-5b/direct-edit` cut from `dev` (after Step 0), one sub-branch per
+step: `phase-5b/direct-edit-N-<step>`. Squash-merge each step when the suite is green with 0
+skipped.
+
+**Process per step.** Design first: a short design note added under the step (decisions,
+open questions, test list), reviewed by Apoorva, then implementation.
+
+- [x] **Step 0 — Land Phase 5 on `dev`.** Done 2026-10-02 (`e2e725a`). Add the workspace-header fix to `CHANGELOG.md`
+      `[Unreleased]`, merge `phase-5/confirm-ui` into `dev`, cut `phase-5b/direct-edit`.
+      The real-session verdict stays a gate for `main`, not for `dev`.
+- [x] **Step 1 — Card rows carry their extract path.** `ValidationCardBuilder` adds a `path`
+      to the session header, each exercise header, set row, warmup row and movement row
+      (e.g. `exercises.1.sets.0`). Pure builder change, unit-tested, no UI change.
+
+      *Design note (2026-10-02):*
+      - New field `path: str | None = None` on `SessionHeader`, `ExerciseHeader`,
+        `WorkingSetRow`, `WarmupRow`, `MovementRow`. A value's full path is `path` + `.` +
+        its extract field name (session header `path` is `""`, the top level). Exercise-level
+        notes and warmup notes hang off the exercise header's path, so `ExerciseCard` and
+        `NotePreview` get nothing new.
+      - Paths use the **list position**, never `number`. They differ whenever the model
+        numbers out of order, and `apply_edits` addresses by position.
+      - Default `None`, not required: 85 row constructions in `test_agent_renderer.py` /
+        `test_agent_card.py` build rows by hand for the terminal renderer, which has no use
+        for a path. `None` means "not editable"; the builder must always set it, and a test
+        enforces that.
+      - Card field names that differ from extract names (`reps`, `quality`,
+        `duration_minutes`) are untouched here. Mapping them is Step 2's `EDITABLE_FIELDS`.
+      - Tests: each row type gets the right path; a session where exercise `number` ≠
+        position + 1 still gets position-based paths; and one invariant test that, for every
+        row the builder emits, resolving its `path` in `extract.model_dump()` lands on an
+        object whose `number` equals the row's `number`.
+- [x] **Step 2 — No-AI edit endpoint.** `POST /extractions/{id}/edit` takes
+      `{extract?, edits: [{path, field, value}]}`. New `agent/card_edits.py` turns card-level
+      edits into `FieldEdit`s through `EDITABLE_FIELDS` (reps string → `rep_count` /
+      `unilateral_rep_count` via `agent/reps.py`; `quality` → `rep_quality_assessment`;
+      `duration_minutes` → `session_duration_minutes`), applies them, re-validates, and
+      returns the same shape as `/correct`. Validation failure → 400 naming the field. The
+      correction record gains `source: "manual"`; `/correct` records `source: "ai"`.
+
+      *Design note (2026-10-02):*
+      - **Request:** `{extract?, edits: [{path, field, value}]}`. `path` is the card element's
+        own `path` from Step 1; `field` is the **card's** field name (`reps`, `quality`), so the
+        UI never learns extract names. `extract` round-trips exactly as on `/correct`.
+      - **Response:** reuses `CorrectOut` (`extract`, `card`, `correction`), so the UI handles
+        both endpoints' replies with one code path.
+      - **`agent/card_edits.py`**, pure, no DB, no LLM:
+        - `element_kind(path)` → `session` / `exercise` / `set` / `warmup_set` / `movement`
+          from the path's shape; anything else is an error.
+        - `EDITABLE_FIELDS: dict[kind, dict[card_field, extract_field]]`. v1:
+          session `date focus program phase week is_deload_week notes`,
+          `duration_minutes`→`session_duration_minutes`; exercise `name notes warmup_notes`;
+          set `weight_kg rpe duration_seconds distance_meters heart_rate_bpm notes`,
+          `quality`→`rep_quality_assessment`, `reps` (special, below); warmup set
+          `weight_kg rep_count notes`; movement `name reps duration_seconds notes`.
+          **Not editable in v1:** failure technique and goal (nested structures; the typed AI
+          correction still handles them).
+        - `reps` is text (`"8"`, `"8+1"`, `"L8/R7"`) read by the existing `agent/reps.py`
+          `parse_reps`, setting `rep_count` and `unilateral_rep_count` together (one filled,
+          one null). Non-empty text it can't read (`"feel"`) is an error, never a silent wipe.
+        - An empty string from an input box means "clear this value" (null).
+        - `apply_card_edits(extract, edits)` → `(new_extract, field_edits)`: map → existing
+          `apply_edits` → `TrainingLogLLMExtract.model_validate`. Any failure raises
+          `CardEditError` with a message naming the field; the endpoint returns 400. All
+          range checks (RPE, negative weight…) come from the existing model validators.
+        - A field the person edited is removed from `uncertain_fields`: they've now looked at
+          it. (`/correct` is left as it is.)
+      - **Correction record:** `{at, source: "manual", edits}` for `/edit`; `/correct` adds
+        `source: "ai"`. Older stored records have no `source`; Step 6 treats missing as `"ai"`.
+      - **Tests:** unit tests per kind and per mapping, reps variants and unreadable reps,
+        empty-string clear, unknown field, unknown path shape, a validator rejection (RPE 85),
+        `uncertain_fields` removal; API tests against the test DB for 200, 400 and 404. Zero
+        LLM calls.
+- [x] **Step 3 — Click-to-edit in the UI.** Verified by Apoorva on 2–3 real sessions. Tap a value → inline input → Enter or blur sends
+      the edit, Escape cancels, the card re-renders from the response. Fields in
+      `uncertain_fields` are highlighted as the first things to check. Phone-sized tap
+      targets, numeric keyboard for numbers. Typed corrections stay for changes that span many
+      fields ("all squat sets were 100 kg").
+
+      *Design note (2026-10-02):*
+      - **Tap a line, not a single value.** The card hides empty values (no RPE → no chip), so
+        per-value tapping could never *add* a missing RPE. Tapping a line (session header,
+        exercise header, set, warmup set, movement) instead opens a small inline form for that
+        line with every editable field, filled with current values, the tapped value focused.
+        Save sends all changed fields as one `/edit` call; unchanged fields aren't sent.
+      - **One form open at a time.** Opening another closes the first without saving. Enter
+        saves, Escape cancels. While saving, the form is disabled; on 400 it stays open with
+        the server's message under it; on success the card re-renders from the reply.
+      - **Field lists in the UI are presentation only:** label, card field name, input type
+        (`inputmode="decimal"` for numbers, a select for quality, a checkbox for deload). The
+        server's `EDITABLE_FIELDS` stays the authority; if the two drift, the server answers
+        400 and nothing is saved. No JS test setup exists to enforce the match, so the
+        Step 3 browser check exercises every field in the UI list once.
+      - **"AI inferred" fields** are outlined in the form and the line's flag stays visible,
+        so they're what you check first. After a save the server has cleared them.
+      - **State:** `/edit` replies are handled exactly like `/correct` replies:
+        `currentExtract` ← reply `extract`, reply `correction` pushed to `corrections`, card
+        re-rendered. The corrections log shows manual edits as "Edited: field → value".
+      - **Phone:** form inputs ≥ 44px tall, stacked under 480px.
+      - **Not editable:** a failed (placeholder) exercise's sets, failure technique, goal.
+      - **Verification, $0:** insert an extraction straight into the test DB (no LLM), run the
+        real API on the test DB, drive the real page headless (puppeteer-core + system
+        Chrome) through edit, bad value, cancel, add-a-missing-RPE and confirm, in light and
+        dark at desktop and 390px widths. Screenshots back to Apoorva.
+- [x] **Step 4 — Add and remove sets and exercises.** Verified by Apoorva on real sessions (9 logged). Server-side operations in
+      `card_edits.py` (add set defaults to a copy of the previous set; remove; add/remove
+      exercise), each producing list-level `FieldEdit`s, with `number` renumbered by the
+      server. UI buttons on the card.
+
+      *Design note (2026-10-03), prompted by a real session that missed a whole set:*
+      - **Same endpoint.** `/edit` takes either `edits` (Step 2) or one `op`
+        `{op, path}` — exactly one of the two per call, so each call is one undoable step in
+        the corrections log.
+      - **Ops**, all in `card_edits.py`, all pure:
+        - `add_set` — `path` is an exercise → append; `path` is a set → insert right after
+          it (a missed set 2 of 4). The new set copies weight and reps from its neighbour
+          (the set it follows, or the last one); RPE, quality, notes and failure technique
+          start empty — copying a failure technique would also be invalid without RPE 10.
+        - `add_warmup_set` — same, for warmup sets.
+        - `add_exercise` — `path` `""` → append; an exercise path → insert after it. Name
+          `"New exercise"` (the model requires a non-empty name), everything else empty.
+        - `remove` — any set, warmup set, exercise or warmup/cooldown movement path.
+      - **Renumbering.** After any add or remove, the affected list's `number`s become
+        1…n by position. This also tidies a list the model numbered out of order.
+      - **Positions shift, so everything keyed by position shifts with them.** An insert or
+        remove re-indexes `uncertain_fields` (and, once Step 5 lands, `sources`); entries
+        under a removed element are dropped. This is the one real correctness risk in the
+        step and gets the most tests.
+      - **Corrections log:** the op is recorded as one list-level `FieldEdit` (the whole new
+        list), the format `patch.py` already documents, plus `op` for readability.
+      - **Reply:** `CorrectOut` gains `created_path` (null except after an add), so the UI
+        opens the new line's form without counting positions itself.
+      - **UI:** each exercise gets `+ Set` and `+ Warmup set` under its sets; the card gets
+        `+ Exercise` at the end; a set's form gets `+ Set after this`; every set, warmup set,
+        exercise and movement form gets `Remove`, which asks once more inline before
+        sending. After an add, the new line's form opens straight away.
+      - **Not in this step:** adding warmup/cooldown movements (remove only), reordering.
+- [ ] **Step 5 — Show where a value came from.** *Deferred 2026-10-03 by Apoorva; not started.* `source_line` is checked during extraction
+      but dropped when `ExerciseExtract` becomes `Exercise`. Keep it: a `sources` map
+      (path → line) on `TrainingLogLLMExtract`, default empty so stored extracts still
+      validate. Card rows carry `source`; tapping a value shows the line. Must confirm this
+      doesn't change anything sent to the model (no eval cache re-key). Update
+      `docs/design.html` (data model).
+- [x] **Step 6 — Corrections as data.** `scripts/correction_stats.py`, read-only: which fields
+      get corrected most, with paths generalised (`exercises.*.sets.*.rpe`), split by
+      `source`. Answers "which prompt should I fix next" from real use.
+
+      *Design note (2026-10-03):*
+      - **Pure part in the package, thin script outside it.**
+        `traininglogs/analytics/corrections.py` holds `summarize(records)`: no DB, unit-tested.
+        `scripts/correction_stats.py` connects read-only (`set_session(readonly=True)`),
+        loads `extractions.corrections` for confirmed extractions, and prints.
+      - **What it counts:**
+        - Field edits by **pattern**, positions replaced with `*`
+          (`exercises.3.sets.1.rpe` → `exercises.*.sets.*.rpe`), split by `source`. Records
+          from before Step 2 have no `source`; they came from `/correct`, so they count as
+          `ai`.
+        - Add/remove ops by type. `add_set` is the useful one: every one is a set the model
+          missed.
+        - How many sessions each pattern appeared in, so one session with 12 RPE fixes
+          doesn't look like a pattern across sessions.
+      - **List-level edits** (an op's whole new list, or an AI correction that replaced a
+        list) count once under their list pattern (`exercises.*.sets`), not per item.
+      - Output is plain text tables, most-corrected first. No charts; this is for deciding
+        what to fix in the prompts.
+- [x] **Step 7 — Repeat a session.** Built and verified by Apoorva 2026-10-03; prod constraint applied with approval. Pick a past session → server builds an extract from the
+      stored session with today's date → normal card, edit, confirm. Zero AI calls. Open
+      design questions, settled in this step's design note: the reverse projection
+      (`TrainingSession` → extract); what `raw_inputs.content` holds so the content-derived
+      `session_id` differs per repeat; `source_kind` needs a new allowed value (additive
+      `CHECK` change on prod, approval required); how the session list is filtered (by
+      `focus`?).
+
+      *Design note (2026-10-03):*
+      - **Flow:** pick a past session → `POST /sessions/{session_id}/repeat` → the server
+        writes a raw input and a *pending* extraction built from that session, no LLM → the
+        UI loads its card exactly as after Extract → edit, add/remove, confirm as usual.
+        Everything after the first call is the existing path, unchanged.
+      - **What a repeat copies** (new `ingest/repeat.py`, pure `session_to_extract(session,
+        date)` + a thin DB function): session focus, program, phase, week, deload flag;
+        warmup/cooldown movement names, reps and durations; every exercise's name, goal,
+        tags and cues, warmup sets' weight and reps; every working set's weight and reps
+        (bilateral or unilateral), duration and distance. **Cleared**, because they describe
+        how *that* day went: RPE, rep quality, failure technique, rest, heart rate, duration,
+        and **every note**. Same rule as `add_set` in Step 4.
+      - **Notes are shown as "last time", never copied** (decided by Apoorva 2026-10-03). A
+        note belongs to the day it was written; copying it would save last week's note as
+        today's unless edited. The UI fetches the source session (`GET /sessions/{id}`,
+        unchanged) and shows its session note and, per exercise, its exercise, warmup and set
+        notes as a muted read-only line, matched by exercise name so adding or removing sets
+        and exercises can't misplace them.
+      - **Date** is today, and `date` is put in `uncertain_fields` (outlined in the form),
+        the same thing extraction does when the text has no date — logging yesterday's
+        session from a repeat is normal.
+      - **Raw input:** `source_kind = 'repeat'`, `source_file = <source session_id>`, content
+        one readable line: `Repeat of <session_id> (<focus>, <date>), started <UTC time>`.
+        The timestamp makes every repeat's content, and so its content-derived
+        `session_id`, unique — two repeats of the same session on the same day don't
+        collide. The source session itself is the real record; the raw input records the
+        action.
+      - **Extraction row:** `model = 'none'`, `prompt_version = 'repeat'`. No `llm_calls`.
+      - **Prod change, needs approval:** `raw_inputs_source_kind_check` gains `'repeat'`.
+        Constraint-only (drop + re-add with one more value); every existing row already
+        satisfies it. `schema.sql` gets the same as an idempotent `DROP CONSTRAINT IF
+        EXISTS` / `ADD CONSTRAINT`, so fresh and existing databases match.
+      - **Choosing the session:** `GET /sessions` gains `exercises` (names, in order) per
+        session and a `limit`. The capture screen gets a "Repeat a past session" list:
+        newest 15, each row date · focus · exercise names, tap to repeat. No focus filter
+        — 9 of 9 recent sessions are "Strength", so it wouldn't narrow anything.
+      - **Historical sessions** (imported from markdown, no extraction) repeat the same way:
+        the repeat reads the normalized tables, not an old extract.
+
+- [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** *Deferred 2026-10-03 as a good enhancement, not a current problem: a read-only scan of all 76 stored model answers in prod (`llm_calls.raw_payload`: 13 split, 13 shell, 50 exercise) found 0 fields the schema would drop. Re-run that scan before picking this up.* No
+      Pydantic model sets `extra`, so the default (`ignore`) discards any field the model
+      returns that the schema lacks. The prompt's notes rule (`prompts.py:74`) usually catches
+      unmappable text first, but nothing enforces it. Make the extraction-side models reject
+      unknown fields so the call retries or is flagged. Check first: if `extra="forbid"`
+      changes the tool schema sent to the model (`additionalProperties: false`), it re-keys the
+      eval cache and may change model behaviour, which means a paid measurement. If so, do the
+      check at validation time instead of in the schema.
+
+**Before merging Phase 5b to `dev`:** update `docs/design.html` (new `/edit` endpoint, card
+`path`, correction `source`, Step 5's `sources`) — required by `CLAUDE.md` for API contract
+changes.
+
+**Out of scope here, recorded under "After end-to-end works":** per-user field sets,
+generating programs from repeated sessions, a sessions/categories browsing view.
+
+## Phase 5.5 — Per-user identity
+
+**Gate: only after Phase 5 is working end-to-end single-user.** Right now `user_id`/`user_name`
+are hardcoded constants (`_DEFAULT_USER_ID`/`_DEFAULT_USER_NAME` in `processor.py`) and the API
+has one shared `API_KEY` — every friend would read and write as *you*, and anyone holding the
+key spends *your* Anthropic credits. This is what turns it from "my tool" into "an app other
+people use on my bill," so it has to land before Phase 6 deploy, not after.
+
+Proportionate fix, not a real auth system:
+
+- [ ] `users` table: `id`, `name`, `api_key` (per person, not shared).
+- [ ] `_db()`/auth dependency resolves `X-Api-Key` → `user_id` instead of trusting one global
+      key; every write scopes to the resolved user, not the hardcoded constant.
+- [ ] `llm_calls.user_id` (or join through `raw_input_id`) — cost is already tracked per call
+      (Phase 3), this just makes "who spent what" a `GROUP BY` instead of assumed to be you.
+- [ ] No passwords, no sessions, no OAuth provider — you hand each friend their own key once.
 
 ## Phase 6 — Deploy
 
+Deploying the **app**, not just the API — `web/` and the FastAPI service ship together.
+
 - [ ] Deploy FastAPI to Fly (`fly.toml` and `Dockerfile` already exist). Supabase is live with
       121 sessions (`archived/plans/pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
-- [ ] Env: `DATABASE_URL`, `API_KEY`, `ALLOWED_ORIGINS`.
-- [ ] Smoke-test read + write paths.
+- [ ] Mount `web/` as static files on the same Fly app (`StaticFiles`), same origin as the API —
+      avoids standing up a second host and sidesteps CORS for the write endpoints. Distinct from
+      how `docs/`'s dashboard reaches the public: that's a static pull into a separate personal
+      website at *its* deploy time, which doesn't fit a page that calls a live write API.
+- [ ] Env: `DATABASE_URL`, `API_KEY` → per-user keys (Phase 5.5), `ALLOWED_ORIGINS`.
+- [ ] Smoke-test read + write paths, and that a second `api_key` actually gets a second
+      `user_id`'s data back, not yours.
 
 ## After end-to-end works
 
@@ -390,6 +728,22 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 ---
 
 ## ▶ Resume here
+
+### Session 2026-10-02 — read this first, it supersedes parts of the 2026-08-10 notes below
+
+- **Prod is migrated.** With approval, applied `schema.sql` plus four `ADD COLUMN`s it can't
+  express (`sessions.notes`, `exercises.tags/modality/movement_pattern` — they exist only inside
+  `CREATE TABLE IF NOT EXISTS`, so any older DB misses them; follow-up: add them to
+  `schema.sql` as `ALTER`s). Counts unchanged: 121 / 1009 / 2469 / 647. The "Prod schema
+  migration — explicitly deferred" section below is now history.
+- **Step 5 squash-merged** into `phase-5/confirm-ui` (`d045f3e`), plus `302eaec`: the API key
+  is now an `sk-ant-usr…` key that needs `ANTHROPIC_WORKSPACE_ID` (sent as the
+  `anthropic-workspace-id` header). Suite 654 green, 0 skipped.
+- **`eval_arms.py` gate dropped by decision** — no spend for now. The real-session check stays.
+- **Running locally against prod:** API on :8000 (`ALLOWED_ORIGINS=http://localhost:5500`),
+  `web/` served on :5500. Logging Apoorva's real sessions is the open item; one orphan
+  `raw_inputs` row (`39abe841…`) is from the failed first attempt.
+- **Next: Phase 5b (direct editing)**, planned above. Awaiting plan approval, then Step 0.
 
 **Last session: 2026-08-10.** Phase 3 merged and pushed at session start. By the end of the
 session: a real extraction bug found and fixed and verified live, `session_id` identity
@@ -436,29 +790,55 @@ test that calls `confirm()`).
 
 ### Start here next session
 
-**Phase 5 — Confirm UI** is next: a new surface in `traininglogs`, deliberately minimal —
-textarea, rendered card, confirm button. This is the actual "friends can try this" surface;
-Phase 4's four endpoints are what it calls. No steps broken out yet — start by deciding the
-stack (plain HTML/JS hitting the API directly is enough for v1; no framework needed yet) and
-where it lives (a new `web/` or similar, separate from `docs/` which is the read-only
-dashboard).
+**Phase 5 — Confirm UI, all five steps done.** Steps 1–4 merged into `phase-5/confirm-ui`
+(`c718e78`, `86fac13`, `3dbffb2`, `2ad804c`). Step 5 is built on `phase-5/confirm-ui-5-polish`
+(cut from `phase-5/confirm-ui`) but **not yet committed or merged** — commit it, then decide
+whether `phase-5/confirm-ui` is ready for `dev`/`main` or needs the two gates below closed
+first. Steps 1–4 verified live against the real API on `TEST_DATABASE_URL`; Step 5 (pure
+CSS/layout, no API-calling logic touched) was verified with a `fetch`-intercepting Puppeteer
+harness instead, by explicit request not to spend money testing something that couldn't have
+changed API behavior — canned responses for all four endpoints, driving the real click-through
+flow across light/dark × desktop/390px-phone, zero real calls. **A real end-to-end look at Step
+5 with actual data is still worth doing** before calling the visual pass done — the mock harness
+proves the CSS handles real card shapes correctly, not that it's *pretty*.
 
-Before that, or before this branch touches prod either way — same blocker as before, still
-unresolved:
+**Two gates before this reaches `main`, both already known, neither closed:**
+1. **`scripts/eval_arms.py` has not been run** against the date fix (`SHELL_SYSTEM_PROMPT`) or
+   the chunking fix (`agent/extraction.py`, `_locate_anchor_lines` → `_locate_anchors`) from
+   Step 2's session — both are deliberately deferred by request, ~$0.45 for one pass covering
+   both. See the CHANGELOG's "Fixed" entries for what each one does if this is a different
+   session picking it back up.
+2. **Manual end-to-end check with the real API**, now that all 5 steps exist — extract, correct,
+   confirm, and look at the confirmed session on the dashboard, not just in the API response.
 
-### Before the AI path is next run against prod — required
+**Housekeeping note, not a bug:** live UI testing against `TEST_DATABASE_URL` this session
+caused one incidental test failure (`test_api.py::test_exercise_history_not_found`, from a
+live-confirmed "Squat" session existing when it ran) that self-resolved via
+`test_ingest.py`'s own per-test `TRUNCATE sessions CASCADE`. If a similar one-off failure shows
+up after a session of live testing, rerun before assuming it's a regression.
 
-Prod does not have the new tables or columns: `raw_inputs`, `extractions`,
-`sessions.extraction_id`, `extractions.corrections`, and now `llm_calls` (Phase 3). **The AI
-path now writes to all of them, so `traininglogs log --parser ai` against prod will fail until
-the schema is applied.** This also blocks Phase 4's endpoints the moment they're pointed at
-`DATABASE_URL` instead of `TEST_DATABASE_URL` — worth doing before Phase 4 needs it, not after.
+**Mockup reference, still the design spec:** reviewed and approved 2026-08-13, live at
+https://claude.ai/code/artifact/e5eb50bd-8f9b-4dc4-91f0-3810b7a39c3c — **only place it exists**
+(source file was written to a machine-local session scratchpad that doesn't persist). One
+standing correction: the mockup's `.ex-head .tag` (modality, e.g. "barbell") does **not** match
+`UserValidationCard`'s real fields — `ExerciseHeader` has no modality/tag, only `number`,
+`name`, `goal`, `uncertain_fields`, `failed` (`validation_card_data.py`). The UI renders
+`Goal: …` in that slot instead; don't reconstruct the tag from memory of the mockup.
 
-Everything is additive (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`), so applying
-`src/traininglogs/db/schema.sql` cannot touch an existing row. It has still not been run:
-`.claude/db-migration.md` requires explicit approval in the same session for anything against
-`DATABASE_URL`. Ask before running it, show the statement first, and do not use
-`repopulate_db.py` (it truncates).
+**Phase 5.5 (per-user identity) is next**, gated on the two items above plus the real
+end-to-end check — not started.
+
+### Prod schema migration — explicitly deferred, not blocking
+
+Prod still does not have `raw_inputs`, `extractions`, `sessions.extraction_id`,
+`extractions.corrections`, or `llm_calls` (Phase 3) — `--parser ai` and Phase 4's endpoints will
+fail against `DATABASE_URL` until `src/traininglogs/db/schema.sql` is applied (additive only,
+`CREATE TABLE IF NOT EXISTS`/`ADD COLUMN IF NOT EXISTS`, cannot touch an existing row). **User
+decision 2026-08-13: deferred on purpose** — the full historical regen this would eventually be
+paired with costs real Haiku money, and isn't needed to keep building. Phase 5 runs entirely
+against `TEST_DATABASE_URL`, so this isn't a blocker for it. Still requires explicit
+same-session approval per `.claude/db-migration.md` whenever it does happen — ask first, show
+the statement, never `repopulate_db.py` (it truncates).
 
 ### State worth carrying, not re-derived
 

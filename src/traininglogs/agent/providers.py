@@ -255,7 +255,13 @@ class AnthropicProvider:
     ) -> None:
         self.model = model
         self.max_tokens = max_tokens
-        self._client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        # A key that is not scoped to a workspace (`sk-ant-usr...`) is rejected unless the request
+        # names one; workspace-scoped keys (`sk-ant-api...`) need no header.
+        workspace_id = os.environ.get("ANTHROPIC_WORKSPACE_ID")
+        self._client = anthropic.Anthropic(
+            api_key=os.environ.get("ANTHROPIC_API_KEY"),
+            default_headers={"anthropic-workspace-id": workspace_id} if workspace_id else None,
+        )
         # One record per extract() call -- i.e. per step (segment/shell/worker/correction), not
         # per raw HTTP attempt -- appended in `finally` whether the call ends in success or a
         # raised LLMParserError. ingest/extract.py drains this into the llm_calls table after

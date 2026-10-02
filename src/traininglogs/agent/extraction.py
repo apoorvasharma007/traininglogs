@@ -128,58 +128,97 @@ def _placeholder_exercise(position: int, name: str, error: str) -> Exercise:
     )
 
 
-# Deliberately 0, not a safety margin. A chunk already runs up to (not including) the next
-# exercise's own anchor line, and by construction everything belonging to the current exercise
-# (its remarks included) appears before that line — so a positive value here only ever leaks
-# the start of the next exercise (its name + first warmup line) into the current chunk. That
-# leak was the root cause of a "lost in the middle"-looking failure that was actually a
-# deterministic bug: a worker handed a 2-exercise excerpt but told to extract "exercise number
-# N" (the global split position) would count blocks in the leaked fragment and misfire — see
-# assemble(), which passes no position at all whenever a chunk was successfully isolated,
-# precisely because an isolated chunk contains exactly one exercise.
-CHUNK_TRAILING_OVERLAP_LINES = 0
+# 1:1 character substitutions only -- no Unicode composition (NFKC) and no whitespace
+# collapsing, unlike _comparable() below. A position found after this normalisation must still
+# be a valid position in the *original* text, which only holds if every substitution replaces
+# exactly one character with exactly one character. Covers the same drift _comparable() was
+# built for -- a model asked to copy a line "verbatim" still silently retypes a curly quote, an
+# em/en dash, or a non-breaking space into its plain equivalent.
+_ANCHOR_CHAR_VARIANTS = (
+    ("’", "'"), ("‘", "'"), ("“", '"'), ("”", '"'),
+    ("–", "-"), ("—", "-"), ("−", "-"),
+    (" ", " "),
+)
 
 
-def _locate_anchor_lines(lines: list[str], split: ExerciseSplit) -> dict[int, int]:
-    """Sequentially locate each exercise's anchor line number, searching forward from the line
-    after the previous exercise's anchor. Sequential (not global) search is what makes this
-    work even when the same anchor text appears more than once in the document (e.g. a
-    repeated exercise name) — we're not asking "where does this occur anywhere," only "where
-    does it occur next," using the ordering the splitter already gave us. A position whose
-    anchor can't be found verbatim is simply omitted; the caller falls back to the full text
-    for that one exercise rather than treating it as fatal."""
+def _normalize_for_anchor_matching(text: str) -> str:
+    for fancy, plain in _ANCHOR_CHAR_VARIANTS:
+        text = text.replace(fancy, plain)
+    return text
+
+
+def _locate_anchors(text: str, split: ExerciseSplit) -> dict[int, int]:
+    """Sequentially locate each exercise's anchor as a character offset into `text`, searching
+    forward from the end of the previous match. Character offsets (not line numbers) are what
+    let two exercises anchored on the same physical line — a short, casual capture with no line
+    breaks between them, e.g. "Bench press 60kg for 8. Incline db press 22kg for 10." — both be
+    found; a line-based search can only ever locate the first of them, since it advances to the
+    *next line* after a match regardless of where in that line the match ended, and there may
+    be no next line at all.
+
+    Sequential (not global) search is what makes this work even when the same anchor text
+    appears more than once in the document (e.g. a repeated exercise name) — we're not asking
+    "where does this occur anywhere," only "where does it occur next," using the ordering the
+    splitter already gave us. A position whose anchor can't be found at all is simply omitted;
+    the caller falls back to the full text for that one exercise rather than treating it as
+    fatal.
+
+    Matching is on `_normalize_for_anchor_matching()`'s output, not raw text, so a model
+    silently retyping a curly quote or non-breaking space doesn't fail an otherwise-correct
+    match — the same class of false negative `_comparable()` exists to prevent elsewhere in
+    this file, applied here in a position-preserving form."""
+    haystack = _normalize_for_anchor_matching(text)
     located: dict[int, int] = {}
     search_from = 0
     for entry in split.exercises:
-        anchor = entry.anchor.strip()
+        anchor = _normalize_for_anchor_matching(entry.anchor.strip())
         if not anchor:
             continue
-        for i in range(search_from, len(lines)):
-            if anchor in lines[i]:
-                located[entry.position] = i
-                search_from = i + 1
-                break
+        idx = haystack.find(anchor, search_from)
+        if idx == -1:
+            continue
+        located[entry.position] = idx
+        search_from = idx + len(anchor)
     return located
 
 
 def _chunk_exercises(text: str, split: ExerciseSplit) -> dict[int, str]:
     """Slice `text` into one isolated chunk per successfully-located exercise: from its own
-    anchor line to CHUNK_TRAILING_OVERLAP_LINES past the next located exercise's anchor line
-    (or to the end of the document for the last one). Positions whose anchor couldn't be
-    located are simply absent from the returned dict — assemble() falls back to the full text
-    for those."""
-    lines = text.split("\n")
-    located = _locate_anchor_lines(lines, split)
-    ordered_positions = sorted(located)
+    anchor to the start of the next located exercise's anchor (or to the end of the document
+    for the last one). No trailing overlap — an earlier version added a few lines of margin as
+    a "safety net," which turned out to leak the next exercise's opening into the current chunk
+    and produce a failure that looked like an LLM reliability problem but was actually this
+    deterministic bug: a worker handed a 2-exercise chunk but told to extract "exercise number
+    N" (the global split position) would count blocks in the leaked fragment and misfire. The
+    current exercise's own trailing content always sits before the next exercise's anchor by
+    construction, so zero overlap is correct, not merely tolerated.
+
+    Boundaries are computed in the order anchors were actually *found* in the text, not the
+    order the split declared as each entry's `position` number. Those can disagree — nothing
+    enforces that the model's position labels match its own list order — and boundary math
+    done against the wrong order slices across exercise boundaries instead of at them: sorting
+    by declared position can pair position N's start with some *other* position's end,
+    producing a chunk that silently spans into a neighboring exercise's content, or in the
+    worse case an inverted, empty span. Sorting by the offset itself instead of the label makes
+    a chunk's content always exactly one isolated exercise, regardless of what the model
+    labeled it — the position it ends up filed under can still be wrong if the model's labels
+    were wrong, but that is a labeling problem, not a text-isolation one, and is not this
+    function's to fix.
+
+    A position whose anchor couldn't be located is simply absent from the returned dict —
+    assemble() falls back to the full text for that one exercise rather than handing a worker
+    an empty or corrupted chunk with no signal as to why. The `end <= start` guard below should
+    be unreachable given the above (anchors have positive length and are searched for strictly
+    after the previous match), but costs nothing to keep as a defensive backstop."""
+    located = _locate_anchors(text, split)
+    by_offset = sorted(located.items(), key=lambda item: item[1])
 
     chunks: dict[int, str] = {}
-    for idx, position in enumerate(ordered_positions):
-        start = located[position]
-        if idx + 1 < len(ordered_positions):
-            end = located[ordered_positions[idx + 1]] + CHUNK_TRAILING_OVERLAP_LINES
-        else:
-            end = len(lines)
-        chunks[position] = "\n".join(lines[start : min(end, len(lines))])
+    for idx, (position, start) in enumerate(by_offset):
+        end = by_offset[idx + 1][1] if idx + 1 < len(by_offset) else len(text)
+        if end <= start:
+            continue
+        chunks[position] = text[start:end]
     return chunks
 
 
