@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 1, card elements carry their extract path
+
+- The validation card's session header, exercise headers, set rows, warmup rows and
+  warmup/cooldown movement rows each gain `path`: where that element lives in the extract, by
+  list position (`exercises.1.sets.0`; `""` for the session header). Returned by
+  `GET /extractions/{id}` and `/correct`. Groundwork for editing a value directly without an
+  AI call. `None` on rows built by hand (the terminal renderer's tests).
+
 ### Fixed — keys not scoped to a workspace were rejected
 
 - `AnthropicProvider` sends the `anthropic-workspace-id` header when `ANTHROPIC_WORKSPACE_ID` is

@@ -37,12 +37,12 @@ class ValidationCardBuilder:
         uncertain = set(extract.uncertain_fields)
         return UserValidationCard(
             session_header=self._session_header(extract, uncertain),
-            warmup_section=self._movement_section("Warmup", extract.warmup),
+            warmup_section=self._movement_section("Warmup", "warmup", extract.warmup),
             exercises=[
                 self._exercise_card(ex, idx, uncertain)
                 for idx, ex in enumerate(extract.exercises)
             ],
-            cooldown_section=self._movement_section("Cooldown", extract.cooldown),
+            cooldown_section=self._movement_section("Cooldown", "cooldown", extract.cooldown),
             note_preview=NotePreview(extract.notes) if extract.notes else None,
             warnings=list(extract.warnings),
         )
@@ -64,9 +64,12 @@ class ValidationCardBuilder:
             focus=extract.focus,
             duration_minutes=extract.session_duration_minutes,
             uncertain_fields=frozenset(uf),
+            path="",
         )
 
-    def _movement_section(self, title: str, movements) -> SessionMovementSection | None:
+    def _movement_section(
+        self, title: str, key: str, movements
+    ) -> SessionMovementSection | None:
         if not movements:
             return None
         return SessionMovementSection(
@@ -78,8 +81,9 @@ class ValidationCardBuilder:
                     reps=m.reps,
                     duration_seconds=m.duration_seconds,
                     notes=m.notes,
+                    path=f"{key}.{m_idx}",
                 )
-                for m in movements
+                for m_idx, m in enumerate(movements)
             ],
         )
 
@@ -104,6 +108,7 @@ class ValidationCardBuilder:
                 goal=self._goal_summary(ex.current_goal) if ex.current_goal else None,
                 uncertain_fields=frozenset(header_uf),
                 failed=failed,
+                path=f"exercises.{ex_idx}",
             ),
             warmup_rows=self._warmup_rows(ex, ex_idx, uncertain),
             working_set_rows=self._working_set_rows(ex, ex_idx, uncertain),
@@ -139,6 +144,7 @@ class ValidationCardBuilder:
                     rep_count=ws.rep_count,
                     notes=ws.notes,
                     uncertain_fields=frozenset(uf),
+                    path=f"exercises.{ex_idx}.warmup_sets.{ws_idx}",
                 )
             )
         return rows
@@ -151,7 +157,7 @@ class ValidationCardBuilder:
         rows = []
         for s_idx, s in enumerate(ex.sets):
             uf = self._set_uncertain(uncertain, ex_idx, "sets", s_idx)
-            rows.append(self._working_set_row(s, uf))
+            rows.append(self._working_set_row(s, uf, f"exercises.{ex_idx}.sets.{s_idx}"))
         return rows
 
     def _set_uncertain(
@@ -160,7 +166,7 @@ class ValidationCardBuilder:
         prefix = f"exercises.{ex_idx}.{set_key}.{set_idx}."
         return {path[len(prefix):].split(".")[0] for path in uncertain if path.startswith(prefix)}
 
-    def _working_set_row(self, s: WorkingSet, uf: set[str]) -> WorkingSetRow:
+    def _working_set_row(self, s: WorkingSet, uf: set[str], path: str) -> WorkingSetRow:
         return WorkingSetRow(
             number=s.number,
             weight_kg=s.weight_kg,
@@ -173,6 +179,7 @@ class ValidationCardBuilder:
             heart_rate_bpm=s.heart_rate_bpm,
             notes=s.notes,
             uncertain_fields=frozenset(uf),
+            path=path,
         )
 
     def _fmt_reps(

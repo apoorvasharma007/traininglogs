@@ -447,12 +447,31 @@ skipped.
 **Process per step.** Design first: a short design note added under the step (decisions,
 open questions, test list), reviewed by Apoorva, then implementation.
 
-- [ ] **Step 0 — Land Phase 5 on `dev`.** Add the workspace-header fix to `CHANGELOG.md`
+- [x] **Step 0 — Land Phase 5 on `dev`.** Done 2026-10-02 (`e2e725a`). Add the workspace-header fix to `CHANGELOG.md`
       `[Unreleased]`, merge `phase-5/confirm-ui` into `dev`, cut `phase-5b/direct-edit`.
       The real-session verdict stays a gate for `main`, not for `dev`.
-- [ ] **Step 1 — Card rows carry their extract path.** `ValidationCardBuilder` adds a `path`
+- [x] **Step 1 — Card rows carry their extract path.** `ValidationCardBuilder` adds a `path`
       to the session header, each exercise header, set row, warmup row and movement row
       (e.g. `exercises.1.sets.0`). Pure builder change, unit-tested, no UI change.
+
+      *Design note (2026-10-02):*
+      - New field `path: str | None = None` on `SessionHeader`, `ExerciseHeader`,
+        `WorkingSetRow`, `WarmupRow`, `MovementRow`. A value's full path is `path` + `.` +
+        its extract field name (session header `path` is `""`, the top level). Exercise-level
+        notes and warmup notes hang off the exercise header's path, so `ExerciseCard` and
+        `NotePreview` get nothing new.
+      - Paths use the **list position**, never `number`. They differ whenever the model
+        numbers out of order, and `apply_edits` addresses by position.
+      - Default `None`, not required: 85 row constructions in `test_agent_renderer.py` /
+        `test_agent_card.py` build rows by hand for the terminal renderer, which has no use
+        for a path. `None` means "not editable"; the builder must always set it, and a test
+        enforces that.
+      - Card field names that differ from extract names (`reps`, `quality`,
+        `duration_minutes`) are untouched here. Mapping them is Step 2's `EDITABLE_FIELDS`.
+      - Tests: each row type gets the right path; a session where exercise `number` ≠
+        position + 1 still gets position-based paths; and one invariant test that, for every
+        row the builder emits, resolving its `path` in `extract.model_dump()` lands on an
+        object whose `number` equals the row's `number`.
 - [ ] **Step 2 — No-AI edit endpoint.** `POST /extractions/{id}/edit` takes
       `{extract?, edits: [{path, field, value}]}`. New `agent/card_edits.py` turns card-level
       edits into `FieldEdit`s through `EDITABLE_FIELDS` (reps string → `rep_count` /
@@ -485,6 +504,15 @@ open questions, test list), reviewed by Apoorva, then implementation.
       `session_id` differs per repeat; `source_kind` needs a new allowed value (additive
       `CHECK` change on prod, approval required); how the session list is filtered (by
       `focus`?).
+
+- [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** No
+      Pydantic model sets `extra`, so the default (`ignore`) discards any field the model
+      returns that the schema lacks. The prompt's notes rule (`prompts.py:74`) usually catches
+      unmappable text first, but nothing enforces it. Make the extraction-side models reject
+      unknown fields so the call retries or is flagged. Check first: if `extra="forbid"`
+      changes the tool schema sent to the model (`additionalProperties: false`), it re-keys the
+      eval cache and may change model behaviour, which means a paid measurement. If so, do the
+      check at validation time instead of in the schema.
 
 **Out of scope here, recorded under "After end-to-end works":** per-user field sets,
 generating programs from repeated sessions, a sessions/categories browsing view.
