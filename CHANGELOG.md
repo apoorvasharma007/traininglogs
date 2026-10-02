@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 2, edit a card value without an AI call
+
+- `POST /extractions/{id}/edit` takes `{extract?, edits: [{path, field, value}]}` — the card
+  element's `path`, the card's own field name, the new value — applies it with no LLM call, and
+  replies in the same shape as `/correct` (`extract`, `card`, `correction`). Stateless and
+  round-tripped the same way. An invalid value (RPE 85, unreadable reps, a field that isn't
+  editable) is a 400 whose detail names the field.
+- `agent/card_edits.py`: `EDITABLE_FIELDS`, the allowlist mapping each card field to its extract
+  field per kind of card element. Reps are typed as written (`8`, `8+1`, `L8/R7`) and read by
+  `agent/reps.py`. An empty string clears a value. Failure techniques and goals are not
+  editable this way yet; a typed correction still handles them.
+- A field edited on the card is dropped from `uncertain_fields`.
+- Correction records gain `source`: `"manual"` from `/edit`, `"ai"` from `/correct`. Records
+  stored before this have no `source`.
+
 ### Added — Phase 5b Step 1, card elements carry their extract path
 
 - The validation card's session header, exercise headers, set rows, warmup rows and

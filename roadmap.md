@@ -472,13 +472,47 @@ open questions, test list), reviewed by Apoorva, then implementation.
         position + 1 still gets position-based paths; and one invariant test that, for every
         row the builder emits, resolving its `path` in `extract.model_dump()` lands on an
         object whose `number` equals the row's `number`.
-- [ ] **Step 2 — No-AI edit endpoint.** `POST /extractions/{id}/edit` takes
+- [x] **Step 2 — No-AI edit endpoint.** `POST /extractions/{id}/edit` takes
       `{extract?, edits: [{path, field, value}]}`. New `agent/card_edits.py` turns card-level
       edits into `FieldEdit`s through `EDITABLE_FIELDS` (reps string → `rep_count` /
       `unilateral_rep_count` via `agent/reps.py`; `quality` → `rep_quality_assessment`;
       `duration_minutes` → `session_duration_minutes`), applies them, re-validates, and
       returns the same shape as `/correct`. Validation failure → 400 naming the field. The
       correction record gains `source: "manual"`; `/correct` records `source: "ai"`.
+
+      *Design note (2026-10-02):*
+      - **Request:** `{extract?, edits: [{path, field, value}]}`. `path` is the card element's
+        own `path` from Step 1; `field` is the **card's** field name (`reps`, `quality`), so the
+        UI never learns extract names. `extract` round-trips exactly as on `/correct`.
+      - **Response:** reuses `CorrectOut` (`extract`, `card`, `correction`), so the UI handles
+        both endpoints' replies with one code path.
+      - **`agent/card_edits.py`**, pure, no DB, no LLM:
+        - `element_kind(path)` → `session` / `exercise` / `set` / `warmup_set` / `movement`
+          from the path's shape; anything else is an error.
+        - `EDITABLE_FIELDS: dict[kind, dict[card_field, extract_field]]`. v1:
+          session `date focus program phase week is_deload_week notes`,
+          `duration_minutes`→`session_duration_minutes`; exercise `name notes warmup_notes`;
+          set `weight_kg rpe duration_seconds distance_meters heart_rate_bpm notes`,
+          `quality`→`rep_quality_assessment`, `reps` (special, below); warmup set
+          `weight_kg rep_count notes`; movement `name reps duration_seconds notes`.
+          **Not editable in v1:** failure technique and goal (nested structures; the typed AI
+          correction still handles them).
+        - `reps` is text (`"8"`, `"8+1"`, `"L8/R7"`) read by the existing `agent/reps.py`
+          `parse_reps`, setting `rep_count` and `unilateral_rep_count` together (one filled,
+          one null). Non-empty text it can't read (`"feel"`) is an error, never a silent wipe.
+        - An empty string from an input box means "clear this value" (null).
+        - `apply_card_edits(extract, edits)` → `(new_extract, field_edits)`: map → existing
+          `apply_edits` → `TrainingLogLLMExtract.model_validate`. Any failure raises
+          `CardEditError` with a message naming the field; the endpoint returns 400. All
+          range checks (RPE, negative weight…) come from the existing model validators.
+        - A field the person edited is removed from `uncertain_fields`: they've now looked at
+          it. (`/correct` is left as it is.)
+      - **Correction record:** `{at, source: "manual", edits}` for `/edit`; `/correct` adds
+        `source: "ai"`. Older stored records have no `source`; Step 6 treats missing as `"ai"`.
+      - **Tests:** unit tests per kind and per mapping, reps variants and unreadable reps,
+        empty-string clear, unknown field, unknown path shape, a validator rejection (RPE 85),
+        `uncertain_fields` removal; API tests against the test DB for 200, 400 and 404. Zero
+        LLM calls.
 - [ ] **Step 3 — Click-to-edit in the UI.** Tap a value → inline input → Enter or blur sends
       the edit, Escape cancels, the card re-renders from the response. Fields in
       `uncertain_fields` are highlighted as the first things to check. Phone-sized tap
@@ -513,6 +547,10 @@ open questions, test list), reviewed by Apoorva, then implementation.
       changes the tool schema sent to the model (`additionalProperties: false`), it re-keys the
       eval cache and may change model behaviour, which means a paid measurement. If so, do the
       check at validation time instead of in the schema.
+
+**Before merging Phase 5b to `dev`:** update `docs/design.html` (new `/edit` endpoint, card
+`path`, correction `source`, Step 5's `sources`) — required by `CLAUDE.md` for API contract
+changes.
 
 **Out of scope here, recorded under "After end-to-end works":** per-user field sets,
 generating programs from repeated sessions, a sessions/categories browsing view.

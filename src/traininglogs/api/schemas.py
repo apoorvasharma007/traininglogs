@@ -5,6 +5,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
+from traininglogs.agent.card_edits import CardEdit
+
 
 class SessionSummary(BaseModel):
     session_id: str
@@ -142,14 +144,31 @@ class CorrectIn(BaseModel):
 
 
 class CorrectOut(BaseModel):
+    """Returned by both /correct and /edit, so a client handles either reply the same way."""
+
     extract: dict[str, Any] = Field(
         description="The corrected extract, in full -- round-trip this back as `extract` on "
-        "the next /correct call, or as `extract` on /confirm once done."
+        "the next /correct or /edit call, or as `extract` on /confirm once done."
     )
     card: dict[str, Any] = Field(description="The same state, rendered as a card for display.")
     correction: dict[str, Any] = Field(
-        description="{at, instruction, edits} -- accumulate these into a list to pass as "
-        "`corrections` on /confirm."
+        description="{at, source, edits} plus `instruction` when source is \"ai\" -- "
+        "accumulate these into a list to pass as `corrections` on /confirm."
+    )
+
+
+class EditIn(BaseModel):
+    extract: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "The extract to edit, if it differs from the extraction's own stored reading -- "
+            "the `extract` from a prior /correct or /edit call. Omit on the first change."
+        ),
+    )
+    edits: list[CardEdit] = Field(
+        min_length=1,
+        description="Values changed on the card: each card element's own `path`, the card "
+        "field name, and the new value. An empty string clears a value.",
     )
 
 

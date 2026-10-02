@@ -16,6 +16,7 @@ from traininglogs.api.schemas import (
     ConfirmOut,
     CorrectIn,
     CorrectOut,
+    EditIn,
     ExerciseHistoryRow,
     SessionDetail,
     SessionSummary,
@@ -228,11 +229,51 @@ def correct_extraction(
 
     correction = {
         "at": datetime.now(timezone.utc).isoformat(),
+        "source": "ai",
         "instruction": body.instruction,
         "edits": [e.model_dump(mode="json") for e in edits],
     }
     card = ValidationCardBuilder().build(updated_extract)
 
+    return CorrectOut(
+        extract=updated_extract.model_dump(mode="json"),
+        card=jsonable_encoder(card),
+        correction=correction,
+    )
+
+
+@app.post("/extractions/{extraction_id}/edit", response_model=CorrectOut)
+def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depends(_auth)):
+    """Apply values changed directly on the card -- no LLM call. Stateless and round-tripped
+    exactly like /correct, and replies in the same shape, so a client treats both alike.
+    """
+    from datetime import datetime, timezone
+
+    from fastapi.encoders import jsonable_encoder
+
+    from traininglogs.agent.card_edits import CardEditError, apply_card_edits
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+    from traininglogs.agent.validation_card_builder import ValidationCardBuilder
+    from traininglogs.db.fetch import get_extraction
+
+    stored = get_extraction(conn, extraction_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+
+    extract_dict = body.extract if body.extract is not None else stored["extract"]
+    current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
+
+    try:
+        updated_extract, edits = apply_card_edits(current_extract, body.edits)
+    except CardEditError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    correction = {
+        "at": datetime.now(timezone.utc).isoformat(),
+        "source": "manual",
+        "edits": [e.model_dump(mode="json") for e in edits],
+    }
+    card = ValidationCardBuilder().build(updated_extract)
     return CorrectOut(
         extract=updated_extract.model_dump(mode="json"),
         card=jsonable_encoder(card),
