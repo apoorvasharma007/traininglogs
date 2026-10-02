@@ -577,15 +577,34 @@ open questions, test list), reviewed by Apoorva, then implementation.
         exercise and movement form gets `Remove`, which asks once more inline before
         sending. After an add, the new line's form opens straight away.
       - **Not in this step:** adding warmup/cooldown movements (remove only), reordering.
-- [ ] **Step 5 — Show where a value came from.** `source_line` is checked during extraction
+- [ ] **Step 5 — Show where a value came from.** *Deferred 2026-10-03 by Apoorva; not started.* `source_line` is checked during extraction
       but dropped when `ExerciseExtract` becomes `Exercise`. Keep it: a `sources` map
       (path → line) on `TrainingLogLLMExtract`, default empty so stored extracts still
       validate. Card rows carry `source`; tapping a value shows the line. Must confirm this
       doesn't change anything sent to the model (no eval cache re-key). Update
       `docs/design.html` (data model).
-- [ ] **Step 6 — Corrections as data.** `scripts/correction_stats.py`, read-only: which fields
+- [x] **Step 6 — Corrections as data.** `scripts/correction_stats.py`, read-only: which fields
       get corrected most, with paths generalised (`exercises.*.sets.*.rpe`), split by
       `source`. Answers "which prompt should I fix next" from real use.
+
+      *Design note (2026-10-03):*
+      - **Pure part in the package, thin script outside it.**
+        `traininglogs/analytics/corrections.py` holds `summarize(records)`: no DB, unit-tested.
+        `scripts/correction_stats.py` connects read-only (`set_session(readonly=True)`),
+        loads `extractions.corrections` for confirmed extractions, and prints.
+      - **What it counts:**
+        - Field edits by **pattern**, positions replaced with `*`
+          (`exercises.3.sets.1.rpe` → `exercises.*.sets.*.rpe`), split by `source`. Records
+          from before Step 2 have no `source`; they came from `/correct`, so they count as
+          `ai`.
+        - Add/remove ops by type. `add_set` is the useful one: every one is a set the model
+          missed.
+        - How many sessions each pattern appeared in, so one session with 12 RPE fixes
+          doesn't look like a pattern across sessions.
+      - **List-level edits** (an op's whole new list, or an AI correction that replaced a
+        list) count once under their list pattern (`exercises.*.sets`), not per item.
+      - Output is plain text tables, most-corrected first. No charts; this is for deciding
+        what to fix in the prompts.
 - [ ] **Step 7 — Repeat a session.** Pick a past session → server builds an extract from the
       stored session with today's date → normal card, edit, confirm. Zero AI calls. Open
       design questions, settled in this step's design note: the reverse projection

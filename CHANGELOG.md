@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 6, which fields get corrected most
+
+- `scripts/correction_stats.py` (read-only) and `traininglogs/analytics/corrections.py`: counts
+  confirmed extractions' corrections by field pattern and source (`manual` / `ai`; records
+  from before `source` existed count as `ai`), plus added/removed lines by op. A reps edit
+  counts once as `reps`, not as its two extract fields.
+
 ### Fixed — AI corrections weren't counted in `llm_calls`
 
 - `POST /extractions/{id}/correct` now records its model call in `llm_calls` (step
