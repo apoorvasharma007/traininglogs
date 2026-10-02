@@ -20,6 +20,7 @@
   const confirmedScreenEl = document.getElementById("confirmedScreen");
   const confirmedSidEl = document.getElementById("confirmedSid");
   const logAnotherBtn = document.getElementById("logAnotherBtn");
+  const repeatListEl = document.getElementById("repeatList");
 
   // The extraction being reviewed, and the client's current copy of its extract -- null means
   // "use the extraction's own stored reading," which is only true before the first correction.
@@ -93,6 +94,11 @@
   let editables = new Map();
   let openForm = null;
 
+  // Notes from the session being repeated, shown read-only as "last time" -- never copied into
+  // the new session (a note belongs to the day it was written). null outside a repeat.
+  // {session: string|null, byExercise: Map(lowercased name -> [string])}
+  let lastTime = null;
+
   apiBaseInput.value = localStorage.getItem("tl_apiBase") || apiBaseInput.value;
   apiKeyInput.value = localStorage.getItem("tl_apiKey") || "";
   apiBaseInput.addEventListener("change", () => localStorage.setItem("tl_apiBase", apiBaseInput.value));
@@ -139,18 +145,7 @@
     }
 
     extractBtn.disabled = true;
-    cardEl.className = "";
-    cardEl.innerHTML = "";
-    outputEl.textContent = "";
-    correctionsLogEl.innerHTML = "";
-    composerEl.style.display = "none";
-    confirmBarEl.style.display = "none";
-    confirmedScreenEl.className = "";
-    corrStatusEl.textContent = "";
-    hideError();
-    currentExtractionId = null;
-    currentExtract = null;
-    corrections = [];
+    resetReview();
     setStatus("Saving...");
 
     const capture = await apiFetch("/inputs", {
@@ -186,24 +181,103 @@
     }
 
     setStatus(`Extracted (extraction_id: ${extraction_id}). Fetching card...`);
-
-    const extraction = await apiFetch(`/extractions/${extraction_id}`, { method: "GET" });
-
-    if (!extraction.ok) {
-      setStatus(`GET /extractions/${extraction_id} failed (${extraction.status}).`, true);
-      showRawOutput(extraction.body);
-      extractBtn.disabled = false;
-      return;
-    }
-
-    setStatus(`Done. extraction_id: ${extraction_id}`);
-    showRawOutput(extraction.body);
-    renderCard(extraction.body);
-    currentExtractionId = extraction_id;
-    composerEl.style.display = "flex";
-    confirmBarEl.style.display = "flex";
+    await loadCard(extraction_id);
     extractBtn.disabled = false;
   });
+
+  // Clears the review area before a new card: extraction or repeat alike.
+  function resetReview() {
+    cardEl.className = "";
+    cardEl.innerHTML = "";
+    outputEl.textContent = "";
+    correctionsLogEl.innerHTML = "";
+    composerEl.style.display = "none";
+    confirmBarEl.style.display = "none";
+    confirmedScreenEl.className = "";
+    corrStatusEl.textContent = "";
+    hideError();
+    currentExtractionId = null;
+    currentExtract = null;
+    corrections = [];
+    lastTime = null;
+  }
+
+  // Fetches a pending extraction's card and opens it for review.
+  async function loadCard(extractionId) {
+    const extraction = await apiFetch(`/extractions/${extractionId}`, { method: "GET" });
+    if (!extraction.ok) {
+      setStatus(`GET /extractions/${extractionId} failed (${extraction.status}).`, true);
+      showRawOutput(extraction.body);
+      return false;
+    }
+    setStatus(`Done. extraction_id: ${extractionId}`);
+    showRawOutput(extraction.body);
+    currentExtractionId = extractionId;
+    renderCard(extraction.body);
+    composerEl.style.display = "flex";
+    confirmBarEl.style.display = "flex";
+    return true;
+  }
+
+  // ---- repeat a past session ----
+
+  async function loadRecentSessions() {
+    if (!apiKeyInput.value) return;
+    const result = await apiFetch("/sessions?limit=15", { method: "GET" });
+    if (!result.ok) {
+      repeatListEl.innerHTML = `<div class="status error">Couldn't load sessions (${result.status}).</div>`;
+      return;
+    }
+    repeatListEl.innerHTML = result.body.length
+      ? result.body.map((s) => `
+          <button type="button" class="repeat-item" data-session-id="${esc(s.session_id)}">
+            <span class="r-date">${esc(s.date)}</span>
+            <span class="r-focus">${esc(s.focus || "Session")}</span>
+            <span class="r-ex">${esc((s.exercises || []).join(" · "))}</span>
+          </button>`).join("")
+      : '<div class="status">No sessions yet.</div>';
+  }
+
+  repeatListEl.addEventListener("click", async (e) => {
+    const item = e.target.closest("[data-session-id]");
+    if (!item) return;
+    const sessionId = item.dataset.sessionId;
+    resetReview();
+    setStatus("Starting from that session...");
+
+    const result = await apiFetch(`/sessions/${encodeURIComponent(sessionId)}/repeat`, { method: "POST" });
+    if (!result.ok) {
+      setStatus(`Couldn't repeat that session (${result.status}).`, true);
+      return;
+    }
+    // Last time's notes first, so the card's first render already shows them.
+    const source = await apiFetch(`/sessions/${encodeURIComponent(sessionId)}`, { method: "GET" });
+    lastTime = source.ok ? lastTimeNotes(source.body) : null;
+    if (await loadCard(result.body.extraction_id)) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+
+  function lastTimeNotes(session) {
+    const byExercise = new Map();
+    (session.exercises || []).forEach((ex) => {
+      const parts = [];
+      if (ex.notes) parts.push(ex.notes);
+      if (ex.warmup_notes) parts.push(`warmup: ${ex.warmup_notes}`);
+      (ex.warmup_sets || []).forEach((w) => { if (w.notes) parts.push(`warmup ${w.number}: ${w.notes}`); });
+      (ex.sets || []).forEach((s) => { if (s.notes) parts.push(`set ${s.number}: ${s.notes}`); });
+      if (parts.length) byExercise.set(ex.name.toLowerCase(), parts);
+    });
+    return { session: session.notes || null, byExercise };
+  }
+
+  function lastTimeHtml(parts) {
+    return parts && parts.length
+      ? `<div class="last-time">Last time: ${parts.map(esc).join(" · ")}</div>` : "";
+  }
+
+  apiKeyInput.addEventListener("change", loadRecentSessions);
+  loadRecentSessions();
 
   // ---- correction loop ----
 
@@ -499,6 +573,8 @@
     currentExtractionId = null;
     currentExtract = null;
     corrections = [];
+    lastTime = null;
+    loadRecentSessions();
     contentInput.focus();
   });
 
@@ -655,6 +731,7 @@
           <span class="name">${h.number}. ${esc(h.name)}</span>
           ${goalHtml ? `<span class="goal">${esc(goalHtml)}</span>` : ""}
         </div>
+        ${lastTime ? lastTimeHtml(lastTime.byExercise.get(h.name.toLowerCase())) : ""}
         ${warmupHtml}
         ${warmupNoteHtml}
         ${setsHtml}
@@ -693,6 +770,8 @@
         <div class="meta">${esc(metaParts.join(" · "))}</div>
         ${shFlags}
       </div>`;
+
+    if (lastTime && lastTime.session) html += lastTimeHtml([lastTime.session]);
 
     if (card.warnings && card.warnings.length) {
       html += `

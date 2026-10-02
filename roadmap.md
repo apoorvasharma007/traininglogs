@@ -605,13 +605,52 @@ open questions, test list), reviewed by Apoorva, then implementation.
         list) count once under their list pattern (`exercises.*.sets`), not per item.
       - Output is plain text tables, most-corrected first. No charts; this is for deciding
         what to fix in the prompts.
-- [ ] **Step 7 — Repeat a session.** Pick a past session → server builds an extract from the
+- [x] **Step 7 — Repeat a session.** Built and verified by Apoorva 2026-10-03; prod constraint applied with approval. Pick a past session → server builds an extract from the
       stored session with today's date → normal card, edit, confirm. Zero AI calls. Open
       design questions, settled in this step's design note: the reverse projection
       (`TrainingSession` → extract); what `raw_inputs.content` holds so the content-derived
       `session_id` differs per repeat; `source_kind` needs a new allowed value (additive
       `CHECK` change on prod, approval required); how the session list is filtered (by
       `focus`?).
+
+      *Design note (2026-10-03):*
+      - **Flow:** pick a past session → `POST /sessions/{session_id}/repeat` → the server
+        writes a raw input and a *pending* extraction built from that session, no LLM → the
+        UI loads its card exactly as after Extract → edit, add/remove, confirm as usual.
+        Everything after the first call is the existing path, unchanged.
+      - **What a repeat copies** (new `ingest/repeat.py`, pure `session_to_extract(session,
+        date)` + a thin DB function): session focus, program, phase, week, deload flag;
+        warmup/cooldown movement names, reps and durations; every exercise's name, goal,
+        tags and cues, warmup sets' weight and reps; every working set's weight and reps
+        (bilateral or unilateral), duration and distance. **Cleared**, because they describe
+        how *that* day went: RPE, rep quality, failure technique, rest, heart rate, duration,
+        and **every note**. Same rule as `add_set` in Step 4.
+      - **Notes are shown as "last time", never copied** (decided by Apoorva 2026-10-03). A
+        note belongs to the day it was written; copying it would save last week's note as
+        today's unless edited. The UI fetches the source session (`GET /sessions/{id}`,
+        unchanged) and shows its session note and, per exercise, its exercise, warmup and set
+        notes as a muted read-only line, matched by exercise name so adding or removing sets
+        and exercises can't misplace them.
+      - **Date** is today, and `date` is put in `uncertain_fields` (outlined in the form),
+        the same thing extraction does when the text has no date — logging yesterday's
+        session from a repeat is normal.
+      - **Raw input:** `source_kind = 'repeat'`, `source_file = <source session_id>`, content
+        one readable line: `Repeat of <session_id> (<focus>, <date>), started <UTC time>`.
+        The timestamp makes every repeat's content, and so its content-derived
+        `session_id`, unique — two repeats of the same session on the same day don't
+        collide. The source session itself is the real record; the raw input records the
+        action.
+      - **Extraction row:** `model = 'none'`, `prompt_version = 'repeat'`. No `llm_calls`.
+      - **Prod change, needs approval:** `raw_inputs_source_kind_check` gains `'repeat'`.
+        Constraint-only (drop + re-add with one more value); every existing row already
+        satisfies it. `schema.sql` gets the same as an idempotent `DROP CONSTRAINT IF
+        EXISTS` / `ADD CONSTRAINT`, so fresh and existing databases match.
+      - **Choosing the session:** `GET /sessions` gains `exercises` (names, in order) per
+        session and a `limit`. The capture screen gets a "Repeat a past session" list:
+        newest 15, each row date · focus · exercise names, tap to repeat. No focus filter
+        — 9 of 9 recent sessions are "Strength", so it wouldn't narrow anything.
+      - **Historical sessions** (imported from markdown, no extraction) repeat the same way:
+        the repeat reads the normalized tables, not an old extract.
 
 - [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** No
       Pydantic model sets `extra`, so the default (`ignore`) discards any field the model

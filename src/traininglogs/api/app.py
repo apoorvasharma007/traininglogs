@@ -69,10 +69,14 @@ async def lifespan(app: FastAPI):
             file=sys.stderr,
         )
         sys.exit(1)
+    global _pool
     _get_pool()
     yield
     if _pool:
         _pool.closeall()
+        # Forget it, so a later startup in the same process (a second TestClient) builds a new
+        # pool instead of handing out connections from this closed one.
+        _pool = None
 
 
 app = FastAPI(title="traininglogs", lifespan=lifespan)
@@ -92,10 +96,27 @@ def list_sessions(
     week: int | None = Query(None),
     from_date: str | None = Query(None),
     to_date: str | None = Query(None),
+    limit: int | None = Query(None, ge=1, le=500),
     conn=Depends(_db),
     _=Depends(_auth),
 ):
-    return get_sessions(conn, phase=phase, week=week, from_date=from_date, to_date=to_date)
+    return get_sessions(
+        conn, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit
+    )
+
+
+@app.post("/sessions/{session_id}/repeat", response_model=CaptureOut, status_code=201)
+def repeat_session_endpoint(session_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Start a new session from a past one -- no LLM call. Returns the same ids as
+    POST /inputs, so the client loads and confirms the card exactly as after an extraction.
+    """
+    from traininglogs.ingest.repeat import repeat_session
+
+    ids = repeat_session(conn, session_id)
+    if ids is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    raw_input_id, extraction_id = ids
+    return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
 
 
 @app.get("/sessions/{session_id}", response_model=SessionDetail)

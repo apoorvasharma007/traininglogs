@@ -282,6 +282,42 @@
   .edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
   .edit-actions button { min-height: 44px; }
   .edit-hint { font-size: 0.78rem; color: var(--muted); }
+
+  /* ---- repeat a past session ---- */
+  .repeat-box { margin-bottom: 1.5rem; }
+  .repeat-box summary { cursor: pointer; font-size: 0.85rem; color: var(--ink-2); padding: 0.4rem 0; }
+  .repeat-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+  .repeat-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.6rem;
+    align-items: baseline;
+    text-align: left;
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 0.6rem 0.8rem;
+    min-height: 44px;
+    background: var(--bg-2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .repeat-item:hover { border-color: var(--border-strong); }
+  .repeat-item .r-date { font-family: var(--f-mono); font-size: 0.74rem; color: var(--muted); }
+  .repeat-item .r-focus { font-weight: 600; }
+  .repeat-item .r-ex { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .repeat-item { grid-template-columns: auto 1fr; }
+    .repeat-item .r-ex { grid-column: 1 / -1; white-space: normal; }
+  }
+  .last-time {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-style: italic;
+    border-bottom: 1px dashed var(--border);
+  }
   .edit-actions { flex-wrap: wrap; }
   .edit-actions .spacer { flex: 1; }
   .btn-ghost.danger { color: var(--red); border-color: var(--red); }
@@ -393,6 +429,11 @@
   <div class="row">
     <button id="extractBtn" class="btn-primary">Extract</button>
   </div>
+
+  <details class="repeat-box">
+    <summary>Or repeat a past session</summary>
+    <div id="repeatList" class="repeat-list"></div>
+  </details>
 
   <div id="status" class="status"></div>
 

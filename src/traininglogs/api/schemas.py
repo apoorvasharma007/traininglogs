@@ -18,6 +18,7 @@ class SessionSummary(BaseModel):
     duration_minutes: Optional[int]
     is_deload_week: Optional[bool]
     weight_unit: str
+    exercises: list[str] = Field(default_factory=list, description="Exercise names, in order.")
 
 
 class MovementOut(BaseModel):

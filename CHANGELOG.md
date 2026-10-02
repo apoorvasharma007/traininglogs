@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 5b Step 7, repeat a past session
+
+- `POST /sessions/{session_id}/repeat` starts a new pending extraction from a stored session,
+  with no LLM call, and returns the same ids as `POST /inputs`; the card is then edited and
+  confirmed as usual. Exercises, goals, cues, warmup sets and each set's weight and reps carry
+  over; RPE, quality, failure technique, rest, heart rate, duration and every note don't. The
+  date is today and flagged uncertain. Works for imported historical sessions too.
+- `ingest/repeat.py`. The raw input is `source_kind = 'repeat'`, `source_file` = the source
+  session id, content one line naming the source, start time and raw input id (keeps each
+  repeat's content-derived `session_id` unique). Extraction `model = 'none'`,
+  `prompt_version = 'repeat'`.
+- Schema: `raw_inputs_source_kind_check` allows `'repeat'`; `schema.sql` re-states it
+  idempotently for existing databases. Applied to prod 2026-10-03 with approval.
+- `GET /sessions` gains `exercises` (names in order) per session and `limit`; ties on date
+  now order newest-created first.
+- UI: "Or repeat a past session" under Extract lists the 15 newest sessions. During a repeat,
+  the source session's notes show as a read-only "Last time" line per exercise, matched by
+  name, and for the session.
+
+### Fixed — a second app startup in one process reused a closed connection pool
+
+- The API's shutdown closed its pool but kept it, so a later startup in the same process (a
+  second test client) handed out connections from the closed pool. It now forgets the pool on
+  shutdown. A single running server never hit this.
+
 ### Added — Phase 5b Step 6, which fields get corrected most
 
 - `scripts/correction_stats.py` (read-only) and `traininglogs/analytics/corrections.py`: counts

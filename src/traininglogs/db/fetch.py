@@ -7,6 +7,7 @@ def get_sessions(
     week: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
+    limit: int | None = None,
 ) -> list[dict]:
     filters = []
     params = []
@@ -30,12 +31,17 @@ def get_sessions(
         cur.execute(
             f"""
             SELECT session_id, date, program, phase, week, focus, duration_minutes,
-                   is_deload_week, weight_unit
+                   is_deload_week, weight_unit,
+                   ARRAY(
+                       SELECT e.name FROM exercises e
+                       WHERE e.session_id = sessions.session_id ORDER BY e.number
+                   ) AS exercises
             FROM sessions
             {where}
-            ORDER BY date DESC
+            ORDER BY date DESC, created_at DESC
+            {"LIMIT %s" if limit is not None else ""}
             """,
-            params,
+            params + ([limit] if limit is not None else []),
         )
         rows = cur.fetchall()
         cols = [d[0] for d in cur.description]
