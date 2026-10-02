@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — keys not scoped to a workspace were rejected
+
+- `AnthropicProvider` sends the `anthropic-workspace-id` header when `ANTHROPIC_WORKSPACE_ID` is
+  set. Keys not scoped to a workspace (`sk-ant-usr…`) are rejected by the API without it;
+  workspace-scoped keys (`sk-ant-api…`) need nothing and are unaffected. Documented in
+  `.env.example`.
+
 ### Added — Phase 5 Step 5, confirm UI polish pass (visual fidelity, dark mode, phone width)
 
 - Dark mode via `@media (prefers-color-scheme: dark)`, palette matched to the approved mockup

@@ -410,6 +410,85 @@ the UI works end-to-end, not before.
 end-to-end verification against the real API. Phase 5.5 (per-user identity) is next per the
 roadmap's own sequencing, gated on that verification.
 
+## Phase 5b — Direct editing (planned 2026-10-02)
+
+**Goal.** Let the person fix the card by tapping a value and typing, instead of sending every
+fix through Haiku. Today each typed correction ("set 2 was 15 reps") is one paid call whose
+only job is to work out which field was meant; the UI already knows that. The same editing
+ability later lets a card start from a past session instead of from the model at all (Step 7),
+which is the first zero-AI way to log a session.
+
+**What already exists and gets reused, not rebuilt:**
+- `agent/patch.py` — `FieldEdit(path, value)` + `apply_edits()`. Every change in this phase,
+  manual or AI, is a list of these. One edit format, one apply function.
+- `extractions.corrections` — the append-only log `/confirm` already writes. Manual edits go
+  into the same list, marked by source, so "what the model said" vs "what the person changed"
+  stays separable (roadmap C7).
+- `TrainingLogLLMExtract.model_validate()` — the single place a bad value (RPE 85, negative
+  reps) gets rejected. Edits are validated by re-validating the whole extract, never by a
+  second set of rules in the UI.
+- The fetch-intercepting Puppeteer harness from Phase 5 Step 5 — UI steps are verified with
+  canned responses, $0.
+
+**Design rules for every step:**
+- The server owns the mapping from a card value to an extract path. The UI never counts list
+  positions or knows that card `reps: "8+1"` is extract `rep_count: {full: 8, partial: 1}`.
+- Stateless, like `/correct`: the client round-trips `extract`; the server holds nothing
+  between calls.
+- Allowlist, not blocklist: one `EDITABLE_FIELDS` table says which card fields can be edited
+  and how each maps to the extract. Adding an editable field later is one row plus a test.
+- No paid calls anywhere in this phase. No prod schema change except Step 7, which needs
+  same-session approval per `.claude/db-migration.md`.
+
+**Branching.** Base `phase-5b/direct-edit` cut from `dev` (after Step 0), one sub-branch per
+step: `phase-5b/direct-edit-N-<step>`. Squash-merge each step when the suite is green with 0
+skipped.
+
+**Process per step.** Design first: a short design note added under the step (decisions,
+open questions, test list), reviewed by Apoorva, then implementation.
+
+- [ ] **Step 0 — Land Phase 5 on `dev`.** Add the workspace-header fix to `CHANGELOG.md`
+      `[Unreleased]`, merge `phase-5/confirm-ui` into `dev`, cut `phase-5b/direct-edit`.
+      The real-session verdict stays a gate for `main`, not for `dev`.
+- [ ] **Step 1 — Card rows carry their extract path.** `ValidationCardBuilder` adds a `path`
+      to the session header, each exercise header, set row, warmup row and movement row
+      (e.g. `exercises.1.sets.0`). Pure builder change, unit-tested, no UI change.
+- [ ] **Step 2 — No-AI edit endpoint.** `POST /extractions/{id}/edit` takes
+      `{extract?, edits: [{path, field, value}]}`. New `agent/card_edits.py` turns card-level
+      edits into `FieldEdit`s through `EDITABLE_FIELDS` (reps string → `rep_count` /
+      `unilateral_rep_count` via `agent/reps.py`; `quality` → `rep_quality_assessment`;
+      `duration_minutes` → `session_duration_minutes`), applies them, re-validates, and
+      returns the same shape as `/correct`. Validation failure → 400 naming the field. The
+      correction record gains `source: "manual"`; `/correct` records `source: "ai"`.
+- [ ] **Step 3 — Click-to-edit in the UI.** Tap a value → inline input → Enter or blur sends
+      the edit, Escape cancels, the card re-renders from the response. Fields in
+      `uncertain_fields` are highlighted as the first things to check. Phone-sized tap
+      targets, numeric keyboard for numbers. Typed corrections stay for changes that span many
+      fields ("all squat sets were 100 kg").
+- [ ] **Step 4 — Add and remove sets and exercises.** Server-side operations in
+      `card_edits.py` (add set defaults to a copy of the previous set; remove; add/remove
+      exercise), each producing list-level `FieldEdit`s, with `number` renumbered by the
+      server. UI buttons on the card.
+- [ ] **Step 5 — Show where a value came from.** `source_line` is checked during extraction
+      but dropped when `ExerciseExtract` becomes `Exercise`. Keep it: a `sources` map
+      (path → line) on `TrainingLogLLMExtract`, default empty so stored extracts still
+      validate. Card rows carry `source`; tapping a value shows the line. Must confirm this
+      doesn't change anything sent to the model (no eval cache re-key). Update
+      `docs/design.html` (data model).
+- [ ] **Step 6 — Corrections as data.** `scripts/correction_stats.py`, read-only: which fields
+      get corrected most, with paths generalised (`exercises.*.sets.*.rpe`), split by
+      `source`. Answers "which prompt should I fix next" from real use.
+- [ ] **Step 7 — Repeat a session.** Pick a past session → server builds an extract from the
+      stored session with today's date → normal card, edit, confirm. Zero AI calls. Open
+      design questions, settled in this step's design note: the reverse projection
+      (`TrainingSession` → extract); what `raw_inputs.content` holds so the content-derived
+      `session_id` differs per repeat; `source_kind` needs a new allowed value (additive
+      `CHECK` change on prod, approval required); how the session list is filtered (by
+      `focus`?).
+
+**Out of scope here, recorded under "After end-to-end works":** per-user field sets,
+generating programs from repeated sessions, a sessions/categories browsing view.
+
 ## Phase 5.5 — Per-user identity
 
 **Gate: only after Phase 5 is working end-to-end single-user.** Right now `user_id`/`user_name`
@@ -470,6 +549,22 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 ---
 
 ## ▶ Resume here
+
+### Session 2026-10-02 — read this first, it supersedes parts of the 2026-08-10 notes below
+
+- **Prod is migrated.** With approval, applied `schema.sql` plus four `ADD COLUMN`s it can't
+  express (`sessions.notes`, `exercises.tags/modality/movement_pattern` — they exist only inside
+  `CREATE TABLE IF NOT EXISTS`, so any older DB misses them; follow-up: add them to
+  `schema.sql` as `ALTER`s). Counts unchanged: 121 / 1009 / 2469 / 647. The "Prod schema
+  migration — explicitly deferred" section below is now history.
+- **Step 5 squash-merged** into `phase-5/confirm-ui` (`d045f3e`), plus `302eaec`: the API key
+  is now an `sk-ant-usr…` key that needs `ANTHROPIC_WORKSPACE_ID` (sent as the
+  `anthropic-workspace-id` header). Suite 654 green, 0 skipped.
+- **`eval_arms.py` gate dropped by decision** — no spend for now. The real-session check stays.
+- **Running locally against prod:** API on :8000 (`ALLOWED_ORIGINS=http://localhost:5500`),
+  `web/` served on :5500. Logging Apoorva's real sessions is the open item; one orphan
+  `raw_inputs` row (`39abe841…`) is from the failed first attempt.
+- **Next: Phase 5b (direct editing)**, planned above. Awaiting plan approval, then Step 0.
 
 **Last session: 2026-08-10.** Phase 3 merged and pushed at session start. By the end of the
 session: a real extraction bug found and fixed and verified live, `session_id` identity
