@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — AI corrections weren't counted in `llm_calls`
+
+- `POST /extractions/{id}/correct` now records its model call in `llm_calls` (step
+  `edit_extraction`), tied to the extraction's raw input, whether the correction succeeds or
+  fails. Before, only extraction was logged, so the database total understated real spend.
+  Corrections made before this fix are not recoverable from the database; the Anthropic
+  Console has them.
+
 ### Added — Phase 5b Step 4, add and remove sets, warmup sets and exercises
 
 - `/edit` also takes one `op` instead of `edits`: `add_set` / `add_warmup_set` (on an exercise:

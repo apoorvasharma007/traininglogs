@@ -519,6 +519,61 @@ class TestCorrectExtraction:
         )
         assert r.status_code == 400
 
+    def _llm_calls_for(self, db_conn, extraction_id: str) -> list[tuple]:
+        with db_conn.cursor() as cur:
+            cur.execute(
+                "SELECT l.step, l.cost_usd, l.failed FROM llm_calls l "
+                "JOIN extractions x ON x.raw_input_id = l.raw_input_id WHERE x.id = %s",
+                (extraction_id,),
+            )
+            return cur.fetchall()
+
+    def _stub_spending_correction(self, monkeypatch, fail: bool) -> None:
+        """A correction that records one call on its provider, as the real one does, then
+        either succeeds or fails the way a bad model reply would."""
+        from traininglogs.agent.patch import FieldEdit
+        from traininglogs.agent.schemas import LLMParserError
+
+        def fake_apply_correction(self_, extract, instruction):
+            self_._provider.calls.append({
+                "step": "edit_extraction", "model": "m", "attempts": 1, "input_tokens": 100,
+                "output_tokens": 10, "cost_usd": 0.0012, "ms": 5, "cached": False,
+                "failed": "bad reply" if fail else None, "raw_payload": None,
+            })
+            if fail:
+                raise LLMParserError("bad reply")
+            return extract.model_copy(update={"focus": "X"}), [FieldEdit(path="focus", value="X")]
+
+        monkeypatch.setattr(
+            "traininglogs.agent.llm_extract_validator.LLMExtractValidator.apply_correction",
+            fake_apply_correction,
+        )
+
+    def test_correction_cost_is_logged(self, client, db_conn, monkeypatch) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-06", "correct test content 6")
+        self._stub_spending_correction(monkeypatch, fail=False)
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 200
+        calls = self._llm_calls_for(db_conn, extraction_id)
+        assert [(step, float(cost), failed) for step, cost, failed in calls] == [
+            ("edit_extraction", 0.0012, None)
+        ]
+
+    def test_failed_correction_cost_is_still_logged(self, client, db_conn, monkeypatch) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-06-07", "correct test content 7")
+        self._stub_spending_correction(monkeypatch, fail=True)
+        r = client.post(
+            f"/extractions/{extraction_id}/correct",
+            json={"instruction": "fix it"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 502
+        assert [c[2] for c in self._llm_calls_for(db_conn, extraction_id)] == ["bad reply"]
+
     def test_not_found(self, client) -> None:
         r = client.post(
             "/extractions/does-not-exist/correct",

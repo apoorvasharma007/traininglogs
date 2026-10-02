@@ -211,6 +211,7 @@ def correct_extraction(
     from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
     from traininglogs.db.fetch import get_extraction
+    from traininglogs.db.insert import insert_llm_calls
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
@@ -219,13 +220,19 @@ def correct_extraction(
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
 
-    validator = LLMExtractValidator(AnthropicProvider())
+    provider = AnthropicProvider()
+    validator = LLMExtractValidator(provider)
     try:
         updated_extract, edits = validator.apply_correction(current_extract, body.instruction)
     except PatchError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except LLMParserError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
+    finally:
+        # Logged whether the correction worked or not, same as extraction does: a failed
+        # correction still cost money. Tied to the raw input, so a session's total cost is one
+        # query across extraction and corrections alike.
+        insert_llm_calls(conn, stored["raw_input_id"], provider.calls)
 
     correction = {
         "at": datetime.now(timezone.utc).isoformat(),
