@@ -295,7 +295,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "good",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -437,7 +437,7 @@
           "number": 2,
           "rpe": 10.0,
           "rest": null,
-          "notes": " full rom cross legs",
+          "notes": "full rom cross legs",
           "set_type": "strength",
           "weight_kg": 11.3,
           "rep_count": {

@@ -80,7 +80,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 200.0,
+          "rep_count": null,
+          "notes": "power kicks"
+        }
+      ],
       "notes": "Work on form and use hands very lightly to protect knees until you have knee sleeves",
       "warmup_notes": "Pyramid. 200 kgs power kicks.",
       "form_cues": [
@@ -215,7 +222,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 20.0,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
       "notes": "1. 20 x feel Can go heavier than 30 too but try with perfect technique",
       "warmup_notes": "Pyramid",
       "form_cues": [
@@ -277,7 +291,26 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 36.0,
+          "rep_count": null,
+          "notes": "unilateral"
+        },
+        {
+          "number": 2,
+          "weight_kg": 43.0,
+          "rep_count": null,
+          "notes": "unilateral"
+        },
+        {
+          "number": 3,
+          "weight_kg": 50.0,
+          "rep_count": null,
+          "notes": "unilateral but this weight hurt my knees and was hard"
+        }
+      ],
       "notes": null,
       "warmup_notes": "Pyramid\u00a0warmup using unilateral, partials and isometric. 36 x feel - unilateral.  43 x feel - unilateral.  50 x feel - unilateral but this weight hurt my knees and was hard",
       "form_cues": [

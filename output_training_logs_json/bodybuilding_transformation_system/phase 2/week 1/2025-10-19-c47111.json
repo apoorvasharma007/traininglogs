@@ -353,7 +353,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 6.8,
+          "rep_count": 8,
+          "notes": "felt good felt in outer thighs and glutes"
+        }
+      ],
       "notes": "Perfect technique at 6.8 kg",
       "warmup_notes": "Pyramid",
       "form_cues": [
@@ -430,7 +437,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 80.0,
+          "rep_count": 10,
+          "notes": null
+        }
+      ],
       "notes": "adjust goal by testing as you progress into week 5",
       "warmup_notes": null,
       "form_cues": [

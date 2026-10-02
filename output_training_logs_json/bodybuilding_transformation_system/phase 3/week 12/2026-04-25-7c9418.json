@@ -197,7 +197,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 12.5,
+          "rep_count": null,
+          "notes": "unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based"
+        }
+      ],
       "notes": "Can try 22.5 for 8 reps as a goal or keep working at 20 for 10 perfect considering bench weight can go up.",
       "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk. 12.5 x\u00a0 feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.",
       "form_cues": [
@@ -328,7 +335,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "learning",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -506,7 +513,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {

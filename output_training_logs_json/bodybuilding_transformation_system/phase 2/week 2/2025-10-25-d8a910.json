@@ -113,7 +113,30 @@
       "number": 2,
       "name": "Seated DB Shoulder Press",
       "exercise_type": "strength",
-      "sets": [],
+      "sets": [
+        {
+          "number": 1,
+          "weight_kg": 17.5,
+          "rep_count": {
+            "full": 13,
+            "partial": 0
+          },
+          "rpe": 8.5,
+          "rep_quality_assessment": "perfect",
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 17.5,
+          "rep_count": {
+            "full": 12,
+            "partial": 0
+          },
+          "rpe": 10.0,
+          "rep_quality_assessment": "perfect",
+          "notes": null
+        }
+      ],
       "target_muscle_groups": null,
       "rep_tempo": null,
       "current_goal": {
@@ -227,7 +250,7 @@
           "number": 1,
           "rpe": 9.0,
           "rest": null,
-          "notes": null,
+          "notes": "right was less tired",
           "set_type": "strength",
           "weight_kg": 4.8,
           "rep_count": {

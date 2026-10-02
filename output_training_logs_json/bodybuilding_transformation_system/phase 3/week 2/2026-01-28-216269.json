@@ -161,7 +161,20 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 32.0,
+          "rep_count": 10,
+          "notes": "one light warmup, do heavier next time"
+        },
+        {
+          "number": 2,
+          "weight_kg": 66.0,
+          "rep_count": 4,
+          "notes": "one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs"
+        }
+      ],
       "notes": "Possible Slight right-shoulder fatigue, control on eccentric improving. Was doing 100 for 10-12 with good form not perfect.",
       "warmup_notes": "pyramid warmup. 32  x 10 - one light warmup, do heavier next time. 66 x 4 - one heavy warmup, at top position of squeeze take arm out and in to feel all the pecs.",
       "form_cues": [

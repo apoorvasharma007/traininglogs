@@ -253,7 +253,20 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 17.5,
+          "rep_count": null,
+          "notes": null
+        },
+        {
+          "number": 2,
+          "weight_kg": 17.5,
+          "rep_count": null,
+          "notes": null
+        }
+      ],
       "notes": "1. 17.5 x feel 2. 17.5 x feel Careful with knee fatigue. We need to fix them before we killshot here.",
       "warmup_notes": "Pyramid",
       "form_cues": [
@@ -585,7 +598,14 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 120.0,
+          "rep_count": null,
+          "notes": "fast explosive tempo"
+        }
+      ],
       "notes": "120x 15 perfect reps is hypertrophic goal. Can barely do 12 reps perfect right now at 120.",
       "warmup_notes": null,
       "form_cues": [

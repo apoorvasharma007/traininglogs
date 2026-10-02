@@ -352,7 +352,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "good",
           "failure_technique": null
         },
         {
