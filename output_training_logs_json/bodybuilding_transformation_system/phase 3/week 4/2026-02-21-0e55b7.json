@@ -22,7 +22,7 @@
           "number": 1,
           "rpe": 9.5,
           "rest": null,
-          "notes": null,
+          "notes": "felt weak today",
           "set_type": "strength",
           "weight_kg": 80.0,
           "rep_count": {
@@ -161,7 +161,26 @@
         "distance_meters": null,
         "target_duration_seconds": null
       },
-      "warmup_sets": null,
+      "warmup_sets": [
+        {
+          "number": 1,
+          "weight_kg": 0.0,
+          "rep_count": null,
+          "notes": "around the world arms extended time under tension is good enough resistance"
+        },
+        {
+          "number": 2,
+          "weight_kg": 2.5,
+          "rep_count": null,
+          "notes": "around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based"
+        },
+        {
+          "number": 3,
+          "weight_kg": 12.5,
+          "rep_count": null,
+          "notes": "unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based"
+        }
+      ],
       "notes": "Practise with 22.8 for 10 or 25 for 8",
       "warmup_notes": "Don\u2019t use heavy weights preserve strength for working sets and avoid injury risk 0 x feel - around the world arms extended time under tension is good enough resistance. 2.5\u00a0 x feel - around the world, lift ass off the bench or let the shoulders drop to extreme range of motion under load, keep breathing, rep count feeling based. 12.5 x\u00a0 feel - unilateral with rotation, massage the shoulder ball and socket joint by rotating elbows all around at bottom position, rep count feeling based.",
       "form_cues": [
@@ -193,7 +212,7 @@
           "number": 2,
           "rpe": 10.0,
           "rest": null,
-          "notes": null,
+          "notes": "arms very open and wide",
           "set_type": "strength",
           "weight_kg": 12.5,
           "rep_count": {

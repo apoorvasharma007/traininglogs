@@ -621,7 +621,7 @@
       "sets": [
         {
           "number": 1,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": null,
           "set_type": "strength",
@@ -636,7 +636,7 @@
         },
         {
           "number": 2,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": null,
           "set_type": "strength",
@@ -651,7 +651,7 @@
         },
         {
           "number": 3,
-          "rpe": null,
+          "rpe": 10.0,
           "rest": null,
           "notes": "around the world",
           "set_type": "strength",

@@ -341,7 +341,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "good",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -481,7 +481,7 @@
           "number": 1,
           "rpe": 10.0,
           "rest": null,
-          "notes": null,
+          "notes": "didnt take enough rest",
           "set_type": "strength",
           "weight_kg": 20.4,
           "rep_count": {

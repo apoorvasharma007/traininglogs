@@ -151,7 +151,7 @@
           "number": 4,
           "rpe": 10.0,
           "rest": null,
-          "notes": null,
+          "notes": "didnt event use leg drive from ground, kept footing loose",
           "set_type": "strength",
           "weight_kg": 63.0,
           "rep_count": {
@@ -322,7 +322,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
@@ -605,7 +605,7 @@
             "partial": 0
           },
           "unilateral_rep_count": null,
-          "rep_quality_assessment": null,
+          "rep_quality_assessment": "perfect",
           "failure_technique": {
             "technique_type": "MyoReps",
             "details": {
