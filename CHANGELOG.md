@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-03
+
 ### Added — Phase 5b Step 7, repeat a past session
 
 - `POST /sessions/{session_id}/repeat` starts a new pending extraction from a stored session,
@@ -251,6 +253,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   yet, that's Step 5.
 - `web/README.md` — how to run the API against `TEST_DATABASE_URL` and serve `web/` locally for
   development.
+
+## [3.0.0] - 2026-08-10
 
 ### Added — Phase 4, write API — complete (POST /inputs, GET /extractions/{id}, POST .../confirm, POST .../correct)
 
@@ -943,6 +947,8 @@ Initial tagged release. Seed entry — describes the system as it stands at v1.0
 - `rest_minutes` and `actual_rest_minutes` must be between 0 and 15.
 - Required string fields reject empty or whitespace-only values.
 
-[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/apoorvasharma007/traininglogs/releases/tag/v1.0.0
