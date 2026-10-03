@@ -359,6 +359,12 @@ class _NoCacheStaticFiles(StaticFiles):
 # Serve web/ from the same origin as the API -- one deploy, no CORS. Mounted last so every API
 # route above takes precedence. WEB_DIR is set in the container image; locally the repo's web/
 # is found from the working directory.
+# The React app (frontend/, built to frontend/dist) is served at /app/ until it replaces web/ in
+# step 8 of react-plan.md. It must be mounted before "/", which would otherwise catch /app/ too.
+_app_dir = Path(os.environ.get("APP_DIR", "frontend/dist"))
+if _app_dir.is_dir():
+    app.mount("/app", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")
+
 _web_dir = Path(os.environ.get("WEB_DIR", "web"))
 if _web_dir.is_dir():
     app.mount("/", _NoCacheStaticFiles(directory=_web_dir, html=True), name="web")

@@ -6,5 +6,9 @@
 !src/**
 !web/
 !web/**
+!frontend/
+!frontend/**
+frontend/node_modules/
+frontend/dist/
 src/**/__pycache__/
 src/*.egg-info/

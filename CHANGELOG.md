@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 1, the React app skeleton
+
+- `frontend/`: React, TypeScript and Vite, with Tailwind, TanStack Query, wouter, Lucide and the
+  Geist fonts. Five tabs (Train, Programs, Progress, History, Settings) with empty screens, and
+  the light and dark colours from `react-plan.md`.
+- The API serves the built app at `/app/`; the old UI stays at `/` until step 8. The Docker image
+  builds the app in a Node stage.
+- CI type-checks, lints, tests and builds the app. The build fails if first-load JavaScript passes
+  120 KB gzipped (78 KB now).
+
 ### Added — Phase 7, a Progress tab with estimated max per lift
 
 - The web app gets Log and Progress tabs. Progress lists six key lifts (Squat, Bench Press,
