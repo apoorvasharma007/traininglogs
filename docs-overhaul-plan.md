@@ -36,9 +36,10 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 - [x] 4. `scripts/README.md`, `tests/fixtures/README.md`: rewritten; 12 retired scripts, `test_import.py` and `fixtures/invalid/` deleted; CLI and parser removal added to the roadmap as a non-urgent enhancement; approved 2026-10-03
 - [x] 5. `CLAUDE.md`: rewritten as working rules (money and data rules, local development, branching and releases, testing, docs); approved 2026-10-03
 - [x] 6. Guides: `.claude/db-migration.md` and `.claude/testing-guide.md` rewritten as short plain steps; `migration-plan.md`, `regen-historical.md`, `migration-runbook.md` moved to `archived/guides/`; CLAUDE.md guide table updated; approved 2026-10-03
-- [ ] 7. `docs/extraction-conventions.md`, `extraction-design-principles.md`
-- [ ] 8. Merge `docs/overhaul` into `dev`
+- [x] 7. `docs/extraction-conventions.md`, `extraction-design-principles.md`: left as records by decision (reference notes for prompt work); revisit with the next prompt change
+- [x] 8. Merge `docs/overhaul` into `dev` (2026-10-03)
 
 ## ▶ Resume here
 
-Step 7, `docs/extraction-conventions.md` and `extraction-design-principles.md`: agreeing their jobs, then step 8 merges into dev. Branch `docs/overhaul` from `dev`.
+Done. Every step is complete and merged into `dev`. This file can move to `archived/plans/` with the next
+release.
