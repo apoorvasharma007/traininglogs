@@ -1,16 +1,18 @@
-# Sample inputs for manually testing the confirm UI
+# Sample inputs
 
-Paste one of these into the textarea at http://localhost:8000/ and hit Extract. Each is a
-different shape/level of detail a real person might actually type — not the clean, structured
-`.md` format the CLI's file-based path is used to. **Every Extract click is a real paid Haiku
-call** (a few cents) — pick one or two, not all six back to back.
+Sessions to paste into the app's text box when testing Extract. Each one is written the way a
+person types after a workout, at a different level of detail. Every Extract is a paid call to
+Claude Haiku, a few cents each, so try one or two at a time.
+
+Samples 1 to 6 are lifting sessions. Samples 7 and 8 test what the app is for beyond lifting: a
+run and a skills session.
 
 ---
 
-## 1. Terse, single line, 4 exercises
+## 1. One line, four exercises
 
-No line breaks at all — this is the shape that used to break exercise chunking (fixed in
-Phase 5, see `CHANGELOG.md`).
+No line breaks at all. The model has to find where each exercise starts inside a single line,
+which it used to get wrong.
 
 ```
 Push day. Bench press 60kg for 8, 8, 6 at RPE 9. Incline DB press 22kg for 10, 10, 8. Cable flye 3 sets of 12. Shoulder press machine 40kg for 10, 10, 8.
@@ -18,9 +20,9 @@ Push day. Bench press 60kg for 8, 8, 6 at RPE 9. Incline DB press 22kg for 10, 1
 
 ---
 
-## 2. Casual multi-line paragraph, 5 exercises, moderate detail
+## 2. A casual paragraph, five exercises
 
-No headers, a little color commentary, one exercise has a warmup mentioned inline.
+No headings, a bit of commentary, and one warmup mentioned in passing.
 
 ```
 Pull day today, back felt a bit tired from Tuesday.
@@ -38,10 +40,10 @@ Bicep curls dumbbell 14kg for 12, 12, 10.
 
 ---
 
-## 3. Detailed, 6 exercises — warmup, RPE, failure technique, a drop set
+## 3. Detailed, six exercises, with warmups, RPE, a failure note and a drop set
 
-The kind of input with the most for the model to get right: a warmup block, a failure-technique
-note, and a drop set described in prose rather than as its own row.
+The most for the model to get right: a warmup block, grinder reps described in words, and a drop
+set written as part of a sentence instead of its own row.
 
 ```
 Legs, felt strong. Deload week is over.
@@ -61,9 +63,9 @@ Calf raises 60kg for 15, 15, 15, 15.
 
 ---
 
-## 4. Semi-structured numbered list, 4 exercises
+## 4. A numbered list, four exercises
 
-Someone typing quickly in a notes app, numbered but not headered.
+Typed quickly in a notes app, numbered but without headings. Has a date in the first line.
 
 ```
 Upper body — 2026-08-10
@@ -76,11 +78,10 @@ Upper body — 2026-08-10
 
 ---
 
-## 5. Structured with headers, 6 exercises, includes a superset
+## 5. Headings and fields, six exercises, with a superset
 
-Closer to the CLI's usual `.md` shape, but written by hand rather than to spec — and a superset
-written as one combined section, which is a real edge case for the splitter (it's told a
-superset is two exercises, not one entry).
+Written with headings by hand. Two exercises share one heading as a superset, and the model should
+still split them into two exercises.
 
 ```
 ## Push Session
@@ -111,10 +112,38 @@ Sets: 55kg x10, 55kg x10, 55kg x8
 
 ---
 
-## 6. Bare minimum, 5 exercises, no RPE or notes at all
+## 6. The bare minimum, five exercises
 
-The sparsest realistic input — just names, weights, and set x rep counts.
+Names, weights and set counts. No RPE, no notes.
 
 ```
 Chest and back. Bench 80kg 5x5. Rows 70kg 5x5. Pullups bodyweight 3x8. Dumbbell press 24kg 3x10. Lat raises 10kg 3x15.
+```
+
+---
+
+## 7. A run
+
+Distance, time, heart rate and splits, with strides at the end. Nothing here is a weight.
+
+```
+Easy run + strides
+5.2 km in 31:40, avg HR 148. legs heavy from yesterday's squats
+splits 6:12, 6:05, 6:01, 6:08, 5:58
+4 strides at the end, ~100m each, felt snappy
+```
+
+---
+
+## 8. A skills session
+
+Reflex drills and handstand practice, measured in rounds, hits and hold times instead of weight
+and reps.
+
+```
+Skills - reflex + handstand
+Reaction ball drills 3 rounds of 2 min, dropped maybe 6 catches in round 1, 2 in round 3
+Light board reaction test 3 x 30s, best 41 hits
+Wall handstand holds 30s, 35s, 28s - wrist ok today
+Freestanding attempts for 10 min, longest kick-up hold ~6s
 ```

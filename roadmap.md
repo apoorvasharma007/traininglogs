@@ -911,6 +911,15 @@ Terraform and provider versions.
 
 ## After end-to-end works
 
+- **Enhancement, not urgent (Apoorva, 2026-10-03): retire the markdown CLI and the rules parser.**
+  `cli/`, `parser/`, most of `processor/`, `templates/` and the `traininglogs log` / `validate`
+  command date from logging by markdown file, which the app replaced. Two pieces are still used
+  by the app and move first: `agent/schemas.py` imports `_parse_failure` and `_parse_quality`
+  from `parser/parse.py`, and `ingest/confirm.py` uses `build_session_from_extract` from
+  `processor/processor.py`. Move those into the app's own modules, then delete the rest with its
+  tests, suite green before and after. `inputs/` and `output_training_logs_json/` stay as records.
+  The retired scripts and `tests/fixtures/invalid/` were already removed in the docs overhaul.
+
 - [ ] **Historical regeneration** — recover the warmup data the rules parser dropped across
       ~121 sessions. Deferred by explicit decision until a working end-to-end version exists.
       Requires Phase 2 (re-runnable extraction). ~$5 at Haiku rates.
@@ -938,6 +947,29 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 ---
 
 ## ▶ Resume here
+
+### Session 2026-10-03 (evening) — read this first
+
+- **Phase 6 is done and live.** The app runs on Google Cloud Run (`us-east1`):
+  https://traininglogs-875429444117.us-east1.run.app. Infrastructure is Terraform in `infra/`
+  (`modules/{project,app}`, `environments/prod/{project,app}`), both layers applied, state in
+  `prod-traininglogs-510513-terraform-state`. CI checks code and infra on every change; CD runs
+  after CI on `main`, waits for Apoorva's approval in the `prod` GitHub environment, applies the
+  app layer and deploys. The first CD run deployed commit `d0f5e74` successfully.
+- **Releasing** is merging `dev` into `main` (merge commit, never squash) and approving CD. `main`
+  needs no review and allows only merge commits (Apoorva changed both settings).
+- **Documentation overhaul done** (`docs-overhaul-plan.md`): README is only what the app does and
+  why; `docs/design.html` rewritten outside-in; `CLAUDE.md` is the working rules, including local
+  development and the money and data rules; short plain guides in `.claude/`; finished guides in
+  `archived/guides/`. 12 retired scripts deleted; `scripts/` is `correction_stats.py`,
+  `eval_arms.py`, `eval_ab.py`.
+- **Open, not urgent:** retire the markdown CLI and rules parser (see "After end-to-end works");
+  the static `docs/index.html` dashboard no longer gets app sessions.
+- **Next, by Apoorva's direction:** the insights / user dashboard, then installable on the phone
+  (PWA), then a UI with screens (htmx), saved programs from repeat, and accounts via Supabase Auth.
+- Apoorva still has to: put the rotated API key into local `.env` (`api-key` is at version 2;
+  version 1 is disabled), then measure the per-request delay to the Singapore database. Set the
+  $1 budget alert in the billing console.
 
 ### Session 2026-10-03 (late) — read this first
 
