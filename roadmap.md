@@ -685,19 +685,62 @@ Proportionate fix, not a real auth system:
       (Phase 3), this just makes "who spent what" a `GROUP BY` instead of assumed to be you.
 - [ ] No passwords, no sessions, no OAuth provider — you hand each friend their own key once.
 
-## Phase 6 — Deploy
+## Phase 6 — Deploy to Google Cloud Run, infrastructure in Terraform (planned 2026-10-03)
 
-Deploying the **app**, not just the API — `web/` and the FastAPI service ship together.
+**Goal.** The app (API + `web/`, one container, one origin) running on Cloud Run so Apoorva can
+use it from his phone, for $0 inside Google's always-free tier, with every piece of
+infrastructure defined in Terraform and deployed by GitHub Actions — no hand-made resources
+except one documented bootstrap. Replaces the earlier Fly plan (Fly has no free tier).
 
-- [ ] Deploy FastAPI to Fly (`fly.toml` and `Dockerfile` already exist). Supabase is live with
-      121 sessions (`archived/plans/pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
-- [ ] Mount `web/` as static files on the same Fly app (`StaticFiles`), same origin as the API —
-      avoids standing up a second host and sidesteps CORS for the write endpoints. Distinct from
-      how `docs/`'s dashboard reaches the public: that's a static pull into a separate personal
-      website at *its* deploy time, which doesn't fit a page that calls a live write API.
-- [ ] Env: `DATABASE_URL`, `API_KEY` → per-user keys (Phase 5.5), `ALLOWED_ORIGINS`.
-- [ ] Smoke-test read + write paths, and that a second `api_key` actually gets a second
-      `user_id`'s data back, not yours.
+**Decisions (Apoorva, 2026-10-03), with the research behind them:**
+- **GCP Cloud Run** in **`us-east1`**: always-free tier (2M requests, 180,000 vCPU-s,
+  360,000 GiB-s a month; North America only). Supabase stays in Singapore for now; `us-east1`
+  sits near Supabase's US East if the DB moves later. Measure latency first.
+- **Terraform**, not Deployment Manager (deprecated; end of support 2026-04-01, shutdown
+  2027-06-30) and not Infrastructure Manager yet (managed Terraform; pricing unverified —
+  switching later reuses the same code).
+- **Same repo**, structure **B**: `infra/modules/` (reusable), `infra/environments/prod/`,
+  `infra/bootstrap/`. A separate infra repo only makes sense once infra is shared across
+  projects.
+- **Workflows:** CI (`ci.yml`, tests — unchanged), **CD** (`deploy.yml`: on `main` after CI
+  passes, build the image, push to Artifact Registry, deploy to Cloud Run), and **Terraform**
+  (`infra.yml`: plan on PRs touching `infra/`, apply on merge to `main`). Terraform owns the
+  service's configuration; CD owns which image runs (`ignore_changes` on the image).
+
+**Google's practices followed** (docs updated 2026-09-30): Cloud Storage state backend;
+"avoid storing secrets in state" — Terraform creates secret containers, values are added once
+with `gcloud`; plan before apply; run Terraform through automation; **Workload Identity
+Federation, no service-account key files**, limited to this repo; local runs use
+`gcloud auth application-default login`; deletion protection on stateful resources; pinned
+Terraform and provider versions.
+
+**Branching.** Base `phase-6/deploy` (from `dev`), one sub-branch per step,
+`phase-6/deploy-N-<step>`. Every Terraform change: show Apoorva the plan before applying.
+
+- [x] **Step 1 — App ready for a container host.** API serves `web/` (no-cache), page defaults
+      to its own origin, image includes `web/` and honours `$PORT`, allowlist
+      `.gcloudignore`/`.dockerignore` (never `.env`/`backups/`). Image built and smoke-tested
+      locally (227 MB). `fa34cdb`.
+- [ ] **Step 2 — Tooling.** Latest Terraform installed; gcloud 587.0.0 already current;
+      `gcloud auth application-default login` for local Terraform runs.
+- [ ] **Step 3 — `infra/bootstrap/`** (applied once, locally, by Apoorva's account): state
+      bucket (versioned, uniform access, public access prevented, `prevent_destroy`), the APIs
+      Terraform itself needs, Workload Identity pool + GitHub provider restricted to
+      `apoorvasharma007/traininglogs`, CI service accounts with least-privilege roles, the $1
+      budget alert (billing-account level, so it lives here). Starts on local state, then
+      migrated into the bucket it created.
+- [ ] **Step 4 — `infra/modules/cloud_run_app/` + `infra/environments/prod/`:** Artifact
+      Registry repo with a keep-2 cleanup policy, runtime service account (reads its own
+      secrets, nothing else), secret containers (`database-url`, `api-key`,
+      `anthropic-api-key`), Cloud Run v2 service (512 MiB, scale 0–2, `ANTHROPIC_WORKSPACE_ID`
+      plain env), public invoker (`allUsers`; data still behind `X-Api-Key`). First image is
+      Google's sample until CD deploys the real one. Secret values added once via `gcloud`.
+- [ ] **Step 5 — Workflows:** `infra.yml` and `deploy.yml`, both authenticating with
+      `google-github-actions/auth@v3` via Workload Identity Federation.
+- [ ] **Step 6 — First real deploy and phone test.** Measure cold start and per-request
+      latency to Singapore; decide on moving the database.
+- [ ] **Step 7 — Docs:** `docs/design.html` (deploy section), README (how to deploy, the
+      bootstrap), CHANGELOG. Remove `fly.toml`.
 
 ## After end-to-end works
 
