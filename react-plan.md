@@ -88,7 +88,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
       a link to their workout and a deload flag; pinned notes stored per exercise name. Prod migration
       needs Apoorva's approval of the exact SQL, a backup, one transaction, counts before and after.
 - [x] 4. `programs-ui`: Programs tab, program screen, workout plan screen, follow and stop following.
-- [ ] 5. `session`: live session saved in the browser database (IndexedDB), last-time values and notes,
+- [x] 5. `session`: live session saved in the browser database (IndexedDB), last-time values and notes,
       pinned notes, Finish sends one request to a new endpoint that saves a confirmed session without
       AI, retry when offline.
 - [ ] 6. `home`: next workout, deload reminder, blank workout, in-progress and waiting-to-send states.
@@ -101,10 +101,11 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 4 merged into `phase-8/react`. Step 3's tables are live in prod (backup
-`backups/prod-before-programs-2026-10-04.json`). Step 4 swapped in shadcn Drawer (vaul), Recharts
-(lift chart, on demand) and Motion (drag to reorder); only Train is in the first download (81 KB
-of the 120 KB budget). The green token is `highlight` in code (shadcn uses `accent` for a grey).
-Confirm takes `program_workout_id`, so a pasted session can count as a planned workout.
-Next: step 5 (`session`). Design the save-a-session-without-AI endpoint and the on-phone storage
-(IndexedDB) with Apoorva before writing code.
+2026-10-04: steps 1 to 5 merged into `phase-8/react`.
+- Prod changes so far, each approved and backed up in `backups/`: step 3's tables; raw input kinds
+  renamed to `text`/`manual` (the check still allows `markdown`/`repeat` until the step 8 deploy).
+- A dev copy exists: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
+- Bodybuilding Transformation (Foundation, Ramp-up) is built on the dev copy only. Next action:
+  show Apoorva what `scripts/add_bts_programs.py --prod` adds (2 programs, 10 workouts, 85 plan
+  rows, 121 sessions linked), back up, and run it only after a yes.
+- Then step 6 (`home`).
