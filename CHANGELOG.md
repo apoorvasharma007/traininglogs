@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 5, logging a session in the app
+
+- Start a workout from a program, or a blank one. Last time's weights and reps fill in grey;
+  tick each set as you do it; add sets, warmup sets and exercises; pin a note to an exercise.
+- The session is saved on the phone (IndexedDB) on every change and sent once at Finish. Offline,
+  it waits on the phone and sends itself when the connection returns.
+- `POST /sessions` saves a session with no model call; `GET /exercises/last` gives last time.
+- Finish offers to update the workout's plan when the session differed from it.
+- Weight and reps are boxes on each set row, on the session screen and on Review; the set number
+  opens a drawer for warmup or working, RPE, note and delete.
+- `scripts/copy_prod_to_dev.py` copies production into a local `traininglogs_dev` database (prod
+  is only read), to try the app on real data; `scripts/add_bts_programs.py` adds Bodybuilding
+  Transformation as two programs, Foundation and Ramp-up, from the sessions already logged.
+
+### Fixed
+
+- A drawer opened from a set didn't slide into view until something else on screen changed.
+
+### Changed
+
+- Raw input kinds are `text` (a note the model reads) and `manual` (entered in the app, no model
+  call), replacing `markdown` and `repeat`; `photo` and `speech` were never used and are gone.
+
 ### Added — Phase 8 step 4, the Programs tab
 
 - Programs list, a program's workouts (drag to reorder, follow, deload reminder, rename, delete)

@@ -70,11 +70,11 @@ class FakeProvider:
 
 class TestCapture:
     def test_stores_the_text_verbatim_and_returns_its_id(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN, source_kind="markdown", source_file="a.md")
+        raw_input_id = capture(conn, MARKDOWN, source_kind="text", source_file="a.md")
 
         raw = get_raw_input(conn, raw_input_id)
         assert raw["content"] == MARKDOWN
-        assert raw["source_kind"] == "markdown"
+        assert raw["source_kind"] == "text"
         assert raw["source_file"] == "a.md"
 
 

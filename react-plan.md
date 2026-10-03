@@ -95,6 +95,9 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 - [ ] 7. `polish`: loading and empty states, transitions, a last pass on motion.
 - [ ] 8. `retire-web`: delete `web/`, update docs, merge `phase-8/react` into `dev`. Deploying is
       Apoorva's call.
+      At the deploy (with its own approval): `UPDATE raw_inputs SET source_kind = 'text' WHERE
+      source_kind = 'markdown'` (rows the old live app wrote meanwhile), then replace the check
+      with `source_kind IN ('text', 'manual')`, matching `schema.sql`.
 
 ## ▶ Resume here
 

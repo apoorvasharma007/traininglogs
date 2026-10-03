@@ -102,7 +102,9 @@ class SessionDetail(BaseModel):
 
 class CaptureIn(BaseModel):
     content: str = Field(min_length=1, description="The session text, as written.")
-    source_kind: str = "markdown"
+    source_kind: Literal["text"] = Field(
+        default="text", description="Always text: this endpoint is for notes the model reads."
+    )
     source_file: Optional[str] = None
 
 
@@ -326,3 +328,72 @@ class PinOut(BaseModel):
     name_key: str
     note: str
     pinned_at: Any
+
+
+class ManualWarmupSet(BaseModel):
+    weight_kg: float = Field(ge=0)
+    reps: Optional[int] = Field(default=None, ge=0)
+    notes: Optional[str] = None
+
+
+class ManualSet(BaseModel):
+    weight_kg: Optional[float] = Field(default=None, ge=0)
+    reps: Optional[int] = Field(default=None, ge=0)
+    rpe: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class ManualExercise(BaseModel):
+    name: str = Field(min_length=1)
+    notes: Optional[str] = None
+    warmup_sets: list[ManualWarmupSet] = []
+    sets: list[ManualSet] = []
+
+    @model_validator(mode="after")
+    def has_a_set(self) -> ManualExercise:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("an exercise needs a name")
+        if not self.warmup_sets and not self.sets:
+            raise ValueError(f"{self.name} has no sets")
+        return self
+
+
+class ManualSessionIn(BaseModel):
+    """A session entered set by set in the app. Only the sets the person ticked are sent."""
+
+    client_id: str = Field(
+        pattern=r"^[0-9a-f]{32}$",
+        description="Made by the phone when the session starts. Sending the same session again "
+        "returns the one already saved.",
+    )
+    date: date
+    focus: Optional[str] = Field(default=None, description="What History shows as its title, e.g. \"1 · Bench\".")
+    duration_minutes: Optional[int] = Field(default=None, ge=0, le=1440)
+    program_workout_id: Optional[str] = None
+    is_deload: bool = False
+    notes: Optional[str] = None
+    exercises: list[ManualExercise] = Field(min_length=1)
+
+
+class SessionSaved(BaseModel):
+    session_id: str
+    created: bool = Field(description="False when this session had already been saved.")
+
+
+class LastSet(BaseModel):
+    weight_kg: Optional[float]
+    reps: Optional[int]
+    rpe: Optional[float] = None
+    notes: Optional[str]
+
+
+class LastExercise(BaseModel):
+    """The most recent session that had this exercise, whatever program it was in."""
+
+    name: str
+    date: date
+    session_id: str
+    notes: Optional[str]
+    warmup_sets: list[LastSet]
+    sets: list[LastSet]

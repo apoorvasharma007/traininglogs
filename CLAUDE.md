@@ -68,6 +68,15 @@ DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/uvicorn traininglogs.api.app:app --r
 Point `DATABASE_URL` at the test database like this when trying things out. Without it, the app
 reads and writes production. Each Extract is a paid model call either way.
 
+To try things on real data without touching production, copy it into a local dev database (this
+only reads production) and run the app on port 8010 against the copy:
+
+```bash
+.venv/bin/python scripts/copy_prod_to_dev.py
+DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_dev \
+    .venv/bin/uvicorn traininglogs.api.app:app --port 8010
+```
+
 Run the tests:
 
 ```bash

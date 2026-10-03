@@ -25,23 +25,44 @@ function card(weight: number, withSet = true): Card {
 const reply = (c: Card) => ({ extract: { v: 'next' }, card: c, correction: { source: 'manual' }, created_path: null })
 
 describe('Review', () => {
-  it('edits a set in the sheet and sends only the change', async () => {
+  it('types a weight into the set row and sends only that change', async () => {
     const calls = fakeApi({
       'GET /extractions/x1': card(120),
       'POST /extractions/x1/edit': reply(card(122.5)),
     })
     renderApp('/review/x1')
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit set 1' }))
-    const sheet = screen.getByRole('dialog', { name: 'Edit set' })
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Plus 2.5 kg' }))
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Done' }))
+    const weight = await screen.findByLabelText('Weight for set 1')
+    expect(weight).toHaveValue('120')
+    await userEvent.clear(weight)
+    await userEvent.type(weight, '122.5')
+    await userEvent.tab()
 
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit set' })).not.toBeInTheDocument())
-    expect(calls.at(-1)).toEqual({
+    await waitFor(() => expect(calls.at(-1)).toEqual({
       key: 'POST /extractions/x1/edit',
       body: { edits: [{ path: 'exercises.0.sets.0', field: 'weight_kg', value: 122.5 }] },
+    }))
+    expect(await screen.findByLabelText('Weight for set 1')).toHaveValue('122.5')
+  })
+
+  it('sends nothing when a box is left unchanged', async () => {
+    const calls = fakeApi({ 'GET /extractions/x1': card(120) })
+    renderApp('/review/x1')
+    await userEvent.click(await screen.findByLabelText('Reps for set 1'))
+    await userEvent.tab()
+    expect(calls.filter((c) => c.key.startsWith('POST'))).toEqual([])
+  })
+
+  it('edits RPE in the drawer opened from the set number', async () => {
+    const calls = fakeApi({
+      'GET /extractions/x1': card(120),
+      'POST /extractions/x1/edit': reply(card(120)),
     })
-    expect(screen.getByRole('button', { name: 'Edit set 1' })).toHaveTextContent('122.5')
+    renderApp('/review/x1')
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 options' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Edit set' })
+    await userEvent.click(within(sheet).getByRole('button', { name: '8' }))
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Done' }))
+    await waitFor(() => expect(calls.at(-1)?.body).toEqual({ edits: [{ path: 'exercises.0.sets.0', field: 'rpe', value: 8 }] }))
   })
 
   it('deletes a set and brings it back with Undo', async () => {
@@ -50,15 +71,15 @@ describe('Review', () => {
       'POST /extractions/x1/edit': reply(card(120, false)),
     })
     renderApp('/review/x1')
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit set 1' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Delete set' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 options' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete set' }))
 
     await screen.findByText('Removed')
     expect(calls.at(-1)?.body).toEqual({ op: { op: 'remove', path: 'exercises.0.sets.0' } })
-    expect(screen.queryByRole('button', { name: 'Edit set 1' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Weight for set 1')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
-    expect(screen.getByRole('button', { name: 'Edit set 1' })).toHaveTextContent('120')
+    expect(screen.getByLabelText('Weight for set 1')).toHaveValue('120')
   })
 
   it('confirms with the edited extract and opens the saved session', async () => {
@@ -77,10 +98,11 @@ describe('Review', () => {
       'GET /sessions/s9': { session_id: 's9', date: '2026-10-04', program: null, focus: 'Strength', duration_minutes: null, notes: null, exercises: [] },
     })
     const location = renderApp('/review/x1')
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit set 1' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Plus 2.5 kg' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit set 1' })).toHaveTextContent('122.5'))
+    const weight = await screen.findByLabelText('Weight for set 1')
+    await userEvent.clear(weight)
+    await userEvent.type(weight, '122.5')
+    await userEvent.tab()
+    await waitFor(() => expect(screen.getByLabelText('Weight for set 1')).toHaveValue('122.5'))
     expect(await screen.findByLabelText('Counts as')).toHaveDisplayValue('Workout 2, next in Strength')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))
 

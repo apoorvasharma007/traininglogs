@@ -7,6 +7,7 @@ import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { planText, useProgram, useProgramChange } from '@/lib/programs'
+import { startSession } from '@/lib/startSession'
 import type { PlanExercise } from '@/lib/types'
 
 const BLANK: PlanExercise = { name: '', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false }
@@ -76,16 +77,25 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
           {change.isError && <p role="alert" className="px-1 text-sm text-destructive">{change.error.message}</p>}
 
+          {w.exercises.length > 0 && program.data && (
+            <button type="button"
+              onClick={() => startSession({ program: program.data, workout: w }).then(() => navigate('/session'))}
+              className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+              Start workout
+            </button>
+          )}
+
           <button type="button" onClick={() => setRemoving(true)} className="h-11 text-sm font-semibold text-destructive">
             Remove workout
           </button>
         </div>
       )}
 
-      {w && editing != null && (
+      {w && (
         <ExerciseSheet
-          key={String(editing)}
-          initial={editing === 'new' ? BLANK : w.exercises[editing]}
+          open={editing != null}
+          formKey={String(editing)}
+          initial={editing === 'new' || editing == null ? BLANK : w.exercises[editing]}
           isNew={editing === 'new'}
           busy={change.isPending}
           onClose={() => setEditing(null)}
@@ -107,6 +117,24 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 }
 
 function ExerciseSheet(props: {
+  open: boolean
+  formKey: string
+  initial: PlanExercise
+  isNew: boolean
+  busy: boolean
+  onSave: (e: PlanExercise) => void
+  onDelete: () => void
+  onClose: () => void
+}) {
+  // Mounted closed and opened in place: a drawer created already open doesn't slide into view.
+  return (
+    <Sheet open={props.open} onClose={props.onClose} label={props.isNew ? 'Add exercise' : 'Edit exercise'}>
+      {props.open && <ExerciseForm key={props.formKey} {...props} />}
+    </Sheet>
+  )
+}
+
+function ExerciseForm(props: {
   initial: PlanExercise
   isNew: boolean
   busy: boolean
@@ -117,7 +145,7 @@ function ExerciseSheet(props: {
   const [e, setE] = useState(props.initial)
   const set = (patch: Partial<PlanExercise>) => setE((x) => ({ ...x, ...patch }))
   return (
-    <Sheet open onClose={props.onClose} label={props.isNew ? 'Add exercise' : 'Edit exercise'}>
+    <>
       <form className="flex flex-col gap-4" onSubmit={(ev) => {
         ev.preventDefault()
         if (e.name.trim()) props.onSave({ ...e, name: e.name.trim() })
@@ -166,6 +194,6 @@ function ExerciseSheet(props: {
           </button>
         </div>
       </form>
-    </Sheet>
+    </>
   )
 }

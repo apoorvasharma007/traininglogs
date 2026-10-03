@@ -209,7 +209,7 @@ class TestCreateInput:
         )
         r = client.post(
             "/inputs",
-            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "markdown"},
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "text"},
             headers={"x-api-key": "testkey"},
         )
         assert r.status_code == 201

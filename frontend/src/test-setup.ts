@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import 'fake-indexeddb/auto'
 
 // jsdom lacks matchMedia, which the drawer (vaul) reads.
 if (!window.matchMedia) {

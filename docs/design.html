@@ -298,7 +298,7 @@
   <table>
     <thead><tr><th>Table</th><th>One row per</th></tr></thead>
     <tbody>
-      <tr><td><code>raw_inputs</code></td><td>thing you pasted, kept untouched; a repeat gets one too, with kind <code>repeat</code></td></tr>
+      <tr><td><code>raw_inputs</code></td><td>what a session was made from, kept untouched: <code>text</code> you wrote, which the model reads, or <code>manual</code>, entered in the app or copied from a past session with no model call</td></tr>
       <tr><td><code>llm_calls</code></td><td>model call: step, tokens, cost, time, and the last raw answer even if it failed</td></tr>
       <tr><td><code>extractions</code></td><td>reading of a raw input: the model's reading, uncertain fields, warnings, status (pending, confirmed, rejected) and the list of corrections</td></tr>
       <tr><td><code>sessions</code></td><td>session: date, program, phase, week, focus, duration, notes, the extraction it came from, and the planned workout it came from</td></tr>
@@ -366,7 +366,7 @@ WorkingSet                    one model for every kind of set; the fields presen
   <div class="diagram">raw_inputs
   id             TEXT PK
   content        TEXT
-  source_kind    TEXT          markdown (pasted text) | photo | speech | repeat
+  source_kind    TEXT          text (read by the model) | manual (no model call)
   source_file    TEXT          for a repeat: the session it came from
   checksum       TEXT
   captured_at    TIMESTAMPTZ
@@ -527,8 +527,10 @@ exercise_pins
       <tr><td><code>POST /extractions/{id}/correct</code></td><td>A correction in words. One model call.</td></tr>
       <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session, optionally as a planned workout (<code>program_workout_id</code>) so the program moves on. <code>409</code> if that text was already confirmed; <code>422</code> for an unknown workout.</td></tr>
       <tr><td><code>POST /sessions/{id}/repeat</code></td><td>A new reading built from a past session. No model call. Same response as <code>POST /inputs</code>.</td></tr>
+      <tr><td><code>POST /sessions</code></td><td>Saves a session entered in the app, no model call: a raw input of kind <code>manual</code>, an extraction, the session. The phone's <code>client_id</code> makes a repeated send return the saved session (<code>200</code>) instead of a second one.</td></tr>
       <tr><td><code>GET /sessions</code></td><td>Sessions, newest first, each with its exercise names. Filters: phase, week, date range, limit.</td></tr>
       <tr><td><code>GET /sessions/{id}</code></td><td>One session in full</td></tr>
+      <tr><td><code>GET /exercises/last?name=…</code></td><td>For each name, the latest session that had it (any program): date, note, warmup and working sets. Names match ignoring case.</td></tr>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>Every working set of one exercise, across all sessions</td></tr>
       <tr><td><code>GET /progress/lifts</code></td><td>Key lifts, then other lifts with 3 or more sessions: latest and best value, sessions, 4-week trend</td></tr>
       <tr><td><code>GET /progress/lifts/{name}</code></td><td>One lift's sessions: the value, the set behind it, records and goal weight. <code>404</code> for an unknown lift.</td></tr>

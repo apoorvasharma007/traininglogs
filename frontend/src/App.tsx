@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import { Loading } from '@/components/QueryStatus'
 import TabBar from '@/components/TabBar'
+import { startOutbox } from '@/lib/store'
 import Train from '@/screens/Train'
 
 // Only Train, the screen the app opens on, is in the first download. Everything else loads when
@@ -23,11 +24,16 @@ const Lift = lazy(() => import('@/screens/Lift'))
 const SessionView = lazy(() => import('@/screens/SessionView'))
 const LogFromNotes = lazy(() => import('@/screens/LogFromNotes'))
 const Review = lazy(() => import('@/screens/review/Review'))
+const Session = lazy(() => import('@/screens/session/Session'))
+const Done = lazy(() => import('@/screens/session/Done'))
 
 export default function App() {
   const [location] = useLocation()
-  // Review has its own bottom bar (Confirm), so the tabs step aside there.
-  const showTabs = !location.startsWith('/review')
+  // Review and a session in progress have their own bottom bars, so the tabs step aside there.
+  const showTabs = !location.startsWith('/review') && !location.startsWith('/session')
+
+  // Finished sessions waiting on the phone are sent now and whenever the connection returns.
+  useEffect(() => startOutbox(), [])
 
   useEffect(() => {
     const id = setTimeout(() => Object.values(tabs).forEach((load) => load()), 1500)
@@ -49,6 +55,8 @@ export default function App() {
             <Route path="/settings" component={Settings} />
             <Route path="/log" component={LogFromNotes} />
             <Route path="/review/:id" component={Review} />
+            <Route path="/session" component={Session} />
+            <Route path="/session/done" component={Done} />
             <Route component={Train} />
           </Switch>
         </Suspense>

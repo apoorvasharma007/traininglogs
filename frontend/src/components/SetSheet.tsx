@@ -6,15 +6,48 @@ const STEP = 'h-14 rounded-2xl border border-border bg-background font-mono text
 const BIG_INPUT =
   'h-13 w-24 border-0 border-b-[1.5px] border-border bg-transparent text-center font-mono text-[30px] font-semibold focus:border-foreground focus:outline-none'
 
-/** Edits one set: weight, reps, RPE, warmup or working, note. Nothing is sent until Done. */
+export type SetTarget = { key: string; title: string; draft: SetDraft }
+
+/**
+ * Edits one set: weight, reps, RPE, warmup or working, note. Nothing is saved until Done.
+ * The drawer stays mounted and opens when `target` is set: created already open, it would not
+ * slide into view until something else re-rendered.
+ */
 export default function SetSheet({
+  target,
+  busy,
+  error,
+  onDone,
+  onDelete,
+  onClose,
+}: {
+  target: SetTarget | null
+  busy: boolean
+  error: string | null
+  onDone: (draft: SetDraft) => void
+  onDelete: () => void
+  onClose: () => void
+}) {
+  // Keeps showing the last set while the drawer slides away.
+  const [shown, setShown] = useState(target)
+  if (target && target !== shown) setShown(target)
+  return (
+    <Sheet open={target != null} onClose={onClose} label="Edit set">
+      {shown && (
+        <SetForm key={shown.key} title={shown.title} initial={shown.draft} busy={busy} error={error}
+          onDone={onDone} onDelete={onDelete} />
+      )}
+    </Sheet>
+  )
+}
+
+function SetForm({
   title,
   initial,
   busy,
   error,
   onDone,
   onDelete,
-  onClose,
 }: {
   title: string
   initial: SetDraft
@@ -22,7 +55,6 @@ export default function SetSheet({
   error: string | null
   onDone: (draft: SetDraft) => void
   onDelete: () => void
-  onClose: () => void
 }) {
   const [draft, setDraft] = useState(initial)
   const set = (patch: Partial<SetDraft>) => setDraft((d) => ({ ...d, ...patch }))
@@ -32,7 +64,7 @@ export default function SetSheet({
   }
 
   return (
-    <Sheet open onClose={onClose} label="Edit set">
+    <>
       <div className="flex items-center justify-between gap-3">
         <span className="min-w-0 truncate text-[17px] font-semibold">{title}</span>
         <div role="group" aria-label="Set type" className="grid shrink-0 grid-cols-2 rounded-xl bg-background p-0.5">
@@ -125,7 +157,7 @@ export default function SetSheet({
           {busy ? 'Saving…' : 'Done'}
         </button>
       </div>
-    </Sheet>
+    </>
   )
 }
 

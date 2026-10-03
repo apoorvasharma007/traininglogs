@@ -1,8 +1,8 @@
 -- ---------------------------------------------------------------------------
 -- Capture and interpretation layers.
 --
--- `raw_inputs` is what the person actually produced -- the markdown they typed, and later the
--- text off a photograph or a speech transcript. It is never edited. Everything downstream can
+-- `raw_inputs` is what the person actually produced -- a note they wrote, or a session entered
+-- set by set in the app. It is never edited. Everything downstream can
 -- be rebuilt from it, which is the point: an extraction is a *derived* artifact, and deriving
 -- it again with a better model or prompt must not require the person to write anything twice.
 --
@@ -20,7 +20,10 @@
 CREATE TABLE IF NOT EXISTS raw_inputs (
     id          TEXT PRIMARY KEY,
     content     TEXT NOT NULL,
-    -- What kind of capture this was. Markdown today; the other two are why this table exists.
+    -- How to read `content`: 'text' is something the person wrote, read by the model (it costs
+    -- money and can be read again with a better prompt); 'manual' was entered in the app, or
+    -- copied from a past session, with no model call -- anything that re-reads raw inputs with a
+    -- model must skip it.
     source_kind TEXT NOT NULL,
     -- Where it came from, when there is a where. Null for pasted or spoken input.
     source_file TEXT,
@@ -29,18 +32,18 @@ CREATE TABLE IF NOT EXISTS raw_inputs (
     checksum    TEXT NOT NULL,
     captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'))
+        CHECK (source_kind IN ('text', 'manual'))
 );
 
--- 'repeat' (a session started from a past one, ingest/repeat.py) was added after raw_inputs
--- existed in real databases, and CREATE TABLE IF NOT EXISTS doesn't touch an existing table's
--- constraints -- so the check is re-stated here, idempotently, for those databases too. Unlike
--- the other three kinds, a repeat's content is a line the app wrote, not a workout to read:
--- anything that re-reads raw inputs with a model must skip it.
+-- Until 2026-10-04 the kinds were 'markdown' (any pasted text), 'repeat' (copied from a past
+-- session) and the never-used 'photo' and 'speech'. Databases made before then get their rows
+-- renamed and the check replaced here; CREATE TABLE IF NOT EXISTS doesn't touch an existing
+-- table. Both updates do nothing once renamed.
+ALTER TABLE raw_inputs DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check;
+UPDATE raw_inputs SET source_kind = 'text' WHERE source_kind = 'markdown';
+UPDATE raw_inputs SET source_kind = 'manual' WHERE source_kind = 'repeat';
 ALTER TABLE raw_inputs
-    DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check,
-    ADD CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'));
+    ADD CONSTRAINT raw_inputs_source_kind_check CHECK (source_kind IN ('text', 'manual'));
 
 CREATE TABLE IF NOT EXISTS extractions (
     id               TEXT PRIMARY KEY,

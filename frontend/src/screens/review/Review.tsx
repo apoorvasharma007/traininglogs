@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Ellipsis } from 'lucide-react'
+import { ChevronDown, Ellipsis } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
+import NumberBox from '@/components/NumberBox'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { ApiError, api } from '@/lib/api'
@@ -17,18 +18,18 @@ import {
   type SetDraft,
 } from '@/lib/review'
 import type { Card, CardExercise } from '@/lib/types'
-import SetSheet from './SetSheet'
+import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import { useReviewDoc } from './useReviewDoc'
 
-type OpenSet = { path: string; title: string; draft: SetDraft }
+type OpenSet = SetTarget & { path: string }
 
 /** The set at `path` in a card, as an editor draft with its title. */
 function findSet(card: Card, path: string): OpenSet | null {
   for (const ex of card.exercises) {
     const w = ex.warmup_rows.find((r) => r.path === path)
-    if (w) return { path, title: `${ex.header.name} · Warmup set`, draft: draftFromWarmup(w) }
+    if (w) return { key: path, path, title: `${ex.header.name} · Warmup set`, draft: draftFromWarmup(w) }
     const s = ex.working_set_rows.find((r) => r.path === path)
-    if (s) return { path, title: `${ex.header.name} · Set ${s.number}`, draft: draftFromSet(s) }
+    if (s) return { key: path, path, title: `${ex.header.name} · Set ${s.number}`, draft: draftFromSet(s) }
   }
   return null
 }
@@ -94,6 +95,14 @@ export default function Review({ params }: { params: { id: string } }) {
   async function saveField(path: string, field: 'name' | 'notes', value: string, previous: string) {
     if (value.trim() === previous.trim()) return true
     return (await review.run([{ edits: [{ path, field, value: value.trim() }] }])) !== undefined
+  }
+
+  /** A value typed into a set's box, saved when the box is left; nothing is sent if unchanged. */
+  async function saveValue(path: string, field: 'weight_kg' | 'reps' | 'rep_count', text: string, before: string) {
+    const value = text.trim()
+    if (value === before) return
+    const n = parseFloat(value)
+    await review.run([{ edits: [{ path, field, value: field === 'reps' || value === '' || Number.isNaN(n) ? value : n }] }])
   }
 
   async function correct() {
@@ -233,21 +242,25 @@ export default function Review({ params }: { params: { id: string } }) {
                 </div>
               )}
 
-              <div className="grid grid-cols-[34px_70px_60px_minmax(0,1fr)] px-4 text-[11px] font-semibold tracking-wide text-faint-foreground">
-                <span>SET</span>
-                <span>KG</span>
-                <span>REPS</span>
+              <div className="grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-1.5 pr-3 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
+                <span className="pl-1">SET</span>
+                <span className="text-center">KG</span>
+                <span className="text-center">REPS</span>
                 <span>NOTE</span>
               </div>
               {ex.warmup_rows.map((w) => (
-                <SetRow key={w.path} label="W" warmup weight={kg(w.weight_kg) === '0' ? 'BW' : kg(w.weight_kg)}
-                  reps={w.rep_count?.toString() ?? '–'} note={w.notes}
-                  onOpen={() => setOpenSet(findSet(doc.card, w.path))} />
+                <SetRow key={`${w.path}:${w.weight_kg}:${w.rep_count}`} label="W" warmup
+                  weight={kg(w.weight_kg)} reps={w.rep_count?.toString() ?? ''} note={w.notes}
+                  onOpen={() => setOpenSet(findSet(doc.card, w.path))}
+                  onWeight={(v) => saveValue(w.path, 'weight_kg', v, kg(w.weight_kg))}
+                  onReps={(v) => saveValue(w.path, 'rep_count', v, w.rep_count?.toString() ?? '')} />
               ))}
               {ex.working_set_rows.map((s) => (
-                <SetRow key={s.path} label={String(s.number)} weight={s.weight_kg ? kg(s.weight_kg) : 'BW'}
-                  reps={(s.reps ?? '–') + (s.rpe != null ? ` @${s.rpe}` : '')} note={s.notes}
-                  onOpen={() => setOpenSet(findSet(doc.card, s.path))} />
+                <SetRow key={`${s.path}:${s.weight_kg}:${s.reps}`} label={String(s.number)}
+                  weight={s.weight_kg == null ? '' : kg(s.weight_kg)} reps={s.reps ?? ''} rpe={s.rpe} note={s.notes}
+                  onOpen={() => setOpenSet(findSet(doc.card, s.path))}
+                  onWeight={(v) => saveValue(s.path, 'weight_kg', v, s.weight_kg == null ? '' : kg(s.weight_kg))}
+                  onReps={(v) => saveValue(s.path, 'reps', v, s.reps ?? '')} />
               ))}
 
               <div className="border-t border-border px-3 pt-2 pb-3">
@@ -337,21 +350,17 @@ export default function Review({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {openSet && (
-        <SetSheet
-          key={openSet.path}
-          title={openSet.title}
-          initial={openSet.draft}
-          busy={review.busy}
-          error={review.error}
-          onDone={saveSet}
-          onDelete={deleteSet}
-          onClose={() => {
-            setOpenSet(null)
-            review.clearError()
-          }}
-        />
-      )}
+      <SetSheet
+        target={openSet}
+        busy={review.busy}
+        error={review.error}
+        onDone={saveSet}
+        onDelete={deleteSet}
+        onClose={() => {
+          setOpenSet(null)
+          review.clearError()
+        }}
+      />
 
       <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise options">
         {menuFor && (
@@ -391,21 +400,39 @@ export default function Review({ params }: { params: { id: string } }) {
   )
 }
 
-function SetRow(props: { label: string; warmup?: boolean; weight: string; reps: string; note: string | null; onOpen: () => void }) {
+/** One set on the card: weight and reps typed in place; the set number opens the full editor. */
+function SetRow(props: {
+  label: string
+  warmup?: boolean
+  weight: string
+  reps: string
+  rpe?: number | null
+  note: string | null
+  onOpen: () => void
+  onWeight: (value: string) => void
+  onReps: (value: string) => void
+}) {
+  const [weight, setWeight] = useState(props.weight)
+  const [reps, setReps] = useState(props.reps)
   return (
-    <button
-      type="button"
-      onClick={props.onOpen}
-      aria-label={`Edit set ${props.label}`}
-      className="grid min-h-11.5 w-full grid-cols-[34px_70px_60px_minmax(0,1fr)] items-center border-t border-border px-4 text-left active:bg-background"
-    >
-      <span className={`font-mono text-[13px] font-semibold ${props.warmup ? 'text-warning' : 'text-muted-foreground'}`}>
+    <div className="grid min-h-13 grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-1.5 border-t border-border pr-3 pl-3">
+      <button type="button" onClick={props.onOpen} aria-label={`Set ${props.label} options`}
+        className={`flex h-10 items-center justify-center gap-0.5 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
+          props.warmup ? 'text-warning' : 'text-muted-foreground'
+        }`}>
         {props.label}
-      </span>
-      <span className="font-mono text-[15px]">{props.weight}</span>
-      <span className="font-mono text-[15px]">{props.reps}</span>
-      <span className="truncate text-xs text-muted-foreground">{props.note}</span>
-    </button>
+        <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />
+      </button>
+      <NumberBox label={`Weight for set ${props.label}`} value={weight} placeholder="kg"
+        onChange={setWeight} onBlur={() => props.onWeight(weight)} />
+      <NumberBox label={`Reps for set ${props.label}`} value={reps} placeholder="reps" inputMode="numeric"
+        onChange={setReps} onBlur={() => props.onReps(reps)} />
+      <button type="button" onClick={props.onOpen} aria-label={`Note and RPE for set ${props.label}`}
+        className="min-w-0 truncate text-left text-xs text-muted-foreground">
+        {props.rpe != null && <span className="font-mono">RPE {props.rpe} </span>}
+        {props.note}
+      </button>
+    </div>
   )
 }
 

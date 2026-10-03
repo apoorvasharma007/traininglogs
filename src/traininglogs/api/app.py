@@ -20,14 +20,17 @@ from traininglogs.api.schemas import (
     CorrectOut,
     EditIn,
     ExerciseHistoryRow,
+    LastExercise,
     LiftDetail,
     LiftsOut,
+    ManualSessionIn,
     PinIn,
     PinOut,
     ProgramIn,
     ProgramOut,
     ProgramPatch,
     SessionDetail,
+    SessionSaved,
     SessionSummary,
     WorkoutExercisesIn,
     WorkoutIn,
@@ -115,6 +118,32 @@ def list_sessions(
     return get_sessions(
         conn, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit
     )
+
+
+@app.post("/sessions", response_model=SessionSaved, status_code=201)
+def save_session(body: ManualSessionIn, response: Response, conn=Depends(_db), _=Depends(_auth)):
+    """Saves a session entered in the app, with no model call. Sending the same `client_id` again
+    returns the session already saved, with 200 instead of 201."""
+    from traininglogs.db.programs import workout_program_id
+    from traininglogs.ingest.manual import save_manual_session
+
+    if body.program_workout_id is not None and workout_program_id(conn, body.program_workout_id) is None:
+        raise HTTPException(status_code=422, detail="That workout doesn't exist or was removed.")
+    try:
+        session_id, created = save_manual_session(conn, body.model_dump(mode="json"))
+    except SystemExit as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not created:
+        response.status_code = 200
+    return SessionSaved(session_id=session_id, created=created)
+
+
+@app.get("/exercises/last", response_model=list[LastExercise])
+def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), _=Depends(_auth)):
+    """Last time for each named exercise: the latest session that had it, from any program."""
+    from traininglogs.db.fetch import get_last_exercises
+
+    return get_last_exercises(conn, name)
 
 
 @app.post("/sessions/{session_id}/repeat", response_model=CaptureOut, status_code=201)

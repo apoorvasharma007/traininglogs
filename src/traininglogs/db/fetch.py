@@ -244,3 +244,44 @@ def get_working_set_rows(conn: Connection) -> list[dict]:
         cols = [d[0] for d in cur.description]
 
     return [dict(zip(cols, row)) for row in rows]
+
+
+def get_last_exercises(conn: Connection, names: list[str]) -> list[dict]:
+    """For each name, the latest session that had that exercise (matched ignoring case and outer
+    spaces): its date, the exercise note, and its warmup and working sets. Names never logged are
+    left out. Reps of a set done one side at a time are the weaker side."""
+    keys = sorted({n.strip().lower() for n in names if n.strip()})
+    if not keys:
+        return []
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT ON (lower(trim(e.name)))
+                   lower(trim(e.name)), e.id, e.name, e.notes, s.date, s.session_id
+            FROM exercises e JOIN sessions s ON s.session_id = e.session_id
+            WHERE lower(trim(e.name)) = ANY(%s)
+            ORDER BY lower(trim(e.name)), s.date DESC, s.created_at DESC, e.number
+            """,
+            (keys,),
+        )
+        found = cur.fetchall()
+        result = []
+        for _key, exercise_id, name, notes, day, session_id in found:
+            cur.execute(
+                "SELECT weight_kg, rep_count, notes FROM warmup_sets WHERE exercise_id = %s ORDER BY number",
+                (exercise_id,),
+            )
+            warmups = [{"weight_kg": w, "reps": r, "notes": n} for w, r, n in cur.fetchall()]
+            cur.execute(
+                """
+                SELECT weight_kg, COALESCE(reps_full, LEAST(left_reps_full, right_reps_full)), rpe, notes
+                FROM working_sets WHERE exercise_id = %s ORDER BY number
+                """,
+                (exercise_id,),
+            )
+            sets = [{"weight_kg": w, "reps": r, "rpe": rpe, "notes": n} for w, r, rpe, n in cur.fetchall()]
+            result.append({
+                "name": name, "date": day, "session_id": session_id, "notes": notes,
+                "warmup_sets": warmups, "sets": sets,
+            })
+    return result

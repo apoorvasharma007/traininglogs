@@ -135,7 +135,7 @@ def repeat_session(
         f"started {now.isoformat(timespec='seconds')} [{raw_input_id}]"
     )
     insert_raw_input(
-        conn, content, source_kind="repeat", source_file=session_id, raw_input_id=raw_input_id
+        conn, content, source_kind="manual", source_file=session_id, raw_input_id=raw_input_id
     )
     extraction_id = insert_extraction(
         conn,
