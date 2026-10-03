@@ -82,7 +82,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 - [x] 1. `scaffold`: `frontend/` app with the tokens above, five tabs, empty screens. FastAPI serves
       the build. Dockerfile builds it. CI runs type-check, Vitest and build. `web/` still works.
-- [ ] 2. `port`: Progress, Lift, History, Settings, Log from notes and Review in React. Review gets
+- [x] 2. `port`: Progress, Lift, History, Settings, Log from notes and Review in React. Review gets
       the bottom-sheet editor and ⋯ menu on top of the existing `/edit` endpoint.
 - [ ] 3. `programs-db`: tables `programs`, `program_workouts`, `program_workout_exercises`; sessions get
       a link to their workout and a deload flag; pinned notes stored per exercise name. Prod migration
@@ -98,7 +98,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: step 1 (`scaffold`) merged into `phase-8/react`. The app runs at `/app/` next to the
-old UI at `/`; locally `cd frontend && npm run dev` serves it with the API proxied to :8000.
-Next: cut `phase-8/react-2-port` and rebuild Progress, Lift, History, Settings, Log from notes
-and Review in React.
+2026-10-04: steps 1 and 2 merged into `phase-8/react`. Decisions made in step 2: History opens a
+read-only session view; "Repeat a past session" is dropped from the new app; charts are SVG;
+sheets use the browser's `<dialog>`; Motion is removed until needed.
+Next: step 3 (`programs-db`). Propose the tables and the exact SQL to Apoorva before writing code.
