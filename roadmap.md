@@ -721,15 +721,17 @@ Terraform and provider versions.
       to its own origin, image includes `web/` and honours `$PORT`, allowlist
       `.gcloudignore`/`.dockerignore` (never `.env`/`backups/`). Image built and smoke-tested
       locally (227 MB). `fa34cdb`.
-- [ ] **Step 2 — Tooling.** Latest Terraform installed; gcloud 587.0.0 already current;
-      `gcloud auth application-default login` for local Terraform runs.
-- [ ] **Step 3 — `infra/bootstrap/`** (applied once, locally, by Apoorva's account): state
-      bucket (versioned, uniform access, public access prevented, `prevent_destroy`), the APIs
-      Terraform itself needs, Workload Identity pool + GitHub provider restricted to
-      `apoorvasharma007/traininglogs`, CI service accounts with least-privilege roles, the $1
-      budget alert (billing-account level, so it lives here). Starts on local state, then
-      migrated into the bucket it created.
-- [ ] **Step 4 — `infra/modules/cloud_run_app/` + `infra/environments/prod/`:** Artifact
+- [x] **Step 2 — Tooling.** gcloud 587.0.0 and Terraform 1.16.4 (Homebrew, HashiCorp tap;
+      1.16.5 arrives with `brew upgrade` once the tap publishes it). Local Terraform signs in with
+      `gcloud auth application-default login`.
+- [x] **Step 3 — Project layer** (`infra/modules/project` + `infra/environments/prod/project`),
+      applied 2026-10-03 by Apoorva from his laptop: 9 APIs, workload identity pool `github` +
+      provider `github-actions` (only this repo), service accounts `terraform` (any branch, so
+      PRs get plans) and `app-deploy` (`main` only), least-privilege roles, `terraform` access to
+      the state bucket. 23 added; re-plan shows no changes. One manual step done: state bucket
+      `prod-traininglogs-510513-terraform-state` (us-east1, versioned, private, labelled). The
+      budget alert is set by hand in the billing console, not in Terraform (decision).
+- [ ] **Step 4 — App layer (`infra/modules/app` + `infra/environments/prod/app`):** Artifact
       Registry repo with a keep-2 cleanup policy, runtime service account (reads its own
       secrets, nothing else), secret containers (`database-url`, `api-key`,
       `anthropic-api-key`), Cloud Run v2 service (512 MiB, scale 0–2, `ANTHROPIC_WORKSPACE_ID`
