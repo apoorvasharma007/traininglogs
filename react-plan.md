@@ -103,9 +103,10 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 2026-10-04: steps 1 to 5 merged into `phase-8/react`.
 - Prod changes so far, each approved and backed up in `backups/`: step 3's tables; raw input kinds
-  renamed to `text`/`manual` (the check still allows `markdown`/`repeat` until the step 8 deploy).
+  renamed to `text`/`manual` (the check still allows `markdown`/`repeat` until the step 8 deploy);
+  Bodybuilding Transformation added as two programs (Foundation, Ramp-up; 10 workouts, 85 plan
+  rows, 121 past sessions linked; neither followed).
 - A dev copy exists: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
-- Bodybuilding Transformation (Foundation, Ramp-up) is built on the dev copy only. Next action:
-  show Apoorva what `scripts/add_bts_programs.py --prod` adds (2 programs, 10 workouts, 85 plan
-  rows, 121 sessions linked), back up, and run it only after a yes.
-- Then step 6 (`home`).
+- Next: step 6 (`home`). First commit: the API's connection pool hands out connections Supabase
+  has closed (every request 500s until a restart); discard dead connections and turn on TCP
+  keepalives, with a test.
