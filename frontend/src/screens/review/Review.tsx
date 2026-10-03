@@ -7,6 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { ApiError, api } from '@/lib/api'
 import { kg } from '@/lib/format'
+import { usePrograms, workoutTitle } from '@/lib/programs'
 import {
   NEW_EXERCISE_NAME,
   draftFromSet,
@@ -43,6 +44,10 @@ export default function Review({ params }: { params: { id: string } }) {
   const [instruction, setInstruction] = useState('')
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const doc = review.doc
+  // Which planned workout this session counts as: the followed program's next one unless changed.
+  const followed = usePrograms().data?.find((p) => p.following)
+  const [countsAs, setCountsAs] = useState<string | null>(null)
+  const workoutId = countsAs ?? followed?.next_workout_id ?? ''
 
   async function saveSet(draft: SetDraft) {
     if (!openSet) return
@@ -102,9 +107,15 @@ export default function Review({ params }: { params: { id: string } }) {
     try {
       const out = await api<{ session_id: string }>(`/extractions/${params.id}/confirm`, {
         method: 'POST',
-        body: { extract: doc.extract ?? undefined, corrections: review.corrections.length ? review.corrections : undefined },
+        body: {
+          extract: doc.extract ?? undefined,
+          corrections: review.corrections.length ? review.corrections : undefined,
+          program_workout_id: followed && workoutId ? workoutId : undefined,
+        },
       })
       await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      await queryClient.invalidateQueries({ queryKey: ['programs'] })
+      if (followed) await queryClient.invalidateQueries({ queryKey: ['program', followed.id] })
       await queryClient.invalidateQueries({ queryKey: ['lifts'] })
       navigate(`/history/${encodeURIComponent(out.session_id)}`)
     } catch (e) {
@@ -146,6 +157,23 @@ export default function Review({ params }: { params: { id: string } }) {
             />
           </div>
           {dateUnsure && <p className="text-xs text-warning">Check the date: it wasn't clear in your note.</p>}
+          {followed && followed.workouts.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="counts-as" className="text-[13px] font-semibold">
+                Counts as
+              </label>
+              <select id="counts-as" value={workoutId} onChange={(e) => setCountsAs(e.target.value)}
+                className="h-11 rounded-xl border border-border bg-background px-3 text-[15px]">
+                {followed.workouts.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {workoutTitle(w)}
+                    {w.id === followed.next_workout_id ? `, next in ${followed.name}` : ''}
+                  </option>
+                ))}
+                <option value="">Not part of the program</option>
+              </select>
+            </div>
+          )}
           {doc.card.warnings.map((w) => (
             <p key={w} className="text-xs text-warning">
               {w}
@@ -258,7 +286,7 @@ export default function Review({ params }: { params: { id: string } }) {
         <div role="status" className="fixed inset-x-4 bottom-44 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1.5 pr-1.5 pl-4 text-sm text-primary-foreground">
           <span>Removed</span>
           <span className="flex">
-            <button type="button" onClick={review.undo} className="h-10 px-3.5 font-bold text-accent">
+            <button type="button" onClick={review.undo} className="h-10 px-3.5 font-bold text-highlight">
               Undo
             </button>
             <button type="button" onClick={review.dismissUndo} aria-label="Dismiss" className="h-10 px-3 opacity-70">

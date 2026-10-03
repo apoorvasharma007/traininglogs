@@ -525,7 +525,7 @@ exercise_pins
       <tr><td><code>GET /extractions/{id}</code></td><td>The card for a reading, as JSON</td></tr>
       <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card, or one line added or removed. No model call. <code>400</code> names the field when a value is invalid.</td></tr>
       <tr><td><code>POST /extractions/{id}/correct</code></td><td>A correction in words. One model call.</td></tr>
-      <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session. <code>409</code> if that text was already confirmed.</td></tr>
+      <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session, optionally as a planned workout (<code>program_workout_id</code>) so the program moves on. <code>409</code> if that text was already confirmed; <code>422</code> for an unknown workout.</td></tr>
       <tr><td><code>POST /sessions/{id}/repeat</code></td><td>A new reading built from a past session. No model call. Same response as <code>POST /inputs</code>.</td></tr>
       <tr><td><code>GET /sessions</code></td><td>Sessions, newest first, each with its exercise names. Filters: phase, week, date range, limit.</td></tr>
       <tr><td><code>GET /sessions/{id}</code></td><td>One session in full</td></tr>

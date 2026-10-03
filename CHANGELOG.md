@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 4, the Programs tab
+
+- Programs list, a program's workouts (drag to reorder, follow, deload reminder, rename, delete)
+  and a workout's plan (name, exercises with warmup sets, working sets and target reps or as many
+  as you can, drag to reorder).
+- Review asks which workout a pasted session counts as; `POST /extractions/{id}/confirm` takes
+  `program_workout_id`.
+- Sheets are now the shadcn Drawer (drag to close); the lift chart uses Recharts; Motion drives
+  reordering. Only the Train screen is in the first download (81 KB); other screens load when
+  opened, and the tabs are fetched in the background.
+
 ### Added — Phase 8 step 3, programs in the database
 
 - Tables `programs`, `program_workouts`, `program_workout_exercises` and `exercise_pins`, and

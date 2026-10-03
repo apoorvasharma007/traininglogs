@@ -1,65 +1,83 @@
-// A small line chart drawn as SVG: one value per session, record sessions marked in the accent.
-// Hand-drawn instead of a chart library, which would cost more than the rest of the app.
-
+// One value per session as a line, record sessions marked in the highlight colour. Recharts,
+// loaded only with the screens that use it.
+import {
+  CartesianGrid,
+  Line,
+  LineChart as Chart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type DotProps,
+} from 'recharts'
 import { niceScale } from '@/lib/chart'
 
 export type ChartPoint = { value: number; tick: string; record: boolean }
 
-const W = 340
-const H = 200
-const LEFT = 34
-const RIGHT = 8
-const TOP = 10
-const BOTTOM = 24
+const AXIS = { fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--faint-foreground)' }
 
-export default function LineChart({ points, label }: { points: ChartPoint[]; label: string }) {
+function Dot(props: DotProps & { payload?: ChartPoint }) {
+  const { cx, cy, payload } = props
+  if (cx == null || cy == null) return null
+  const record = payload?.record
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={record ? 5.5 : 3.5}
+      fill={record ? 'var(--highlight)' : 'var(--foreground)'}
+      stroke="var(--card)"
+      strokeWidth={2}
+    />
+  )
+}
+
+export default function LineChart({
+  points,
+  label,
+  format,
+}: {
+  points: ChartPoint[]
+  label: string
+  format: (value: number) => string
+}) {
   if (points.length === 0) return null
   const values = points.map((p) => p.value)
   const { lo, hi, step } = niceScale(Math.min(...values), Math.max(...values))
-  const x = (i: number) =>
-    points.length === 1 ? LEFT + (W - LEFT - RIGHT) / 2 : LEFT + (i * (W - LEFT - RIGHT)) / (points.length - 1)
-  const y = (v: number) => TOP + ((hi - v) / (hi - lo || 1)) * (H - TOP - BOTTOM)
-  const grid: number[] = []
-  for (let v = lo; v <= hi + step / 2; v += step) grid.push(Math.round(v * 100) / 100)
-
-  // Label at most 4 dates so they never overlap.
-  const every = Math.max(1, Math.ceil(points.length / 4))
+  const ticks: number[] = []
+  for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Math.round(v * 100) / 100)
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="block w-full">
-      {grid.map((v) => (
-        <g key={v}>
-          <line x1={LEFT} x2={W - RIGHT} y1={y(v)} y2={y(v)} className="stroke-border" strokeWidth={1} />
-          <text x={LEFT - 6} y={y(v) + 3} textAnchor="end" className="fill-faint-foreground font-mono text-[10px]">
-            {v}
-          </text>
-        </g>
-      ))}
-      <polyline
-        points={points.map((p, i) => `${x(i)},${y(p.value)}`).join(' ')}
-        fill="none"
-        className="stroke-foreground"
-        strokeWidth={2}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={x(i)}
-          cy={y(p.value)}
-          r={p.record ? 5.5 : 3.5}
-          className={`stroke-card ${p.record ? 'fill-accent' : 'fill-foreground'}`}
-          strokeWidth={2}
-        />
-      ))}
-      {points.map((p, i) =>
-        i % every === 0 || i === points.length - 1 ? (
-          <text key={i} x={x(i)} y={H - 6} textAnchor="middle" className="fill-faint-foreground font-mono text-[10px]">
-            {p.tick}
-          </text>
-        ) : null,
-      )}
-    </svg>
+    <div role="img" aria-label={label} className="h-52 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <Chart data={points} margin={{ top: 10, right: 12, bottom: 0, left: -12 }}>
+          <CartesianGrid vertical={false} stroke="var(--border)" />
+          <XAxis dataKey="tick" tick={AXIS} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} />
+          <YAxis domain={[lo, hi]} ticks={ticks} tick={AXIS} tickLine={false} axisLine={false} width={44} />
+          <Tooltip
+            cursor={{ stroke: 'var(--border)' }}
+            contentStyle={{
+              background: 'var(--popover)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              fontSize: 13,
+              color: 'var(--popover-foreground)',
+            }}
+            labelStyle={{ color: 'var(--muted-foreground)' }}
+            formatter={(v) => [format(Number(v)), '']}
+            separator=""
+          />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="var(--foreground)"
+            strokeWidth={2}
+            dot={<Dot />}
+            activeDot={{ r: 6, fill: 'var(--foreground)', stroke: 'var(--card)', strokeWidth: 2 }}
+            isAnimationActive={!window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+          />
+        </Chart>
+      </ResponsiveContainer>
+    </div>
   )
 }

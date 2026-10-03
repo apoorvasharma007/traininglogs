@@ -66,6 +66,14 @@ describe('Review', () => {
       'GET /extractions/x1': card(120),
       'POST /extractions/x1/edit': reply(card(122.5)),
       'POST /extractions/x1/confirm': { session_id: 's9' },
+      'GET /programs': [{
+        id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null,
+        next_workout_id: 'w2',
+        workouts: [
+          { id: 'w1', position: 1, name: 'Bench', last_done: null, exercises: [] },
+          { id: 'w2', position: 2, name: null, last_done: null, exercises: [] },
+        ],
+      }],
       'GET /sessions/s9': { session_id: 's9', date: '2026-10-04', program: null, focus: 'Strength', duration_minutes: null, notes: null, exercises: [] },
     })
     const location = renderApp('/review/x1')
@@ -73,12 +81,14 @@ describe('Review', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Plus 2.5 kg' }))
     await userEvent.click(screen.getByRole('button', { name: 'Done' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Edit set 1' })).toHaveTextContent('122.5'))
+    expect(await screen.findByLabelText('Counts as')).toHaveDisplayValue('Workout 2, next in Strength')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))
 
     await waitFor(() => expect(location.history.at(-1)).toBe('/history/s9'))
     expect(calls.find((c) => c.key === 'POST /extractions/x1/confirm')?.body).toEqual({
       extract: { v: 'next' },
       corrections: [{ source: 'manual' }],
+      program_workout_id: 'w2',
     })
   })
 

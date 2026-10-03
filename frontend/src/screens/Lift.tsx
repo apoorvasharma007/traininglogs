@@ -41,7 +41,7 @@ export default function Lift({ params }: { params: { name: string } }) {
             <span className="flex items-baseline gap-2.5">
               <span className="font-mono text-[40px] font-semibold tracking-tight">{liftValue(lift.data, latest.value)}</span>
               {latest.records.length > 0 && (
-                <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">Record</span>
+                <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-xs font-semibold text-highlight">Record</span>
               )}
             </span>
             <span className="text-[13px] text-muted-foreground">
@@ -69,6 +69,7 @@ export default function Lift({ params }: { params: { name: string } }) {
             <LineChart
               label={`${name} by session`}
               points={shown.map((p) => ({ value: p.value, tick: shortDate(p.date), record: p.records.length > 0 }))}
+              format={(v) => liftValue(lift.data, v)}
             />
             <p className="px-2 pt-1 text-xs text-muted-foreground">Without RPE, a set counts as taken to failure.</p>
           </div>
@@ -86,7 +87,7 @@ export default function Lift({ params }: { params: { name: string } }) {
                     <span className="font-mono font-semibold">{liftValue(lift.data, p.value)}</span>{' '}
                     <span className="text-muted-foreground">from {setText(p.best_set)}</span>
                   </span>
-                  {p.records.length > 0 && <span className="text-[11px] font-semibold text-accent">Record</span>}
+                  {p.records.length > 0 && <span className="text-[11px] font-semibold text-highlight">Record</span>}
                 </li>
               ))}
             </ul>

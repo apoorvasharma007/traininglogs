@@ -57,8 +57,8 @@ View Transitions API, all off when the phone asks for reduced motion. Light and 
 | text-secondary | `#8E8E96` | `#71717A` |
 | text-tertiary | `#5C5C63` | `#A1A1AA` |
 | button | `#F4F4F5` on `#0B0B0C` text | `#18181B` on `#FFFFFF` text |
-| accent | `#4CC38A` | `#15803D` |
-| accent-soft | `#13261C` | `#F0FDF4` |
+| accent (`highlight` in code) | `#4CC38A` | `#15803D` |
+| accent-soft (`highlight-soft` in code) | `#13261C` | `#F0FDF4` |
 | warning | `#D4A24C` on `#1F1A10` | `#92400E` on `#FFFBEB` |
 | danger | `#E5484D` | `#B91C1C` |
 

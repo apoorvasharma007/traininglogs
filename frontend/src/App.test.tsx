@@ -19,7 +19,7 @@ describe('App', () => {
   it('switches screen when a tab is tapped', async () => {
     renderAt('/')
     await userEvent.click(screen.getByRole('link', { name: 'History' }))
-    expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'History' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'History' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Train' })).not.toHaveAttribute('aria-current')
   })

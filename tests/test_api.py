@@ -396,6 +396,44 @@ class TestConfirmExtraction:
         from traininglogs.db.fetch import get_extraction
         assert get_extraction(db_conn, extraction_id)["corrections"] == corrections
 
+    def test_confirm_counts_as_a_planned_workout(self, client, db_conn) -> None:
+        from traininglogs.db.programs import add_workout, create_program
+
+        program_id = create_program(db_conn, "Confirm test program")
+        workout_id = add_workout(db_conn, program_id, "Bench")
+        extraction_id = self._insert_extraction(db_conn, "2026-05-08", "confirm test content 8")
+        try:
+            r = client.post(
+                f"/extractions/{extraction_id}/confirm",
+                json={"program_workout_id": workout_id},
+                headers={"x-api-key": "testkey"},
+            )
+            assert r.status_code == 201
+            with db_conn.cursor() as cur:
+                cur.execute(
+                    "SELECT program_workout_id FROM sessions WHERE session_id = %s",
+                    (r.json()["session_id"],),
+                )
+                assert cur.fetchone()[0] == workout_id
+        finally:
+            with db_conn.cursor() as cur:
+                cur.execute("DELETE FROM sessions WHERE program_workout_id = %s", (workout_id,))
+                cur.execute("DELETE FROM program_workouts WHERE program_id = %s", (program_id,))
+                cur.execute("DELETE FROM programs WHERE id = %s", (program_id,))
+            db_conn.commit()
+
+    def test_confirm_with_an_unknown_workout_saves_nothing(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-09", "confirm test content 9")
+        r = client.post(
+            f"/extractions/{extraction_id}/confirm",
+            json={"program_workout_id": "nope"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 422
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM sessions WHERE session_id LIKE '2026-05-09%'")
+            assert cur.fetchone()[0] == 0
+
     def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
         id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
         r1 = client.post(f"/extractions/{id_a}/confirm", headers={"x-api-key": "testkey"})

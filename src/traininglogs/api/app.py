@@ -242,10 +242,21 @@ def confirm_extraction_endpoint(
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     final_extract = TrainingLogLLMExtract.model_validate(extract_dict)
 
+    if body.program_workout_id is not None:
+        from traininglogs.db.programs import workout_program_id
+
+        if workout_program_id(conn, body.program_workout_id) is None:
+            raise HTTPException(status_code=422, detail="That workout doesn't exist or was removed.")
+
     try:
         session = confirm(conn, extraction_id, final_extract, corrections=body.corrections)
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+
+    if body.program_workout_id is not None:
+        from traininglogs.db.programs import link_session_to_workout
+
+        link_session_to_workout(conn, session.session_id, body.program_workout_id)
 
     response.status_code = 201
     return ConfirmOut(session_id=session.session_id)

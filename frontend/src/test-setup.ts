@@ -1,12 +1,23 @@
 import '@testing-library/jest-dom/vitest'
 
-// jsdom has <dialog> but not showModal/close; give it the minimum the Sheet uses.
-if (!HTMLDialogElement.prototype.showModal) {
-  HTMLDialogElement.prototype.showModal = function () {
-    this.setAttribute('open', '')
-  }
-  HTMLDialogElement.prototype.close = function () {
-    this.removeAttribute('open')
-    this.dispatchEvent(new Event('close'))
-  }
+// jsdom lacks matchMedia, which the drawer (vaul) reads.
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}
+
+// jsdom lacks pointer capture, which the drawer uses for dragging.
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = () => {}
+  Element.prototype.releasePointerCapture = () => {}
+  Element.prototype.hasPointerCapture = () => false
 }

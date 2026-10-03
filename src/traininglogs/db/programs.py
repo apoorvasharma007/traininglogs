@@ -281,6 +281,15 @@ def set_workout_exercises(conn: Connection, workout_id: str, exercises: list[dic
     return True
 
 
+def link_session_to_workout(conn: Connection, session_id: str, workout_id: str) -> None:
+    """Records that a session was this planned workout, so its program moves on to the next."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE sessions SET program_workout_id = %s WHERE session_id = %s", (workout_id, session_id)
+        )
+    conn.commit()
+
+
 def name_key(name: str) -> str:
     """How exercise names are matched for pins: case and outer spaces ignored."""
     return name.strip().lower()

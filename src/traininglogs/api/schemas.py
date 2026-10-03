@@ -126,6 +126,11 @@ class ConfirmIn(BaseModel):
         description="The corrections that produced `extract`, recorded alongside the "
         "extraction. Omit if none were applied.",
     )
+    program_workout_id: Optional[str] = Field(
+        default=None,
+        description="The planned workout this session counts as, so the program moves on to "
+        "the next one. Omit when it isn't part of a program.",
+    )
 
 
 class ConfirmOut(BaseModel):

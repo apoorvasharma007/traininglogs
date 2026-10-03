@@ -115,3 +115,29 @@ export type EditReply = {
   correction: Record<string, unknown>
   created_path: string | null
 }
+
+export type PlanExercise = {
+  name: string
+  warmup_sets: number
+  working_sets: number
+  target_reps: number | null
+  amrap: boolean
+}
+
+export type Workout = {
+  id: string
+  position: number
+  name: string | null
+  last_done: string | null
+  exercises: PlanExercise[]
+}
+
+export type Program = {
+  id: string
+  name: string
+  deload_after_days: number
+  following: boolean
+  following_since: string | null
+  workouts: Workout[]
+  next_workout_id: string | null
+}
