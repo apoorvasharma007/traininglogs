@@ -35,10 +35,10 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 - [x] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`: rewritten; samples 1 to 6 kept verbatim, a run and a skills sample added; approved 2026-10-03
 - [x] 4. `scripts/README.md`, `tests/fixtures/README.md`: rewritten; 12 retired scripts, `test_import.py` and `fixtures/invalid/` deleted; CLI and parser removal added to the roadmap as a non-urgent enhancement; approved 2026-10-03
 - [x] 5. `CLAUDE.md`: rewritten as working rules (money and data rules, local development, branching and releases, testing, docs); approved 2026-10-03
-- [ ] 6. `.claude/*.md`, `docs/migration-runbook.md` (some may move to `archived/`)
+- [x] 6. Guides: `.claude/db-migration.md` and `.claude/testing-guide.md` rewritten as short plain steps; `migration-plan.md`, `regen-historical.md`, `migration-runbook.md` moved to `archived/guides/`; CLAUDE.md guide table updated; approved 2026-10-03
 - [ ] 7. `docs/extraction-conventions.md`, `extraction-design-principles.md`
 - [ ] 8. Merge `docs/overhaul` into `dev`
 
 ## ▶ Resume here
 
-Step 6, `.claude/*.md` and `docs/migration-runbook.md`: deciding which stay, which move to `archived/`; then update CLAUDE.md's guide table. Branch `docs/overhaul` from `dev`.
+Step 7, `docs/extraction-conventions.md` and `extraction-design-principles.md`: agreeing their jobs, then step 8 merges into dev. Branch `docs/overhaul` from `dev`.

@@ -133,9 +133,7 @@ main   what's deployed; only dev merges into it
 | Guide | Read it before |
 |---|---|
 | [`infra/README.md`](infra/README.md) | Changing anything on Google Cloud |
-| [`.claude/db-migration.md`](.claude/db-migration.md) | Changing the database schema |
-| [`.claude/regen-historical.md`](.claude/regen-historical.md) | A change that would rewrite historical sessions |
-| [`.claude/testing-guide.md`](.claude/testing-guide.md) | Writing tests |
-| [`.claude/migration-plan.md`](.claude/migration-plan.md) | Nothing new: the finished 2.0 migration's record |
+| [`.claude/db-migration.md`](.claude/db-migration.md) | Changing what the database stores |
+| [`.claude/testing-guide.md`](.claude/testing-guide.md) | Testing a change, locally or after a deploy |
 
-Step 6 of [`docs-overhaul-plan.md`](docs-overhaul-plan.md) reviews these.
+Guides for finished work and retired tools are in [`archived/guides/`](archived/guides/).
