@@ -965,12 +965,11 @@
       <div class="lift-session">
         <div class="ls-head">
           <span class="ls-date">${esc(p.date)}</span>
-          <span class="ls-value">${esc(liftValue(lift.measure, p.value) ?? "no bodyweight sets")}</span>
-          ${!bodyweight ? `<span>from ${esc(setText({ ...p.best_set, reps_full: p.best_set.reps }))}${p.method === "epley" ? ", no RPE" : ""}</span>` : ""}
-          ${bodyweight && p.heaviest_kg ? `<span>added ${esc(p.heaviest_kg)} kg</span>` : ""}
+          <span class="ls-value">${esc(liftValue(lift.measure, p.value) ?? `added ${p.heaviest_kg} kg`)}</span>
+          <span>from ${esc(setText({ ...p.best_set, reps_full: p.best_set.reps }))}${p.method === "epley" ? ", no RPE" : ""}</span>
+          ${bodyweight && p.value !== null && p.heaviest_kg ? `<span>· added up to ${esc(p.heaviest_kg)} kg</span>` : ""}
           ${p.records.map((r) => `<span class="record">record: ${esc(RECORD_LABEL[r] || r)}</span>`).join(" ")}
         </div>
-        <div class="ls-sets">${p.sets.map((s) => esc(`${s.number}. ${setText(s)}`)).join(" · ")}</div>
       </div>`).join("");
   }
 })();
