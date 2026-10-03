@@ -87,7 +87,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 - [x] 3. `programs-db`: tables `programs`, `program_workouts`, `program_workout_exercises`; sessions get
       a link to their workout and a deload flag; pinned notes stored per exercise name. Prod migration
       needs Apoorva's approval of the exact SQL, a backup, one transaction, counts before and after.
-- [ ] 4. `programs-ui`: Programs tab, program screen, workout plan screen, follow and stop following.
+- [x] 4. `programs-ui`: Programs tab, program screen, workout plan screen, follow and stop following.
 - [ ] 5. `session`: live session saved in the browser database (IndexedDB), last-time values and notes,
       pinned notes, Finish sends one request to a new endpoint that saves a confirmed session without
       AI, retry when offline.
@@ -98,10 +98,10 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 3 merged into `phase-8/react`. Step 3's tables are live in prod (applied
-with approval; backup `backups/prod-before-programs-2026-10-04.json`; all 9 old table counts
-unchanged: 130 sessions, 1048 exercises, 2571 working sets).
-Apoorva asked for the best-supported libraries and no compromise on UI/UX (first load kept lean
-by lazy-loading). So step 4 also swaps the hand-built pieces from step 2: shadcn Drawer (vaul) for
-sheets, Motion back, Recharts loaded only on the lift chart, shadcn components for menus and inputs.
-Next: cut `phase-8/react-4-programs-ui`.
+2026-10-04: steps 1 to 4 merged into `phase-8/react`. Step 3's tables are live in prod (backup
+`backups/prod-before-programs-2026-10-04.json`). Step 4 swapped in shadcn Drawer (vaul), Recharts
+(lift chart, on demand) and Motion (drag to reorder); only Train is in the first download (81 KB
+of the 120 KB budget). The green token is `highlight` in code (shadcn uses `accent` for a grey).
+Confirm takes `program_workout_id`, so a pasted session can count as a planned workout.
+Next: step 5 (`session`). Design the save-a-session-without-AI endpoint and the on-phone storage
+(IndexedDB) with Apoorva before writing code.
