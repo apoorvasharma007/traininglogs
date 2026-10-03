@@ -899,15 +899,15 @@ Terraform and provider versions.
       `anthropic-api-key`), Cloud Run v2 service (512 MiB, scale 0–2, `ANTHROPIC_WORKSPACE_ID`
       plain env), public invoker (`allUsers`; data still behind `X-Api-Key`). First image is
       Google's sample until CD deploys the real one. Secret values added once via `gcloud`.
-- [ ] **Step 5 — Workflows:** `infra.yml` and `deploy.yml`, both authenticating with
+- [x] **Step 5 — Workflows** (reshaped by Apoorva 2026-10-03 into CI = checks, CD = ships): `ci.yml` (test, terraform fmt/validate/plan with the plan posted on PRs) and `cd.yml` (approval-gated `prod` environment: terraform apply, then build/push/deploy). Verified on PR #33: workload identity sign-in as `terraform` and plan (`No changes`) work. Originally planned as `infra.yml` and `deploy.yml`, both authenticating with
       `google-github-actions/auth@v3` via Workload Identity Federation.
 - [ ] **Step 6 — First real deploy and phone test.** First deploy done by hand 2026-10-03
       (image `traininglogs:9cc3500`, built `--platform linux/amd64`, revision
       `traininglogs-00002-b27`): https://traininglogs-875429444117.us-east1.run.app — page 200,
       no key 401, works on Apoorva's phone. Still to do: update `API_KEY` in local `.env` to the
       rotated key, then measure per-request latency to the Singapore database.
-- [ ] **Step 7 — Docs:** `docs/design.html` (deploy section), README (how to deploy, the
-      bootstrap), CHANGELOG. Remove `fly.toml`.
+- [x] **Step 7 — Docs:** `docs/design.html` (deploy section), README (how to deploy, the one
+      manual step), CHANGELOG. Remove `fly.toml`.
 
 ## After end-to-end works
 
