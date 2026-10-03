@@ -1,6 +1,6 @@
 # Sample inputs for manually testing the confirm UI
 
-Paste one of these into the textarea at http://localhost:5500 and hit Extract. Each is a
+Paste one of these into the textarea at http://localhost:8000/ and hit Extract. Each is a
 different shape/level of detail a real person might actually type — not the clean, structured
 `.md` format the CLI's file-based path is used to. **Every Extract click is a real paid Haiku
 call** (a few cents) — pick one or two, not all six back to back.

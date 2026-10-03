@@ -1,21 +1,11 @@
 name: CI
+
+# Checks only -- nothing here changes Google Cloud. Runs on every pull request and every push to
+# main; CD (cd.yml) ships, and only after this succeeds on main.
 on:
   push:
     branches: ["main"]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "docs/**"
-      - "pyproject.toml"
-      - ".github/workflows/**"
   pull_request:
-    branches: ["**"]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "docs/**"
-      - "pyproject.toml"
-      - ".github/workflows/**"
 
 jobs:
   test:
@@ -41,9 +31,9 @@ jobs:
       API_KEY: testkey
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -57,6 +47,69 @@ jobs:
       - name: Test
         run: pytest tests/
 
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # GitHub sign-in to Google (workload identity), for the plan
+      pull-requests: write  # post the plan on the pull request
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          # Same version as local runs: Terraform refuses state written by a newer version.
+          terraform_version: "1.16.4"
+          terraform_wrapper: false
+
+      - name: Format
+        run: terraform fmt -check -recursive infra
+
+      - name: Validate project layer
+        working-directory: infra/environments/prod/project
+        run: terraform init -backend=false -input=false && terraform validate
+
+      - name: Validate app layer
+        working-directory: infra/environments/prod/app
+        run: terraform init -backend=false -input=false && terraform validate
+
+      # Fork pull requests get no sign-in token, so only this repository's own branches plan.
+      - name: Sign in to Google Cloud as terraform
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SERVICE_ACCOUNT }}
+
+      - name: Plan app layer
+        id: plan
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: infra/environments/prod/app
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -no-color -lock-timeout=120s | tee plan.txt
+
+      - name: Post the plan on the pull request
+        if: github.event_name == 'pull_request' && steps.plan.outcome == 'success'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- terraform-plan:prod/app -->";
+            let plan = fs.readFileSync("infra/environments/prod/app/plan.txt", "utf8");
+            if (plan.length > 60000) plan = plan.slice(-60000);
+            const body = `${marker}\n**Terraform plan — prod / app**\n\n\`\`\`\n${plan}\n\`\`\``;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find((c) => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
   release:
     needs: test
     runs-on: ubuntu-latest
@@ -65,9 +118,9 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -85,8 +138,8 @@ jobs:
       # changed, sed is a no-op and we skip the commit. If it did change, we
       # push a small docs-only commit back to main.
       #
-      # Safe from loops: the workflow's `paths` filter excludes docs/**, so
-      # this bot commit will not re-trigger CI. No [skip ci] marker needed.
+      # Safe from loops: a commit pushed with the workflow's own GITHUB_TOKEN never starts new
+      # workflow runs, so this bot commit won't re-trigger CI (or CD). No [skip ci] needed.
       - name: Sync app version into design.html
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -124,7 +177,7 @@ jobs:
 
       - name: Create GitHub release
         if: steps.tag_check.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}

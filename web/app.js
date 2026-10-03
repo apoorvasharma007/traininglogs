@@ -99,7 +99,9 @@
   // {session: string|null, byExercise: Map(lowercased name -> [string])}
   let lastTime = null;
 
-  apiBaseInput.value = localStorage.getItem("tl_apiBase") || apiBaseInput.value;
+  // Served by the API itself, so its own origin is the default; a saved value (e.g. pointing
+  // at a local server) still wins.
+  apiBaseInput.value = localStorage.getItem("tl_apiBase") || window.location.origin;
   apiKeyInput.value = localStorage.getItem("tl_apiKey") || "";
   apiBaseInput.addEventListener("change", () => localStorage.setItem("tl_apiBase", apiBaseInput.value));
   apiKeyInput.addEventListener("change", () => localStorage.setItem("tl_apiKey", apiKeyInput.value));

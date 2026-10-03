@@ -20,3 +20,15 @@ output_training_logs_json_v3.0.0/
 
 # Local prod backups (data, not code)
 backups/
+
+# Terraform: local state, plugin cache, and per-machine variable values (the repo is public --
+# project and billing account IDs stay out of it; *.tfvars.example files are committed).
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+*_override.tf
