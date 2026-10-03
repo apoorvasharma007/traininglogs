@@ -800,4 +800,177 @@
     cardEl.innerHTML = html;
     cardEl.className = "active";
   }
+
+  // ---- progress (Phase 7) ----
+  // Key lifts and other lifts from GET /progress/lifts; one lift's sessions and chart from
+  // GET /progress/lifts/{name}. The server does every calculation; this only draws.
+
+  const logViewEl = document.getElementById("logView");
+  const progressViewEl = document.getElementById("progressView");
+  const progressStatusEl = document.getElementById("progressStatus");
+  const liftListEl = document.getElementById("liftList");
+  const keyLiftsEl = document.getElementById("keyLifts");
+  const otherLiftsEl = document.getElementById("otherLifts");
+  const liftDetailEl = document.getElementById("liftDetail");
+  let liftChart = null;
+
+  document.querySelectorAll(".tabs [data-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const progress = tab.dataset.tab === "progress";
+      document.querySelectorAll(".tabs [data-tab]").forEach((t) => {
+        t.setAttribute("aria-selected", String(t === tab));
+      });
+      logViewEl.hidden = progress;
+      progressViewEl.hidden = !progress;
+      if (progress) loadLifts();
+    });
+  });
+
+  const TREND = { up: ["↑", "trend-up", "up"], flat: ["→", "trend-flat", "flat"], down: ["↓", "trend-down", "down"] };
+
+  function liftValue(measure, value) {
+    if (value === null || value === undefined) return null;
+    return measure === "bodyweight_reps" ? `${value} reps` : `${value} kg`;
+  }
+
+  function liftCardHtml(lift) {
+    const latest = liftValue(lift.measure, lift.latest);
+    if (!lift.sessions || latest === null) {
+      return `<button type="button" class="lift-card empty" data-lift="${esc(lift.name)}">
+        <span class="l-name">${esc(lift.name)}</span>
+        <span class="l-value">No countable sets yet</span></button>`;
+    }
+    const t = lift.trend ? TREND[lift.trend] : null;
+    const label = lift.measure === "bodyweight_reps" ? "best reps at bodyweight" : "estimated max";
+    return `<button type="button" class="lift-card" data-lift="${esc(lift.name)}">
+      <span class="l-name">${esc(lift.name)}</span>
+      <span class="l-value">${esc(latest)}${t ? ` <span class="${t[1]}" title="4-week trend: ${t[2]}">${t[0]}</span>` : ""}</span>
+      <span class="l-meta">${esc(label)} · best ${esc(liftValue(lift.measure, lift.best))}</span>
+      <span class="l-meta">${lift.sessions} session${lift.sessions === 1 ? "" : "s"} · last ${esc(lift.last_date)}</span></button>`;
+  }
+
+  async function loadLifts() {
+    liftDetailEl.hidden = true;
+    liftListEl.hidden = false;
+    progressStatusEl.textContent = "Loading...";
+    progressStatusEl.className = "status";
+    const result = await apiFetch("/progress/lifts", { method: "GET" });
+    if (!result.ok) {
+      progressStatusEl.textContent = `Couldn't load lifts (${result.status}).`;
+      progressStatusEl.className = "status error";
+      return;
+    }
+    progressStatusEl.textContent = "";
+    keyLiftsEl.innerHTML = result.body.key_lifts.map(liftCardHtml).join("");
+    otherLiftsEl.innerHTML = result.body.other_lifts.length
+      ? result.body.other_lifts.map(liftCardHtml).join("")
+      : '<div class="status">No other lifts with 3 or more sessions yet.</div>';
+  }
+
+  liftListEl.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-lift]");
+    if (card) openLift(card.dataset.lift);
+  });
+
+  document.getElementById("liftBack").addEventListener("click", loadLifts);
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function setText(set) {
+    let reps = set.reps_full;
+    if (reps === null && (set.left_reps_full !== null || set.right_reps_full !== null)) {
+      reps = `${set.left_reps_full ?? "?"}L/${set.right_reps_full ?? "?"}R`;
+    }
+    const weight = set.weight_kg ? `${set.weight_kg} kg` : "bodyweight";
+    return `${weight} × ${reps ?? "?"}${set.rpe !== null ? ` @ RPE ${set.rpe}` : ""}`;
+  }
+
+  const RECORD_LABEL = { estimated_max: "best estimate", heaviest: "heaviest", reps: "most reps" };
+
+  async function openLift(name) {
+    progressStatusEl.textContent = "Loading...";
+    progressStatusEl.className = "status";
+    const result = await apiFetch(`/progress/lifts/${encodeURIComponent(name)}`, { method: "GET" });
+    if (!result.ok) {
+      progressStatusEl.textContent = `Couldn't load ${name} (${result.status}).`;
+      progressStatusEl.className = "status error";
+      return;
+    }
+    progressStatusEl.textContent = "";
+    const lift = result.body;
+    const bodyweight = lift.measure === "bodyweight_reps";
+    liftListEl.hidden = true;
+    liftDetailEl.hidden = false;
+
+    document.getElementById("liftTitle").textContent = lift.name;
+    const t = lift.trend ? TREND[lift.trend] : null;
+    document.getElementById("liftSummary").innerHTML = lift.sessions
+      ? `${bodyweight ? "Best reps at bodyweight" : "Estimated max"}: latest <strong>${esc(liftValue(lift.measure, lift.latest))}</strong>, best ${esc(liftValue(lift.measure, lift.best))}, over ${lift.sessions} sessions.${t ? ` 4-week trend: <span class="${t[1]}">${t[2]} ${t[0]}</span>.` : " Not enough sessions yet for a 4-week trend."}`
+      : "No countable sets yet: sets need a weight above 0 and 1 to 12 reps.";
+    document.getElementById("liftHow").textContent = bodyweight
+      ? "Each point is the session's most reps at bodyweight. Added weight is drawn separately, because the app doesn't store bodyweight."
+      : "Each point is the session's best estimated max: weight × (1 + (reps + reps left) / 30), where reps left = 10 − RPE. Sets without RPE are treated as taken to failure. Counted: working sets with a weight above 0 and 1 to 12 reps.";
+
+    const points = lift.points;
+    const labels = points.map((p) => p.date);
+    const red = cssVar("--red"), ink = cssVar("--ink"), muted = cssVar("--muted"), border = cssVar("--border");
+    const datasets = [{
+      label: bodyweight ? "Reps at bodyweight" : "Estimated max (kg)",
+      data: points.map((p) => p.value),
+      borderColor: ink,
+      backgroundColor: points.map((p) => (p.records.length ? red : ink)),
+      pointRadius: points.map((p) => (p.records.length ? 6 : 3)),
+      spanGaps: true,
+      yAxisID: "y",
+    }];
+    if (bodyweight) {
+      datasets.push({
+        label: "Added weight (kg)", data: points.map((p) => p.heaviest_kg),
+        borderColor: muted, backgroundColor: muted, borderDash: [4, 4], spanGaps: true, yAxisID: "y2",
+      });
+    } else if (points.some((p) => p.goal_weight_kg)) {
+      datasets.push({
+        label: "Goal weight (kg)", data: points.map((p) => p.goal_weight_kg),
+        borderColor: muted, backgroundColor: muted, borderDash: [4, 4], pointRadius: 0, spanGaps: true, yAxisID: "y",
+      });
+    }
+    const axisTitle = (text) => ({ display: true, text, color: muted });
+    const scales = {
+      x: { ticks: { color: muted }, grid: { color: border } },
+      y: bodyweight
+        ? { beginAtZero: true, title: axisTitle("reps"), ticks: { color: muted, precision: 0 }, grid: { color: border } }
+        : { title: axisTitle("kg"), ticks: { color: muted }, grid: { color: border } },
+    };
+    if (bodyweight) {
+      scales.y2 = { position: "right", beginAtZero: true, title: axisTitle("added kg"),
+                    ticks: { color: muted }, grid: { drawOnChartArea: false } };
+    }
+
+    if (liftChart) liftChart.destroy();
+    liftChart = window.Chart
+      ? new window.Chart(document.getElementById("liftChart"), {
+          type: "line",
+          data: { labels, datasets },
+          options: {
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: ink } } },
+            scales,
+          },
+        })
+      : null;
+
+    document.getElementById("liftSessions").innerHTML = points.slice().reverse().map((p) => `
+      <div class="lift-session">
+        <div class="ls-head">
+          <span class="ls-date">${esc(p.date)}</span>
+          <span class="ls-value">${esc(liftValue(lift.measure, p.value) ?? "no bodyweight sets")}</span>
+          ${!bodyweight ? `<span>from ${esc(setText({ ...p.best_set, reps_full: p.best_set.reps }))}${p.method === "epley" ? ", no RPE" : ""}</span>` : ""}
+          ${bodyweight && p.heaviest_kg ? `<span>added ${esc(p.heaviest_kg)} kg</span>` : ""}
+          ${p.records.map((r) => `<span class="record">record: ${esc(RECORD_LABEL[r] || r)}</span>`).join(" ")}
+        </div>
+        <div class="ls-sets">${p.sets.map((s) => esc(`${s.number}. ${setText(s)}`)).join(" · ")}</div>
+      </div>`).join("");
+  }
 })();

@@ -935,10 +935,10 @@ suggestions with their working shown, (5) load and recovery once wearable data i
 
 **Branching.** Base `phase-7/progress` from `dev`; sub-branches `phase-7/progress-N-<step>`.
 
-- [ ] **Step 1 — Calculations.** `analytics/strength.py` and `analytics/key_lifts.py`, pure and
+- [x] **Step 1 — Calculations.** `analytics/strength.py` and `analytics/key_lifts.py`, pure and
       unit-tested.
-- [ ] **Step 2 — API.** The two endpoints, tested against the test database.
-- [ ] **Step 3 — Progress view.** Tab, lift list, chart, records, the sets behind each point.
+- [x] **Step 2 — API.** The two endpoints, tested against the test database.
+- [x] **Step 3 — Progress view.** Tab, lift list, chart, records, the sets behind each point.
 
 **Later, not in this phase:** have extraction reuse exercise names already in the log, shown on
 the card, so new name variants stop appearing.
