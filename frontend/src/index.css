@@ -61,3 +61,20 @@ body {
   @apply bg-background font-sans text-foreground antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Bottom sheets slide up; off when the phone asks for less motion. */
+.sheet[open] {
+  animation: sheet-up 0.22s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: none;
+  }
+}

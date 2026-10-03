@@ -1,20 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Router } from 'wouter'
-import { memoryLocation } from 'wouter/memory-location'
 import { describe, expect, it } from 'vitest'
-import App from './App'
-
-function renderAt(path: string) {
-  const { hook } = memoryLocation({ path })
-  return render(
-    <Router hook={hook}>
-      <App />
-    </Router>,
-  )
-}
+import { fakeApi, renderApp as renderAt } from './test-utils'
 
 describe('App', () => {
+  fakeApi({})
+
   it('opens on Train with all five tabs', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { name: 'Train' })).toBeInTheDocument()

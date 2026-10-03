@@ -1,3 +1,91 @@
+import { useQuery } from '@tanstack/react-query'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'wouter'
+import PageTitle from '@/components/PageTitle'
+import { LoadError, Loading } from '@/components/QueryStatus'
+import { api } from '@/lib/api'
+import { liftValue } from '@/lib/lifts'
+import type { LiftSummary, LiftsOut } from '@/lib/types'
+
+const TREND = { up: ArrowUpRight, flat: ArrowRight, down: ArrowDownRight }
+
+function LiftTile({ lift }: { lift: LiftSummary }) {
+  const Trend = lift.trend ? TREND[lift.trend] : null
+  return (
+    <Link
+      href={`/progress/${encodeURIComponent(lift.name)}`}
+      className="flex min-h-32 flex-col gap-1.5 rounded-2xl border border-border bg-card p-3.5"
+    >
+      <span className="text-sm font-semibold">{lift.name}</span>
+      {lift.latest == null ? (
+        <span className="text-[13px] leading-snug text-muted-foreground">No countable sets yet.</span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1.5 font-mono text-[22px] font-semibold tracking-tight">
+            {liftValue(lift, lift.latest)}
+            {Trend && <Trend size={18} aria-label={`trend ${lift.trend}`} className="text-muted-foreground" />}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {lift.best != null && `best ${liftValue(lift, lift.best)} · `}
+            {lift.sessions} {lift.sessions === 1 ? 'session' : 'sessions'}
+          </span>
+        </>
+      )}
+    </Link>
+  )
+}
+
 export default function Progress() {
-  return <h1 className="text-[28px] font-bold tracking-tight">Progress</h1>
+  const lifts = useQuery({ queryKey: ['lifts'], queryFn: () => api<LiftsOut>('/progress/lifts') })
+  const [showOthers, setShowOthers] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PageTitle sub="Estimated max per lift, from your sets and RPE">Progress</PageTitle>
+      {lifts.isPending && <Loading />}
+      {lifts.isError && <LoadError error={lifts.error} retry={() => lifts.refetch()} />}
+      {lifts.data && (
+        <>
+          <div className="grid grid-cols-2 gap-2.5">
+            {lifts.data.key_lifts.map((l) => (
+              <LiftTile key={l.name} lift={l} />
+            ))}
+          </div>
+          {lifts.data.other_lifts.length > 0 && (
+            <section className="overflow-hidden rounded-2xl border border-border bg-card">
+              <button
+                type="button"
+                aria-expanded={showOthers}
+                onClick={() => setShowOthers(!showOthers)}
+                className="flex min-h-13 w-full items-center justify-between px-4 font-semibold"
+              >
+                <span>
+                  Other lifts <span className="font-normal text-muted-foreground">· {lifts.data.other_lifts.length}</span>
+                </span>
+                <ChevronRight
+                  size={18}
+                  aria-hidden
+                  className={`text-muted-foreground transition-transform ${showOthers ? 'rotate-90' : ''}`}
+                />
+              </button>
+              {showOthers &&
+                lifts.data.other_lifts.map((l) => (
+                  <Link
+                    key={l.name}
+                    href={`/progress/${encodeURIComponent(l.name)}`}
+                    className="flex min-h-12 items-center justify-between border-t border-border px-4 text-[15px]"
+                  >
+                    <span>{l.name}</span>
+                    <span className="font-mono text-[13px] text-muted-foreground">
+                      {l.latest != null ? liftValue(l, l.latest) : '–'}
+                    </span>
+                  </Link>
+                ))}
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  )
 }

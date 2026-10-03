@@ -19,7 +19,8 @@ export default function TabBar() {
     >
       <div className="mx-auto grid max-w-md grid-cols-5">
         {TABS.map(({ path, label, icon: Icon }) => {
-          const active = location === path
+          // A tab stays lit on its sub-screens: /progress/Squat lights Progress.
+          const active = path === '/' ? location === '/' || location === '/log' : location.startsWith(path)
           return (
             <Link
               key={path}

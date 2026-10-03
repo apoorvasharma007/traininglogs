@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 2, the current screens in React
+
+- Progress (key lifts, other lifts, a lift's chart and sessions), History grouped by week with a
+  read-only session view, Settings, Log from notes and Review.
+- Review edits a set in a bottom sheet (±2.5 kg, ±1 rep, RPE, warmup or working, note), adds
+  sets, warmup sets and exercises from a ⋯ menu, and undoes a removal. It uses the existing
+  `/edit`, `/correct` and `/confirm` endpoints.
+- Charts are drawn as SVG instead of with a chart library; first-load JavaScript is 89 KB.
+
 ### Added — Phase 8 step 1, the React app skeleton
 
 - `frontend/`: React, TypeScript and Vite, with Tailwind, TanStack Query, wouter, Lucide and the
