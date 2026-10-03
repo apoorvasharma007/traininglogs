@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Scripts that belonged to the retired markdown flow or were one-off tools:
+  `build_dashboard.py`, `import_sessions_to_db.py`, `regen_historical.py`,
+  `regen_historical_ai.py`, `repopulate_db.py`, `validate_regen.py`, `validate_v3_local.py`,
+  `apply_schema_supabase.py`, `test_supabase_connection.py`, `test_supabase_counts.py`,
+  `measure_prefix_tokens.py`, `groq_limits.py`, with `tests/test_import.py`. Kept:
+  `correction_stats.py`, `eval_arms.py` and `eval_ab.py`, which `eval_arms.py` imports.
+- `tests/fixtures/invalid/`, which nothing read.
 - `fly.toml` — the Fly plan was replaced by Cloud Run (Fly has no free tier).
 
 ### Added — the web UI is served by the API (deploy prep)

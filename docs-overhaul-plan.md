@@ -33,7 +33,7 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 - [x] 1. `README.md`: what the app does and why, nothing else (setup and CLI moved out, Apoorva 2026-10-03)
 - [x] 2. `docs/design.html`: rewritten outside-in (what it is, web app, flow, repeat, AI, data, API, where it runs, limits, next); no markdown/CLI; approved 2026-10-03
 - [x] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`: rewritten; samples 1 to 6 kept verbatim, a run and a skills sample added; approved 2026-10-03
-- [ ] 4. `scripts/README.md`, `tests/fixtures/README.md`
+- [x] 4. `scripts/README.md`, `tests/fixtures/README.md`: rewritten; 12 retired scripts, `test_import.py` and `fixtures/invalid/` deleted; CLI and parser removal added to the roadmap as a non-urgent enhancement; approved 2026-10-03
 - [ ] 5. `CLAUDE.md`
 - [ ] 6. `.claude/*.md`, `docs/migration-runbook.md` (some may move to `archived/`)
 - [ ] 7. `docs/extraction-conventions.md`, `extraction-design-principles.md`
@@ -41,4 +41,4 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 
 ## ▶ Resume here
 
-Step 4, `scripts/README.md` and `tests/fixtures/README.md`: agreeing their jobs and outlines. Branch `docs/overhaul` from `dev`.
+Step 5, `CLAUDE.md`: agreeing its job and outline. It still mentions deleted scripts. Branch `docs/overhaul` from `dev`.

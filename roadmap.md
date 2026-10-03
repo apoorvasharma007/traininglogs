@@ -911,6 +911,15 @@ Terraform and provider versions.
 
 ## After end-to-end works
 
+- **Enhancement, not urgent (Apoorva, 2026-10-03): retire the markdown CLI and the rules parser.**
+  `cli/`, `parser/`, most of `processor/`, `templates/` and the `traininglogs log` / `validate`
+  command date from logging by markdown file, which the app replaced. Two pieces are still used
+  by the app and move first: `agent/schemas.py` imports `_parse_failure` and `_parse_quality`
+  from `parser/parse.py`, and `ingest/confirm.py` uses `build_session_from_extract` from
+  `processor/processor.py`. Move those into the app's own modules, then delete the rest with its
+  tests, suite green before and after. `inputs/` and `output_training_logs_json/` stay as records.
+  The retired scripts and `tests/fixtures/invalid/` were already removed in the docs overhaul.
+
 - [ ] **Historical regeneration** — recover the warmup data the rules parser dropped across
       ~121 sessions. Deferred by explicit decision until a working end-to-end version exists.
       Requires Phase 2 (re-runnable extraction). ~$5 at Haiku rates.
