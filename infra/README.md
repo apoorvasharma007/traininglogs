@@ -1,59 +1,112 @@
 # infra/
 
-Everything traininglogs runs on in Google Cloud, in Terraform.
+Everything traininglogs runs on in Google Cloud, as Terraform.
 
 ```
 modules/
-  project/          a project layer: switched-on APIs, GitHub sign-in, terraform + app-deploy accounts
-  app/              an app layer: Cloud Run service, image registry, secrets, app-runtime account
+  project/          a project layer: APIs, GitHub sign-in, terraform and app-deploy accounts
+  app/              an app layer: Cloud Run service, Artifact Registry, secrets, app-runtime account
 environments/
   prod/
-    project/        prod's project layer — applied by hand
-    app/            prod's app layer — applied by the pipeline
+    project/        prod's project layer, applied by hand
+    app/            prod's app layer, applied by the pipeline
 ```
 
-Each environment is its own Google Cloud project. `modules/` hold the resources, written once;
-each folder under `environments/` is where Terraform runs: which module, with which values, and
-where its state lives.
+Each environment is its own Google Cloud project. The modules hold the resources, written once.
+Each folder under `environments/` is where Terraform runs: it names a module, gives it that
+environment's values, and says where the state lives.
 
 ## Who applies what
 
 | Layer | Applied by | Why |
 |---|---|---|
 | `environments/<env>/project` | You, from your laptop | It creates the account the pipeline runs as, so the pipeline can't create it |
-| `environments/<env>/app` | GitHub Actions: plan on a pull request, apply on merge to `main` | Everyday infrastructure changes |
+| `environments/<env>/app` | CD, after you approve the run | Everyday changes |
 
-Both always go through `terraform plan` first.
-
-## The one manual step, once per environment
-
-Terraform keeps its state in a bucket, and can't store state in a bucket it hasn't created yet.
-Create it once by hand (prod shown):
+Both go through `terraform plan` before every `apply`. Local runs sign in with your own Google
+account, once per machine:
 
 ```bash
-gcloud storage buckets create gs://prod-traininglogs-510513-terraform-state \
-  --project=traininglogs-510513 --location=us-east1 \
-  --uniform-bucket-level-access --public-access-prevention
-gcloud storage buckets update gs://prod-traininglogs-510513-terraform-state \
-  --versioning --update-labels=environment=prod,app=traininglogs
+gcloud auth application-default login
 ```
 
-Versioning keeps every earlier state, so a bad apply can be undone. The name starts with the
-environment because bucket names are global across all of Google Cloud.
+## Setting up a new environment
 
-## Running the project layer
+This is the order prod was built in. Each step needs the one before it.
+
+1. Create the state bucket. Terraform can't keep its state in a bucket that doesn't exist yet,
+   so this is the only thing made by hand:
+
+   ```bash
+   gcloud storage buckets create gs://prod-traininglogs-510513-terraform-state \
+     --project=traininglogs-510513 --location=us-east1 \
+     --uniform-bucket-level-access --public-access-prevention
+   gcloud storage buckets update gs://prod-traininglogs-510513-terraform-state \
+     --versioning --update-labels=environment=prod,app=traininglogs
+   ```
+
+2. Apply the project layer:
+
+   ```bash
+   cd infra/environments/prod/project
+   terraform init
+   terraform plan -out=tfplan
+   terraform apply tfplan
+   ```
+
+3. Create the three secrets, empty. Cloud Run won't start a revision that reads a secret with no
+   value, so you create and fill the secrets before the service:
+
+   ```bash
+   cd infra/environments/prod/app
+   terraform init
+   terraform plan -out=tfplan \
+     -target=module.app.google_secret_manager_secret.database_url \
+     -target=module.app.google_secret_manager_secret.api_key \
+     -target=module.app.google_secret_manager_secret.anthropic_api_key
+   terraform apply tfplan
+   ```
+
+4. Add each secret's value. See [Secrets](#secrets).
+
+5. Apply the rest of the app layer:
+
+   ```bash
+   terraform plan -out=tfplan
+   terraform apply tfplan
+   ```
+
+   The service starts on Google's sample image. The next CD run replaces it with the app.
+
+## Everyday changes
+
+Edit `infra/` on a branch and open a pull request. CI checks the format, validates both layers and
+posts the plan for `prod/app` as a comment on the pull request. Read it. Once it's merged to
+`main`, CD waits for your approval, then applies that layer and deploys the app.
+
+The project layer never runs in the pipeline. Change it from your laptop with plan, then apply.
+
+## Secrets
+
+The app reads `database-url`, `api-key` and `anthropic-api-key` from Secret Manager. Terraform
+creates them but never holds their values, so no secret ends up in Terraform's state.
+
+To add or change a value, add a new version. From a terminal, without the value appearing on
+screen:
 
 ```bash
-gcloud auth application-default login          # once per machine; no key files
-cd infra/environments/prod/project
-terraform init
-terraform plan -out=tfplan
-terraform apply tfplan
+printf '%s' "$VALUE" | gcloud secrets versions add api-key --data-file=-
 ```
+
+Or use the Secret Manager page in the console. Every instance that starts after the new version
+exists uses it. To switch over at once instead of waiting for instances to recycle, re-run the
+latest CD run: its deploy starts a new revision.
+
+Once the new value works, disable the old version, or it keeps working too.
 
 ## Naming
 
-- Environment prefix only on globally named things (the state bucket). Everything else lives in a
-  project that already belongs to one environment.
-- Every resource that supports labels carries `environment` and `app`.
-- Terraform names use underscores (`app_deploy`); Google Cloud IDs use hyphens (`app-deploy`).
+- Only globally named things carry the environment prefix, which today means the state bucket.
+  Everything else lives in a project that already belongs to one environment.
+- Every resource that supports labels has `environment` and `app`.
+- Terraform names use underscores (`app_deploy`). Google Cloud IDs use hyphens (`app-deploy`).

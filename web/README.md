@@ -12,5 +12,9 @@ Run the app locally and open `http://localhost:8000/`:
 Paste your API key into the X-Api-Key field once; the page remembers it. The API base URL
 defaults to the page's own address.
 
+`index.html` holds the markup and styles. `app.js` holds the behaviour, including `FIELD_SPECS`,
+the list of fields each kind of card line can edit. The server's `EDITABLE_FIELDS` decides what
+is actually allowed.
+
 `sample_inputs.md` has ready-to-paste sessions for trying the extract flow. Each Extract is a
 paid model call.

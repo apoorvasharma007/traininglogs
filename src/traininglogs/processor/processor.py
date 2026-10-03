@@ -75,7 +75,7 @@ def compute_session_id(content: str, date_str: str) -> str:
     editing a file's content and resubmitting is no longer treated as updating the same
     session in place -- it produces a new session_id, since the content changed. session_id
     was never guaranteed stable across code changes to begin with (see
-    .claude/regen-historical.md -- it already happened once) -- compare on date, not
+    archived/guides/regen-historical.md -- it already happened once) -- compare on date, not
     session_id, when that matters."""
     h = hashlib.sha256(_normalize_content(content).encode()).hexdigest()[:6]
     return f"{date_str}-{h}"
