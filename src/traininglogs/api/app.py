@@ -20,6 +20,8 @@ from traininglogs.api.schemas import (
     CorrectOut,
     EditIn,
     ExerciseHistoryRow,
+    LiftDetail,
+    LiftsOut,
     SessionDetail,
     SessionSummary,
 )
@@ -127,6 +129,32 @@ def session_detail(session_id: str, conn=Depends(_db), _=Depends(_auth)):
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+@app.get("/progress/lifts", response_model=LiftsOut)
+def progress_lifts(conn=Depends(_db), _=Depends(_auth)):
+    """Key lifts, then other lifts trained in 3 or more sessions: each with its latest and best
+    estimated max (or best reps at bodyweight), and the trend over the last 4 weeks."""
+    from datetime import date
+
+    from traininglogs.analytics.progress import lift_summaries
+    from traininglogs.db.fetch import get_working_set_rows
+
+    return lift_summaries(get_working_set_rows(conn), date.today())
+
+
+@app.get("/progress/lifts/{name}", response_model=LiftDetail)
+def progress_lift(name: str, conn=Depends(_db), _=Depends(_auth)):
+    """One lift's sessions, oldest first: the value, the set behind it, records and goal."""
+    from datetime import date
+
+    from traininglogs.analytics.progress import lift_detail
+    from traininglogs.db.fetch import get_working_set_rows
+
+    detail = lift_detail(get_working_set_rows(conn), name, date.today())
+    if detail is None:
+        raise HTTPException(status_code=404, detail="No lift with that name")
+    return detail
 
 
 @app.get("/exercises/{name}/history", response_model=list[ExerciseHistoryRow])

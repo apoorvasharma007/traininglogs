@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -202,3 +202,53 @@ class ExerciseHistoryRow(BaseModel):
     rpe: Optional[float]
     rep_quality: Optional[str]
     failure_technique: Optional[Any]
+
+
+class LiftSummary(BaseModel):
+    name: str
+    measure: Literal["estimated_max", "bodyweight_reps"]
+    sessions: int
+    latest: Optional[float]
+    best: Optional[float]
+    last_date: Optional[date]
+    trend: Optional[Literal["up", "flat", "down"]]
+
+
+class LiftsOut(BaseModel):
+    key_lifts: list[LiftSummary]
+    other_lifts: list[LiftSummary]
+
+
+class LiftSet(BaseModel):
+    number: int
+    weight_kg: Optional[float]
+    reps_full: Optional[int]
+    left_reps_full: Optional[int]
+    right_reps_full: Optional[int]
+    rpe: Optional[float]
+
+
+class LiftBestSet(BaseModel):
+    number: int
+    weight_kg: Optional[float]
+    reps: Optional[int]
+    rpe: Optional[float]
+
+
+class LiftPoint(BaseModel):
+    session_id: str
+    date: date
+    value: Optional[float] = Field(
+        description="Best estimated max (kg), or best reps at bodyweight; null for a bodyweight "
+        "lift's session with only weighted sets"
+    )
+    method: Optional[Literal["rpe", "epley"]]
+    heaviest_kg: Optional[float]
+    goal_weight_kg: Optional[float]
+    records: list[str]
+    best_set: LiftBestSet
+    sets: list[LiftSet]
+
+
+class LiftDetail(LiftSummary):
+    points: list[LiftPoint]

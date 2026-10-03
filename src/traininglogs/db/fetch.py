@@ -215,3 +215,32 @@ def get_extractions_for_raw_input(conn: Connection, raw_input_id: str) -> list[d
         )
         rows = cur.fetchall()
     return [dict(zip(_EXTRACTION_COLUMNS, r)) for r in rows]
+
+
+def get_working_set_rows(conn: Connection) -> list[dict]:
+    """Every working set with its session date, exercise name and goal weight: the input to the
+    Progress view. Keys match analytics.strength.SetRow."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                s.session_id,
+                s.date,
+                e.name AS exercise,
+                ws.number,
+                ws.weight_kg,
+                ws.reps_full,
+                ws.left_reps_full,
+                ws.right_reps_full,
+                ws.rpe,
+                e.goal_weight_kg
+            FROM working_sets ws
+            JOIN exercises e ON e.id = ws.exercise_id
+            JOIN sessions s ON s.session_id = e.session_id
+            ORDER BY s.date ASC, e.number ASC, ws.number ASC
+            """
+        )
+        rows = cur.fetchall()
+        cols = [d[0] for d in cur.description]
+
+    return [dict(zip(cols, row)) for row in rows]

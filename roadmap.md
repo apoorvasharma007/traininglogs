@@ -251,7 +251,7 @@ See the open hypothesis at the end of `extraction-design-principles.md`.
       file-path hash (`processor.compute_session_id`). Keep the date prefix for readability.
       Deferring is safe: `extraction_id` is nullable so old and new sessions coexist, the
       dashboard already tolerates a null `source_file`, and the only case that *needs* the
-      re-key is input with no file path — photo and speech, which is Phase 7. Historical
+      re-key is input with no file path — photo and speech, not yet scheduled. Historical
       sessions keep their path-hash ids and null `extraction_id`/`source_file` until then.
       Backfilling is free when it happens: a raw input is just text, so rows can be built from
       the `.md` files with no API calls.
@@ -908,6 +908,40 @@ Terraform and provider versions.
       rotated key, then measure per-request latency to the Singapore database.
 - [x] **Step 7 — Docs:** `docs/design.html` (deploy section), README (how to deploy, the one
       manual step), CHANGELOG. Remove `fly.toml`.
+
+## Phase 7 — Progress: estimated max per key lift (planned 2026-10-03)
+
+The first piece of the insights dashboard, chosen from research into what lifters and strength
+apps value (Hevy, MacroFactor Workouts, WHOOP, coach platforms; see the chat of 2026-10-03). Order
+agreed with Apoorva: (1) estimated max per lift with records and goals, (2) exercise-to-muscle
+mapping and hard sets per muscle per week, (3) strength level per muscle, (4) next-session
+suggestions with their working shown, (5) load and recovery once wearable data is connected.
+
+**Design for piece 1, approved by Apoorva:**
+- A Progress view in the web app. Key lifts by default; "Other lifts" (3 or more sessions, names
+  grouped ignoring case) collapsed below.
+- Key lifts, chosen by Apoorva, in `analytics/key_lifts.py` with their accepted name variants:
+  Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean, Pull-up. Chin-ups stay in "Other
+  lifts". Matching happens when reading; stored names are never changed.
+- Estimated max per set: `weight × (1 + (reps + RIR) / 30)`, RIR = 10 − RPE, so 1 rep at RPE 9
+  equals 2 at RPE 10; plain Epley without RPE. Published RPE charts disagree with each other, so
+  no chart is used. Counted sets: working sets, weight above 0, 1 to 12 full reps. Unilateral sets
+  use the weaker side.
+- Per session: the best estimated max. Records: best estimated max and heaviest weight. Trend:
+  last 4 weeks against the 4 before (flat within 2%). Program goal weight drawn as a line.
+- Pull-up is measured in best reps at bodyweight, with the heaviest added weight as a record,
+  because the app stores no bodyweight.
+- API `GET /progress/lifts` and `GET /progress/lifts/{name}`; charts with Chart.js from a CDN.
+
+**Branching.** Base `phase-7/progress` from `dev`; sub-branches `phase-7/progress-N-<step>`.
+
+- [x] **Step 1 — Calculations.** `analytics/strength.py` and `analytics/key_lifts.py`, pure and
+      unit-tested.
+- [x] **Step 2 — API.** The two endpoints, tested against the test database.
+- [x] **Step 3 — Progress view.** Tab, lift list, chart, records, the sets behind each point.
+
+**Later, not in this phase:** have extraction reuse exercise names already in the log, shown on
+the card, so new name variants stop appearing.
 
 ## After end-to-end works
 

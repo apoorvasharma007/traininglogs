@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 7, a Progress tab with estimated max per lift
+
+- The web app gets Log and Progress tabs. Progress lists six key lifts (Squat, Bench Press,
+  Shoulder Press, Deadlift, Barbell Clean, Pull-up) and, under "Other lifts", every exercise
+  trained in 3 or more sessions. Each lift opens a chart of its best estimated max per session,
+  with record sessions marked, the goal weight as a line, and the sets behind each point.
+- Estimated max = weight × (1 + (reps + RIR) / 30), RIR = 10 − RPE; plain Epley without RPE.
+  Counted: working sets, weight above 0, 1 to 12 full reps; unilateral sets use the weaker side.
+  Pull-up shows best reps at bodyweight and added weight separately.
+- `analytics/strength.py`, `analytics/key_lifts.py`, `analytics/progress.py`;
+  `GET /progress/lifts` and `GET /progress/lifts/{name}`. Charts use Chart.js 4.5.1 from cdnjs.
+
 ### Added — Phase 6, deployed to Google Cloud Run with Terraform and CI/CD
 
 - The app runs on Cloud Run (`us-east1`, 512 MiB, 0–2 instances, inside the always-free tier):
