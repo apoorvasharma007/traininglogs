@@ -80,7 +80,7 @@ The accent appears only on ticked sets, the "Next" chip, records and the active 
 Base branch `phase-8/react` from `dev`. One sub-branch per step, `phase-8/react-N-<step>`, squash-merged
 into the base when the suite is 0 failed and 0 skipped. The base merges to `dev` when all steps are done.
 
-- [ ] 1. `scaffold`: `frontend/` app with the tokens above, five tabs, empty screens. FastAPI serves
+- [x] 1. `scaffold`: `frontend/` app with the tokens above, five tabs, empty screens. FastAPI serves
       the build. Dockerfile builds it. CI runs type-check, Vitest and build. `web/` still works.
 - [ ] 2. `port`: Progress, Lift, History, Settings, Log from notes and Review in React. Review gets
       the bottom-sheet editor and ⋯ menu on top of the existing `/edit` endpoint.
@@ -98,5 +98,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: design and colours approved. Branch `phase-8/react` created from `dev` (5a1a848).
-Next: cut `phase-8/react-1-scaffold` and build step 1.
+2026-10-04: step 1 (`scaffold`) merged into `phase-8/react`. The app runs at `/app/` next to the
+old UI at `/`; locally `cd frontend && npm run dev` serves it with the API proxied to :8000.
+Next: cut `phase-8/react-2-port` and rebuild Progress, Lift, History, Settings, Log from notes
+and Review in React.
