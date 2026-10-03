@@ -252,3 +252,72 @@ class LiftPoint(BaseModel):
 
 class LiftDetail(LiftSummary):
     points: list[LiftPoint]
+
+
+class PlanExercise(BaseModel):
+    """One exercise in a workout's plan: how many sets and the target reps. No weights."""
+
+    name: str = Field(min_length=1)
+    warmup_sets: int = Field(default=0, ge=0, le=20)
+    working_sets: int = Field(default=1, ge=0, le=20)
+    target_reps: Optional[int] = Field(default=None, gt=0, le=100)
+    amrap: bool = Field(default=False, description="As many reps as you can.")
+
+    @model_validator(mode="after")
+    def strip_name(self) -> PlanExercise:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("name can't be blank")
+        return self
+
+
+class WorkoutOut(BaseModel):
+    id: str
+    position: int
+    name: Optional[str]
+    last_done: Optional[date]
+    exercises: list[PlanExercise]
+
+
+class ProgramOut(BaseModel):
+    id: str
+    name: str
+    deload_after_days: int
+    following: bool
+    following_since: Optional[date]
+    workouts: list[WorkoutOut]
+    next_workout_id: Optional[str] = Field(
+        description="The workout after the one in the program's latest session; workout 1 when "
+        "there is none or after the last. Null when the program has no workouts."
+    )
+
+
+class ProgramIn(BaseModel):
+    name: str = Field(min_length=1)
+
+
+class ProgramPatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    deload_after_days: Optional[int] = Field(default=None, gt=0, le=365)
+
+
+class WorkoutIn(BaseModel):
+    name: Optional[str] = None
+
+
+class WorkoutOrderIn(BaseModel):
+    workout_ids: list[str] = Field(description="Every workout of the program, once each, in the new order.")
+
+
+class WorkoutExercisesIn(BaseModel):
+    exercises: list[PlanExercise]
+
+
+class PinIn(BaseModel):
+    note: str = Field(min_length=1)
+
+
+class PinOut(BaseModel):
+    name_key: str
+    note: str
+    pinned_at: Any

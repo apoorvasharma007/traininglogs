@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
 // The API paths the dev server forwards to FastAPI on :8000, so `npm run dev` talks to the real API.
-const API_PATHS = ['/sessions', '/progress', '/exercises', '/inputs', '/extractions']
+const API_PATHS = ['/sessions', '/progress', '/exercises', '/inputs', '/extractions', '/programs', '/workouts', '/pins']
 
 export default defineConfig({
   // Served at /app/ next to the old web/ UI until step 8 of react-plan.md moves it to /.

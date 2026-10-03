@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 3, programs in the database
+
+- Tables `programs`, `program_workouts`, `program_workout_exercises` and `exercise_pins`, and
+  `sessions.program_workout_id`. Only additions; no existing column or row changes.
+- Endpoints to create, rename, follow, archive and reorder programs and workouts, set a
+  workout's plan, and pin notes to exercises. A program reports its next workout: the one after
+  its latest session, back to 1 after the last.
+
 ### Added — Phase 8 step 2, the current screens in React
 
 - Progress (key lifts, other lifts, a lift's chart and sessions), History grouped by week with a

@@ -200,3 +200,55 @@ CREATE INDEX IF NOT EXISTS idx_warmups_session_id   ON warmups(session_id);
 CREATE INDEX IF NOT EXISTS idx_cooldowns_session_id ON cooldowns(session_id);
 CREATE INDEX IF NOT EXISTS idx_exercises_session_id         ON exercises(session_id);
 CREATE INDEX IF NOT EXISTS idx_working_sets_exercise_id     ON working_sets(exercise_id);
+
+-- Programs (Phase 8). A program is workouts in order; after the last one it starts again at 1.
+-- Removing a program or workout marks it archived, so sessions that point at it keep the link.
+CREATE TABLE IF NOT EXISTS programs (
+    id                TEXT PRIMARY KEY,
+    name              TEXT NOT NULL,
+    deload_after_days INT  NOT NULL DEFAULT 28 CHECK (deload_after_days > 0),
+    following         BOOLEAN NOT NULL DEFAULT false,
+    -- The deload count starts here, or at the last deload session, whichever is later.
+    following_since   DATE,
+    archived_at       TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- At most one program is followed at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed ON programs (following) WHERE following;
+
+-- Workout 1, 2, 3 of a program. The name is optional ("Push").
+CREATE TABLE IF NOT EXISTS program_workouts (
+    id          TEXT PRIMARY KEY,
+    program_id  TEXT NOT NULL REFERENCES programs(id),
+    position    INT  NOT NULL CHECK (position > 0),
+    name        TEXT,
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- The plan inside a workout. No weights: a session takes them from the last time.
+CREATE TABLE IF NOT EXISTS program_workout_exercises (
+    id           TEXT PRIMARY KEY,
+    workout_id   TEXT NOT NULL REFERENCES program_workouts(id) ON DELETE CASCADE,
+    position     INT  NOT NULL CHECK (position > 0),
+    name         TEXT NOT NULL,
+    warmup_sets  INT  NOT NULL DEFAULT 0 CHECK (warmup_sets >= 0),
+    working_sets INT  NOT NULL DEFAULT 1 CHECK (working_sets >= 0),
+    target_reps  INT  CHECK (target_reps > 0),
+    -- "1 × max": as many reps as you can.
+    amrap        BOOLEAN NOT NULL DEFAULT false
+);
+
+-- A note pinned to an exercise shows in every later session of it. Matched ignoring case.
+CREATE TABLE IF NOT EXISTS exercise_pins (
+    name_key  TEXT PRIMARY KEY,
+    note      TEXT NOT NULL,
+    pinned_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Which planned workout a session came from; empty for blank workouts and older sessions.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS program_workout_id TEXT REFERENCES program_workouts(id);
+
+CREATE INDEX IF NOT EXISTS idx_program_workouts_program_id ON program_workouts(program_id);
+CREATE INDEX IF NOT EXISTS idx_program_workout_exercises_workout_id ON program_workout_exercises(workout_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_program_workout_id ON sessions(program_workout_id);
