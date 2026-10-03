@@ -30,9 +30,9 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 
 ## Steps
 
-- [x] 1. `README.md` — what the app does and why, nothing else (setup and CLI moved out, Apoorva 2026-10-03)
-- [x] 2. `docs/design.html` — rewritten outside-in (what it is, web app, flow, repeat, AI, data, API, where it runs, limits, next); no markdown/CLI; approved 2026-10-03
-- [ ] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`
+- [x] 1. `README.md`: what the app does and why, nothing else (setup and CLI moved out, Apoorva 2026-10-03)
+- [x] 2. `docs/design.html`: rewritten outside-in (what it is, web app, flow, repeat, AI, data, API, where it runs, limits, next); no markdown/CLI; approved 2026-10-03
+- [x] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`: rewritten; samples 1 to 6 kept verbatim, a run and a skills sample added; approved 2026-10-03
 - [ ] 4. `scripts/README.md`, `tests/fixtures/README.md`
 - [ ] 5. `CLAUDE.md`
 - [ ] 6. `.claude/*.md`, `docs/migration-runbook.md` (some may move to `archived/`)
@@ -41,4 +41,4 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 
 ## ▶ Resume here
 
-Step 3, `infra/README.md`, `web/README.md`, `web/sample_inputs.md`: agreeing their jobs and outlines. Branch `docs/overhaul` from `dev`.
+Step 4, `scripts/README.md` and `tests/fixtures/README.md`: agreeing their jobs and outlines. Branch `docs/overhaul` from `dev`.
