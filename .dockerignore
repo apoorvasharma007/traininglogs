@@ -1,0 +1,10 @@
+# What `docker build` sends as context. Same allowlist as .gcloudignore -- never .env or backups/.
+*
+!Dockerfile
+!pyproject.toml
+!src/
+!src/**
+!web/
+!web/**
+src/**/__pycache__/
+src/*.egg-info/

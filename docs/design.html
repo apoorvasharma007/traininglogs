@@ -638,6 +638,44 @@ traininglogs log session.md --parser rules</code></pre>
   </table>
 
   <p>Every request requires an <code>X-Api-Key</code> header. The app fails at startup if <code>API_KEY</code> is unset. Single key, no users table, no OAuth — it's mine and the dashboard's.</p>
+  <p>The API process serves the web UI too, from <code>web/</code> at <code>/</code>. It's mounted after every API route so it can't shadow one, and sent with <code>Cache-Control: no-cache</code> so a browser never keeps an old <code>app.js</code> after a deploy. One app, one process, one deploy, locally and on Cloud Run alike.</p>
+</section>
+
+<section>
+  <h2 id="deploy">Where it runs</h2>
+  <p>One container, the API and the web UI together, on <strong>Google Cloud Run</strong> in <code>us-east1</code>: <a href="https://traininglogs-875429444117.us-east1.run.app">traininglogs-875429444117.us-east1.run.app</a>. It scales to zero when idle and to at most two instances under load, so it stays inside Cloud Run's always-free tier and can't scale up a bill. The database is still Supabase in Singapore.</p>
+  <table>
+    <thead><tr><th>Piece</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td>Cloud Run service <code>traininglogs</code></td><td>512 MiB, 0&ndash;2 instances, CPU only while handling a request. Runs as <code>app-runtime</code>. Public URL; every data endpoint still needs <code>X-Api-Key</code>.</td></tr>
+      <tr><td>Artifact Registry <code>images</code></td><td>The app's images, tagged by commit. Only the newest two are kept.</td></tr>
+      <tr><td>Secret Manager</td><td><code>database-url</code>, <code>api-key</code>, <code>anthropic-api-key</code>, read by <code>app-runtime</code> only. Terraform creates them empty; values are added with <code>gcloud</code>, so none are in Terraform state. A new version is picked up by every instance that starts after it.</td></tr>
+      <tr><td>Service accounts</td><td><code>terraform</code> (applies the app layer), <code>app-deploy</code> (ships images, <code>main</code> only), <code>app-runtime</code> (the running app). Each holds only what its job needs.</td></tr>
+      <tr><td>GitHub sign-in</td><td>Workload identity federation: workflows get short-lived tokens, only from <code>apoorvasharma007/traininglogs</code>. No service-account key file exists anywhere.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Infrastructure as code</h3>
+  <p>Everything above is Terraform, in <code>infra/</code>. Each environment is its own Google Cloud project, split into two layers by who applies them:</p>
+  <div class="diagram">infra/
+  modules/project/            APIs, GitHub sign-in, terraform + app-deploy accounts
+  modules/app/                Cloud Run, Artifact Registry, secrets, app-runtime
+  environments/prod/project/  applied by hand: it creates the pipeline's own account
+  environments/prod/app/      applied by the pipeline</div>
+  <p>State lives in one bucket per environment (<code>prod-traininglogs-510513-terraform-state</code>, versioned), the only thing created by hand. Every change goes through <code>terraform plan</code> before <code>apply</code>. <code>infra/README.md</code> has the commands and the naming rules.</p>
+
+  <h3>CI and CD</h3>
+  <div class="diagram">pull request / push to main
+      │
+      ▼
+  CI      test · terraform fmt + validate · plan prod/app (posted on the PR)
+      │   checks only, changes nothing
+      ▼   (main, green)
+  CD      waits for approval (GitHub environment "prod")
+      │
+      ├── infra   terraform apply prod/app (a no-op when infra/ didn't change)
+      └── app     build image → push to images → Cloud Run onto it</div>
+  <p>Terraform owns how the service is configured; CD owns which image runs, so Terraform ignores the image. Shipping a release is merging <code>dev</code> into <code>main</code> and approving the run.</p>
 </section>
 
 <section>
@@ -675,8 +713,9 @@ traininglogs log session.md --parser rules</code></pre>
 <section>
   <h2 id="next">What's next</h2>
   <ul class="body">
-    <li><strong>Per-user identity.</strong> A key per person instead of one shared key, every write scoped to the user it resolves to, cost attributable per user &mdash; so friends can use it without reading or writing as me, or spending my credits.</li>
-    <li><strong>Deploy.</strong> The API and the web UI hosted together on Fly, against the Supabase database already live.</li>
+    <li><strong>Installable on the phone.</strong> A web app manifest and icon, so the hosted UI opens from the home screen like an app.</li>
+    <li><strong>A UI with screens.</strong> Home, Review, History, Settings, rebuilt with htmx and server-rendered templates, keeping the logic in Python.</li>
+    <li><strong>Friends.</strong> Sign-in through Supabase Auth, every write scoped to the person who made it.</li>
     <li><strong>Mobile capture.</strong> Offline draft capture on a phone, synced on reconnect, feeding the same pipeline. Further out — photo and speech input follow the same pattern once this lands.</li>
   </ul>
   <p>This document is meant to be the one place that explains the system as it is today, not as it was or as it might be.</p>
@@ -698,6 +737,7 @@ traininglogs log session.md --parser rules</code></pre>
     <li><a href="#storage">How it works</a></li>
     <li><a href="#ai-capture">Inside the AI agent</a></li>
     <li><a href="#api">The API</a></li>
+    <li><a href="#deploy">Where it runs</a></li>
     <li><a href="#dashboard">The dashboard</a></li>
     <li><a href="#versioning">Versioning</a></li>
     <li><a href="#next">What's next</a></li>

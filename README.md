@@ -56,13 +56,13 @@ traininglogs log --program <name> --phase <n> --week <n>
 traininglogs validate inputs/programs/<slug>/phase_N/week_N/<session>.md
 ```
 
-**Start the API:**
+**Run the app locally** (API and web UI, one process):
 
 ```bash
 uvicorn traininglogs.api.app:app --reload
 ```
 
-API is available at `http://localhost:8000`. All requests require `X-Api-Key` header.
+Open `http://localhost:8000/` for the web UI. API requests need the `X-Api-Key` header.
 
 **Run tests:**
 
@@ -71,3 +71,18 @@ API is available at `http://localhost:8000`. All requests require `X-Api-Key` he
 ```
 
 Tests require both Postgres instances running (`docker compose up -d`).
+
+---
+
+## Deploy
+
+The app runs on Google Cloud Run: https://traininglogs-875429444117.us-east1.run.app
+
+- **Infrastructure** is Terraform in [`infra/`](infra/README.md) — the layout, the one manual
+  step, and how to plan/apply each layer.
+- **Shipping** is automatic: merge `dev` into `main`. CI runs the tests and Terraform checks; CD
+  then waits for approval in the `prod` GitHub environment, applies the app layer, builds the
+  image and rolls Cloud Run onto it.
+- **Secrets** (`database-url`, `api-key`, `anthropic-api-key`) live in Secret Manager. Add a new
+  value with `gcloud secrets versions add <name> --data-file=-` or in the console; instances
+  that start afterwards use it.

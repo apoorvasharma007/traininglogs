@@ -1,23 +1,16 @@
 # web/
 
-Confirm UI. Plain HTML/JS, no build step. Phase 5 of `roadmap.md`.
+The confirm UI: plain HTML and JavaScript, no build step. The API serves it at `/`, so there is
+no separate web server.
 
-## Running locally (against the test DB)
+Run the app locally and open `http://localhost:8000/`:
 
 ```bash
-# terminal 1 — API, pointed at TEST_DATABASE_URL
-DATABASE_URL="$TEST_DATABASE_URL" ALLOWED_ORIGINS=http://localhost:5500 \
-  .venv/bin/uvicorn traininglogs.api.app:app --reload
-
-# terminal 2 — serve this directory
-cd web && python3 -m http.server 5500
+.venv/bin/uvicorn traininglogs.api.app:app --reload
 ```
 
-Open `http://localhost:5500`, set the API key (matches `.env`'s `API_KEY`) and API base URL
-(`http://localhost:8000` by default) — both are saved to `localStorage` so they persist across
-reloads. Paste session notes, hit Extract.
+Paste your API key into the X-Api-Key field once; the page remembers it. The API base URL
+defaults to the page's own address.
 
-`sample_inputs.md` has six ready-to-paste samples spanning different levels of detail and
-structure (terse one-liner, casual paragraph, numbered list, headered markdown, bare minimum)
-for exercising the UI without composing test input by hand. Each Extract click is a real paid
-call — see the file for details.
+`sample_inputs.md` has ready-to-paste sessions for trying the extract flow. Each Extract is a
+paid model call.

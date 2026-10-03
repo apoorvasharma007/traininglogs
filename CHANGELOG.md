@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 6, deployed to Google Cloud Run with Terraform and CI/CD
+
+- The app runs on Cloud Run (`us-east1`, 512 MiB, 0–2 instances, inside the always-free tier):
+  https://traininglogs-875429444117.us-east1.run.app
+- `infra/`: Terraform (`modules/{project,app}`, `environments/prod/{project,app}`). Project layer:
+  APIs, workload identity pool `github` (only this repository), service accounts `terraform` and
+  `app-deploy` (`main` only). App layer: Artifact Registry `images` (keeps newest 2), secrets
+  (values never in state), `app-runtime`, Cloud Run service `traininglogs`. State in a versioned
+  bucket, the one manual step.
+- `cd.yml`: after CI succeeds on `main`, waits for approval (GitHub environment `prod`), applies
+  the app layer, then builds the image and deploys it to Cloud Run.
+- Repository variables `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`,
+  `GCP_TERRAFORM_SERVICE_ACCOUNT`, `GCP_APP_DEPLOY_SERVICE_ACCOUNT`.
+
+### Changed — CI checks everything, on every change
+
+- `ci.yml` runs on every pull request and push to `main` (no path filter — a `web/`-only change
+  used to skip CI) and gains a `terraform` job: format, validate both layers, and plan
+  `prod/app`, posted as one comment on the pull request.
+- Actions on current majors: `checkout@v7`, `setup-python@v7`, `setup-terraform@v4`,
+  `auth@v3`, `setup-gcloud@v3`, `github-script@v9`, `action-gh-release@v3`.
+
+### Removed
+
+- `fly.toml` — the Fly plan was replaced by Cloud Run (Fly has no free tier).
+
+### Added — the web UI is served by the API (deploy prep)
+
+- The API serves `web/` at `/`, mounted after every API route, with `Cache-Control: no-cache`
+  so a deploy is never hidden behind a cached `app.js`. The page's API base now defaults to its
+  own origin. `WEB_DIR` points at it in the container image.
+- Docker image includes `web/` and listens on `$PORT` (Cloud Run), default 8080.
+- `.gcloudignore` / `.dockerignore`: allowlists, so a source upload or build context is only
+  `Dockerfile`, `pyproject.toml`, `src/` and `web/` — never `.env` or `backups/`.
+
 ## [3.1.0] - 2026-10-03
 
 ### Removed — stale copy of the historical session JSON

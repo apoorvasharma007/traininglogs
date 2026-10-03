@@ -685,19 +685,229 @@ Proportionate fix, not a real auth system:
       (Phase 3), this just makes "who spent what" a `GROUP BY` instead of assumed to be you.
 - [ ] No passwords, no sessions, no OAuth provider — you hand each friend their own key once.
 
-## Phase 6 — Deploy
+## Phase 6 — Deploy to Google Cloud Run, infrastructure in Terraform (planned 2026-10-03)
 
-Deploying the **app**, not just the API — `web/` and the FastAPI service ship together.
+**Goal.** The app (API + `web/`, one container, one origin) running on Cloud Run so Apoorva can
+use it from his phone, for $0 inside Google's always-free tier, with every piece of
+infrastructure defined in Terraform and deployed by GitHub Actions — no hand-made resources
+except one documented bootstrap. Replaces the earlier Fly plan (Fly has no free tier).
 
-- [ ] Deploy FastAPI to Fly (`fly.toml` and `Dockerfile` already exist). Supabase is live with
-      121 sessions (`archived/plans/pre-online-plan.md` Cloud Wave Step 1, done 2026-05-07).
-- [ ] Mount `web/` as static files on the same Fly app (`StaticFiles`), same origin as the API —
-      avoids standing up a second host and sidesteps CORS for the write endpoints. Distinct from
-      how `docs/`'s dashboard reaches the public: that's a static pull into a separate personal
-      website at *its* deploy time, which doesn't fit a page that calls a live write API.
-- [ ] Env: `DATABASE_URL`, `API_KEY` → per-user keys (Phase 5.5), `ALLOWED_ORIGINS`.
-- [ ] Smoke-test read + write paths, and that a second `api_key` actually gets a second
-      `user_id`'s data back, not yours.
+**Decisions (Apoorva, 2026-10-03), with the research behind them:**
+- **GCP Cloud Run** in **`us-east1`**: always-free tier (2M requests, 180,000 vCPU-s,
+  360,000 GiB-s a month; North America only). Supabase stays in Singapore for now; `us-east1`
+  sits near Supabase's US East if the DB moves later. Measure latency first.
+- **Terraform**, not Deployment Manager (deprecated; end of support 2026-04-01, shutdown
+  2027-06-30) and not Infrastructure Manager yet (managed Terraform; pricing unverified —
+  switching later reuses the same code).
+- **Same repo**, structure **B**: `infra/modules/` (reusable), `infra/environments/prod/`,
+  `infra/bootstrap/`. A separate infra repo only makes sense once infra is shared across
+  projects.
+- **Workflows:** CI (`ci.yml`, tests — unchanged), **CD** (`deploy.yml`: on `main` after CI
+  passes, build the image, push to Artifact Registry, deploy to Cloud Run), and **Terraform**
+  (`infra.yml`: plan on PRs touching `infra/`, apply on merge to `main`). Terraform owns the
+  service's configuration; CD owns which image runs (`ignore_changes` on the image).
+
+**Google's practices followed** (docs updated 2026-09-30): Cloud Storage state backend;
+"avoid storing secrets in state" — Terraform creates secret containers, values are added once
+with `gcloud`; plan before apply; run Terraform through automation; **Workload Identity
+Federation, no service-account key files**, limited to this repo; local runs use
+`gcloud auth application-default login`; deletion protection on stateful resources; pinned
+Terraform and provider versions.
+
+**Branching.** Base `phase-6/deploy` (from `dev`), one sub-branch per step,
+`phase-6/deploy-N-<step>`. Every Terraform change: show Apoorva the plan before applying.
+
+- [x] **Step 1 — App ready for a container host.** API serves `web/` (no-cache), page defaults
+      to its own origin, image includes `web/` and honours `$PORT`, allowlist
+      `.gcloudignore`/`.dockerignore` (never `.env`/`backups/`). Image built and smoke-tested
+      locally (227 MB). `fa34cdb`.
+- [x] **Step 2 — Tooling.** gcloud 587.0.0 and Terraform 1.16.4 (Homebrew, HashiCorp tap;
+      1.16.5 arrives with `brew upgrade` once the tap publishes it). Local Terraform signs in with
+      `gcloud auth application-default login`.
+- [x] **Step 3 — Project layer** (`infra/modules/project` + `infra/environments/prod/project`),
+      applied 2026-10-03 by Apoorva from his laptop: 9 APIs, workload identity pool `github` +
+      provider `github-actions` (only this repo), service accounts `terraform` (any branch, so
+      PRs get plans) and `app-deploy` (`main` only), least-privilege roles, `terraform` access to
+      the state bucket. 23 added; re-plan shows no changes. One manual step done: state bucket
+      `prod-traininglogs-510513-terraform-state` (us-east1, versioned, private, labelled). The
+      budget alert is set by hand in the billing console, not in Terraform (decision).
+- [x] **Step 4 — App layer** (`infra/modules/app` + `infra/environments/prod/app`), applied
+      2026-10-03: Artifact Registry `images` (keeps newest 2), secrets `database-url` / `api-key`
+      / `anthropic-api-key` (empty in Terraform; values added once with `gcloud secrets versions
+      add`, so none are in state), `app-runtime` (reads only those 3), `app-deploy` may act as
+      `app-runtime`, Cloud Run `traininglogs` (0–2 instances, 512 MiB, image ignored by
+      Terraform), public invoker. First apply needed `-target` on the 3 secrets because Cloud Run
+      refuses a revision whose secret has no version. Apoorva rotated `api-key` to version 2 in
+      the console and disabled version 1; the running revision picked it up automatically.
+- [ ] **Step 5 — Show where a value came from.** *Deferred 2026-10-03 by Apoorva; not started.* `source_line` is checked during extraction
+      but dropped when `ExerciseExtract` becomes `Exercise`. Keep it: a `sources` map
+      (path → line) on `TrainingLogLLMExtract`, default empty so stored extracts still
+      validate. Card rows carry `source`; tapping a value shows the line. Must confirm this
+      doesn't change anything sent to the model (no eval cache re-key). Update
+      `docs/design.html` (data model).
+- [x] **Step 6 — Corrections as data.** `scripts/correction_stats.py`, read-only: which fields
+      get corrected most, with paths generalised (`exercises.*.sets.*.rpe`), split by
+      `source`. Answers "which prompt should I fix next" from real use.
+
+      *Design note (2026-10-03):*
+      - **Pure part in the package, thin script outside it.**
+        `traininglogs/analytics/corrections.py` holds `summarize(records)`: no DB, unit-tested.
+        `scripts/correction_stats.py` connects read-only (`set_session(readonly=True)`),
+        loads `extractions.corrections` for confirmed extractions, and prints.
+      - **What it counts:**
+        - Field edits by **pattern**, positions replaced with `*`
+          (`exercises.3.sets.1.rpe` → `exercises.*.sets.*.rpe`), split by `source`. Records
+          from before Step 2 have no `source`; they came from `/correct`, so they count as
+          `ai`.
+        - Add/remove ops by type. `add_set` is the useful one: every one is a set the model
+          missed.
+        - How many sessions each pattern appeared in, so one session with 12 RPE fixes
+          doesn't look like a pattern across sessions.
+      - **List-level edits** (an op's whole new list, or an AI correction that replaced a
+        list) count once under their list pattern (`exercises.*.sets`), not per item.
+      - Output is plain text tables, most-corrected first. No charts; this is for deciding
+        what to fix in the prompts.
+- [x] **Step 7 — Repeat a session.** Built and verified by Apoorva 2026-10-03; prod constraint applied with approval. Pick a past session → server builds an extract from the
+      stored session with today's date → normal card, edit, confirm. Zero AI calls. Open
+      design questions, settled in this step's design note: the reverse projection
+      (`TrainingSession` → extract); what `raw_inputs.content` holds so the content-derived
+      `session_id` differs per repeat; `source_kind` needs a new allowed value (additive
+      `CHECK` change on prod, approval required); how the session list is filtered (by
+      `focus`?).
+
+      *Design note (2026-10-03):*
+      - **Flow:** pick a past session → `POST /sessions/{session_id}/repeat` → the server
+        writes a raw input and a *pending* extraction built from that session, no LLM → the
+        UI loads its card exactly as after Extract → edit, add/remove, confirm as usual.
+        Everything after the first call is the existing path, unchanged.
+      - **What a repeat copies** (new `ingest/repeat.py`, pure `session_to_extract(session,
+        date)` + a thin DB function): session focus, program, phase, week, deload flag;
+        warmup/cooldown movement names, reps and durations; every exercise's name, goal,
+        tags and cues, warmup sets' weight and reps; every working set's weight and reps
+        (bilateral or unilateral), duration and distance. **Cleared**, because they describe
+        how *that* day went: RPE, rep quality, failure technique, rest, heart rate, duration,
+        and **every note**. Same rule as `add_set` in Step 4.
+      - **Notes are shown as "last time", never copied** (decided by Apoorva 2026-10-03). A
+        note belongs to the day it was written; copying it would save last week's note as
+        today's unless edited. The UI fetches the source session (`GET /sessions/{id}`,
+        unchanged) and shows its session note and, per exercise, its exercise, warmup and set
+        notes as a muted read-only line, matched by exercise name so adding or removing sets
+        and exercises can't misplace them.
+      - **Date** is today, and `date` is put in `uncertain_fields` (outlined in the form),
+        the same thing extraction does when the text has no date — logging yesterday's
+        session from a repeat is normal.
+      - **Raw input:** `source_kind = 'repeat'`, `source_file = <source session_id>`, content
+        one readable line: `Repeat of <session_id> (<focus>, <date>), started <UTC time>`.
+        The timestamp makes every repeat's content, and so its content-derived
+        `session_id`, unique — two repeats of the same session on the same day don't
+        collide. The source session itself is the real record; the raw input records the
+        action.
+      - **Extraction row:** `model = 'none'`, `prompt_version = 'repeat'`. No `llm_calls`.
+      - **Prod change, needs approval:** `raw_inputs_source_kind_check` gains `'repeat'`.
+        Constraint-only (drop + re-add with one more value); every existing row already
+        satisfies it. `schema.sql` gets the same as an idempotent `DROP CONSTRAINT IF
+        EXISTS` / `ADD CONSTRAINT`, so fresh and existing databases match.
+      - **Choosing the session:** `GET /sessions` gains `exercises` (names, in order) per
+        session and a `limit`. The capture screen gets a "Repeat a past session" list:
+        newest 15, each row date · focus · exercise names, tap to repeat. No focus filter
+        — 9 of 9 recent sessions are "Strength", so it wouldn't narrow anything.
+      - **Historical sessions** (imported from markdown, no extraction) repeat the same way:
+        the repeat reads the normalized tables, not an old extract.
+
+- [ ] **Step 8 — Unknown fields from the model are an error, not silently dropped.** *Deferred 2026-10-03 as a good enhancement, not a current problem: a read-only scan of all 76 stored model answers in prod (`llm_calls.raw_payload`: 13 split, 13 shell, 50 exercise) found 0 fields the schema would drop. Re-run that scan before picking this up.* No
+      Pydantic model sets `extra`, so the default (`ignore`) discards any field the model
+      returns that the schema lacks. The prompt's notes rule (`prompts.py:74`) usually catches
+      unmappable text first, but nothing enforces it. Make the extraction-side models reject
+      unknown fields so the call retries or is flagged. Check first: if `extra="forbid"`
+      changes the tool schema sent to the model (`additionalProperties: false`), it re-keys the
+      eval cache and may change model behaviour, which means a paid measurement. If so, do the
+      check at validation time instead of in the schema.
+
+**Before merging Phase 5b to `dev`:** update `docs/design.html` (new `/edit` endpoint, card
+`path`, correction `source`, Step 5's `sources`) — required by `CLAUDE.md` for API contract
+changes.
+
+**Out of scope here, recorded under "After end-to-end works":** per-user field sets,
+generating programs from repeated sessions, a sessions/categories browsing view.
+
+## Phase 5.5 — Per-user identity
+
+**Gate: only after Phase 5 is working end-to-end single-user.** Right now `user_id`/`user_name`
+are hardcoded constants (`_DEFAULT_USER_ID`/`_DEFAULT_USER_NAME` in `processor.py`) and the API
+has one shared `API_KEY` — every friend would read and write as *you*, and anyone holding the
+key spends *your* Anthropic credits. This is what turns it from "my tool" into "an app other
+people use on my bill," so it has to land before Phase 6 deploy, not after.
+
+Proportionate fix, not a real auth system:
+
+- [ ] `users` table: `id`, `name`, `api_key` (per person, not shared).
+- [ ] `_db()`/auth dependency resolves `X-Api-Key` → `user_id` instead of trusting one global
+      key; every write scopes to the resolved user, not the hardcoded constant.
+- [ ] `llm_calls.user_id` (or join through `raw_input_id`) — cost is already tracked per call
+      (Phase 3), this just makes "who spent what" a `GROUP BY` instead of assumed to be you.
+- [ ] No passwords, no sessions, no OAuth provider — you hand each friend their own key once.
+
+## Phase 6 — Deploy to Google Cloud Run, infrastructure in Terraform (planned 2026-10-03)
+
+**Goal.** The app (API + `web/`, one container, one origin) running on Cloud Run so Apoorva can
+use it from his phone, for $0 inside Google's always-free tier, with every piece of
+infrastructure defined in Terraform and deployed by GitHub Actions — no hand-made resources
+except one documented bootstrap. Replaces the earlier Fly plan (Fly has no free tier).
+
+**Decisions (Apoorva, 2026-10-03), with the research behind them:**
+- **GCP Cloud Run** in **`us-east1`**: always-free tier (2M requests, 180,000 vCPU-s,
+  360,000 GiB-s a month; North America only). Supabase stays in Singapore for now; `us-east1`
+  sits near Supabase's US East if the DB moves later. Measure latency first.
+- **Terraform**, not Deployment Manager (deprecated; end of support 2026-04-01, shutdown
+  2027-06-30) and not Infrastructure Manager yet (managed Terraform; pricing unverified —
+  switching later reuses the same code).
+- **Same repo**, structure **B**: `infra/modules/` (reusable), `infra/environments/prod/`,
+  `infra/bootstrap/`. A separate infra repo only makes sense once infra is shared across
+  projects.
+- **Workflows:** CI (`ci.yml`, tests — unchanged), **CD** (`deploy.yml`: on `main` after CI
+  passes, build the image, push to Artifact Registry, deploy to Cloud Run), and **Terraform**
+  (`infra.yml`: plan on PRs touching `infra/`, apply on merge to `main`). Terraform owns the
+  service's configuration; CD owns which image runs (`ignore_changes` on the image).
+
+**Google's practices followed** (docs updated 2026-09-30): Cloud Storage state backend;
+"avoid storing secrets in state" — Terraform creates secret containers, values are added once
+with `gcloud`; plan before apply; run Terraform through automation; **Workload Identity
+Federation, no service-account key files**, limited to this repo; local runs use
+`gcloud auth application-default login`; deletion protection on stateful resources; pinned
+Terraform and provider versions.
+
+**Branching.** Base `phase-6/deploy` (from `dev`), one sub-branch per step,
+`phase-6/deploy-N-<step>`. Every Terraform change: show Apoorva the plan before applying.
+
+- [x] **Step 1 — App ready for a container host.** API serves `web/` (no-cache), page defaults
+      to its own origin, image includes `web/` and honours `$PORT`, allowlist
+      `.gcloudignore`/`.dockerignore` (never `.env`/`backups/`). Image built and smoke-tested
+      locally (227 MB). `fa34cdb`.
+- [x] **Step 2 — Tooling.** gcloud 587.0.0 and Terraform 1.16.4 (Homebrew, HashiCorp tap;
+      1.16.5 arrives with `brew upgrade` once the tap publishes it). Local Terraform signs in with
+      `gcloud auth application-default login`.
+- [x] **Step 3 — Project layer** (`infra/modules/project` + `infra/environments/prod/project`),
+      applied 2026-10-03 by Apoorva from his laptop: 9 APIs, workload identity pool `github` +
+      provider `github-actions` (only this repo), service accounts `terraform` (any branch, so
+      PRs get plans) and `app-deploy` (`main` only), least-privilege roles, `terraform` access to
+      the state bucket. 23 added; re-plan shows no changes. One manual step done: state bucket
+      `prod-traininglogs-510513-terraform-state` (us-east1, versioned, private, labelled). The
+      budget alert is set by hand in the billing console, not in Terraform (decision).
+- [ ] **Step 4 — App layer (`infra/modules/app` + `infra/environments/prod/app`):** Artifact
+      Registry repo with a keep-2 cleanup policy, runtime service account (reads its own
+      secrets, nothing else), secret containers (`database-url`, `api-key`,
+      `anthropic-api-key`), Cloud Run v2 service (512 MiB, scale 0–2, `ANTHROPIC_WORKSPACE_ID`
+      plain env), public invoker (`allUsers`; data still behind `X-Api-Key`). First image is
+      Google's sample until CD deploys the real one. Secret values added once via `gcloud`.
+- [x] **Step 5 — Workflows** (reshaped by Apoorva 2026-10-03 into CI = checks, CD = ships): `ci.yml` (test, terraform fmt/validate/plan with the plan posted on PRs) and `cd.yml` (approval-gated `prod` environment: terraform apply, then build/push/deploy). Verified on PR #33: workload identity sign-in as `terraform` and plan (`No changes`) work. Originally planned as `infra.yml` and `deploy.yml`, both authenticating with
+      `google-github-actions/auth@v3` via Workload Identity Federation.
+- [ ] **Step 6 — First real deploy and phone test.** First deploy done by hand 2026-10-03
+      (image `traininglogs:9cc3500`, built `--platform linux/amd64`, revision
+      `traininglogs-00002-b27`): https://traininglogs-875429444117.us-east1.run.app — page 200,
+      no key 401, works on Apoorva's phone. Still to do: update `API_KEY` in local `.env` to the
+      rotated key, then measure per-request latency to the Singapore database.
+- [x] **Step 7 — Docs:** `docs/design.html` (deploy section), README (how to deploy, the one
+      manual step), CHANGELOG. Remove `fly.toml`.
 
 ## After end-to-end works
 
