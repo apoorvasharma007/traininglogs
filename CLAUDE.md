@@ -1,194 +1,141 @@
 # traininglogs
 
-## Vision
+The working rules for this repo, for Apoorva and for any coding agent. What the app is lives in
+[`README.md`](README.md); how it works lives in [`docs/design.html`](docs/design.html). Link to
+them instead of repeating them here.
 
-A personal training log system where you describe your workout in natural language, an AI agent maps it to a strict structured schema, stores it in a database, and serves it to a dashboard on your website.
+## Where to start
 
-Capture happens offline during the workout (draft saved locally in a PWA). Processing happens post-workout — AI maps the draft to the schema, asks clarifying questions if needed, then saves to DB.
+[`roadmap.md`](roadmap.md) is the forward plan. Start at its `▶ Resume here` section: it has the
+current state and what's safe to run. A task that spans sessions gets its own plan file in the
+repo root with a `▶ Resume here` section of its own, like `docs-overhaul-plan.md`. Finished and
+superseded plans move to [`archived/plans/`](archived/plans/).
 
----
+## Rules that cost money or data
 
-## Active plans
+Paid model calls:
 
-[`roadmap.md`](roadmap.md) is the single forward plan — six phases from local CLI to hosted app.
-**Start at its `▶ Resume here` section**, which carries the current state, what is safe to run,
-and the conventions that cost money to forget.
+- Never start a paid run without a dry run first. `scripts/eval_arms.py --dry-run` lists every
+  call it would make and spends nothing.
+- A prompt or schema change re-keys the eval cache, so batch prompt changes into one
+  measurement.
+- Quote costs from a dry run or from `llm_calls`, never from memory.
 
-`extraction-design-principles.md` sits beside it as reference findings, not a plan.
+The production database (Supabase, `DATABASE_URL`):
 
-Superseded plans live in [`archived/plans/`](archived/plans/) with a note on what each one
-settled and, where relevant, what was later reversed.
+- Anything that writes to it needs Apoorva's approval in the same session. Approval from an
+  earlier session doesn't carry over.
+- Show the exact statements first. Run them in one transaction, in the foreground, check row
+  counts before and after, and roll back on any surprise.
+- Take a backup before changing many rows; `backups/` is git-ignored for this.
+- Prefer marking over deleting. An extraction that shouldn't count becomes `rejected`; deleting a
+  raw input also deletes its `llm_calls` cost history.
 
----
+Secrets:
 
-## Operational guides
+- They live in `.env` locally and in Secret Manager on Google Cloud. Never in a committed file, a
+  log, a command's printed output or Terraform state.
+- The repo is public. Project IDs are fine to commit; billing account IDs and keys are not.
 
-Read these before any significant development work. They capture lessons from building
-against `dev` with multiple feature branches.
+## Local development
 
-| Guide | When to read |
-|---|---|
-| [`.claude/regen-historical.md`](.claude/regen-historical.md) | Before any schema, parser, or session-ID change that affects existing data |
-| [`.claude/db-migration.md`](.claude/db-migration.md) | Before adding columns, changing schema, or cutting over to a new DB |
-| [`.claude/testing-guide.md`](.claude/testing-guide.md) | Before writing tests or doing E2E validation for a new feature |
-| [`.claude/migration-plan.md`](.claude/migration-plan.md) | 2.0 migration tracking doc — all phases complete; contains E2E test protocol |
-
----
-
-## Source of truth
-
-Don't duplicate what these documents already say. Link to them.
-
-| Topic | Lives in |
-|---|---|
-| System shape, data model, decisions, dashboard design, what's next | [`docs/design.html`](docs/design.html) |
-| Released changes, per-version state, validation rules in effect | [`CHANGELOG.md`](CHANGELOG.md) |
-| How to install and run the app | [`README.md`](README.md) |
-| Agent working rules (this file) | `CLAUDE.md` |
-
-`docs/index.html` is the **published dashboard**, not documentation. It is rebuilt by `scripts/build_dashboard.py` (called automatically by `traininglogs log`) — never hand-edit it.
-
----
-
-## Docs hygiene (read before opening a PR)
-
-**On every PR that changes app behavior:**
-
-- Add an entry under `## [Unreleased]` in `CHANGELOG.md` (Added / Changed / Fixed / Removed). Don't ship behavior without a changelog line.
-- If the system shape, data model, API contract, storage layout, or dashboard design changes → update `docs/design.html` in the same PR and bump the eyebrow + footer date manually.
-- The app-version stamp inside `design.html` (`<span class="app-version">…</span>`) is auto-synced by CI on merge to `main`. **Do not edit it by hand.**
-- If validation rules change → update both the data-model section in `design.html` and the "Validation rules in effect" block in the relevant CHANGELOG entry.
-
-**On cutting a release** (bump `pyproject.toml` `version`):
-
-- Move `[Unreleased]` entries under a new `## [X.Y.Z] - YYYY-MM-DD` heading in `CHANGELOG.md`.
-- Add the `[X.Y.Z]` compare/tag link at the bottom of the file.
-- Push to `main`. CI handles tagging, the GitHub release, and the `design.html` version stamp.
-
-**Never:**
-
-- Hand-edit `docs/index.html` (regenerate via `traininglogs log`).
-- Add architecture or "current state" narrative to this file — it belongs in `design.html` or `CHANGELOG.md`.
-
----
-
-## Branching
-
-```
-main  ←  stable, releases cut from here
-  └── dev  ←  integration branch for all new work
-        └── feature/<name>, fix/<name>, chore/<name>
+```bash
+python -m venv .venv
+.venv/bin/pip install -e .
+cp .env.example .env              # then fill it in, see below
+docker compose up -d db_test      # Postgres for the tests, on port 5433
 ```
 
-- `main` is always stable. Never commit directly to `main` during new development.
-- All feature branches cut from `dev`, merged back to `dev`.
-- `dev` merges to `main` only when the new version is production-ready.
-- One feature or fix per branch. Squash merge to keep history clean.
+| `.env` variable | Needed for | |
+|---|---|---|
+| `DATABASE_URL` | the app | Required. Points at production; see the warning below. |
+| `API_KEY` | the app | Required. The app won't start without it. |
+| `ANTHROPIC_API_KEY` | extraction and typed corrections | Required |
+| `ANTHROPIC_WORKSPACE_ID` | Anthropic keys not scoped to a workspace (`sk-ant-usr…`) | Required with such a key |
+| `TEST_DATABASE_URL` | the tests | Defaults to the Docker database on port 5433 |
+| `GROQ_API_KEY` | `eval_ab.py` comparing models | Optional |
+| `ALLOWED_ORIGINS` | calling the API from a page on another origin | Optional; the app's own page doesn't need it |
 
-## Commits
+`LOCAL_DATABASE_URL` and `REGEN_DATABASE_URL` in `.env.example` belong to the retired markdown
+flow; nothing in the app reads them.
 
-- Small, atomic commits. Each commit leaves the codebase working.
-- Format: `<type>: <short description>` — types: `feat`, `fix`, `test`, `refactor`, `chore`, `docs`.
-- No unrelated changes bundled in one commit.
+Run the app. It serves the API and the web UI from one process at `http://localhost:8000/`:
+
+```bash
+DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/uvicorn traininglogs.api.app:app --reload
+```
+
+Point `DATABASE_URL` at the test database like this when trying things out. Without it, the app
+reads and writes production. Each Extract is a paid model call either way.
+
+Run the tests:
+
+```bash
+.venv/bin/pytest tests/
+```
+
+## Branching and releases
+
+```
+main   what's deployed; only dev merges into it
+ └── dev   integration branch
+      └── <area>/<topic>                 a base branch per piece of work: phase-6/deploy, docs/overhaul
+           └── <area>/<topic>-N-<step>   one sub-branch per step
+```
+
+- Cut the base branch from `dev`, and one sub-branch per step. Name sub-branches with `-N-<step>`,
+  not `/<step>`: git refuses a branch named like a directory under another branch.
+- Squash each finished step into its base. Merge the base into `dev`, and `dev` into `main`,
+  with merge commits. Never squash into `dev` or `main`; that splits their history.
+- A step merges only with the full suite green: 0 failed, 0 skipped.
+- A release is merging `dev` into `main`. CI runs, then CD waits for Apoorva's approval in the
+  `prod` GitHub environment, applies the app's Terraform and deploys. To publish a version, bump
+  `pyproject.toml`'s `version` and move the changelog's `[Unreleased]` entries under the new
+  version first; CI then tags it and creates the GitHub release.
+- Commit messages: `<type>: <what changed>`, with types `feat`, `fix`, `test`, `refactor`,
+  `chore`, `docs`.
 
 ## Testing
 
-### Phase order — always follow this sequence
+- Tests that touch the database use the real test database in Docker, never mocks.
+- A change that breaks tests gets its tests fixed or rewritten in the same step. Don't skip or
+  delete a test to get green.
+- New models get tests for valid construction, each validator's accept and reject cases, and a
+  `model_dump(mode="json")` round trip.
+- A web UI change gets checked in a browser against the local app before it merges.
+- After a deploy, open the live app and check that the page loads and a request without the API
+  key gets `401`.
 
-1. **Unit tests first.** Model, validation, and pure-logic changes get unit tests before any pipeline code is touched. Run them green before proceeding to the next phase.
-2. **Integration tests second.** Parser, processor, and DB insert changes get integration tests against a real test DB (Docker). Never mock the DB.
-3. **E2E last.** Manual validation using `traininglogs validate` (no DB write) and `traininglogs log --no-commit` (DB write, no git) against files in `tests/fixtures/` before opening a PR. See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full protocol.
+## Docs
 
-### Breaking changes
-
-- When a field rename, schema change, or model restructure breaks existing tests, mark them `pytest.mark.skip` with a comment stating exactly what unblocks the skip (e.g., `"unblocked by: historical data regen in chore/historical-data-regen"`).
-- Never delete a test to make CI green. Skip with a reason.
-- All skips must be resolved before merging to `main`.
-- Historical data regeneration is a separate branch (`chore/historical-data-regen`) after model + parser are stable on `dev`. It is not part of any feature branch.
-
-### Feature checklist — required before opening a PR
-
-- [ ] Every new model class has unit tests for: valid construction, each validator (valid + rejection cases), and `model_dump(mode="json")` round-trip.
-- [ ] Every new discriminated union has dispatch tests for each variant.
-- [ ] Every changed field that becomes Optional has a test confirming `None` is accepted and an empty string is still rejected.
-- [ ] Existing tests pass or are explicitly skipped with a reason.
-- [ ] `pytest tests/` runs clean locally (skips are fine, failures are not).
-- [ ] CHANGELOG.md has an entry under `[Unreleased]`.
-- [ ] If schema or API contract changed: `docs/design.html` updated in the same PR.
-
-### Test fixtures
-
-- Sample session files live in `tests/fixtures/valid/` and `tests/fixtures/invalid/`. See `tests/fixtures/README.md` for the full, current table — don't duplicate it here. Use these for E2E validation.
-- New feature tests create their own in-code fixtures or sample JSON using the new schema. Do not modify existing output JSON files during feature development.
-- Existing JSON in `output_training_logs_json/` is historical data — treated as read-only until `chore/historical-data-regen` runs.
-- DB tests use a real Postgres test DB via Docker Compose. Never mocks.
-- See [`.claude/testing-guide.md`](.claude/testing-guide.md) for the full E2E protocol.
+- Every pull request that changes behaviour adds a line under `[Unreleased]` in
+  `CHANGELOG.md`: Added, Changed, Fixed or Removed.
+- If the flow, the data model, the API or how it's hosted changes, update `docs/design.html` in
+  the same pull request and its date at the top and bottom. Never edit the version inside
+  `<span class="app-version">`; CI sets it on merge to `main`.
+- Write every document in plain language. No em dashes, no filler, active voice, sentence-case
+  headings. Say what something does or give the number, not how it feels. Check facts against the
+  code before writing them down.
+- `docs/index.html` is the old static dashboard, rebuilt only by the retired command-line flow.
+  Don't edit it by hand.
 
 ## Working conventions
 
-- Python 3.10+, PEP 8, type hints on all functions.
-- No unnecessary abstractions — solve the current problem only.
-- No ORM unless there's a real pain point that justifies one.
-- Don't change DB column or Pydantic field names without explicit instruction — the schema, API, and dashboard depend on them.
-- Validation errors raise `TrainingLogValidationError`.
-- `.env` for secrets (never committed); `.env.example` documents required vars.
+- Python 3.10 or newer, PEP 8, type hints on every function.
+- Solve the problem in front of you. No abstractions for futures that haven't arrived, and no ORM.
+- Don't rename database columns or Pydantic fields without being asked; the API, the UI and the
+  stored data depend on them.
+- Infrastructure changes go through Terraform in `infra/`, never by hand in the console. See
+  [`infra/README.md`](infra/README.md).
 
-## Commands
+## Guides
 
-```bash
-# Install (always use the project venv)
-.venv/bin/pip install -e .
+| Guide | Read it before |
+|---|---|
+| [`infra/README.md`](infra/README.md) | Changing anything on Google Cloud |
+| [`.claude/db-migration.md`](.claude/db-migration.md) | Changing the database schema |
+| [`.claude/regen-historical.md`](.claude/regen-historical.md) | A change that would rewrite historical sessions |
+| [`.claude/testing-guide.md`](.claude/testing-guide.md) | Writing tests |
+| [`.claude/migration-plan.md`](.claude/migration-plan.md) | Nothing new: the finished 2.0 migration's record |
 
-# Run tests (requires docker compose up -d)
-.venv/bin/pytest tests/
-
-# Start all Postgres services (prod, test, validation)
-docker compose up -d
-```
-
-### traininglogs CLI
-
-```bash
-# Process a single session file
-traininglogs log inputs/programs/<slug>/phase_N/week_N/<session>.md
-
-# Process all sessions in a directory
-traininglogs log inputs/programs/<slug>/phase_N/week_N/
-
-# Process a week by program/phase/week flags
-traininglogs log --program <slug> --phase N --week N
-
-# Validate a file without writing to DB (exit non-zero on failure)
-traininglogs validate inputs/programs/<slug>/phase_N/week_N/<session>.md
-traininglogs validate tests/fixtures/strength_session.md   # quick smoke test
-
-# Flags (work with any invocation form)
-traininglogs log <target> --no-commit     # insert to DB, skip git commit
-traininglogs log <target> --pr            # insert, commit, open a PR
-
-# Start the API server
-uvicorn traininglogs.api.app:app --reload
-# API at http://localhost:8000 — all requests require X-Api-Key header
-```
-
-### Scripts
-
-See `scripts/README.md` for full details on each script.
-
-```bash
-# Rebuild the dashboard HTML from the current DB
-.venv/bin/python scripts/build_dashboard.py
-
-# Bulk-import all JSON session files into the current DB (idempotent)
-.venv/bin/python scripts/import_sessions_to_db.py
-.venv/bin/python scripts/import_sessions_to_db.py --overwrite   # truncate first
-
-# Regenerate all historical JSON from the current processor pipeline
-# (safety-isolated — writes to a fresh dir, not output_training_logs_json/)
-# See .claude/regen-historical.md before running
-REGEN_DATABASE_URL=<validation-db-url> .venv/bin/python scripts/regen_historical.py
-
-# Truncate and repopulate the prod DB from current .md inputs
-# Script refuses to run if DATABASE_URL looks like the test DB
-.venv/bin/python scripts/repopulate_db.py
-```
+Step 6 of [`docs-overhaul-plan.md`](docs-overhaul-plan.md) reviews these.

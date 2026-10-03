@@ -34,11 +34,11 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 - [x] 2. `docs/design.html`: rewritten outside-in (what it is, web app, flow, repeat, AI, data, API, where it runs, limits, next); no markdown/CLI; approved 2026-10-03
 - [x] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`: rewritten; samples 1 to 6 kept verbatim, a run and a skills sample added; approved 2026-10-03
 - [x] 4. `scripts/README.md`, `tests/fixtures/README.md`: rewritten; 12 retired scripts, `test_import.py` and `fixtures/invalid/` deleted; CLI and parser removal added to the roadmap as a non-urgent enhancement; approved 2026-10-03
-- [ ] 5. `CLAUDE.md`
+- [x] 5. `CLAUDE.md`: rewritten as working rules (money and data rules, local development, branching and releases, testing, docs); approved 2026-10-03
 - [ ] 6. `.claude/*.md`, `docs/migration-runbook.md` (some may move to `archived/`)
 - [ ] 7. `docs/extraction-conventions.md`, `extraction-design-principles.md`
 - [ ] 8. Merge `docs/overhaul` into `dev`
 
 ## ▶ Resume here
 
-Step 5, `CLAUDE.md`: agreeing its job and outline. It still mentions deleted scripts. Branch `docs/overhaul` from `dev`.
+Step 6, `.claude/*.md` and `docs/migration-runbook.md`: deciding which stay, which move to `archived/`; then update CLAUDE.md's guide table. Branch `docs/overhaul` from `dev`.
