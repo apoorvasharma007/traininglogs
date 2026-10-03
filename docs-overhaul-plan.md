@@ -30,7 +30,7 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 
 ## Steps
 
-- [ ] 1. `README.md`
+- [x] 1. `README.md` — what the app does and why, nothing else (setup and CLI moved out, Apoorva 2026-10-03)
 - [ ] 2. `docs/design.html`
 - [ ] 3. `infra/README.md`, `web/README.md`, `web/sample_inputs.md`
 - [ ] 4. `scripts/README.md`, `tests/fixtures/README.md`
@@ -41,4 +41,4 @@ Records, left as they are except for outright factual errors: `CHANGELOG.md`, `r
 
 ## ▶ Resume here
 
-Step 1, `README.md`: agreeing its job and outline. Branch `docs/overhaul` from `dev`.
+Step 2, `docs/design.html`: agreeing its job and outline. Branch `docs/overhaul` from `dev`.
