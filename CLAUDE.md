@@ -104,8 +104,9 @@ main   what's deployed; only dev merges into it
 - Squash each finished step into its base. Merge the base into `dev`, and `dev` into `main`,
   with merge commits. Never squash into `dev` or `main`; that splits their history.
 - A step merges only with the full suite green: 0 failed, 0 skipped.
-- A release is merging `dev` into `main`. CI runs, then CD waits for Apoorva's approval in the
-  `prod` GitHub environment, applies the app's Terraform and deploys. To publish a version, bump
+- A push to `dev` deploys staging once CI's checks pass, with no approval. A release is merging
+  `dev` into `main`: CI runs, then its deploy waits for Apoorva's approval in the `prod` GitHub
+  environment, applies the app's Terraform and deploys. To publish a version, bump
   `pyproject.toml`'s `version` and move the changelog's `[Unreleased]` entries under the new
   version first; CI then tags it and creates the GitHub release.
 - Commit messages: `<type>: <what changed>`, with types `feat`, `fix`, `test`, `refactor`,
