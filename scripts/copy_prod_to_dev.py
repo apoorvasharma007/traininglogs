@@ -1,10 +1,13 @@
-"""Copy production into the local dev database, so the app can be tried on real data safely.
+"""Copy production into the local dev database or staging, so the app can be tried on real data.
 
-Reads production (DATABASE_URL) in a read-only transaction and never writes to it. Wipes the dev
-database (DEV_DATABASE_URL, default the `traininglogs_dev` database in the local Docker Postgres),
-applies schema.sql, and copies every table. Run it again any time to start fresh.
+Reads production (DATABASE_URL) in a read-only transaction and never writes to it. Applies
+schema.sql to the target, empties its tables and copies every table in. The target is
+DEV_DATABASE_URL: the `traininglogs_dev` database in the local Docker Postgres by default, or
+staging's database (DATABASE_URL_STAGING); anything else is refused. Run it again any time to
+start fresh.
 
     .venv/bin/python scripts/copy_prod_to_dev.py
+    DEV_DATABASE_URL="$DATABASE_URL_STAGING" .venv/bin/python scripts/copy_prod_to_dev.py
 
 Then run the app against the copy:
 
@@ -28,7 +31,7 @@ DEFAULT_DEV_URL = "postgresql://traininglogs:traininglogs@localhost:5433/trainin
 # Parents before children, so foreign keys hold while copying.
 TABLES = [
     "raw_inputs", "extractions", "llm_calls",
-    "programs", "program_workouts", "program_workout_exercises", "exercise_pins",
+    "programs", "program_workouts", "program_workout_exercises",
     "sessions", "warmups", "cooldowns", "exercises", "working_sets", "warmup_sets",
 ]
 
@@ -46,18 +49,19 @@ def main() -> int:
     load_dotenv(".env")
     prod_url = os.environ["DATABASE_URL"]
     dev_url = os.environ.get("DEV_DATABASE_URL", DEFAULT_DEV_URL)
-    if urlparse(dev_url).hostname not in ("localhost", "127.0.0.1") or dev_url == prod_url:
-        print(f"Refusing: the dev database must be on this machine, got {urlparse(dev_url).hostname}")
+    allowed = urlparse(dev_url).hostname in ("localhost", "127.0.0.1") or dev_url == os.environ.get("DATABASE_URL_STAGING")
+    if not allowed or dev_url == prod_url:
+        print(f"Refusing: the target must be on this machine or be staging, got {urlparse(dev_url).hostname}")
         return 1
 
     prod = psycopg2.connect(prod_url)
     prod.set_session(readonly=True)
     dev = psycopg2.connect(dev_url)
 
-    with dev.cursor() as cur:
-        cur.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
-    dev.commit()
+    # Emptied rather than dropped: on Supabase the public schema also carries Supabase's own grants.
     apply_schema(dev)
+    with dev.cursor() as cur:
+        cur.execute(f"TRUNCATE {', '.join(TABLES)} CASCADE")
 
     with prod.cursor() as p, dev.cursor() as d:
         for table in TABLES:
@@ -80,7 +84,7 @@ def main() -> int:
     dev.commit()
     prod.close()
     dev.close()
-    print("Copied production into", urlparse(dev_url).path.lstrip("/"))
+    print("Copied production into", urlparse(dev_url).hostname, urlparse(dev_url).path.lstrip("/"))
     return 0
 
 
