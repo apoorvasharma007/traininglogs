@@ -52,10 +52,21 @@ def to_extract(session: dict[str, Any]) -> TrainingLogLLMExtract:
         "date": session["date"],
         "focus": session.get("focus") or None,
         "is_deload_week": session.get("is_deload") or None,
-        "session_duration_minutes": session.get("duration_minutes"),
+        # A session under a minute arrives as 0; a session's duration must be positive, so it's left out.
+        "session_duration_minutes": session.get("duration_minutes") or None,
         "notes": session.get("notes") or None,
+        "warmup": _movements(session.get("warmup")),
+        "cooldown": _movements(session.get("cooldown")),
         "exercises": exercises,
     })
+
+
+def _movements(items: list[dict] | None) -> list[dict] | None:
+    return [
+        {"number": n, "name": m["name"], "reps": m.get("reps"), "duration_seconds": m.get("duration_seconds"),
+         "notes": m.get("notes") or None}
+        for n, m in enumerate(items or [], start=1)
+    ] or None
 
 
 def _saved_session_id(conn: Connection, raw_input_id: str) -> str | None:

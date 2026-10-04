@@ -19,7 +19,11 @@ function LiftTile({ lift }: { lift: LiftSummary }) {
     >
       <span className="text-sm font-semibold">{lift.name}</span>
       {lift.latest == null ? (
-        <span className="text-[13px] leading-snug text-muted-foreground">No countable sets yet.</span>
+        <span className="text-[13px] leading-snug text-muted-foreground">
+          {lift.sessions === 0
+            ? 'Not logged yet'
+            : `${lift.measure === 'bodyweight_reps' ? 'No bodyweight sets yet' : 'No sets with an RPE yet'} · ${lift.sessions} ${lift.sessions === 1 ? 'session' : 'sessions'}`}
+        </span>
       ) : (
         <>
           <span className="flex items-center gap-1.5 font-mono text-[22px] font-semibold tracking-tight">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import ScreenHeader from '@/components/ScreenHeader'
+import BottomBar from '@/components/BottomBar'
 import { api } from '@/lib/api'
 import type { CaptureOut } from '@/lib/types'
 
@@ -17,7 +18,7 @@ export default function LogFromNotes() {
     setError(null)
     try {
       const out = await api<CaptureOut>('/inputs', { method: 'POST', body: { content: text } })
-      if (!out.extraction_id) throw new Error(out.error ?? 'The note was saved but could not be read.')
+      if (!out.extraction_id) throw new Error(out.error ?? "Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.")
       navigate(`/review/${out.extraction_id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -39,23 +40,20 @@ export default function LogFromNotes() {
           placeholder="Paste or type it the way you wrote it. Weights, reps, how it felt."
           className="h-52 resize-none rounded-2xl border border-border bg-card p-3.5 leading-normal"
         />
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
+      </div>
+      <BottomBar aboveTabs error={error}>
         <button
           type="button"
           disabled={busy || !text.trim()}
           onClick={extract}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? 'Reading your note…' : 'Extract'}
+          {busy ? 'Reading your note…' : 'Read my note'}
         </button>
         <p className="text-center text-xs text-muted-foreground">
-          Reads your note with AI, about 3 cents. You check everything before it's saved.
+          Reads your note with AI for about ₹2 to ₹5; longer notes cost more. Each AI fix after that is ₹1 to ₹3 more. You check everything before it's saved.
         </p>
-      </div>
+      </BottomBar>
     </div>
   )
 }

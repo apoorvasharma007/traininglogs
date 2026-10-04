@@ -27,3 +27,6 @@ if (!Element.prototype.setPointerCapture) {
 
 // The send queue keeps its state in memory; a send left running by one test must not leak into the next.
 afterEach(() => resetOutboxForTests())
+
+// jsdom has no layout, so no scrolling.
+if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {}

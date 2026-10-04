@@ -52,6 +52,16 @@ export function groupByWeek<T>(items: T[], dateOf: (item: T) => string, today: D
   return groups
 }
 
+/**
+ * What History calls a session: its workout's name, or a name it was given; otherwise its first
+ * exercises ("Squat · Bench press · Pull ups"). Older sessions keep the name their note gave them.
+ */
+export function sessionName(s: { focus: string | null; exercises: (string | { name: string })[] }): string {
+  if (s.focus?.trim()) return s.focus.trim()
+  const names = s.exercises.map((e) => (typeof e === 'string' ? e : e.name))
+  return names.length ? names.slice(0, 3).join(' · ') + (names.length > 3 ? ' …' : '') : 'Session'
+}
+
 /** "8", "8+1" with partial reps, "8L / 7R" for one side at a time. */
 export function repsText(s: WorkingSet): string {
   if (s.reps_full != null) return s.reps_partial ? `${s.reps_full}+${s.reps_partial}` : String(s.reps_full)

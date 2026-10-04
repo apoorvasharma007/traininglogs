@@ -137,6 +137,14 @@ main   what's deployed; only dev merges into it
 
 ## Working conventions
 
+- The app's look is locked (since 2026-10-04): the fonts, the colours in `frontend/src/index.css`,
+  type sizes, spacing, icons, and the layout of existing screens. New screens reuse those pieces.
+  Propose any visual change and wait for Apoorva's yes before making it.
+- Anything that changes saved data (programs, following, deleting) asks first or offers Undo.
+- A screen's main action goes in `BottomBar` (fixed at the bottom; `aboveTabs` on screens with
+  tabs). Secondary and destructive actions stay as small text at the end of the content. Sheets
+  use `Sheet`, which grows with its content up to the visible screen.
+
 - Python 3.10 or newer, PEP 8, type hints on every function.
 - Solve the problem in front of you. No abstractions for futures that haven't arrived, and no ORM.
 - Don't rename database columns or Pydantic fields without being asked; the API, the UI and the

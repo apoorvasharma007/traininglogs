@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   addWarmupSet,
   counts,
-  pickChoice,
-  planFromSession,
+  switchExercise,
+  setMovements,
+  recordCardio,
+  startFromPast,
+  wantsWarmupNudge,
   saveSet,
   startFromWorkout,
   toggleDone,
@@ -16,7 +19,7 @@ const workout: Workout = {
   id: 'w1',
   position: 1,
   name: 'Bench',
-  last_done: null,
+  last_done: null, warmup: [], cooldown: [],
   exercises: [
     { name: 'Squat', warmup_sets: 1, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] },
     { name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true, alternatives: [] },
@@ -80,14 +83,6 @@ describe('Finish', () => {
     ])
   })
 
-  it('offers a new plan only when the sets differ from it', () => {
-    const s = startFromWorkout(workout, '1 · Bench', 'p1', lasts, now)
-    expect(planFromSession(s, workout.exercises)).toBeNull()
-    const more = addWarmupSet(s, s.exercises[2].key).session
-    expect(planFromSession(more, workout.exercises)?.[2]).toEqual(
-      { name: 'Deadlift', warmup_sets: 1, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] },
-    )
-  })
 })
 
 describe('adding a warmup set', () => {
@@ -100,37 +95,105 @@ describe('adding a warmup set', () => {
   })
 })
 
-describe('choices on a plan line', () => {
-  const line = { name: 'Shoulder Press', warmup_sets: 0, working_sets: 5, target_reps: 5, amrap: false, alternatives: ['Bench press'] }
-  const dates: Record<string, string> = { 'shoulder press': '2026-09-30', 'bench press': '2026-10-02' }
-  const lastDate = (n: string) => dates[n.toLowerCase()]
-
-  it('starts with the one done longest ago', () => {
-    expect(pickChoice(line, lastDate)).toBe('Shoulder Press')
-    expect(pickChoice(line, (n) => ({ 'shoulder press': '2026-10-02', 'bench press': '2026-09-30' })[n.toLowerCase()])).toBe('Bench press')
+describe('the set drawer', () => {
+  it('keeps last time as a suggestion when only effort or a note changes', () => {
+    let s = startFromWorkout(workout, '1 · Bench', 'p1', lasts, now)
+    const set = s.exercises[0].sets[1]
+    s = saveSet(s, set.key, { kind: 'working', weight: set.weight, reps: set.reps, rpe: 8.5, note: 'grind' })
+    expect(s.exercises[0].sets[1]).toMatchObject({ ghost: true, rpe: 8.5, note: 'grind' })
   })
+})
 
-  it('treats never done as oldest, and a tie as the first in the plan', () => {
-    expect(pickChoice({ ...line, alternatives: ['Bench press', 'Dips'] }, lastDate)).toBe('Dips')
-    expect(pickChoice(line, () => undefined)).toBe('Shoulder Press')
-  })
+describe('alternatives', () => {
+  const line = { name: 'Shoulder Press', warmup_sets: 1, working_sets: 2, target_reps: 5, amrap: false, alternatives: ['Bench press'] }
+  const w = { ...workout, exercises: [line] }
+  const lasts: LastExercise[] = [
+    { name: 'Shoulder Press', date: '2026-10-02', notes: 'easy', warmup_sets: [{ weight_kg: 30, reps: 5, notes: null }], sets: [{ weight_kg: 60, reps: 5, notes: null }] },
+    { name: 'Bench press', date: '2026-09-30', notes: 'still hard', warmup_sets: [{ weight_kg: 40, reps: 5, notes: null }], sets: [{ weight_kg: 90, reps: 2, notes: null }, { weight_kg: 87.5, reps: 2, notes: null }] },
+  ]
 
-  it('starts the session with the picked one and its own last time, keeping all choices', () => {
-    const w = { ...workout, exercises: [line] }
-    const s = startFromWorkout(w, 't', 'p1', [
-      { name: 'Shoulder Press', date: '2026-10-02', notes: null, warmup_sets: [], sets: [{ weight_kg: 60, reps: 5, notes: null }] },
-      { name: 'Bench press', date: '2026-09-30', notes: 'still hard', warmup_sets: [], sets: [{ weight_kg: 90, reps: 2, notes: null }] },
-    ], now)
-    expect(s.exercises[0].name).toBe('Bench press')
-    expect(s.exercises[0].lastNote).toBe('still hard')
-    expect(s.exercises[0].sets[0].weight).toBe('90')
+  it('starts with the first exercise and keeps every choice', () => {
+    const s = startFromWorkout(w, 't', 'p1', lasts, now)
+    expect(s.exercises[0].name).toBe('Shoulder Press')
     expect(s.exercises[0].choices).toEqual(['Shoulder Press', 'Bench press'])
+    expect(s.exercises[0].sets.map((x) => x.weight)).toEqual(['30', '60', '60'])
   })
 
-  it('doing another choice is not a change to the plan', () => {
-    const w = { ...workout, exercises: [line] }
-    const s = startFromWorkout(w, 't', 'p1', [], now)
-    const swapped = { ...s, exercises: [{ ...s.exercises[0], name: 'Bench press' }] }
-    expect(planFromSession(swapped, w.exercises)).toBeNull()
+  it('switching refills untouched sets from the new exercise and keeps ticked ones', () => {
+    let s = startFromWorkout(w, 't', 'p1', lasts, now)
+    const ex = s.exercises[0]
+    s = toggleDone(s, ex.sets[0].key)
+    s = switchExercise(s, ex.key, 'Bench press')
+    const after = s.exercises[0]
+    expect(after.name).toBe('Bench press')
+    expect(after.lastNote).toBe('still hard')
+    expect(after.sets.map((x) => [x.weight, x.done, x.last])).toEqual([
+      ['30', true, '40 × 5'],
+      ['90', false, '90 × 2'],
+      ['87.5', false, '87.5 × 2'],
+    ])
+  })
+
+})
+
+describe('warm-up and cool-down', () => {
+  it('come from the workout and only ticked ones are sent', () => {
+    const w = {
+      ...workout,
+      warmup: [{ name: 'Easy cardio', reps: null, duration_seconds: 180 }, { name: 'Arm circles', reps: 10, duration_seconds: null }],
+      cooldown: [{ name: 'Stretch', reps: null, duration_seconds: 300 }],
+    }
+    let s = startFromWorkout(w, 't', 'p1', [], now)
+    expect(s.warmup?.map((m) => [m.name, m.amount, m.done])).toEqual([['Easy cardio', '3 min', false], ['Arm circles', '10', false]])
+    s = setMovements(s, 'warmup', s.warmup!.map((m, i) => (i === 0 ? { ...m, done: true } : m)))
+    s = toggleDone(s, s.exercises[0].sets[0].key)
+    const req = toRequest(s, now)
+    expect(req.warmup).toEqual([{ name: 'Easy cardio', reps: null, duration_seconds: 180, notes: null }])
+    expect(req.cooldown).toEqual([])
+  })
+})
+
+describe('a movement amount the rule cannot read', () => {
+  it('is kept as the note', () => {
+    let s = startFromWorkout({ ...workout, warmup: [{ name: 'Leg swings', reps: null, duration_seconds: null }] }, 't', 'p1', [], now)
+    s = setMovements(s, 'warmup', s.warmup!.map((m) => ({ ...m, amount: 'each side 10', done: true })))
+    expect(toRequest(s, now).warmup).toEqual([{ name: 'Leg swings', reps: null, duration_seconds: null, notes: 'each side 10' }])
+  })
+})
+
+describe('warm-up nudge', () => {
+  it('records the minutes since the timer started, within 1 and 5', () => {
+    const s = { ...startFromWorkout(workout, 't', 'p1', [], now), cardioStartedAt: new Date(2026, 9, 4, 10, 0).toISOString() }
+    expect(wantsWarmupNudge(s)).toBe(true)
+    const after = recordCardio(s, new Date(2026, 9, 4, 10, 3, 10))
+    expect(after.warmup?.map((m) => [m.name, m.amount, m.done])).toEqual([['Easy cardio', '3 min', true]])
+    expect(wantsWarmupNudge(after)).toBe(false)
+    expect(recordCardio(s, new Date(2026, 9, 4, 10, 30)).warmup?.[0].amount).toBe('5 min')
+  })
+
+  it('ticks an Easy cardio row already there instead of adding another', () => {
+    const s = startFromWorkout({ ...workout, warmup: [{ name: 'Easy cardio', reps: null, duration_seconds: 300 }] }, 't', 'p1', [], now)
+    expect(recordCardio(s, now).warmup?.map((m) => [m.name, m.done])).toEqual([['Easy cardio', true]])
+  })
+})
+
+describe('doing a past session again', () => {
+  it('copies its exercises and set counts, with its values in grey', () => {
+    const past = {
+      session_id: 's1', date: '2026-10-02', program: null, focus: null, duration_minutes: 40, notes: null,
+      exercises: [{
+        number: 1, name: 'Squat', notes: 'better depth',
+        warmup_sets: [{ number: 1, weight_kg: 80, rep_count: 3, notes: null }],
+        sets: [{ number: 1, weight_kg: 125, reps_full: 2, reps_partial: null, left_reps_full: null, right_reps_full: null, rpe: 9, notes: null }],
+      }],
+    }
+    const s = startFromPast(past, now)
+    expect(s.title).toBe('Squat')
+    expect(s.workoutId).toBeNull()
+    expect(s.exercises[0].lastNote).toBe('better depth')
+    expect(s.exercises[0].sets.map((x) => [x.kind, x.weight, x.reps, x.ghost, x.last])).toEqual([
+      ['warmup', '80', '3', true, '80 × 3'],
+      ['working', '125', '2', true, '125 × 2'],
+    ])
   })
 })

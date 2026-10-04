@@ -7,6 +7,135 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-10-05
+
+### Added
+
+- Program templates: New program offers "Create your own" or "From a template". Four starter
+  templates (5×5 strength, Push / pull / legs, Upper / lower, Upper / lower / PPL) show their
+  workouts, and "Add program" copies one into your programs. The server lists them at
+  `GET /templates` and copies one with `POST /templates/{id}/copy`.
+- An empty workout has an Add exercises button that starts editing, instead of "Tap Edit to add
+  some".
+- Move up and Move down in a session's exercise menu. If the order changed, "Update the
+  program?" offers "Change the order", unticked; exercises you skipped keep their place.
+- The empty Programs screen has a New program button instead of an explanation.
+
+### Fixed
+
+- An exercise's menu no longer has "Add set"; the card's + Set does the same, in the session and
+  the confirmation card.
+- Every screen's main action sits in a bar fixed at the bottom: Start workout, Follow this
+  program, Read my note, Confirm session, Save changes, Done. Before, some sat right after the
+  content, near the top on a short screen.
+- Sheets open as tall as their content, up to the visible screen, so a long menu no longer needs
+  scrolling on a normal iPhone. Before, they stopped at 80% of Safari's full height.
+- Settings no longer says "Choosing your own key lifts comes later."
+- Progress tiles say "Not logged yet" for a lift never logged, and "No sets with an RPE yet · 3
+  sessions" for one logged without RPE, instead of "No countable sets yet" for both.
+- The Done screen survives the app restarting on it: the summary and the "Update the program?"
+  offer come back. Before, it said "Nothing just finished" and the offer was lost.
+- Estimated max now counts only sets with an RPE. Before, a set without one was treated as all
+  out, which understated the max whenever reps were left. A session with no RPE shows on the
+  lift's chart as a hollow dot at its heaviest weight, and in its session list as "heaviest, no
+  RPE"; it doesn't count toward the latest, best or trend.
+- Safari on iPhone zoomed the page in when you tapped a small box or double-tapped. The app now
+  stays at its normal size.
+- The confirmation card's top shows three rows, Date, Workout and Duration, each one tappable to
+  change it. "Not part of a program" sits in the workout list, replacing the "Was this ...? No"
+  sentence.
+- Error messages say what went wrong and what to do. A server error shows its code ("Server
+  error (500). Try again in a minute."), a lost connection says "No connection", and a note that
+  couldn't be read says it's still saved. Before, some showed raw technical text.
+- Confirming a note that's already saved says so ("This note is already saved as a session. Find
+  it in History.") instead of a database error that told you to change the date.
+- After a session, "Update the program?" matches each exercise and movement to the one in the
+  workout it started from instead of by name. A renamed exercise shows as one line ("Squat → Squats"),
+  unticked, so a typo can't reach the program by accident. Switching to an alternative offers to
+  make it the main exercise. Extra sets count only once ticked, and an exercise added but never
+  done isn't offered. A skipped warm-up or cool-down movement from the workout is offered for removal, and
+  a different amount ("Easy cardio: 10 min (was 5 min)") as a change.
+- The exercise editor's alternatives are headed "Alternatives · switch during the workout"
+  instead of "Or".
+- The exercise editor's reps hint says "Leave empty for AMRAP (as many reps as possible)".
+- The deload reminder sheet says "Remind me to take a lighter week after this many weeks of
+  training" instead of "Suggest a lighter pass through the program".
+- The home screen's next-workout card is a summary: program name, workout name and exercise
+  names. The "Current program" and "Next workout" labels, sets and alternatives are gone; they
+  show once the workout starts.
+- Log from notes gives the real cost in rupees: about ₹2 to ₹5 to read a note, and ₹1 to ₹3 for
+  each AI fix after that. It said "about 3 cents".
+- Log from notes' button says "Read my note" instead of "Extract".
+- The waiting-to-send bar's button says "Send now" instead of "Retry".
+- After a session, the offer to change the workout is called "Update program" at every step.
+  Before, it was "Save to program" on the button and "Update program" in the confirm.
+- "Remove" is used for taking a set, exercise or workout out, and "Delete" only for a whole
+  program. The confirmation card's Undo bar says what was removed ("Squat removed").
+- "Warm-up" is spelled the same everywhere; some places said "Warmup".
+- Warm-up set templates say they build up to your first working set, and show greyed out with
+  how to use them when that set has no weight yet. Before, they were hidden.
+- When an AI fix can't be used, the fix box now says why in plain words, naming the exercise and
+  sets ("Face pull, warm-up sets 1 and 2: needs a weight."), and keeps your message. Before, a
+  red bar showed the server's raw error.
+- The AI fix box asks for every change in one message, says each fix is a paid AI call, and
+  cycles through longer examples.
+- Values the AI marked unsure for every set of an exercise ("exercises.0.sets.*.reps") weren't
+  passed to the card.
+- A session shorter than a minute failed to save (a duration of 0) and waited to send forever.
+
+### Changed
+
+- Alternatives no longer take turns: a workout starts with the first exercise, and a swap icon
+  beside its name switches the session to an alternative, refilled from that one's last time.
+- Target reps is one field; empty means as many as you can.
+- A workout's name field starts as "Workout N"; adding a workout asks for its name.
+- Deleting an exercise from a program's workout asks first.
+- A set with a note shows a note marker on its row. Train no longer has "Do a different workout".
+- Program and workout screens open for viewing; Edit shows renaming, reordering, adding and
+  settings. The workout's title is its name, edited in place.
+- Effort in words: Moderate, Hard or All out, stored as RPE 7, 8.5 or 10; an exact RPE stays one
+  tap away. Set rows show effort as a small three-bar meter.
+- Warm-up ramps from an exercise's menu: Full ramp, Short ramp, 5/3/1 style or one feeler set,
+  worked out from the first working set's weight.
+- The session's LAST column is gone; last time shows in the boxes and in the set's drawer.
+- Warm-up and cool-down for the whole session: a program's workout can carry them, a session copies
+  them at Start, and only ticked ones are saved. Presets: General, Upper body, Lower body; Walk and
+  stretch, Stretch only. `PUT /workouts/{id}/movements`; `POST /sessions` takes `warmup` and
+  `cooldown`; `program_workouts.warmup` and `.cooldown`.
+- The 40/50/60% warm-up ramp is called Wendler's 5/3/1. Bodyweight sets get no ramp.
+- Warm-up and cool-down drawers are headed "templates"; the exercise ramp menu item is "Warm-up
+  set templates" and warns only before replacing warm-up sets you entered. Templates: Easy cardio
+  and Dynamic stretching to warm up, Easy cardio and Static stretching to cool down.
+- After a session from a program, "Save changes to the program?" lists how it differed: more sets,
+  new exercises and new warm-up or cool-down movements start ticked; removed exercises and fewer
+  sets start unticked. Skipped sets and alternatives are not changes. Replaces the all-or-nothing
+  "Update workout?".
+- The set drawer keeps its height when switching to Warmup, so the switch stays under your finger.
+- Review shows what the AI wasn't sure of as amber boxes, with "N things to check" to jump to
+  them; an exercise it couldn't read says so plainly. The header is the date, "Was this Workout 3
+  of Starting Strength?" and the duration. The fix box asks for changes in plain words, with
+  examples that change every few seconds.
+- A session is named after its workout, or after its first exercises; History uses that name.
+- "Do this again" on a past session starts it as a live session. Home: the next workout, a "Wrote
+  it down instead?" card for Log from notes, then Repeat a past session and Ad-hoc workout
+  (formerly Blank workout). Without a program, home offers recent sessions to do again.
+- The deload reminder only reminds: OK hides it for another stretch of the program's weeks.
+- Editing a program or a workout is a draft: renaming, reordering, exercises and warm-up or
+  cool-down change nothing until Save changes; Cancel discards (asking first if anything changed).
+  The tabs and back arrow hide while editing. The deload reminder's weeks are chosen, then saved.
+- Review matches the session screen: no NOTE column (effort and notes show beside the set number),
+  and the date is a quiet line that opens the date picker.
+- Saving changes to a program, stopping following, and following a program while another is
+  followed each ask first.
+- A session starts with "Warm up first · 5 min easy cardio": Start runs a countdown and records it
+  when it ends (or on Done); ✕ skips it. The deload reminder is one line in weeks (3 to 8) at
+  the foot of a program's page, beside Stop following.
+- A set's drawer holds only what its row can't: warmup or working, RPE, note, delete. Weight and
+  reps are typed on the row. The deload reminder and Stop following show on the program's page.
+- In a session, an exercise collapses to one line when its last set is ticked, the next one
+  scrolls into view, and the header shows the exercise you're on.
+
+
 ## [4.0.0] - 2026-10-04
 
 ### Removed
@@ -1108,7 +1237,9 @@ Initial tagged release. Seed entry — describes the system as it stands at v1.0
 - `rest_minutes` and `actual_rest_minutes` must be between 0 and 15.
 - Required string fields reject empty or whitespace-only values.
 
-[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v4.0.0...v4.1.0
+[4.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...v2.0.0

@@ -247,7 +247,7 @@ class TestCreateInput:
         body = r.json()
         assert body["raw_input_id"]
         assert body["extraction_id"] is None
-        assert "LLM unavailable" in body["error"]
+        assert body["error"].startswith("Couldn't read your note.")
 
         with db_conn.cursor() as cur:
             cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
@@ -442,6 +442,7 @@ class TestConfirmExtraction:
         id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
         r2 = client.post(f"/extractions/{id_b}/confirm", headers={"x-api-key": "testkey"})
         assert r2.status_code == 409
+        assert r2.json()["detail"] == "This note is already saved as a session. Find it in History."
 
     def test_not_found(self, client) -> None:
         r = client.post("/extractions/does-not-exist/confirm", headers={"x-api-key": "testkey"})

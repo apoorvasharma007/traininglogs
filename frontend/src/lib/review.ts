@@ -38,19 +38,6 @@ export function draftFromSet(row: CardSetRow): SetDraft {
   }
 }
 
-/** Weight after a ±2.5 tap: never below 0, no floating-point tails. */
-export function stepWeight(weight: string, delta: number): string {
-  const current = parseFloat(weight.replace(',', '.')) || 0
-  return String(Math.max(0, Math.round((current + delta) * 10) / 10))
-}
-
-/** Reps after a ±1 tap. Only plain numbers step; "8+1" or "8L / 7R" are left to typing. */
-export function stepReps(reps: string, delta: number): string | null {
-  if (reps.trim() === '') return delta > 0 ? '1' : '0'
-  if (!/^\d+$/.test(reps.trim())) return null
-  return String(Math.max(0, Number(reps) + delta))
-}
-
 function numberOrEmpty(text: string): number | '' {
   const n = parseFloat(text.replace(',', '.'))
   return Number.isNaN(n) ? '' : n

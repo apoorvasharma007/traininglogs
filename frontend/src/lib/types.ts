@@ -58,7 +58,7 @@ export type LiftPoint = {
   session_id: string
   date: string
   value: number | null
-  method: 'rpe' | 'epley' | null
+  method: 'rpe' | null // null: no set had an RPE, so value is null and heaviest_kg stands in
   heaviest_kg: number | null
   records: string[]
   best_set: { number: number; weight_kg: number | null; reps: number | null; rpe: number | null }
@@ -72,6 +72,7 @@ export type CardWarmupRow = {
   weight_kg: number
   rep_count: number | null
   notes: string | null
+  uncertain_fields: string[] // what the AI wasn't sure of: weight_kg, rep_count
   path: string
 }
 
@@ -81,6 +82,7 @@ export type CardSetRow = {
   reps: string | null
   rpe: number | null
   notes: string | null
+  uncertain_fields: string[] // what the AI wasn't sure of: weight_kg, reps, rpe
   path: string
 }
 
@@ -97,6 +99,7 @@ export type Card = {
     date: string
     focus: string | null
     program: string | null
+    duration_minutes: number | null
     uncertain_fields: string[]
     path: string
   }
@@ -125,12 +128,17 @@ export type PlanExercise = {
   alternatives: string[] // other exercises that can take this line's place
 }
 
+/** A warm-up or cool-down movement: reps, a duration, or neither. */
+export type Movement = { name: string; reps: number | null; duration_seconds: number | null }
+
 export type Workout = {
   id: string
   position: number
   name: string | null
   last_done: string | null
   exercises: PlanExercise[]
+  warmup: Movement[]
+  cooldown: Movement[]
 }
 
 export type Program = {
@@ -142,4 +150,12 @@ export type Program = {
   workouts: Workout[]
   next_workout_id: string | null
   deload: { days_since: number; due: boolean; in_progress: number }
+}
+
+/** A ready-made program to copy into your own. */
+export type ProgramTemplate = {
+  id: string
+  name: string
+  days: string // "3 days a week"
+  workouts: { name: string; exercises: PlanExercise[] }[]
 }

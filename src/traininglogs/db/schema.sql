@@ -242,9 +242,14 @@ CREATE TABLE IF NOT EXISTS program_workout_exercises (
     amrap        BOOLEAN NOT NULL DEFAULT false
 );
 
--- Other exercises that can take a plan line's place ("Shoulder Press or Bench press"). Starting the
--- workout picks whichever of them was done longest ago; the session can still change anything.
+-- Other exercises that can take this one's place ("Shoulder Press or Bench press"). A workout
+-- starts with the first; the session can switch to an alternative.
 ALTER TABLE program_workout_exercises ADD COLUMN IF NOT EXISTS alternatives TEXT[] NOT NULL DEFAULT '{}';
+
+-- A workout's warm-up and cool-down movements: [{name, reps, duration_seconds}], copied into a
+-- session at Start, where each is optional.
+ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS warmup JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS cooldown JSONB NOT NULL DEFAULT '[]';
 
 -- A note pinned to an exercise shows in every later session of it. Matched ignoring case.
 CREATE TABLE IF NOT EXISTS exercise_pins (

@@ -6,6 +6,7 @@ its own transaction.
 """
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import date, timedelta
 from typing import Any
@@ -59,7 +60,7 @@ def _attach_workouts(conn: Connection, program: dict[str, Any]) -> dict[str, Any
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT w.id, w.position, w.name,
+            SELECT w.id, w.position, w.name, w.warmup, w.cooldown,
                    (SELECT max(s.date) FROM sessions s WHERE s.program_workout_id = w.id) AS last_done
             FROM program_workouts w
             WHERE w.program_id = %s AND w.archived_at IS NULL
@@ -172,6 +173,39 @@ def create_program(conn: Connection, name: str) -> str:
     return program_id
 
 
+def create_program_with_workouts(conn: Connection, name: str, workouts: list[dict[str, Any]]) -> str:
+    """Creates a program with its workouts and their exercises in one transaction, so a failure
+    leaves nothing behind. Each workout is {"name", "exercises"}, exercises as in
+    set_workout_exercises."""
+    program_id = _new_id()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO programs (id, name) VALUES (%s, %s)", (program_id, name))
+            for position, w in enumerate(workouts, start=1):
+                workout_id = _new_id()
+                cur.execute(
+                    "INSERT INTO program_workouts (id, program_id, position, name) VALUES (%s, %s, %s, %s)",
+                    (workout_id, program_id, position, w["name"]),
+                )
+                for n, e in enumerate(w["exercises"], start=1):
+                    cur.execute(
+                        """
+                        INSERT INTO program_workout_exercises
+                            (id, workout_id, position, name, warmup_sets, working_sets, target_reps, amrap, alternatives)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            _new_id(), workout_id, n, e["name"], e["warmup_sets"], e["working_sets"],
+                            e["target_reps"], e["amrap"], list(e.get("alternatives") or []),
+                        ),
+                    )
+    except Exception:
+        conn.rollback()
+        raise
+    conn.commit()
+    return program_id
+
+
 def update_program(
     conn: Connection, program_id: str, name: str | None = None, deload_after_days: int | None = None
 ) -> bool:
@@ -257,6 +291,18 @@ def workout_program_id(conn: Connection, workout_id: str) -> str | None:
         )
         row = cur.fetchone()
     return row[0] if row else None
+
+
+def set_workout_movements(conn: Connection, workout_id: str, warmup: list[dict], cooldown: list[dict]) -> bool:
+    """Replaces a workout's warm-up and cool-down movements."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE program_workouts SET warmup = %s::jsonb, cooldown = %s::jsonb WHERE id = %s AND archived_at IS NULL",
+            (json.dumps(warmup), json.dumps(cooldown), workout_id),
+        )
+        found = cur.rowcount == 1
+    conn.commit()
+    return found
 
 
 def rename_workout(conn: Connection, workout_id: str, name: str | None) -> bool:
