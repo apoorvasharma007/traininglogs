@@ -92,7 +92,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
       pinned notes, Finish sends one request to a new endpoint that saves a confirmed session without
       AI, retry when offline.
 - [x] 6. `home`: next workout, deload reminder, blank workout, in-progress and waiting-to-send states.
-- [ ] 6b. `options`: a plan line can list alternatives ("Shoulder Press or Bench press"). Start
+- [x] 6b. `options`: a plan line can list alternatives ("Shoulder Press or Bench press"). Start
       picks the one done longest ago; the session shows just that one and stays fully editable
       (rename suggests the alternatives). No toggles. Adds Starting Strength Phase 4 as 3 workouts.
 - [ ] 7. `polish`: loading and empty states, transitions, a last pass on motion.
@@ -104,12 +104,11 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 6 merged into `phase-8/react`.
+2026-10-04: steps 1 to 6b merged into `phase-8/react`.
 - Prod changes so far (each approved, backups in `backups/`): step 3 tables; raw input kinds
   `text`/`manual` (check still allows the old names until step 8); Bodybuilding Transformation
-  Foundation and Ramp-up (121 sessions linked, neither followed).
+  Foundation and Ramp-up (121 sessions linked); `program_workout_exercises.alternatives`;
+  Starting Strength · Phase 4 as 3 workouts with choices (9 sessions linked), followed.
 - Dev copy: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
-- Next: step 6b (`options`) on `phase-8/react-6b-options`. Apoorva rejected writing Starting
-  Strength out as 24 workouts: a program is inspiration, the session is where the day's choices
-  are made. Then add Starting Strength Phase 4 as 3 workouts (dev copy first, prod with approval),
-  linking the 9 logged sessions to workouts 1, 2, 3 in turn, and follow it.
+- Next: step 7 (`polish`), then step 8 (`retire-web`, tighten the source_kind check, deploy when
+  Apoorva says).
