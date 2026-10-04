@@ -23,15 +23,16 @@ def _rows(cur) -> list[dict[str, Any]]:
     return [dict(zip(names, row)) for row in cur.fetchall()]
 
 
-def list_programs(conn: Connection) -> list[dict[str, Any]]:
-    """Every program not archived, the followed one first, each with its workouts."""
+def list_programs(conn: Connection, user_id: str) -> list[dict[str, Any]]:
+    """The user's programs not archived, the followed one first, each with its workouts."""
     with conn.cursor() as cur:
         cur.execute(
             """
             SELECT id, name, deload_after_days, following, following_since
-            FROM programs WHERE archived_at IS NULL
+            FROM programs WHERE archived_at IS NULL AND user_id = %s
             ORDER BY following DESC, created_at
-            """
+            """,
+            (user_id,),
         )
         programs = _rows(cur)
     for p in programs:
@@ -165,27 +166,27 @@ def _next_workout_id(conn: Connection, program_id: str, workouts: list[dict[str,
     return (later[0] if later else workouts[0])["id"]
 
 
-def create_program(conn: Connection, name: str) -> str:
+def create_program(conn: Connection, name: str, user_id: str) -> str:
     program_id = _new_id()
     with conn.cursor() as cur:
-        cur.execute("INSERT INTO programs (id, name) VALUES (%s, %s)", (program_id, name))
+        cur.execute("INSERT INTO programs (id, name, user_id) VALUES (%s, %s, %s)", (program_id, name, user_id))
     conn.commit()
     return program_id
 
 
-def create_program_with_workouts(conn: Connection, name: str, workouts: list[dict[str, Any]]) -> str:
+def create_program_with_workouts(conn: Connection, name: str, workouts: list[dict[str, Any]], user_id: str) -> str:
     """Creates a program with its workouts and their exercises in one transaction, so a failure
     leaves nothing behind. Each workout is {"name", "exercises"}, exercises as in
     set_workout_exercises."""
     program_id = _new_id()
     try:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO programs (id, name) VALUES (%s, %s)", (program_id, name))
+            cur.execute("INSERT INTO programs (id, name, user_id) VALUES (%s, %s, %s)", (program_id, name, user_id))
             for position, w in enumerate(workouts, start=1):
                 workout_id = _new_id()
                 cur.execute(
-                    "INSERT INTO program_workouts (id, program_id, position, name) VALUES (%s, %s, %s, %s)",
-                    (workout_id, program_id, position, w["name"]),
+                    "INSERT INTO program_workouts (id, program_id, position, name, user_id) VALUES (%s, %s, %s, %s, %s)",
+                    (workout_id, program_id, position, w["name"], user_id),
                 )
                 for n, e in enumerate(w["exercises"], start=1):
                     cur.execute(
@@ -224,14 +225,19 @@ def update_program(
 
 
 def follow_program(conn: Connection, program_id: str, today: date) -> bool:
-    """Follows this program and stops following any other. Following again keeps its start date."""
+    """Follows this program and stops following the owner's other one. Following again keeps its
+    start date."""
     with conn.cursor() as cur:
         cur.execute("SELECT following FROM programs WHERE id = %s AND archived_at IS NULL", (program_id,))
         row = cur.fetchone()
         if row is None:
             return False
         if not row[0]:
-            cur.execute("UPDATE programs SET following = false WHERE following")
+            cur.execute(
+                "UPDATE programs SET following = false WHERE following"
+                " AND user_id = (SELECT user_id FROM programs WHERE id = %s)",
+                (program_id,),
+            )
             cur.execute(
                 "UPDATE programs SET following = true, following_since = %s WHERE id = %s",
                 (today, program_id),
@@ -265,7 +271,7 @@ def archive_program(conn: Connection, program_id: str) -> bool:
 
 
 def add_workout(conn: Connection, program_id: str, name: str | None) -> str | None:
-    """Adds a workout after the last one. None if the program doesn't exist."""
+    """Adds a workout after the last one, owned like its program. None if the program doesn't exist."""
     workout_id = _new_id()
     with conn.cursor() as cur:
         cur.execute("SELECT 1 FROM programs WHERE id = %s AND archived_at IS NULL", (program_id,))
@@ -273,11 +279,14 @@ def add_workout(conn: Connection, program_id: str, name: str | None) -> str | No
             return None
         cur.execute(
             """
-            INSERT INTO program_workouts (id, program_id, position, name)
-            SELECT %s, %s, COALESCE(max(position), 0) + 1, %s
-            FROM program_workouts WHERE program_id = %s AND archived_at IS NULL
+            INSERT INTO program_workouts (id, program_id, position, name, user_id)
+            SELECT %s, %s,
+                   (SELECT COALESCE(max(position), 0) + 1 FROM program_workouts
+                    WHERE program_id = %s AND archived_at IS NULL),
+                   %s, user_id
+            FROM programs WHERE id = %s
             """,
-            (workout_id, program_id, name, program_id),
+            (workout_id, program_id, program_id, name, program_id),
         )
     conn.commit()
     return workout_id

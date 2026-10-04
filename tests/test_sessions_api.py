@@ -10,13 +10,14 @@ from fastapi.testclient import TestClient
 from traininglogs.db.db import apply_schema, get_connection
 from traininglogs.db.fetch import get_raw_input, get_session
 
+from signed_in import USER_A, USER_B_AUTH, auth
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
-HEADERS = {"x-api-key": "testkey"}
+HEADERS = auth()
 
 # Every session here is dated in 3001 so cleanup can find them.
 FAR = "3001-01-"
@@ -121,7 +122,7 @@ class TestSaveSession:
     def test_counts_as_a_planned_workout(self, client, conn) -> None:
         from traininglogs.db.programs import add_workout, create_program
 
-        workout_id = add_workout(conn, create_program(conn, "sessions-test"), "sessions-test")
+        workout_id = add_workout(conn, create_program(conn, "sessions-test", USER_A), "sessions-test")
         r = client.post("/sessions", json=body(program_workout_id=workout_id), headers=HEADERS)
         with conn.cursor() as cur:
             cur.execute("SELECT program_workout_id FROM sessions WHERE session_id = %s", (r.json()["session_id"],))

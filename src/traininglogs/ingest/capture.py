@@ -15,10 +15,11 @@ def capture(
     content: str,
     source_kind: str = "text",
     source_file: str | None = None,
+    user_id: str | None = None,
 ) -> str:
     """Store what the person actually wrote, before anything is asked of a model.
 
     Returns the raw_input_id. Deliberately does nothing else -- no LLM call, no git, no
     dashboard -- so a capture always succeeds even if everything downstream of it fails.
     """
-    return insert_raw_input(conn, content, source_kind=source_kind, source_file=source_file)
+    return insert_raw_input(conn, content, source_kind=source_kind, source_file=source_file, user_id=user_id)

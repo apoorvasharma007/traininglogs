@@ -112,7 +112,7 @@ def session_to_extract(session: dict[str, Any], date: str) -> TrainingLogLLMExtr
 
 
 def repeat_session(
-    conn: Connection, session_id: str, now: datetime | None = None
+    conn: Connection, session_id: str, user_id: str, now: datetime | None = None
 ) -> tuple[str, str] | None:
     """Write a raw input and a pending extraction repeating `session_id`; return their ids,
     or None if there is no such session.
@@ -135,7 +135,8 @@ def repeat_session(
         f"started {now.isoformat(timespec='seconds')} [{raw_input_id}]"
     )
     insert_raw_input(
-        conn, content, source_kind="manual", source_file=session_id, raw_input_id=raw_input_id
+        conn, content, source_kind="manual", source_file=session_id, raw_input_id=raw_input_id,
+        user_id=user_id,
     )
     extraction_id = insert_extraction(
         conn,

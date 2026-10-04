@@ -19,8 +19,9 @@ def insert_raw_input(
     source_kind: str = "text",
     source_file: str | None = None,
     raw_input_id: str | None = None,
+    user_id: str | None = None,
 ) -> str:
-    """Store what the person actually wrote, and return its id.
+    """Store what the person actually wrote, owned by `user_id`, and return its id.
 
     Deliberately not deduplicated on checksum. Logging the same text twice is a real thing a
     person does -- repeating a session, re-importing a file -- and collapsing those would make
@@ -30,10 +31,10 @@ def insert_raw_input(
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO raw_inputs (id, content, source_kind, source_file, checksum)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO raw_inputs (id, content, source_kind, source_file, checksum, user_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """,
-            (new_id, content, source_kind, source_file, content_checksum(content)),
+            (new_id, content, source_kind, source_file, content_checksum(content), user_id),
         )
     conn.commit()
     return new_id
@@ -51,7 +52,7 @@ def insert_extraction(
     corrections: list[dict] | None = None,
     extraction_id: str | None = None,
 ) -> str:
-    """Store one attempt at reading a raw input, and return its id.
+    """Store one attempt at reading a raw input, owned like the raw input, and return its id.
 
     `uncertain_fields` and `warnings` are stored alongside the extract rather than folded into
     it, because they are statements *about* the extraction rather than part of it -- and because
@@ -63,12 +64,13 @@ def insert_extraction(
             """
             INSERT INTO extractions (
                 id, raw_input_id, model, prompt_version, extract,
-                uncertain_fields, warnings, status, corrections, confirmed_at
+                uncertain_fields, warnings, status, corrections, confirmed_at, user_id
             )
             -- confirmed_at follows from status rather than being a second thing to remember.
             -- Two fields that must agree, set independently, eventually disagree.
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    CASE WHEN %s = 'confirmed' THEN now() ELSE NULL END)
+                    CASE WHEN %s = 'confirmed' THEN now() ELSE NULL END,
+                    (SELECT user_id FROM raw_inputs WHERE id = %s))
             """,
             (
                 new_id,
@@ -81,6 +83,7 @@ def insert_extraction(
                 status,
                 json.dumps(corrections or []),
                 status,
+                raw_input_id,
             ),
         )
     conn.commit()
@@ -184,7 +187,10 @@ def insert_session(
                 session_id, date, program, program_author, program_length_weeks,
                 phase, week, is_deload_week, focus, duration_minutes,
                 weight_unit, user_id, notes, source_file, extraction_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                      -- Owned by the caller's user, or else like the extraction it came from.
+                      COALESCE(%s::uuid, (SELECT user_id FROM extractions WHERE id = %s)),
+                      %s, %s, %s)
             """,
             (
                 session.session_id,
@@ -199,6 +205,7 @@ def insert_session(
                 session.session_duration_minutes,
                 session.weight_unit,
                 user_id,
+                extraction_id,
                 session.notes,
                 source_file,
                 extraction_id,

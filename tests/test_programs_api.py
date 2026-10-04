@@ -11,13 +11,14 @@ from traininglogs.db.db import apply_schema, get_connection
 from traininglogs.db.insert import insert_session
 from traininglogs.models.models import TrainingSession
 
+from signed_in import USER_A, USER_B_AUTH, auth
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
-HEADERS = {"x-api-key": "testkey"}
+HEADERS = auth()
 
 SESSION_IDS = ["programs-test-001", "programs-test-002"]
 

@@ -18,12 +18,13 @@ from traininglogs.db.insert import insert_session
 from traininglogs.ingest.repeat import repeat_session, session_to_extract
 from traininglogs.models.models import TrainingSession
 
+from signed_in import USER_A, USER_B_AUTH, auth
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
 
 SOURCE_ID = "repeat-test-source-001"
 
@@ -81,7 +82,7 @@ def db_conn():
     with conn.cursor() as cur:
         cur.execute("DELETE FROM sessions WHERE session_id = %s", (SOURCE_ID,))
     conn.commit()
-    insert_session(conn, TrainingSession.model_validate(SOURCE))
+    insert_session(conn, TrainingSession.model_validate(SOURCE), user_id=USER_A)
     yield conn
     with conn.cursor() as cur:
         # The source, plus every session confirmed from a repeat of it.
@@ -107,7 +108,7 @@ def app_module():
     return app
 
 
-HEADERS = {"x-api-key": "testkey"}
+HEADERS = auth()
 
 
 class TestSessionToExtract:
@@ -153,7 +154,7 @@ class TestSessionToExtract:
 class TestRepeatSession:
     def test_writes_a_repeat_raw_input_and_pending_extraction(self, db_conn) -> None:
         now = datetime(2026, 10, 3, 14, 2, tzinfo=timezone.utc)
-        raw_input_id, extraction_id = repeat_session(db_conn, SOURCE_ID, now=now)
+        raw_input_id, extraction_id = repeat_session(db_conn, SOURCE_ID, USER_A, now=now)
 
         raw = get_raw_input(db_conn, raw_input_id)
         assert (raw["source_kind"], raw["source_file"]) == ("manual", SOURCE_ID)
@@ -170,7 +171,7 @@ class TestRepeatSession:
             assert cur.fetchone()[0] == 0
 
     def test_unknown_session_returns_none(self, db_conn) -> None:
-        assert repeat_session(db_conn, "no-such-session") is None
+        assert repeat_session(db_conn, "no-such-session", USER_A) is None
 
 
 class TestRepeatApi:

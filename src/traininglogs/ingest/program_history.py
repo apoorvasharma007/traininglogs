@@ -56,11 +56,13 @@ def _plan(conn: Connection, p: HistoryProgram, focus: str) -> list[dict]:
     ]
 
 
-def build_from_history(conn: Connection, p: HistoryProgram) -> dict:
-    """Creates the program and links its past sessions. Refuses if a program by that name exists.
+def build_from_history(conn: Connection, p: HistoryProgram, user_id: str) -> dict:
+    """Creates the program for `user_id` and links their past sessions. Refuses if a program by that name exists.
     Returns the program's id and, per workout, how many exercises and linked sessions it has."""
     with conn.cursor() as cur:
-        cur.execute("SELECT 1 FROM programs WHERE name = %s AND archived_at IS NULL", (p.name,))
+        cur.execute(
+            "SELECT 1 FROM programs WHERE name = %s AND archived_at IS NULL AND user_id = %s", (p.name, user_id)
+        )
         if cur.fetchone():
             raise ValueError(f"A program called {p.name!r} already exists")
 
@@ -69,7 +71,7 @@ def build_from_history(conn: Connection, p: HistoryProgram) -> dict:
     if missing:
         raise ValueError(f"No sessions in phase {p.plan_phase}, week {p.plan_week} for: {', '.join(missing)}")
 
-    program_id = create_program(conn, p.name)
+    program_id = create_program(conn, p.name, user_id)
     summary = {"program_id": program_id, "workouts": []}
     for focus in p.foci:
         workout_id = add_workout(conn, program_id, focus)
@@ -79,8 +81,9 @@ def build_from_history(conn: Connection, p: HistoryProgram) -> dict:
                 """
                 UPDATE sessions SET program_workout_id = %s
                 WHERE program = %s AND focus = %s AND week = ANY(%s) AND program_workout_id IS NULL
+                  AND user_id = %s
                 """,
-                (workout_id, p.source, focus, list(p.weeks)),
+                (workout_id, p.source, focus, list(p.weeks), user_id),
             )
             linked = cur.rowcount
         conn.commit()

@@ -4,7 +4,8 @@ Each 12-week phase of the program is two halves with different exercises: Founda
 and Ramp-up (weeks 7-12). The plans come from the first week of each half in phase 3, the latest;
 sessions from both phases are linked to the matching workout.
 
-Runs against the local dev database unless told otherwise:
+Runs against the local dev database unless told otherwise. The programs belong to the user
+whose users.id is in OWNER_USER_ID, and only that user's sessions are linked:
 
     .venv/bin/python scripts/add_bts_programs.py            # dev copy
     .venv/bin/python scripts/add_bts_programs.py --prod     # production: only with Apoorva's yes
@@ -34,7 +35,7 @@ def main() -> int:
     url = os.environ["DATABASE_URL"] if "--prod" in sys.argv else os.environ.get("DEV_DATABASE_URL", DEFAULT_DEV_URL)
     conn = psycopg2.connect(url)
     for p in PROGRAMS:
-        summary = build_from_history(conn, p)
+        summary = build_from_history(conn, p, os.environ["OWNER_USER_ID"])
         print(p.name)
         for w in summary["workouts"]:
             print(f"  {w['focus']:18} {w['exercises']:2} exercises, {w['sessions_linked']:2} past sessions linked")

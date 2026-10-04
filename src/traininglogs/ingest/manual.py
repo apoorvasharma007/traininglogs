@@ -83,18 +83,27 @@ def _saved_session_id(conn: Connection, raw_input_id: str) -> str | None:
     return row[0] if row else None
 
 
-def save_manual_session(conn: Connection, session: dict[str, Any]) -> tuple[str, bool]:
-    """Saves the session; returns its id and whether it was new (False for a repeated send)."""
+class ClientIdTaken(Exception):
+    """The phone's id for the session already belongs to someone else's input."""
+
+
+def save_manual_session(conn: Connection, session: dict[str, Any], user_id: str) -> tuple[str, bool]:
+    """Saves the session for `user_id`; returns its id and whether it was new (False for a
+    repeated send). The phone chooses `client_id`, so an id already used by another person is
+    refused rather than answered with their session."""
     raw_input_id = session["client_id"]
-    if get_raw_input(conn, raw_input_id) is not None:
+    existing_input = get_raw_input(conn, raw_input_id)
+    if existing_input is not None:
+        if str(existing_input.get("user_id")) != user_id:
+            raise ClientIdTaken(raw_input_id)
         existing = _saved_session_id(conn, raw_input_id)
         if existing is not None:
             return existing, False
 
     extract = to_extract(session)
-    if get_raw_input(conn, raw_input_id) is None:
+    if existing_input is None:
         content = json.dumps(session, sort_keys=True, default=str)
-        insert_raw_input(conn, content, source_kind="manual", raw_input_id=raw_input_id)
+        insert_raw_input(conn, content, source_kind="manual", raw_input_id=raw_input_id, user_id=user_id)
     extraction_id = insert_extraction(
         conn,
         raw_input_id=raw_input_id,

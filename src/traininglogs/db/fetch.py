@@ -3,14 +3,15 @@ from psycopg2.extensions import connection as Connection
 
 def get_sessions(
     conn: Connection,
+    user_id: str,
     phase: int | None = None,
     week: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
     limit: int | None = None,
 ) -> list[dict]:
-    filters = []
-    params = []
+    filters = ["user_id = %s"]
+    params: list = [user_id]
 
     if phase is not None:
         filters.append("phase = %s")
@@ -25,7 +26,7 @@ def get_sessions(
         filters.append("date <= %s")
         params.append(to_date)
 
-    where = ("WHERE " + " AND ".join(filters)) if filters else ""
+    where = "WHERE " + " AND ".join(filters)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -126,7 +127,7 @@ def get_session(conn: Connection, session_id: str) -> dict | None:
     return session
 
 
-def get_exercise_history(conn: Connection, name: str) -> list[dict]:
+def get_exercise_history(conn: Connection, name: str, user_id: str) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -145,10 +146,10 @@ def get_exercise_history(conn: Connection, name: str) -> list[dict]:
             FROM working_sets ws
             JOIN exercises e ON e.id = ws.exercise_id
             JOIN sessions s ON s.session_id = e.session_id
-            WHERE LOWER(e.name) = LOWER(%s)
+            WHERE LOWER(e.name) = LOWER(%s) AND s.user_id = %s
             ORDER BY s.date ASC, ws.number ASC
             """,
-            (name,),
+            (name, user_id),
         )
         rows = cur.fetchall()
         cols = [d[0] for d in cur.description]
@@ -160,7 +161,7 @@ def get_raw_input(conn: Connection, raw_input_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, content, source_kind, source_file, checksum, captured_at
+            SELECT id, content, source_kind, source_file, checksum, captured_at, user_id
             FROM raw_inputs WHERE id = %s
             """,
             (raw_input_id,),
@@ -168,7 +169,7 @@ def get_raw_input(conn: Connection, raw_input_id: str) -> dict | None:
         row = cur.fetchone()
     if row is None:
         return None
-    keys = ("id", "content", "source_kind", "source_file", "checksum", "captured_at")
+    keys = ("id", "content", "source_kind", "source_file", "checksum", "captured_at", "user_id")
     return dict(zip(keys, row))
 
 
@@ -217,7 +218,7 @@ def get_extractions_for_raw_input(conn: Connection, raw_input_id: str) -> list[d
     return [dict(zip(_EXTRACTION_COLUMNS, r)) for r in rows]
 
 
-def get_working_set_rows(conn: Connection) -> list[dict]:
+def get_working_set_rows(conn: Connection, user_id: str) -> list[dict]:
     """Every working set with its session date, exercise name and goal weight: the input to the
     Progress view. Keys match analytics.strength.SetRow."""
     with conn.cursor() as cur:
@@ -237,8 +238,10 @@ def get_working_set_rows(conn: Connection) -> list[dict]:
             FROM working_sets ws
             JOIN exercises e ON e.id = ws.exercise_id
             JOIN sessions s ON s.session_id = e.session_id
+            WHERE s.user_id = %s
             ORDER BY s.date ASC, e.number ASC, ws.number ASC
-            """
+            """,
+            (user_id,),
         )
         rows = cur.fetchall()
         cols = [d[0] for d in cur.description]
@@ -246,7 +249,7 @@ def get_working_set_rows(conn: Connection) -> list[dict]:
     return [dict(zip(cols, row)) for row in rows]
 
 
-def get_last_exercises(conn: Connection, names: list[str]) -> list[dict]:
+def get_last_exercises(conn: Connection, names: list[str], user_id: str) -> list[dict]:
     """For each name, the latest session that had that exercise (matched ignoring case and outer
     spaces): its date, the exercise note, and its warmup and working sets. Names never logged are
     left out. Reps of a set done one side at a time are the weaker side."""
@@ -259,10 +262,10 @@ def get_last_exercises(conn: Connection, names: list[str]) -> list[dict]:
             SELECT DISTINCT ON (lower(trim(e.name)))
                    lower(trim(e.name)), e.id, e.name, e.notes, s.date, s.session_id
             FROM exercises e JOIN sessions s ON s.session_id = e.session_id
-            WHERE lower(trim(e.name)) = ANY(%s)
+            WHERE lower(trim(e.name)) = ANY(%s) AND s.user_id = %s
             ORDER BY lower(trim(e.name)), s.date DESC, s.created_at DESC, e.number
             """,
-            (keys,),
+            (keys, user_id),
         )
         found = cur.fetchall()
         result = []

@@ -11,6 +11,8 @@ from traininglogs.db.programs import get_program
 from traininglogs.ingest.program_history import HistoryProgram, build_from_history
 from traininglogs.models.models import TrainingSession
 
+from signed_in import USER_A
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
@@ -55,14 +57,14 @@ def conn():
         ("3002-01-12", 2, "Upper", 3), ("3001-06-01", 1, "Upper", 2),
         ("3002-02-20", 7, "Upper", 3),  # outside weeks 1-2: not linked
     ]):
-        insert_session(c, _session(f"history-test-{i}", day, week, focus, phase))
+        insert_session(c, _session(f"history-test-{i}", day, week, focus, phase), user_id=USER_A)
     yield c
     _clean(c)
     c.close()
 
 
 def test_plan_comes_from_the_chosen_week_and_sessions_are_linked(conn) -> None:
-    summary = build_from_history(conn, PROGRAM)
+    summary = build_from_history(conn, PROGRAM, USER_A)
     assert [(w["focus"], w["sessions_linked"]) for w in summary["workouts"]] == [("Upper", 3), ("Lower", 1)]
 
     program = get_program(conn, summary["program_id"])
@@ -78,11 +80,11 @@ def test_plan_comes_from_the_chosen_week_and_sessions_are_linked(conn) -> None:
 
 
 def test_refuses_to_build_twice(conn) -> None:
-    build_from_history(conn, PROGRAM)
+    build_from_history(conn, PROGRAM, USER_A)
     with pytest.raises(ValueError, match="already exists"):
-        build_from_history(conn, PROGRAM)
+        build_from_history(conn, PROGRAM, USER_A)
 
 
 def test_refuses_when_the_plan_week_has_no_session(conn) -> None:
     with pytest.raises(ValueError, match="No sessions"):
-        build_from_history(conn, HistoryProgram("History test", SOURCE, (1,), 3, 5, ("Upper",)))
+        build_from_history(conn, HistoryProgram("History test", SOURCE, (1,), 3, 5, ("Upper",)), USER_A)

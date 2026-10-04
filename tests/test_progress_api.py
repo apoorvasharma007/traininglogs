@@ -10,13 +10,14 @@ from traininglogs.db.db import apply_schema, get_connection
 from traininglogs.db.insert import insert_session
 from traininglogs.models.models import TrainingSession
 
+from signed_in import USER_A, USER_B_AUTH, auth
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
-HEADERS = {"x-api-key": "testkey"}
+HEADERS = auth()
 
 IDS = ["progress-test-001", "progress-test-002"]
 
@@ -42,8 +43,8 @@ def client():
     with conn.cursor() as cur:
         cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s)", (IDS,))
     conn.commit()
-    insert_session(conn, session(IDS[0], "3000-01-01", 120.0))
-    insert_session(conn, session(IDS[1], "3000-01-08", 125.0))
+    insert_session(conn, session(IDS[0], "3000-01-01", 120.0), user_id=USER_A)
+    insert_session(conn, session(IDS[1], "3000-01-08", 125.0), user_id=USER_A)
     from traininglogs.api.app import app
 
     with TestClient(app) as c:
