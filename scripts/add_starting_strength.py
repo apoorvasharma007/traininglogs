@@ -3,7 +3,7 @@
 Three workouts a week, each the same shape: squat, a press, a pull from the floor or back extensions,
 and a chin-up or pull-up variant. The variation between weeks lives in each line's choices
 ("Shoulder Press or Bench press"): starting a workout picks the choice done longest ago, and the
-session can still change anything. Workout 2 is the light squat day. Every line is 5 x 5; warmup
+session can still change anything. Every line is 5 x 5; warmup
 sets are as many as in the latest logged session of the line's first exercise. Exercise names
 are the ones used in the logs, so last time and Progress match.
 
@@ -36,7 +36,7 @@ LINES = [
     ["Deadlift", "Barbell Clean", "Back extension"],
     ["Chinups", "Pull ups", "Weighted chin up", "Weighted pull up"],
 ]
-WORKOUT_NAMES = [None, "Light squat day", None]
+WORKOUT_NAMES = [None, None, None]
 
 
 class HeldCommits(psycopg2.extensions.connection):
