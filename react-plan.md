@@ -104,7 +104,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 6b and 8 merged into `phase-8/react`; merging to `dev` and `main` and
-deploying 4.0.0. After the deploy: rename leftover `markdown` raw inputs to `text` and tighten the
-`source_kind` check to `text`/`manual` (with Apoorva's approval), then check the live app.
-Step 7 (`polish`) waits for real use.
+2026-10-04: 4.0.0 is live on Cloud Run (CD run 37165158828). Steps 1 to 6b and 8 are done and in
+`main`. The `source_kind` check in prod is `text`/`manual`, matching `schema.sql` (backup
+`backups/prod-before-source-kind-check-2026-10-04.json`).
+Next: step 7 (`polish`) once Apoorva has trained with the app; collect what feels off first.
