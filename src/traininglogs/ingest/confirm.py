@@ -5,7 +5,7 @@ session, closing out the extraction that produced it.
 """
 from __future__ import annotations
 
-from pathlib import Path
+import hashlib
 
 from psycopg2.extensions import connection as Connection
 
@@ -13,17 +13,43 @@ from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.db.fetch import get_extraction, get_raw_input
 from traininglogs.db.insert import confirm_extraction, insert_session
 from traininglogs.models.models import TrainingSession
-from traininglogs.processor.processor import build_session_from_extract
+
+
+def _normalize_content(content: str) -> str:
+    """Collapse whitespace differences that don't change what was written -- so the same
+    text, retyped, re-copied with different line endings, or resubmitted with a trailing
+    newline, is recognised as the same input."""
+    return " ".join(content.split())
+
+
+def compute_session_id(content: str, date_str: str) -> str:
+    """Deterministic session ID: YYYY-MM-DD-<6-char SHA256 of the normalized content>.
+
+    Identity is the text: the same input submitted twice collides on this id and is caught by
+    the session_id check in insert_session, with no separate dedup mechanism. Compare sessions
+    on date, not session_id, when that matters: the scheme has changed before."""
+    h = hashlib.sha256(_normalize_content(content).encode()).hexdigest()[:6]
+    return f"{date_str}-{h}"
+
+
+def build_session_from_extract(extract: TrainingLogLLMExtract, content: str) -> TrainingSession:
+    """A confirmed extract as a TrainingSession, with the fields the extract doesn't produce.
+    `content` is the captured text, which session_id is derived from."""
+    session_dict = extract.model_dump(mode="python", exclude={"uncertain_fields"})
+    session_dict["session_id"] = compute_session_id(content, extract.date)
+    # The model still requires these; they aren't stored. The owner is sessions.user_id.
+    session_dict["user_id"] = "-"
+    session_dict["user_name"] = "-"
+    session_dict["data_model_version"] = "0.0.1"
+    session_dict["data_model_type"] = "TrainingSession"
+    return TrainingSession.model_validate(session_dict)
 
 
 def confirm(
     conn: Connection,
     extraction_id: str,
     final_extract: TrainingLogLLMExtract,
-    md_path: Path | None = None,
     corrections: list[dict] | None = None,
-    inputs_root: Path | None = None,
-    source_file: str | None = None,
 ) -> TrainingSession:
     """Build and insert the session from a confirmed extract, and mark the extraction that
     produced it confirmed.
@@ -33,11 +59,6 @@ def confirm(
     row, not folded into the extract, so what the model said and what the person changed stay
     permanently separable (roadmap C7).
 
-    `md_path` is optional: session_id is derived from the captured content itself (see
-    `processor.compute_session_id`), fetched here from the raw input the extraction came
-    from, so this works the same whether the caller has a file (`cli/log.py`) or not (the
-    API). `md_path`, when given, only adds program/phase/week from the file's directory
-    position.
     """
     extraction = get_extraction(conn, extraction_id)
     if extraction is None:
@@ -47,11 +68,9 @@ def confirm(
     if raw is None:
         raise ValueError(f"no raw_input for extraction {extraction_id!r}")
 
-    session = build_session_from_extract(final_extract, raw["content"], md_path, inputs_root)
+    session = build_session_from_extract(final_extract, raw["content"])
 
-    if not insert_session(
-        conn, session, source_file=source_file, extraction_id=extraction_id
-    ):
+    if not insert_session(conn, session, extraction_id=extraction_id):
         raise SystemExit(
             f"\nERROR: session_id '{session.session_id}' already exists in the DB.\n"
             f"The date is likely wrong, or this exact content was already confirmed. Fix "

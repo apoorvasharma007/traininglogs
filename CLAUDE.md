@@ -49,15 +49,12 @@ docker compose up -d db_test      # Postgres for the tests, on port 5433
 | `.env` variable | Needed for | |
 |---|---|---|
 | `DATABASE_URL` | the app | Required. Points at production; see the warning below. |
-| `API_KEY` | the app | Required. The app won't start without it. |
+| `SUPABASE_URL` | the app | Required: the Supabase project whose sign-ins the server accepts. The app won't start without it. |
 | `ANTHROPIC_API_KEY` | extraction and typed corrections | Required |
 | `ANTHROPIC_WORKSPACE_ID` | Anthropic keys not scoped to a workspace (`sk-ant-usr…`) | Required with such a key |
 | `TEST_DATABASE_URL` | the tests | Defaults to the Docker database on port 5433 |
 | `GROQ_API_KEY` | `eval_ab.py` comparing models | Optional |
 | `ALLOWED_ORIGINS` | calling the API from a page on another origin | Optional; the app's own page doesn't need it |
-
-`LOCAL_DATABASE_URL` and `REGEN_DATABASE_URL` in `.env.example` belong to the retired markdown
-flow; nothing in the app reads them.
 
 Build the app once, then run it. One process serves the API and the app at `http://localhost:8000/`:
 
@@ -133,7 +130,8 @@ main   what's deployed; only dev merges into it
 - Write every document in plain language. No em dashes, no filler, active voice, sentence-case
   headings. Say what something does or give the number, not how it feels. Check facts against the
   code before writing them down.
-- `docs/index.html` is the old static dashboard, rebuilt only by the retired command-line flow.
+- `docs/index.html` is the old static dashboard, frozen since the command-line flow that rebuilt it
+  was deleted (2026-10-05).
   Don't edit it by hand.
 
 ## Working conventions

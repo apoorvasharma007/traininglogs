@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The retired command-line flow (`traininglogs log`, `dashboard`, `validate`), its markdown parser,
+  the terminal confirm loop and their tests, and the `rich` and `pyyaml` dependencies. The app is
+  the only way in now; the old static dashboard (`docs/index.html`) stays as it is.
 - Pinned exercise notes, with `/pins` and the `exercise_pins` table. Each exercise already shows
   last time's note.
 

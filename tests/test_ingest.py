@@ -290,7 +290,7 @@ class TestLLMCallsArePersisted:
 
 
 class TestConfirm:
-    def test_writes_the_session_and_marks_the_extraction_confirmed(self, conn, tmp_path) -> None:
+    def test_writes_the_session_and_marks_the_extraction_confirmed(self, conn) -> None:
         raw_input_id = capture(conn, MARKDOWN)
         with conn.cursor() as cur:
             cur.execute(
@@ -300,10 +300,8 @@ class TestConfirm:
             )
         conn.commit()
 
-        md_path = tmp_path / "leg_press.md"
-        md_path.write_text(MARKDOWN)
 
-        session = confirm(conn, "x1", make_extract(), md_path=md_path)
+        session = confirm(conn, "x1", make_extract())
 
         with conn.cursor() as cur:
             cur.execute(
@@ -315,9 +313,7 @@ class TestConfirm:
         assert stored["status"] == "confirmed"
         assert stored["confirmed_at"] is not None
 
-    def test_returns_the_full_session_not_just_its_id(self, conn, tmp_path) -> None:
-        """The caller (cli/log.py) needs the whole object to re-insert into the local DB
-        mirror -- returning a bare id would force it to re-fetch what it already just built."""
+    def test_returns_the_full_session_not_just_its_id(self, conn) -> None:
         from traininglogs.models.models import TrainingSession
 
         raw_input_id = capture(conn, MARKDOWN)
@@ -329,20 +325,13 @@ class TestConfirm:
             )
         conn.commit()
 
-        md_path = tmp_path / "leg_press.md"
-        md_path.write_text(MARKDOWN)
 
-        session = confirm(conn, "x3", make_extract(), md_path=md_path, source_file="a.md")
+        session = confirm(conn, "x3", make_extract())
 
         assert isinstance(session, TrainingSession)
         assert session.focus == "Legs Hypertrophy"
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT source_file FROM sessions WHERE session_id = %s", (session.session_id,)
-            )
-            assert cur.fetchone()[0] == "a.md"
 
-    def test_records_corrections_on_the_extraction(self, conn, tmp_path) -> None:
+    def test_records_corrections_on_the_extraction(self, conn) -> None:
         raw_input_id = capture(conn, MARKDOWN)
         with conn.cursor() as cur:
             cur.execute(
@@ -352,25 +341,20 @@ class TestConfirm:
             )
         conn.commit()
 
-        md_path = tmp_path / "leg_press.md"
-        md_path.write_text(MARKDOWN)
         corrections = [{"at": "2026-08-09T10:00:00+00:00", "instruction": "fix it", "edits": []}]
 
-        confirm(conn, "x2", make_extract(), md_path=md_path, corrections=corrections)
+        confirm(conn, "x2", make_extract(), corrections=corrections)
 
         assert get_extraction(conn, "x2")["corrections"] == corrections
 
-    def test_raises_for_an_unknown_extraction(self, conn, tmp_path) -> None:
-        md_path = tmp_path / "leg_press.md"
-        md_path.write_text(MARKDOWN)
+    def test_raises_for_an_unknown_extraction(self, conn) -> None:
         with pytest.raises(ValueError):
-            confirm(conn, "does-not-exist", make_extract(), md_path=md_path)
+            confirm(conn, "does-not-exist", make_extract())
 
 
-class TestConfirmWithNoFilePath:
-    """The API path has no file at all -- confirm() fetches the raw input's own content and
-    derives session_id from that, same as the CLI path, just without a directory to also read
-    program/phase/week from (roadmap decision 2026-08-10: identity is content, not source)."""
+class TestConfirmSessionIds:
+    """confirm() derives session_id from the raw input's own content (roadmap decision
+    2026-08-10: identity is content, not source)."""
 
     def _extraction_for(self, conn, content: str, extraction_id: str) -> str:
         raw_input_id = capture(conn, content)
@@ -383,7 +367,7 @@ class TestConfirmWithNoFilePath:
         conn.commit()
         return raw_input_id
 
-    def test_confirm_works_with_no_md_path(self, conn) -> None:
+    def test_confirm_takes_nothing_from_a_file(self, conn) -> None:
         self._extraction_for(conn, MARKDOWN, "y1")
         session = confirm(conn, "y1", make_extract())
         assert session.session_id.startswith("2026-03-01-")
@@ -391,17 +375,11 @@ class TestConfirmWithNoFilePath:
         assert session.phase is None
         assert session.week is None
 
-    def test_session_id_matches_the_cli_path_for_identical_content(self, conn, tmp_path) -> None:
-        """Same content, different capture routes (a file vs. none) -- same session_id."""
+    def test_session_id_comes_from_the_captured_content(self, conn) -> None:
         self._extraction_for(conn, MARKDOWN, "y2")
-        via_api = confirm(conn, "y2", make_extract())
+        from traininglogs.ingest.confirm import compute_session_id
 
-        md_path = tmp_path / "leg_press.md"
-        md_path.write_text(MARKDOWN)
-        from traininglogs.processor.processor import compute_session_id
-        via_cli_id = compute_session_id(MARKDOWN, make_extract().date)
-
-        assert via_api.session_id == via_cli_id
+        assert confirm(conn, "y2", make_extract()).session_id == compute_session_id(MARKDOWN, make_extract().date)
 
     def test_identical_content_confirmed_twice_collides_instead_of_duplicating(self, conn) -> None:
         self._extraction_for(conn, MARKDOWN, "y3")

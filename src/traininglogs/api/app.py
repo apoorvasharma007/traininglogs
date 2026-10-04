@@ -263,7 +263,7 @@ def exercise_history(name: str, conn=Depends(_db), user: str = Depends(_user)):
 
 @app.post("/inputs", response_model=CaptureOut)
 def create_input(body: CaptureIn, response: Response, conn=Depends(_db), user: str = Depends(_user)):
-    """capture() then extract() -- the same two ingest/ functions cli/log.py calls, over HTTP.
+    """capture() then extract(), over HTTP.
 
     capture() commits before extract() is ever attempted, so a failed extraction still leaves
     `raw_input_id` in the response -- the text is not lost, and the caller can retry extraction
