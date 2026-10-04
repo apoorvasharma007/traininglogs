@@ -534,7 +534,7 @@ exercise_pins
       <tr><td><code>GET /exercises/{name}/history</code></td><td>Every working set of one exercise, across all sessions</td></tr>
       <tr><td><code>GET /progress/lifts</code></td><td>Key lifts, then other lifts with 3 or more sessions: latest and best value, sessions, 4-week trend</td></tr>
       <tr><td><code>GET /progress/lifts/{name}</code></td><td>One lift's sessions: the value, the set behind it, records and goal weight. <code>404</code> for an unknown lift.</td></tr>
-      <tr><td><code>GET /programs</code>, <code>POST /programs</code></td><td>Programs not archived, the followed one first, each with its workouts, their plans, when each was last done, and the next workout. Create one by name.</td></tr>
+      <tr><td><code>GET /programs</code>, <code>POST /programs</code></td><td>Programs not archived, the followed one first, each with its workouts, their plans, when each was last done, the next workout, and the deload count (days since the program was followed, its last deload, or a break of 7 days or more; whether one is due or under way). Create one by name.</td></tr>
       <tr><td><code>GET</code>, <code>PATCH</code>, <code>DELETE /programs/{id}</code></td><td>One program; change its name or deload days; archive it</td></tr>
       <tr><td><code>POST /programs/{id}/follow</code>, <code>/unfollow</code></td><td>Follow this program (any other stops being followed), or stop</td></tr>
       <tr><td><code>POST /programs/{id}/workouts</code></td><td>Add a workout after the last one</td></tr>

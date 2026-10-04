@@ -13,6 +13,7 @@ function program(patch: Partial<Program> = {}): Program {
     following: false,
     following_since: null,
     next_workout_id: 'w1',
+    deload: { days_since: 0, due: false, in_progress: 0 },
     workouts: [
       { id: 'w1', position: 1, name: 'Bench', last_done: '2026-09-28', exercises: [
         { name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false },

@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,6 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
@@ -48,13 +50,44 @@ def _get_pool() -> SimpleConnectionPool:
     global _pool
     if _pool is None:
         db_url = os.environ["DATABASE_URL"]
-        _pool = SimpleConnectionPool(minconn=1, maxconn=10, dsn=db_url)
+        # Keepalives stop an idle connection from being dropped along the way; the name lets the
+        # tests find this pool's connections in pg_stat_activity.
+        _pool = SimpleConnectionPool(
+            minconn=1, maxconn=10, dsn=db_url, application_name="traininglogs-api",
+            keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
+        )
     return _pool
+
+
+# A connection idle longer than this is checked before use; Supabase closes idle ones.
+IDLE_CHECK_SECONDS = 60.0
+_last_used: dict[int, float] = {}
+
+
+def _live_connection(pool: SimpleConnectionPool):
+    """A connection from the pool that the server hasn't closed. Reusing a closed one made every
+    request fail until a restart. One that sat idle gets a `SELECT 1` first; a failure replaces
+    it. Connections in steady use skip the check."""
+    for _ in range(pool.maxconn + 1):
+        conn = pool.getconn()
+        idle = time.monotonic() - _last_used.get(id(conn), 0.0)
+        try:
+            if not conn.closed:
+                if idle > IDLE_CHECK_SECONDS:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT 1")
+                    conn.rollback()
+                return conn
+        except psycopg2.Error:
+            pass
+        _last_used.pop(id(conn), None)
+        pool.putconn(conn, close=True)
+    raise HTTPException(status_code=503, detail="Database unavailable")
 
 
 def _db():
     pool = _get_pool()
-    conn = pool.getconn()
+    conn = _live_connection(pool)
     try:
         yield conn
     finally:
@@ -66,8 +99,16 @@ def _db():
         # its uncommitted writes as if they were its own -- invisible to every other
         # connection, including a test's own, but very visible to itself. Rollback is a safe
         # no-op when everything was already committed.
-        conn.rollback()
-        pool.putconn(conn)
+        if conn.closed:
+            # Lost mid-request: don't hand a dead connection to the next one.
+            pool.putconn(conn, close=True)
+        else:
+            try:
+                conn.rollback()
+                _last_used[id(conn)] = time.monotonic()
+                pool.putconn(conn)
+            except psycopg2.Error:
+                pool.putconn(conn, close=True)
 
 
 def _auth(x_api_key: Annotated[str, Header()] = ""):

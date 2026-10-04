@@ -286,6 +286,12 @@ class WorkoutOut(BaseModel):
     exercises: list[PlanExercise]
 
 
+class DeloadStatus(BaseModel):
+    days_since: int = Field(description="Days of training counted toward the next deload.")
+    due: bool = Field(description="days_since has reached the program's deload_after_days.")
+    in_progress: int = Field(description="How many of the latest sessions in a row were deloads.")
+
+
 class ProgramOut(BaseModel):
     id: str
     name: str
@@ -297,6 +303,7 @@ class ProgramOut(BaseModel):
         description="The workout after the one in the program's latest session; workout 1 when "
         "there is none or after the last. Null when the program has no workouts."
     )
+    deload: DeloadStatus
 
 
 class ProgramIn(BaseModel):

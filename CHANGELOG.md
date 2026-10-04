@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 6, the Train home screen
+
+- Train shows the program you follow and its next workout with Start, or the session in
+  progress with Resume, plus Blank workout and Log from notes, and how many finished sessions
+  are waiting to send.
+- A one-line deload reminder when a program reaches its deload days (28 by default). Start makes
+  the next pass through the program a deload; ✕ hides the reminder for 7 days.
+- `GET /programs` reports each program's deload count.
+
+### Fixed
+
+- The API replaces database connections the server has closed; before, every request failed
+  until a restart after Supabase dropped idle connections.
+
 ### Added — Phase 8 step 5, logging a session in the app
 
 - Start a workout from a program, or a blank one. Last time's weights and reps fill in grey;

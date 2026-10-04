@@ -24,7 +24,7 @@ SESSION_IDS = ["programs-test-001", "programs-test-002"]
 
 def _clean(conn) -> None:
     with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s)", (SESSION_IDS,))
+        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s) OR session_id LIKE 'programs-deload-%%'", (SESSION_IDS,))
         cur.execute("DELETE FROM program_workout_exercises")
         cur.execute("UPDATE sessions SET program_workout_id = NULL WHERE program_workout_id IS NOT NULL")
         cur.execute("DELETE FROM program_workouts")
@@ -197,3 +197,57 @@ class TestPins:
 
     def test_empty_note_is_rejected(self, client) -> None:
         assert client.put("/pins/Squat", json={"note": ""}, headers=HEADERS).status_code == 422
+
+
+class TestDeload:
+    """The deload count, on dates far from any other test's sessions."""
+
+    TODAY = date(2998, 3, 1)
+
+    def _program_with_sessions(self, client, conn, days_ago: list[int], deload_days_ago=(), following_days_ago=None):
+        from datetime import timedelta
+
+        p = _program(client, workouts=("A",))
+        w = p["workouts"][0]["id"]
+        for i, n in enumerate(days_ago):
+            sid = f"programs-deload-{i}"
+            SESSION_IDS.append(sid) if sid not in SESSION_IDS else None
+            _session_from(conn, sid, (self.TODAY - timedelta(days=n)).isoformat(), w)
+            if n in deload_days_ago:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE sessions SET is_deload_week = true WHERE session_id = %s", (sid,))
+                conn.commit()
+        if following_days_ago is not None:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE programs SET following = true, following_since = %s WHERE id = %s",
+                            (self.TODAY - timedelta(days=following_days_ago), p["id"]))
+            conn.commit()
+        from traininglogs.db.programs import deload_status, get_program
+
+        program = get_program(conn, p["id"])
+        return deload_status(conn, program, self.TODAY)
+
+    def test_due_after_28_days_of_training(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 1], following_days_ago=30)
+        assert status == {"days_since": 30, "due": True, "in_progress": 0}
+
+    def test_not_due_before_28_days(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [20, 15, 10, 5, 2], following_days_ago=20)
+        assert status == {"days_since": 20, "due": False, "in_progress": 0}
+
+    def test_a_break_of_7_days_restarts_the_count(self, client, conn) -> None:
+        # Trained 40 to 20 days ago, then nothing for 10 days, then again from 10 days ago.
+        status = self._program_with_sessions(client, conn, [40, 35, 30, 25, 20, 10, 6, 2], following_days_ago=40)
+        assert status["days_since"] == 10 and status["due"] is False
+
+    def test_a_break_still_going_counts_as_zero(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [40, 30, 20, 9], following_days_ago=40)
+        assert status["days_since"] == 0
+
+    def test_counts_from_the_day_after_the_last_deload(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [35, 32, 30, 25, 20, 15, 10, 5, 2], deload_days_ago=(32, 30), following_days_ago=35)
+        assert status["days_since"] == 29 and status["due"] is True
+
+    def test_a_deload_under_way_is_not_due(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [40, 35, 30, 25, 20, 15, 10, 5, 3, 1], deload_days_ago=(3, 1), following_days_ago=40)
+        assert status["in_progress"] == 2 and status["due"] is False

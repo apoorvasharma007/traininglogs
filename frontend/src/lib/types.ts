@@ -140,4 +140,5 @@ export type Program = {
   following_since: string | null
   workouts: Workout[]
   next_workout_id: string | null
+  deload: { days_since: number; due: boolean; in_progress: number }
 }

@@ -7,7 +7,7 @@ its own transaction.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from psycopg2.extensions import connection as Connection
@@ -85,7 +85,60 @@ def _attach_workouts(conn: Connection, program: dict[str, Any]) -> dict[str, Any
         ]
     program["workouts"] = workouts
     program["next_workout_id"] = _next_workout_id(conn, program["id"], workouts)
+    program["deload"] = deload_status(conn, program, date.today())
     return program
+
+
+# A break this long with no training restarts the deload count.
+BREAK_DAYS = 7
+
+
+def deload_status(conn: Connection, program: dict[str, Any], today: date) -> dict[str, Any]:
+    """How long the program has gone without a deload, and whether one is under way.
+
+    The count runs from the latest of: the day the program was followed, the day after its last
+    deload session, and the first session after a break of BREAK_DAYS or more with no training
+    at all. A break that is still going on (no session in the last BREAK_DAYS days) makes it 0.
+    `in_progress` is how many of the program's latest sessions in a row were deload sessions.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.date, COALESCE(s.is_deload_week, false)
+            FROM sessions s JOIN program_workouts w ON w.id = s.program_workout_id
+            WHERE w.program_id = %s ORDER BY s.date, s.created_at
+            """,
+            (program["id"],),
+        )
+        own = cur.fetchall()
+        cur.execute("SELECT DISTINCT date FROM sessions WHERE date <= %s ORDER BY date", (today,))
+        trained = [r[0] for r in cur.fetchall()]
+
+    in_progress = 0
+    for _, deload in reversed(own):
+        if not deload:
+            break
+        in_progress += 1
+
+    starts = []
+    if program.get("following") and program.get("following_since"):
+        starts.append(program["following_since"])
+    deloads = [d for d, deload in own if deload]
+    if deloads:
+        starts.append(deloads[-1] + timedelta(days=1))
+    after_break = [b for a, b in zip(trained, trained[1:]) if (b - a).days >= BREAK_DAYS]
+    if after_break:
+        starts.append(after_break[-1])
+    if not starts and own:
+        starts.append(own[0][0])
+
+    on_break = not trained or (today - trained[-1]).days >= BREAK_DAYS
+    days = 0 if on_break or not starts else max(0, (today - max(starts)).days)
+    return {
+        "days_since": days,
+        "due": days >= program["deload_after_days"] and in_progress == 0,
+        "in_progress": in_progress,
+    }
 
 
 def _next_workout_id(conn: Connection, program_id: str, workouts: list[dict[str, Any]]) -> str | None:

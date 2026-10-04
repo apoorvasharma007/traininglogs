@@ -786,3 +786,26 @@ class TestWebUi:
     def test_api_routes_still_take_precedence(self, client) -> None:
         assert client.get("/sessions").status_code == 401
         assert client.get("/sessions", headers={"x-api-key": "testkey"}).status_code == 200
+
+
+class TestDeadConnections:
+    """Supabase closes idle connections. The pool must replace them instead of failing every
+    request until a restart."""
+
+    def test_requests_work_after_the_server_closes_the_pool_connections(self, client, monkeypatch) -> None:
+        import traininglogs.api.app as api_app
+
+        # Treat every pooled connection as idle, as after a quiet spell.
+        monkeypatch.setattr(api_app, "IDLE_CHECK_SECONDS", -1.0)
+        headers = {"x-api-key": "testkey"}
+        assert client.get("/sessions?limit=1", headers=headers).status_code == 200
+        killer = get_connection(TEST_DB_URL)
+        with killer.cursor() as cur:
+            cur.execute(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE application_name = 'traininglogs-api' AND pid <> pg_backend_pid()"
+            )
+            assert cur.rowcount >= 1
+        killer.close()
+        for _ in range(3):
+            assert client.get("/sessions?limit=1", headers=headers).status_code == 200
