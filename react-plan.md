@@ -95,8 +95,8 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 - [x] 6b. `options`: a plan line can list alternatives ("Shoulder Press or Bench press"). Start
       picks the one done longest ago; the session shows just that one and stays fully editable
       (rename suggests the alternatives). No toggles. Adds Starting Strength Phase 4 as 3 workouts.
-- [ ] 7. `polish`: loading and empty states, transitions, a last pass on motion.
-- [ ] 8. `retire-web`: delete `web/`, update docs, merge `phase-8/react` into `dev`. Deploying is
+- [ ] 7. `polish` (moved after the deploy, to be shaped by real use; its first fixes are merged): loading and empty states, transitions, a last pass on motion.
+- [x] 8. `retire-web`: delete `web/`, update docs, merge `phase-8/react` into `dev`. Deploying is
       Apoorva's call.
       At the deploy (with its own approval): `UPDATE raw_inputs SET source_kind = 'text' WHERE
       source_kind = 'markdown'` (rows the old live app wrote meanwhile), then replace the check
@@ -104,11 +104,7 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 6b merged into `phase-8/react`.
-- Prod changes so far (each approved, backups in `backups/`): step 3 tables; raw input kinds
-  `text`/`manual` (check still allows the old names until step 8); Bodybuilding Transformation
-  Foundation and Ramp-up (121 sessions linked); `program_workout_exercises.alternatives`;
-  Starting Strength · Phase 4 as 3 workouts with choices (9 sessions linked), followed.
-- Dev copy: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
-- Next: step 7 (`polish`), then step 8 (`retire-web`, tighten the source_kind check, deploy when
-  Apoorva says).
+2026-10-04: steps 1 to 6b and 8 merged into `phase-8/react`; merging to `dev` and `main` and
+deploying 4.0.0. After the deploy: rename leftover `markdown` raw inputs to `text` and tighten the
+`source_kind` check to `text`/`manual` (with Apoorva's approval), then check the live app.
+Step 7 (`polish`) waits for real use.
