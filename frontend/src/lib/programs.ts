@@ -4,9 +4,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { PlanExercise, Program, Workout } from '@/lib/types'
 
-/** "1 · Push", or "Workout 2" when it has no name. */
+/** "1 · Push", or "Workout 2" when it has no name, or a name that only repeats the number. */
 export function workoutTitle(w: Pick<Workout, 'position' | 'name'>): string {
-  return w.name ? `${w.position} · ${w.name}` : `Workout ${w.position}`
+  const plain = `Workout ${w.position}`
+  const name = w.name?.trim()
+  return name && name.toLowerCase() !== plain.toLowerCase() ? `${w.position} · ${name}` : plain
 }
 
 /** "or Bench press", "or Deadlift or Barbell Clean"; empty without alternatives. */

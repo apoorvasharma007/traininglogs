@@ -66,8 +66,9 @@ describe('Session', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
 
-    // The queue makes several IndexedDB reads and writes first; slower when the whole suite runs.
-    expect(await screen.findByText('Waiting to send', {}, { timeout: 3000 })).toBeInTheDocument()
+    // Two send attempts can overlap (the one at Finish and the one when the app opened), so the
+    // status may flick to "Sending…" before it settles; wait for the settled screen.
+    await waitFor(() => expect(screen.getByText('Waiting to send')).toBeInTheDocument())
     const queued = (await get('sessions-to-send')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
   })

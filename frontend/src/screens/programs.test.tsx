@@ -28,6 +28,7 @@ describe('workout display', () => {
   it('names a workout by number and optional name', () => {
     expect(workoutTitle({ position: 1, name: 'Push' })).toBe('1 · Push')
     expect(workoutTitle({ position: 2, name: null })).toBe('Workout 2')
+    expect(workoutTitle({ position: 2, name: 'workout 2 ' })).toBe('Workout 2')
   })
 
   it('summarises a plan', () => {

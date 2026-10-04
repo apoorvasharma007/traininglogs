@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import type { LiveSession, SessionRequest } from '@/lib/session'
 
 const CURRENT = 'session-in-progress'
+const SEND_TIMEOUT_MS = 20_000
 const OUTBOX = 'sessions-to-send'
 
 export async function loadSession(): Promise<LiveSession | null> {
@@ -61,7 +62,8 @@ export async function flush(): Promise<void> {
   publish({ sending: true, pending: await readOutbox() })
   try {
     for (const request of [...outbox.pending]) {
-      await api('/sessions', { method: 'POST', body: request })
+      // A send that hangs counts as failed after 20 s, so later retries aren't blocked behind it.
+      await api('/sessions', { method: 'POST', body: request, timeoutMs: SEND_TIMEOUT_MS })
       const pending = (await readOutbox()).filter((r) => r.client_id !== request.client_id)
       await set(OUTBOX, pending)
       publish({ pending, lastError: null })
@@ -79,6 +81,11 @@ export function startOutbox(): () => void {
   const onOnline = () => flush()
   window.addEventListener('online', onOnline)
   return () => window.removeEventListener('online', onOnline)
+}
+
+/** For tests: forget the in-memory queue state between tests. */
+export function resetOutboxForTests(): void {
+  outbox = { pending: [], sending: false, lastError: null }
 }
 
 export function useOutbox(): Outbox {

@@ -40,9 +40,14 @@ function detailOf(body: unknown, status: number): string {
   return `Request failed (${status})`
 }
 
-export async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+export async function api<T>(
+  path: string,
+  init?: { method?: string; body?: unknown; timeoutMs?: number },
+): Promise<T> {
   const res = await fetch(path, {
     method: init?.method ?? 'GET',
+    // A request that never answers would otherwise wait forever (no timeout by default).
+    signal: init?.timeoutMs ? AbortSignal.timeout(init.timeoutMs) : undefined,
     headers: { 'Content-Type': 'application/json', 'X-Api-Key': getApiKey() },
     body: init?.body === undefined ? undefined : JSON.stringify(init.body),
   })

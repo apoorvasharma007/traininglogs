@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom/vitest'
 import 'fake-indexeddb/auto'
+import { afterEach } from 'vitest'
+import { resetOutboxForTests } from '@/lib/store'
 
 // jsdom lacks matchMedia, which the drawer (vaul) reads.
 if (!window.matchMedia) {
@@ -22,3 +24,6 @@ if (!Element.prototype.setPointerCapture) {
   Element.prototype.releasePointerCapture = () => {}
   Element.prototype.hasPointerCapture = () => false
 }
+
+// The send queue keeps its state in memory; a send left running by one test must not leak into the next.
+afterEach(() => resetOutboxForTests())

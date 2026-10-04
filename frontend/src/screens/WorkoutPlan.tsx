@@ -7,7 +7,7 @@ import DragList from '@/components/DragList'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
-import { choicesText, planText, useProgram, useProgramChange } from '@/lib/programs'
+import { choicesText, planText, useProgram, useProgramChange, workoutTitle } from '@/lib/programs'
 import { startSession } from '@/lib/startSession'
 import type { PlanExercise } from '@/lib/types'
 
@@ -30,7 +30,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
   return (
     <div className="pb-6">
-      <ScreenHeader back={back} backLabel={`Back to ${program.data?.name ?? 'program'}`} title={w ? `Workout ${w.position}` : 'Workout'} />
+      <ScreenHeader back={back} backLabel={`Back to ${program.data?.name ?? 'program'}`} title={w ? workoutTitle(w) : 'Workout'} />
       {program.isPending && <Loading />}
       {program.isError && <LoadError error={program.error} retry={() => program.refetch()} />}
       {program.data && !w && <p className="px-1 text-sm text-muted-foreground">This workout was removed.</p>}
