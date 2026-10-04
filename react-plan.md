@@ -91,7 +91,10 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 - [x] 5. `session`: live session saved in the browser database (IndexedDB), last-time values and notes,
       pinned notes, Finish sends one request to a new endpoint that saves a confirmed session without
       AI, retry when offline.
-- [ ] 6. `home`: next workout, deload reminder, blank workout, in-progress and waiting-to-send states.
+- [x] 6. `home`: next workout, deload reminder, blank workout, in-progress and waiting-to-send states.
+- [ ] 6b. `options`: a plan line can list alternatives ("Shoulder Press or Bench press"). Start
+      picks the one done longest ago; the session shows just that one and stays fully editable
+      (rename suggests the alternatives). No toggles. Adds Starting Strength Phase 4 as 3 workouts.
 - [ ] 7. `polish`: loading and empty states, transitions, a last pass on motion.
 - [ ] 8. `retire-web`: delete `web/`, update docs, merge `phase-8/react` into `dev`. Deploying is
       Apoorva's call.
@@ -101,12 +104,12 @@ into the base when the suite is 0 failed and 0 skipped. The base merges to `dev`
 
 ## ▶ Resume here
 
-2026-10-04: steps 1 to 5 merged into `phase-8/react`.
-- Prod changes so far, each approved and backed up in `backups/`: step 3's tables; raw input kinds
-  renamed to `text`/`manual` (the check still allows `markdown`/`repeat` until the step 8 deploy);
-  Bodybuilding Transformation added as two programs (Foundation, Ramp-up; 10 workouts, 85 plan
-  rows, 121 past sessions linked; neither followed).
-- A dev copy exists: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
-- Next: step 6 (`home`). First commit: the API's connection pool hands out connections Supabase
-  has closed (every request 500s until a restart); discard dead connections and turn on TCP
-  keepalives, with a test.
+2026-10-04: steps 1 to 6 merged into `phase-8/react`.
+- Prod changes so far (each approved, backups in `backups/`): step 3 tables; raw input kinds
+  `text`/`manual` (check still allows the old names until step 8); Bodybuilding Transformation
+  Foundation and Ramp-up (121 sessions linked, neither followed).
+- Dev copy: `scripts/copy_prod_to_dev.py` -> `traininglogs_dev`, app on port 8010.
+- Next: step 6b (`options`) on `phase-8/react-6b-options`. Apoorva rejected writing Starting
+  Strength out as 24 workouts: a program is inspiration, the session is where the day's choices
+  are made. Then add Starting Strength Phase 4 as 3 workouts (dev copy first, prod with approval),
+  linking the 9 logged sessions to workouts 1, 2, 3 in turn, and follow it.
