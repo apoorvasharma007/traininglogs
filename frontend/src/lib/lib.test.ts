@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { niceScale } from './chart'
 import { dayLabel, groupByWeek, kg, repsText } from './format'
 import { inRange, liftValue, setText } from './lifts'
-import { editsFor, exercisePathOf, stepReps, stepWeight, type SetDraft } from './review'
+import { editsFor, exercisePathOf, type SetDraft } from './review'
 
 const ws = { number: 1, weight_kg: 100, reps_full: null, reps_partial: null, left_reps_full: null, right_reps_full: null, rpe: null, notes: null }
 
@@ -86,15 +86,55 @@ describe('review edits', () => {
     expect(editsFor('p', w, { ...w, reps: '5' })).toEqual([{ path: 'p', field: 'rep_count', value: 5 }])
   })
 
-  it('steps weight and plain reps', () => {
-    expect(stepWeight('120', 2.5)).toBe('122.5')
-    expect(stepWeight('1', -2.5)).toBe('0')
-    expect(stepReps('2', 1)).toBe('3')
-    expect(stepReps('8+1', 1)).toBeNull()
-    expect(stepReps('', 1)).toBe('1')
-  })
-
   it('finds the exercise of a set', () => {
     expect(exercisePathOf('exercises.2.warmup_sets.0')).toBe('exercises.2')
+  })
+})
+
+import { effortLevel } from './effort'
+import { warmupSets } from './warmup'
+
+describe('warmup ramps', () => {
+  it('builds each ramp from the first working weight, rounded to 2.5 kg', () => {
+    expect(warmupSets('full', 125)).toEqual([
+      { kg: 20, reps: 10 }, { kg: 57.5, reps: 8 }, { kg: 82.5, reps: 5 }, { kg: 100, reps: 3 }, { kg: 112.5, reps: 1 },
+    ])
+    expect(warmupSets('short', 125)).toEqual([{ kg: 62.5, reps: 5 }, { kg: 87.5, reps: 4 }, { kg: 112.5, reps: 2 }])
+    expect(warmupSets('531', 125)).toEqual([{ kg: 50, reps: 5 }, { kg: 62.5, reps: 5 }, { kg: 75, reps: 3 }])
+  })
+
+  it('never goes below the empty bar', () => {
+    expect(warmupSets('short', 30).map((s) => s.kg)).toEqual([20, 20, 27.5])
+  })
+})
+
+describe('effort', () => {
+  it('maps RPE to Moderate, Hard and All out', () => {
+    expect([null, 6, 7, 7.5, 8, 8.5, 9, 9.5, 10].map(effortLevel)).toEqual([0, 1, 1, 1, 2, 2, 2, 3, 3])
+  })
+})
+
+import { amountText, parseAmount } from './movements'
+
+describe('movement amounts', () => {
+  it('reads reps or a time', () => {
+    expect(parseAmount('10')).toEqual({ reps: 10, duration_seconds: null })
+    expect(parseAmount('3 min')).toEqual({ reps: null, duration_seconds: 180 })
+    expect(parseAmount('45s')).toEqual({ reps: null, duration_seconds: 45 })
+    expect(parseAmount('')).toEqual({ reps: null, duration_seconds: null })
+  })
+
+  it('writes them back the same way', () => {
+    expect(['10', '3 min', '45 s', ''].map((t) => amountText(parseAmount(t)))).toEqual(['10', '3 min', '45 s', ''])
+  })
+})
+
+import { sessionName } from './format'
+
+describe('session names', () => {
+  it('uses the given name, else the first exercises', () => {
+    expect(sessionName({ focus: 'Workout 3', exercises: ['Squat'] })).toBe('Workout 3')
+    expect(sessionName({ focus: null, exercises: ['Squat', 'Bench press', 'Pull ups', 'Calf raise'] })).toBe('Squat · Bench press · Pull ups …')
+    expect(sessionName({ focus: '', exercises: [] })).toBe('Session')
   })
 })

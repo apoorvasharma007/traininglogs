@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import { api } from '@/lib/api'
-import { dayLabel, kg, repsText } from '@/lib/format'
+import { dayLabel, kg, repsText, sessionName } from '@/lib/format'
+import { startSession } from '@/lib/startSession'
 import type { SessionDetail } from '@/lib/types'
 
 function weightText(w: number | null): string {
@@ -12,6 +14,7 @@ function weightText(w: number | null): string {
 /** A past session, read-only. */
 export default function SessionView({ params }: { params: { id: string } }) {
   const id = decodeURIComponent(params.id)
+  const [, navigate] = useLocation()
   const session = useQuery({
     queryKey: ['session', id],
     queryFn: () => api<SessionDetail>(`/sessions/${encodeURIComponent(id)}`),
@@ -26,9 +29,15 @@ export default function SessionView({ params }: { params: { id: string } }) {
       {s && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 px-1">
-            <span className="text-xl font-bold tracking-tight">{s.focus || s.program || 'Session'}</span>
+            <span className="text-xl font-bold tracking-tight">{sessionName(s)}</span>
             {s.notes && <p className="text-sm text-muted-foreground">{s.notes}</p>}
           </div>
+          {s.exercises.length > 0 && (
+            <button type="button" onClick={() => startSession({ past: s }).then(() => navigate('/session'))}
+              className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+              Do this again
+            </button>
+          )}
           {s.exercises.map((ex) => (
             <section key={ex.number} className="overflow-hidden rounded-2xl border border-border bg-card">
               <div className="flex flex-col gap-1 px-4 pt-3 pb-2">

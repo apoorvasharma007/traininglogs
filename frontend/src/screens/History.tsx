@@ -5,7 +5,7 @@ import { Link } from 'wouter'
 import PageTitle from '@/components/PageTitle'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { api } from '@/lib/api'
-import { dayLabel, groupByWeek } from '@/lib/format'
+import { dayLabel, groupByWeek, sessionName } from '@/lib/format'
 import type { SessionSummary } from '@/lib/types'
 
 export default function History() {
@@ -37,7 +37,7 @@ export default function History() {
                 >
                   <span className="font-mono text-xs text-muted-foreground">{dayLabel(s.date)}</span>
                   <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-sm font-semibold">{s.focus || s.program || 'Session'}</span>
+                    <span className="text-sm font-semibold">{sessionName(s)}</span>
                     <span className="truncate text-xs text-muted-foreground">{s.exercises.join(' · ')}</span>
                   </span>
                   <ChevronRight size={16} aria-hidden className="text-faint-foreground" />

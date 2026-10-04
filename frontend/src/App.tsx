@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import { Loading } from '@/components/QueryStatus'
 import TabBar from '@/components/TabBar'
+import { useIsEditing } from '@/lib/editing'
 import { startOutbox } from '@/lib/store'
 import Train from '@/screens/Train'
 
@@ -19,6 +20,7 @@ const Progress = lazy(tabs.progress)
 const History = lazy(tabs.history)
 const Settings = lazy(tabs.settings)
 const Program = lazy(() => import('@/screens/Program'))
+const Templates = lazy(() => import('@/screens/Templates'))
 const WorkoutPlan = lazy(() => import('@/screens/WorkoutPlan'))
 const Lift = lazy(() => import('@/screens/Lift'))
 const SessionView = lazy(() => import('@/screens/SessionView'))
@@ -29,8 +31,9 @@ const Done = lazy(() => import('@/screens/session/Done'))
 
 export default function App() {
   const [location] = useLocation()
-  // Review and a session in progress have their own bottom bars, so the tabs step aside there.
-  const showTabs = !location.startsWith('/review') && !location.startsWith('/session')
+  const editing = useIsEditing()
+  // Review, a session in progress and edit mode have their own bottom bars, so the tabs step aside.
+  const showTabs = !location.startsWith('/review') && !location.startsWith('/session') && !editing
 
   // Finished sessions waiting on the phone are sent now and whenever the connection returns.
   useEffect(() => startOutbox(), [])
@@ -46,6 +49,7 @@ export default function App() {
         <Suspense fallback={<Loading />}>
           <Switch>
             <Route path="/programs" component={Programs} />
+            <Route path="/programs/templates" component={Templates} />
             <Route path="/programs/:id" component={Program} />
             <Route path="/programs/:id/workouts/:wid" component={WorkoutPlan} />
             <Route path="/progress" component={Progress} />

@@ -2,6 +2,7 @@ import { ChevronRight, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import NameSheet from '@/components/NameSheet'
+import Sheet from '@/components/Sheet'
 import PageTitle from '@/components/PageTitle'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { useCreateProgram, usePrograms, workoutTitle } from '@/lib/programs'
@@ -18,12 +19,13 @@ export default function Programs() {
   const create = useCreateProgram()
   const [, navigate] = useLocation()
   const [creating, setCreating] = useState(false)
+  const [choosing, setChoosing] = useState(false) // "Create your own" or "From a template"
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-end justify-between">
         <PageTitle>Programs</PageTitle>
-        <button type="button" onClick={() => setCreating(true)}
+        <button type="button" onClick={() => setChoosing(true)}
           className="flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-sm font-semibold transition active:scale-95">
           <Plus size={16} aria-hidden /> New
         </button>
@@ -32,11 +34,12 @@ export default function Programs() {
       {programs.isPending && <Loading />}
       {programs.isError && <LoadError error={programs.error} retry={() => programs.refetch()} />}
       {programs.data?.length === 0 && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border p-5 text-sm">
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-5 text-sm">
           <p className="font-semibold">No programs yet</p>
-          <p className="text-muted-foreground">
-            A program is workouts in order. After the last one it starts again at 1, until you reach your goal.
-          </p>
+          <button type="button" onClick={() => setChoosing(true)}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3.5 font-semibold text-primary-foreground transition active:scale-95">
+            <Plus size={16} aria-hidden /> New program
+          </button>
         </div>
       )}
       {programs.data && programs.data.length > 0 && (
@@ -60,6 +63,21 @@ export default function Programs() {
           ))}
         </div>
       )}
+
+      <Sheet open={choosing} onClose={() => setChoosing(false)} label="New program">
+        <span className="text-[17px] font-semibold">New program</span>
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
+          <button type="button" onClick={() => { setChoosing(false); setCreating(true) }}
+            className="flex h-13 items-center px-4 text-left text-[15px] font-semibold active:bg-muted">
+            Create your own
+          </button>
+          <Link href="/programs/templates" onClick={() => setChoosing(false)}
+            className="flex h-13 items-center justify-between border-t border-border px-4 text-[15px] font-semibold active:bg-muted">
+            From a template
+            <ChevronRight size={18} aria-hidden className="text-faint-foreground" />
+          </Link>
+        </div>
+      </Sheet>
 
       <NameSheet
         open={creating}

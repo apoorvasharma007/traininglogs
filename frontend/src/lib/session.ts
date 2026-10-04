@@ -1,8 +1,9 @@
 // The session in progress: how it starts, how it changes, and what is sent at Finish.
 // Plain functions on plain data, so the screen stays thin and all of this is testable.
-import { kg } from '@/lib/format'
+import { kg, sessionName } from '@/lib/format'
 import type { SetDraft, SetKind } from '@/lib/review'
-import type { PlanExercise, Workout } from '@/lib/types'
+import { amountText, parseAmount } from '@/lib/movements'
+import type { Movement, PlanExercise, SessionDetail, Workout } from '@/lib/types'
 
 export type LiveSet = {
   key: string
@@ -15,6 +16,7 @@ export type LiveSet = {
   // Values carried over from last time, shown grey until the set is edited or ticked.
   ghost: boolean
   last: string | null // "120 × 2", what this set was last time
+  planned?: boolean // one of the sets the workout's plan asked for, not one added today
 }
 
 export type LiveExercise = {
@@ -26,7 +28,19 @@ export type LiveExercise = {
   noteOpen: boolean
   lastNote: string | null
   sets: LiveSet[]
+  planIndex?: number // the workout plan line it started from; none when added during the session
 }
+
+/** A warm-up or cool-down movement in a session; left out at Finish unless ticked. */
+export type LiveMovement = {
+  key: string
+  name: string
+  amount: string
+  done: boolean
+  fromNudge?: boolean // recorded by "Warm up first", which every session offers anyway
+  planIndex?: number // its place in the workout's planned warm-up or cool-down
+}
+export type MovementKind = 'warmup' | 'cooldown'
 
 export type LiveSession = {
   clientId: string // the id the server uses to recognise a repeated send
@@ -34,9 +48,16 @@ export type LiveSession = {
   date: string // YYYY-MM-DD, local
   programId: string | null
   workoutId: string | null
-  title: string // "1 · Bench", or "Blank workout"
+  title: string // "1 · Bench", or "Ad-hoc workout"
   isDeload: boolean
   exercises: LiveExercise[]
+  warmup?: LiveMovement[]
+  cooldown?: LiveMovement[]
+  // The "warm up first" prompt: dismissed or done for this session, and when its timer started.
+  warmupNudge?: 'skipped' | 'done'
+  cardioStartedAt?: string
+  // Last time for each exercise and alternative in the plan, so switching refills from it.
+  lasts?: LastExercise[]
 }
 
 export type LastSet = { weight_kg: number | null; reps: number | null; rpe?: number | null; notes: string | null }
@@ -55,6 +76,8 @@ export type SessionRequest = {
     warmup_sets: { weight_kg: number; reps: number | null; notes: string | null }[]
     sets: { weight_kg: number | null; reps: number | null; rpe: number | null; notes: string | null }[]
   }[]
+  warmup: { name: string; reps: number | null; duration_seconds: number | null; notes: string | null }[]
+  cooldown: { name: string; reps: number | null; duration_seconds: number | null; notes: string | null }[]
 }
 
 /** 32 random hex characters. getRandomValues, unlike randomUUID, also works over plain http. */
@@ -74,24 +97,6 @@ export function lastText(s: LastSet): string {
 
 const nameKey = (name: string) => name.trim().toLowerCase()
 
-/**
- * Which of a plan line's choices to start with: the one done longest ago, never done counting as
- * oldest, so alternatives take turns by themselves. Ties go to the earlier one in the plan.
- */
-export function pickChoice(plan: PlanExercise, lastDate: (name: string) => string | undefined): string {
-  const choices = [plan.name, ...plan.alternatives]
-  let best = choices[0]
-  let bestDate = lastDate(best) ?? ''
-  for (const c of choices.slice(1)) {
-    const d = lastDate(c) ?? ''
-    if (d < bestDate) {
-      best = c
-      bestDate = d
-    }
-  }
-  return best
-}
-
 function blankSet(kind: SetKind): LiveSet {
   return { key: newKey(), kind, weight: '', reps: '', rpe: null, note: '', done: false, ghost: false, last: null }
 }
@@ -109,6 +114,7 @@ function plannedSets(plan: PlanExercise, last: LastExercise | undefined): LiveSe
         reps: reps != null ? String(reps) : '',
         ghost: source != null || reps != null,
         last: from[i] ? lastText(from[i]) : null,
+        planned: true,
       }
     })
   return [...make('warmup', plan.warmup_sets, last?.warmup_sets ?? []), ...make('working', plan.working_sets, last?.sets ?? [])]
@@ -131,20 +137,51 @@ export function startFromWorkout(
     workoutId: workout.id,
     title,
     isDeload,
-    exercises: workout.exercises.map((plan) => {
-      const name = pickChoice(plan, (n) => byName.get(nameKey(n))?.date)
-      const last = byName.get(nameKey(name))
+    lasts,
+    warmup: (workout.warmup ?? []).map((m, i) => ({ ...toLive(m), planIndex: i })),
+    cooldown: (workout.cooldown ?? []).map((m, i) => ({ ...toLive(m), planIndex: i })),
+    exercises: workout.exercises.map((plan, planIndex) => {
+      const last = byName.get(nameKey(plan.name))
       return {
         key: newKey(),
-        name,
+        name: plan.name,
         choices: [plan.name, ...plan.alternatives],
         naming: false,
         note: '',
         noteOpen: false,
         lastNote: last?.notes ?? null,
         sets: plannedSets(plan, last),
+        planIndex,
       }
     }),
+  }
+}
+
+/** A session to do again: its exercises and set counts, its values in grey as "last time". */
+export function startFromPast(past: SessionDetail, now: Date): LiveSession {
+  const set = (kind: SetKind, weight: number | null, reps: number | null, last: string): LiveSet => ({
+    ...blankSet(kind),
+    weight: weight != null ? String(weight) : '',
+    reps: reps != null ? String(reps) : '',
+    ghost: true,
+    last,
+  })
+  return {
+    ...startBlank(now),
+    title: sessionName(past),
+    exercises: past.exercises.map((ex) => ({
+      key: newKey(),
+      name: ex.name,
+      choices: [ex.name],
+      naming: false,
+      note: '',
+      noteOpen: false,
+      lastNote: ex.notes,
+      sets: [
+        ...ex.warmup_sets.map((w) => set('warmup', w.weight_kg, w.rep_count, lastText({ weight_kg: w.weight_kg, reps: w.rep_count, notes: null }))),
+        ...ex.sets.map((w) => set('working', w.weight_kg, w.reps_full, lastText({ weight_kg: w.weight_kg, reps: w.reps_full, notes: null }))),
+      ],
+    })),
   }
 }
 
@@ -155,7 +192,7 @@ export function startBlank(now: Date): LiveSession {
     date: localDate(now),
     programId: null,
     workoutId: null,
-    title: 'Blank workout',
+    title: 'Ad-hoc workout',
     isDeload: false,
     exercises: [],
   }
@@ -201,7 +238,11 @@ export function saveSet(s: LiveSession, setKey: string, draft: SetDraft): LiveSe
       if (!e.sets.some((x) => x.key === setKey)) return e
       const sets = e.sets.map((x) =>
         x.key === setKey
-          ? { ...x, kind: draft.kind, weight: draft.weight, reps: draft.reps, rpe: draft.kind === 'working' ? draft.rpe : null, note: draft.note, ghost: false }
+          ? {
+              ...x, kind: draft.kind, weight: draft.weight, reps: draft.reps, rpe: draft.kind === 'working' ? draft.rpe : null, note: draft.note,
+              // Weight and reps are typed on the row; the drawer leaves last time's suggestion as it is.
+              ghost: x.ghost && draft.weight === x.weight && draft.reps === x.reps,
+            }
           : x,
       )
       return { ...e, sets: [...sets.filter((x) => x.kind === 'warmup'), ...sets.filter((x) => x.kind === 'working')] }
@@ -246,12 +287,121 @@ export function addExercise(s: LiveSession): { session: LiveSession; exKey: stri
   return { session: { ...s, exercises: [...s.exercises, ex] }, exKey: ex.key }
 }
 
+/**
+ * Switches an exercise to one of its alternatives. Sets still showing last time's values are
+ * refilled from the new exercise's last time; sets already ticked or typed into are kept.
+ */
+export function switchExercise(s: LiveSession, exKey: string, name: string): LiveSession {
+  const last = s.lasts?.find((l) => nameKey(l.name) === nameKey(name))
+  return mapExercise(s, exKey, (e) => {
+    const counter = { warmup: 0, working: 0 }
+    const sets = e.sets.map((x) => {
+      const i = counter[x.kind]++
+      const from = (x.kind === 'warmup' ? last?.warmup_sets : last?.sets) ?? []
+      const source = from[i] ?? from[from.length - 1]
+      const lastLabel = from[i] ? lastText(from[i]) : null
+      if (x.done || !x.ghost) return { ...x, last: lastLabel }
+      return {
+        ...x,
+        weight: source?.weight_kg != null ? String(source.weight_kg) : '',
+        reps: source?.reps != null ? String(source.reps) : x.reps,
+        last: lastLabel,
+      }
+    })
+    return { ...e, name, lastNote: last?.notes ?? null, sets }
+  })
+}
+
+/** Replaces an exercise's warmup sets with a ramp's, shown as suggestions until typed over or ticked. */
+export function setWarmups(s: LiveSession, exKey: string, sets: { kg: number; reps: number }[]): LiveSession {
+  // The new sets take the place of the planned ones they replace; any beyond that are extra.
+  const planned = s.exercises.find((e) => e.key === exKey)?.sets.filter((x) => x.kind === 'warmup' && x.planned).length ?? 0
+  return mapExercise(s, exKey, (e) => ({
+    ...e,
+    sets: [
+      ...sets.map((w, i) => ({ ...blankSet('warmup'), weight: String(w.kg), reps: String(w.reps), ghost: true, planned: i < planned })),
+      ...e.sets.filter((x) => x.kind === 'working'),
+    ],
+  }))
+}
+
+/** Moves an exercise one place up (-1) or down (1); at either end it stays put. */
+export function moveExercise(s: LiveSession, exKey: string, by: -1 | 1): LiveSession {
+  const i = s.exercises.findIndex((e) => e.key === exKey)
+  const j = i + by
+  if (i < 0 || j < 0 || j >= s.exercises.length) return s
+  const exercises = [...s.exercises]
+  ;[exercises[i], exercises[j]] = [exercises[j], exercises[i]]
+  return { ...s, exercises }
+}
+
 export function removeExercise(s: LiveSession, exKey: string): LiveSession {
   return { ...s, exercises: s.exercises.filter((e) => e.key !== exKey) }
 }
 
 export function draftOf(set: LiveSet): SetDraft {
   return { kind: set.kind, weight: set.weight, reps: set.reps, rpe: set.rpe, note: set.note }
+}
+
+// ---- warm-up and cool-down ----
+
+function toLive(m: Movement): LiveMovement {
+  return { key: newKey(), name: m.name, amount: amountText(m), done: false }
+}
+
+function doneMovements(list: LiveMovement[] | undefined): SessionRequest['warmup'] {
+  return (list ?? [])
+    .filter((m) => m.done && m.name.trim())
+    .map((m) => {
+      const amount = parseAmount(m.amount)
+      // An amount the rule can't read ("2 rounds", "each side 10") is kept as the note, not lost.
+      const unread = m.amount.trim() && amount.reps == null && amount.duration_seconds == null ? m.amount.trim() : null
+      return { name: m.name.trim(), ...amount, notes: unread }
+    })
+}
+
+export function movementsOf(s: LiveSession, kind: MovementKind): LiveMovement[] {
+  return s[kind] ?? []
+}
+
+export function setMovements(s: LiveSession, kind: MovementKind, list: LiveMovement[]): LiveSession {
+  return { ...s, [kind]: list }
+}
+
+/** A preset's movements added after the ones already there. */
+export function addPreset(s: LiveSession, kind: MovementKind, movements: Movement[]): LiveSession {
+  return setMovements(s, kind, [...movementsOf(s, kind), ...movements.map(toLive)])
+}
+
+export function changeMovement(s: LiveSession, kind: MovementKind, key: string, patch: Partial<LiveMovement>): LiveSession {
+  return setMovements(s, kind, movementsOf(s, kind).map((m) => (m.key === key ? { ...m, ...patch } : m)))
+}
+
+export const CARDIO_MINUTES = 5
+
+/** Whether to show "warm up first": not dismissed, not done, and nothing in the warm-up ticked. */
+export function wantsWarmupNudge(s: LiveSession): boolean {
+  return s.warmupNudge == null && !movementsOf(s, 'warmup').some((m) => m.done)
+}
+
+/**
+ * Records the easy cardio as done: the minutes since its timer started (at least 1, at most the
+ * full time), or the full time when there was no timer. Ticks an existing "Easy cardio" row, or adds one.
+ */
+export function recordCardio(s: LiveSession, now: Date): LiveSession {
+  const minutes = s.cardioStartedAt
+    ? Math.min(CARDIO_MINUTES, Math.max(1, Math.round((now.getTime() - new Date(s.cardioStartedAt).getTime()) / 60000)))
+    : CARDIO_MINUTES
+  const list = movementsOf(s, 'warmup')
+  const existing = list.find((m) => m.name.trim().toLowerCase() === 'easy cardio')
+  const warmup = existing
+    ? list.map((m) => (m === existing ? { ...m, amount: `${minutes} min`, done: true, fromNudge: true } : m))
+    : [{ key: newKey(), name: 'Easy cardio', amount: `${minutes} min`, done: true, fromNudge: true }, ...list]
+  return { ...s, warmup, warmupNudge: 'done', cardioStartedAt: undefined }
+}
+
+export function newMovement(): LiveMovement {
+  return { key: newKey(), name: '', amount: '', done: false }
 }
 
 // ---- Finish ----
@@ -268,14 +418,18 @@ const num = (text: string): number | null => {
 
 /** What Finish sends: only ticked sets, and only exercises with at least one. */
 export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
-  const minutes = Math.max(0, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000))
+  // At least a minute: a session's duration has to be positive.
+  const minutes = Math.max(1, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000))
   return {
     client_id: s.clientId,
     date: s.date,
-    focus: s.title,
+    // A workout's session is named after it; History names any other by its exercises.
+    focus: s.workoutId ? s.title : null,
     duration_minutes: minutes,
     program_workout_id: s.workoutId,
     is_deload: s.isDeload,
+    warmup: doneMovements(s.warmup),
+    cooldown: doneMovements(s.cooldown),
     exercises: s.exercises
       .map((e) => {
         const done = e.sets.filter((x) => x.done)
@@ -294,27 +448,3 @@ export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
   }
 }
 
-/**
- * The workout's plan as this session actually went (exercises and how many sets of each kind),
- * or null when it matches the plan. Finish offers to update the workout with it.
- */
-export function planFromSession(s: LiveSession, plan: PlanExercise[]): PlanExercise[] | null {
-  const next = s.exercises
-    .filter((e) => e.name.trim())
-    .map((e) => {
-      // Matched by any of the line's choices, so a swap on the day keeps the line's settings.
-      const old = plan.find((p) => [p.name, ...p.alternatives].some((c) => nameKey(c) === nameKey(e.name)))
-      return {
-        name: old && nameKey(old.name) !== nameKey(e.name) ? old.name : e.name.trim(),
-        warmup_sets: e.sets.filter((x) => x.kind === 'warmup').length,
-        working_sets: e.sets.filter((x) => x.kind === 'working').length,
-        target_reps: old?.target_reps ?? null,
-        amrap: old?.amrap ?? false,
-        alternatives: old?.alternatives ?? [],
-      }
-    })
-  const same =
-    next.length === plan.length &&
-    next.every((p, i) => nameKey(p.name) === nameKey(plan[i].name) && p.warmup_sets === plan[i].warmup_sets && p.working_sets === plan[i].working_sets)
-  return same ? null : next
-}

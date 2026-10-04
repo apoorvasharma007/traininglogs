@@ -12,7 +12,8 @@ import {
 } from 'recharts'
 import { niceScale } from '@/lib/chart'
 
-export type ChartPoint = { value: number; tick: string; record: boolean }
+// `hollow`: a different measure stood in for this session, drawn as an outline.
+export type ChartPoint = { value: number; tick: string; record: boolean; hollow?: boolean }
 
 const AXIS = { fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--faint-foreground)' }
 
@@ -20,6 +21,9 @@ function Dot(props: DotProps & { payload?: ChartPoint }) {
   const { cx, cy, payload } = props
   if (cx == null || cy == null) return null
   const record = payload?.record
+  if (payload?.hollow) {
+    return <circle cx={cx} cy={cy} r={3.5} fill="var(--card)" stroke="var(--foreground)" strokeWidth={1.5} />
+  }
   return (
     <circle
       cx={cx}
@@ -36,10 +40,13 @@ export default function LineChart({
   points,
   label,
   format,
+  hollowLabel,
 }: {
   points: ChartPoint[]
   label: string
   format: (value: number) => string
+  /** Said after a hollow point's value in the tooltip, e.g. "heaviest". */
+  hollowLabel?: string
 }) {
   if (points.length === 0) return null
   const values = points.map((p) => p.value)
@@ -64,7 +71,10 @@ export default function LineChart({
               color: 'var(--popover-foreground)',
             }}
             labelStyle={{ color: 'var(--muted-foreground)' }}
-            formatter={(v) => [format(Number(v)), '']}
+            formatter={(v, _name, item) => [
+              item.payload?.hollow && hollowLabel ? `${format(Number(v))} ${hollowLabel}` : format(Number(v)),
+              '',
+            ]}
             separator=""
           />
           <Line

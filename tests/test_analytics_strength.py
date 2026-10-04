@@ -32,8 +32,9 @@ class TestEstimateMax:
     def test_one_at_rpe_9_equals_two_at_rpe_10(self) -> None:
         assert estimate_max(100, 1, 9)[0] == estimate_max(100, 2, 10)[0]
 
-    def test_without_rpe_is_plain_epley(self) -> None:
-        assert estimate_max(100, 5, None) == (pytest.approx(116.7), "epley")
+    def test_without_rpe_there_is_no_estimate(self) -> None:
+        """Reps left are unknown; treating them as none would understate the max."""
+        assert estimate_max(100, 5, None) is None
 
     def test_a_single_at_rpe_10_is_close_to_the_weight(self) -> None:
         assert estimate_max(140, 1, 10)[0] == pytest.approx(144.7)
@@ -74,6 +75,22 @@ class TestSessionPoints:
 
     def test_session_with_nothing_countable_is_left_out(self) -> None:
         assert session_points([row("a", date(2026, 9, 1), 0, 10)]) == []
+
+    def test_session_without_rpe_keeps_its_heaviest_set_and_no_estimate(self) -> None:
+        rows = [
+            row("a", date(2026, 9, 1), 100, 5, number=1),
+            row("a", date(2026, 9, 1), 110, 3, number=2),
+        ]
+        [point] = session_points(rows)
+        assert (point.value, point.method, point.heaviest_kg, point.best_set.number) == (None, None, 110, 2)
+
+    def test_only_sets_with_rpe_make_the_estimate(self) -> None:
+        rows = [
+            row("a", date(2026, 9, 1), 140, 3, number=1),  # heavier, but no RPE
+            row("a", date(2026, 9, 1), 100, 5, 8, number=2),
+        ]
+        [point] = session_points(rows)
+        assert (point.best_set.number, point.value, point.heaviest_kg) == (2, pytest.approx(123.3), 140)
 
 
 class TestRecords:

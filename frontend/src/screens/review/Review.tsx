@@ -1,13 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Ellipsis } from 'lucide-react'
+import { ChevronDown, ChevronRight, Ellipsis, MessageSquareText, Pencil, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
+import EffortBars from '@/components/EffortBars'
 import NumberBox from '@/components/NumberBox'
 import ScreenHeader from '@/components/ScreenHeader'
+import BottomBar from '@/components/BottomBar'
 import Sheet from '@/components/Sheet'
-import { ApiError, api } from '@/lib/api'
-import { kg } from '@/lib/format'
+import { api } from '@/lib/api'
+import { dayLabel, kg } from '@/lib/format'
 import { usePrograms, workoutTitle } from '@/lib/programs'
 import {
   NEW_EXERCISE_NAME,
@@ -19,6 +21,7 @@ import {
 } from '@/lib/review'
 import type { Card, CardExercise } from '@/lib/types'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
+import FixBox from './FixBox'
 import { useReviewDoc } from './useReviewDoc'
 
 type OpenSet = SetTarget & { path: string }
@@ -27,9 +30,9 @@ type OpenSet = SetTarget & { path: string }
 function findSet(card: Card, path: string): OpenSet | null {
   for (const ex of card.exercises) {
     const w = ex.warmup_rows.find((r) => r.path === path)
-    if (w) return { key: path, path, title: `${ex.header.name} · Warmup set`, draft: draftFromWarmup(w) }
+    if (w) return { key: path, path, title: ex.header.name, draft: draftFromWarmup(w) }
     const s = ex.working_set_rows.find((r) => r.path === path)
-    if (s) return { key: path, path, title: `${ex.header.name} · Set ${s.number}`, draft: draftFromSet(s) }
+    if (s) return { key: path, path, title: ex.header.name, draft: draftFromSet(s) }
   }
   return null
 }
@@ -40,15 +43,18 @@ export default function Review({ params }: { params: { id: string } }) {
   const [, navigate] = useLocation()
   const [openSet, setOpenSet] = useState<OpenSet | null>(null)
   const [menuFor, setMenuFor] = useState<CardExercise | null>(null)
+  const [removed, setRemoved] = useState('') // the Undo toast: "Set removed", "Squat removed"
   const [naming, setNaming] = useState<string | null>(null) // exercise path being renamed
   const [noteFor, setNoteFor] = useState<string | null>(null) // exercise path with its note open
-  const [instruction, setInstruction] = useState('')
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const doc = review.doc
   // Which planned workout this session counts as: the followed program's next one unless changed.
   const followed = usePrograms().data?.find((p) => p.following)
   const [countsAs, setCountsAs] = useState<string | null>(null)
   const workoutId = countsAs ?? followed?.next_workout_id ?? ''
+  const countsAsWorkout = followed?.workouts.find((w) => w.id === workoutId) ?? null
+  const [picking, setPicking] = useState(false)
+  const [timingOpen, setTimingOpen] = useState(false)
 
   async function saveSet(draft: SetDraft) {
     if (!openSet) return
@@ -74,6 +80,7 @@ export default function Review({ params }: { params: { id: string } }) {
 
   async function deleteSet() {
     if (!openSet) return
+    setRemoved('Set removed')
     const ok = await review.run([{ op: { op: 'remove', path: openSet.path } }], { undoable: true })
     if (ok !== undefined) setOpenSet(null)
   }
@@ -105,21 +112,22 @@ export default function Review({ params }: { params: { id: string } }) {
     await review.run([{ edits: [{ path, field, value: field === 'reps' || value === '' || Number.isNaN(n) ? value : n }] }])
   }
 
-  async function correct() {
-    if (!instruction.trim()) return
-    if (await review.run([{ instruction: instruction.trim() }])) setInstruction('')
-  }
-
   async function confirm() {
     if (!doc) return
     setConfirmError(null)
     try {
+      // The session takes its workout's name, or none: History then names it by its exercises.
+      const name = followed && countsAsWorkout ? workoutTitle(countsAsWorkout) : ''
+      const named = (header.focus ?? '') === name
+        ? { doc, corrections: review.corrections }
+        : await review.run([{ edits: [{ path: header.path, field: 'focus', value: name }] }])
+      if (!named) return
       const out = await api<{ session_id: string }>(`/extractions/${params.id}/confirm`, {
         method: 'POST',
         body: {
-          extract: doc.extract ?? undefined,
-          corrections: review.corrections.length ? review.corrections : undefined,
-          program_workout_id: followed && workoutId ? workoutId : undefined,
+          extract: named.doc.extract ?? undefined,
+          corrections: named.corrections.length ? named.corrections : undefined,
+          program_workout_id: followed && countsAsWorkout ? countsAsWorkout.id : undefined,
         },
       })
       await queryClient.invalidateQueries({ queryKey: ['sessions'] })
@@ -128,11 +136,17 @@ export default function Review({ params }: { params: { id: string } }) {
       await queryClient.invalidateQueries({ queryKey: ['lifts'] })
       navigate(`/history/${encodeURIComponent(out.session_id)}`)
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
-      setConfirmError(
-        e instanceof ApiError && e.status === 409 ? `${message} Fix the date above, then confirm again.` : message,
-      )
+      setConfirmError(e instanceof Error ? e.message : String(e))
     }
+  }
+
+  /** Scrolls to, and focuses, the next value marked amber. */
+  function jumpToCheck() {
+    const all = Array.from(document.querySelectorAll<HTMLElement>('[data-check]'))
+    if (all.length === 0) return
+    const next = all.find((el) => el.getBoundingClientRect().top > 140) ?? all[0]
+    next.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    next.focus?.({ preventScroll: true })
   }
 
   if (review.initial.isPending) return <Loading />
@@ -140,55 +154,73 @@ export default function Review({ params }: { params: { id: string } }) {
 
   const header = doc.card.session_header
   const dateUnsure = header.uncertain_fields.includes('date')
+  // Everything to look at before confirming: the date, each value the AI wasn't sure of, each
+  // working set with no reps, and each exercise it couldn't read.
+  const checks =
+    (dateUnsure ? 1 : 0) +
+    doc.card.exercises.reduce(
+      (n, ex) =>
+        n +
+        (ex.failure_reason ? 1 : 0) +
+        ex.warmup_rows.reduce((m, w) => m + (w.uncertain_fields.includes('weight_kg') ? 1 : 0) + (w.uncertain_fields.includes('rep_count') ? 1 : 0), 0) +
+        ex.working_set_rows.reduce((m, r) => m + (r.uncertain_fields.includes('weight_kg') ? 1 : 0) + (r.uncertain_fields.includes('reps') || !r.reps ? 1 : 0), 0),
+      0,
+    )
 
   return (
-    <div className="pb-40">
+    <div className="pb-32">
       <ScreenHeader back="/log" backLabel="Back to your note" title="Review" />
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xl font-bold tracking-tight">{header.focus || 'Session'}</span>
-            <label className="sr-only" htmlFor="session-date">
-              Date
-            </label>
+        {/* Date, workout and duration as rows: each one taps open to change it. */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <label data-check={dateUnsure ? '' : undefined}
+            className="relative flex min-h-13 items-center gap-3 px-4 text-[15px]">
+            <span className="w-20 shrink-0 text-muted-foreground">Date</span>
+            <span className={`flex-1 font-semibold ${dateUnsure ? 'text-warning' : ''}`}>
+              {dayLabel(header.date)}
+              {dateUnsure && <span className="font-normal"> · check this</span>}
+            </span>
+            <Pencil size={16} aria-hidden className="text-muted-foreground" />
+            {/* The phone's date picker sits invisibly over the row and opens on tap. */}
             <input
-              id="session-date"
+              aria-label="Date"
               type="date"
               value={header.date}
               disabled={review.busy}
               onChange={(e) =>
                 e.target.value && review.run([{ edits: [{ path: header.path, field: 'date', value: e.target.value }] }])
               }
-              className={`h-9 rounded-lg border px-2 text-[13px] ${
-                dateUnsure ? 'border-warning/50 bg-warning-soft text-warning' : 'border-border bg-background'
-              }`}
+              className="absolute inset-0 cursor-pointer opacity-0"
             />
-          </div>
-          {dateUnsure && <p className="text-xs text-warning">Check the date: it wasn't clear in your note.</p>}
+          </label>
           {followed && followed.workouts.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="counts-as" className="text-[13px] font-semibold">
-                Counts as
-              </label>
-              <select id="counts-as" value={workoutId} onChange={(e) => setCountsAs(e.target.value)}
-                className="h-11 rounded-xl border border-border bg-background px-3 text-[15px]">
-                {followed.workouts.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {workoutTitle(w)}
-                    {w.id === followed.next_workout_id ? `, next in ${followed.name}` : ''}
-                  </option>
-                ))}
-                <option value="">Not part of the program</option>
-              </select>
-            </div>
+            <button type="button" onClick={() => setPicking(true)}
+              className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
+              <span className="w-20 shrink-0 text-muted-foreground">Workout</span>
+              <span className="min-w-0 flex-1 truncate font-semibold">
+                {countsAsWorkout ? `${workoutTitle(countsAsWorkout)} · ${followed.name}` : 'Not part of a program'}
+              </span>
+              <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
+            </button>
           )}
-          {doc.card.warnings.map((w) => (
-            <p key={w} className="text-xs text-warning">
-              {w}
-            </p>
-          ))}
+          <button type="button" onClick={() => setTimingOpen(true)}
+            className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
+            <span className="w-20 shrink-0 text-muted-foreground">Duration</span>
+            <span className={`flex-1 ${header.duration_minutes ? 'font-semibold' : 'text-muted-foreground'}`}>
+              {header.duration_minutes ? `${header.duration_minutes} min` : 'Add'}
+            </span>
+            <Pencil size={16} aria-hidden className="text-muted-foreground" />
+          </button>
         </div>
+
+        {checks > 0 && (
+          <button type="button" onClick={jumpToCheck}
+            className="flex h-11 items-center gap-2 self-start rounded-xl border border-warning/50 bg-warning-soft px-3.5 text-sm font-semibold text-warning">
+            <TriangleAlert size={16} aria-hidden />
+            {checks} {checks === 1 ? 'thing' : 'things'} to check
+          </button>
+        )}
 
         {doc.card.exercises.map((ex) => {
           const exPath = ex.header.path
@@ -214,7 +246,9 @@ export default function Review({ params }: { params: { id: string } }) {
                   ) : (
                     <h2 className="text-base font-semibold">{ex.header.name}</h2>
                   )}
-                  {ex.failure_reason && <p className="text-xs text-warning">{ex.failure_reason}</p>}
+                  {ex.failure_reason && (
+                    <p data-check="" className="text-[13px] text-warning">Couldn't read the sets. Add them.</p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -242,15 +276,15 @@ export default function Review({ params }: { params: { id: string } }) {
                 </div>
               )}
 
-              <div className="grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-1.5 pr-3 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
+              <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] gap-1.5 pr-3 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
                 <span className="pl-1">SET</span>
                 <span className="text-center">KG</span>
                 <span className="text-center">REPS</span>
-                <span>NOTE</span>
               </div>
               {ex.warmup_rows.map((w) => (
                 <SetRow key={`${w.path}:${w.weight_kg}:${w.rep_count}`} label="W" warmup
                   weight={kg(w.weight_kg)} reps={w.rep_count?.toString() ?? ''} note={w.notes}
+                  flagWeight={w.uncertain_fields.includes('weight_kg')} flagReps={w.uncertain_fields.includes('rep_count')}
                   onOpen={() => setOpenSet(findSet(doc.card, w.path))}
                   onWeight={(v) => saveValue(w.path, 'weight_kg', v, kg(w.weight_kg))}
                   onReps={(v) => saveValue(w.path, 'rep_count', v, w.rep_count?.toString() ?? '')} />
@@ -258,6 +292,7 @@ export default function Review({ params }: { params: { id: string } }) {
               {ex.working_set_rows.map((s) => (
                 <SetRow key={`${s.path}:${s.weight_kg}:${s.reps}`} label={String(s.number)}
                   weight={s.weight_kg == null ? '' : kg(s.weight_kg)} reps={s.reps ?? ''} rpe={s.rpe} note={s.notes}
+                  flagWeight={s.uncertain_fields.includes('weight_kg')} flagReps={s.uncertain_fields.includes('reps') || !s.reps}
                   onOpen={() => setOpenSet(findSet(doc.card, s.path))}
                   onWeight={(v) => saveValue(s.path, 'weight_kg', v, s.weight_kg == null ? '' : kg(s.weight_kg))}
                   onReps={(v) => saveValue(s.path, 'reps', v, s.reps ?? '')} />
@@ -285,10 +320,17 @@ export default function Review({ params }: { params: { id: string } }) {
         >
           + Exercise
         </button>
+
+        <FixBox
+          busy={review.busy}
+          error={review.errorFromFix ? review.error : null}
+          onEdit={() => review.error && review.clearError()}
+          onFix={async (text) => !!(await review.run([{ instruction: text }]))}
+        />
       </div>
 
-      {review.error && !openSet && (
-        <div role="alert" className="fixed inset-x-4 bottom-44 mx-auto flex max-w-md items-start justify-between gap-3 rounded-2xl bg-destructive px-4 py-3 text-sm text-white">
+      {review.error && !review.errorFromFix && !openSet && (
+        <div role="alert" className="fixed inset-x-4 bottom-32 mx-auto flex max-w-md items-start justify-between gap-3 rounded-2xl bg-destructive px-4 py-3 text-sm text-white">
           <span>{review.error}</span>
           <button type="button" onClick={review.clearError} className="font-semibold">
             OK
@@ -296,8 +338,8 @@ export default function Review({ params }: { params: { id: string } }) {
         </div>
       )}
       {review.canUndo && !review.error && (
-        <div role="status" className="fixed inset-x-4 bottom-44 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1.5 pr-1.5 pl-4 text-sm text-primary-foreground">
-          <span>Removed</span>
+        <div role="status" className="fixed inset-x-4 bottom-32 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1.5 pr-1.5 pl-4 text-sm text-primary-foreground">
+          <span>{removed}</span>
           <span className="flex">
             <button type="button" onClick={review.undo} className="h-10 px-3.5 font-bold text-highlight">
               Undo
@@ -309,46 +351,39 @@ export default function Review({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-card">
-        <div className="mx-auto flex max-w-md flex-col gap-2.5 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault()
-              correct()
-            }}
-          >
-            <label htmlFor="fix" className="sr-only">
-              Describe a change
-            </label>
-            <input
-              id="fix"
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-              placeholder="Or describe a change: all squats were 125"
-              className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-sm"
-            />
-            {instruction.trim() && (
-              <button type="submit" disabled={review.busy} className="h-11 rounded-xl border border-border px-3 text-sm font-semibold">
-                Apply
-              </button>
-            )}
-          </form>
-          {confirmError && (
-            <p role="alert" className="text-sm text-destructive">
-              {confirmError}
-            </p>
-          )}
-          <button
-            type="button"
-            disabled={review.busy}
-            onClick={confirm}
-            className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
-          >
-            {review.busy ? 'Saving…' : 'Confirm session'}
+      <BottomBar error={confirmError}>
+        <button
+          type="button"
+          disabled={review.busy}
+          onClick={confirm}
+          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          {review.busy ? 'Saving…' : 'Confirm session'}
+        </button>
+      </BottomBar>
+
+      <Sheet open={picking} onClose={() => setPicking(false)} label="Which workout was it?">
+        <span className="text-[17px] font-semibold">Which workout was it?</span>
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
+          {(followed?.workouts ?? []).map((w) => (
+            <button key={w.id} type="button" onClick={() => { setCountsAs(w.id); setPicking(false) }}
+              className="flex h-13 items-center justify-between border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0">
+              {workoutTitle(w)}
+              {w.id === followed?.next_workout_id && <span className="text-xs text-muted-foreground">next</span>}
+            </button>
+          ))}
+          <button type="button" onClick={() => { setCountsAs(''); setPicking(false) }}
+            className="flex h-13 items-center border-t border-border px-4 text-left text-[15px] font-medium text-muted-foreground">
+            Not part of a program
           </button>
         </div>
-      </div>
+      </Sheet>
+
+      <DurationSheet open={timingOpen} initial={header.duration_minutes} busy={review.busy}
+        onClose={() => setTimingOpen(false)}
+        onSave={async (minutes) => {
+          if (await review.run([{ edits: [{ path: header.path, field: 'duration_minutes', value: minutes ?? '' }] }])) setTimingOpen(false)
+        }} />
 
       <SetSheet
         target={openSet}
@@ -367,8 +402,7 @@ export default function Review({ params }: { params: { id: string } }) {
           <>
             <span className="text-[17px] font-semibold">{menuFor.header.name}</span>
             <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
-              <MenuItem label="Add warmup set" run={() => addLine('add_warmup_set', menuFor.header.path)} />
-              <MenuItem label="Add set" run={() => addLine('add_set', menuFor.header.path)} />
+              <MenuItem label="Add warm-up set" run={() => addLine('add_warmup_set', menuFor.header.path)} />
               <MenuItem
                 label={menuFor.note_preview ? 'Edit note' : 'Add note'}
                 run={() => {
@@ -388,6 +422,7 @@ export default function Review({ params }: { params: { id: string } }) {
                 danger
                 run={async () => {
                   const path = menuFor.header.path
+                  setRemoved(`${menuFor.header.name || 'Exercise'} removed`)
                   setMenuFor(null)
                   await review.run([{ op: { op: 'remove', path } }], { undoable: true })
                 }}
@@ -408,6 +443,8 @@ function SetRow(props: {
   reps: string
   rpe?: number | null
   note: string | null
+  flagWeight?: boolean
+  flagReps?: boolean
   onOpen: () => void
   onWeight: (value: string) => void
   onReps: (value: string) => void
@@ -415,23 +452,21 @@ function SetRow(props: {
   const [weight, setWeight] = useState(props.weight)
   const [reps, setReps] = useState(props.reps)
   return (
-    <div className="grid min-h-13 grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-1.5 border-t border-border pr-3 pl-3">
+    <div className="grid min-h-13 grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-1.5 border-t border-border pr-3 pl-3">
+      {/* As on the session screen: effort and a note show as small marks beside the set number. */}
       <button type="button" onClick={props.onOpen} aria-label={`Set ${props.label} options`}
-        className={`flex h-10 items-center justify-center gap-0.5 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
+        className={`flex h-10 items-center justify-center gap-1 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
           props.warmup ? 'text-warning' : 'text-muted-foreground'
         }`}>
         {props.label}
-        <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />
+        <EffortBars rpe={props.rpe ?? null} />
+        {props.note && <MessageSquareText size={12} strokeWidth={2.2} aria-label="has a note" className="text-foreground" />}
+        {!props.note && props.rpe == null && <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />}
       </button>
-      <NumberBox label={`Weight for set ${props.label}`} value={weight} placeholder="kg"
+      <NumberBox label={`Weight for set ${props.label}`} value={weight} placeholder="kg" flagged={props.flagWeight && weight === props.weight}
         onChange={setWeight} onBlur={() => props.onWeight(weight)} />
-      <NumberBox label={`Reps for set ${props.label}`} value={reps} placeholder="reps" inputMode="numeric"
+      <NumberBox label={`Reps for set ${props.label}`} value={reps} placeholder="reps" inputMode="numeric" flagged={props.flagReps && reps === props.reps}
         onChange={setReps} onBlur={() => props.onReps(reps)} />
-      <button type="button" onClick={props.onOpen} aria-label={`Note and RPE for set ${props.label}`}
-        className="min-w-0 truncate text-left text-xs text-muted-foreground">
-        {props.rpe != null && <span className="font-mono">RPE {props.rpe} </span>}
-        {props.note}
-      </button>
     </div>
   )
 }
@@ -477,5 +512,36 @@ function InlineField(props: {
         className={props.className}
       />
     </>
+  )
+}
+
+/** How long the session took, in minutes; empty clears it. */
+function DurationSheet(props: { open: boolean; initial: number | null; busy: boolean; onSave: (minutes: number | null) => void; onClose: () => void }) {
+  return (
+    <Sheet open={props.open} onClose={props.onClose} label="Duration">
+      {props.open && <DurationForm {...props} />}
+    </Sheet>
+  )
+}
+
+function DurationForm({ initial, busy, onSave }: { initial: number | null; busy: boolean; onSave: (minutes: number | null) => void }) {
+  const [text, setText] = useState(initial ? String(initial) : '')
+  return (
+    <form className="flex flex-col gap-4" onSubmit={(e) => {
+      e.preventDefault()
+      const n = parseInt(text, 10)
+      onSave(n > 0 ? n : null)
+    }}>
+      <span className="text-[17px] font-semibold">How long was it?</span>
+      <div className="flex items-baseline justify-center gap-2">
+        <label htmlFor="duration" className="sr-only">Minutes</label>
+        <input id="duration" autoFocus inputMode="numeric" value={text} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))}
+          className="h-14 w-28 rounded-xl bg-muted text-center font-mono text-[28px] font-semibold" />
+        <span className="text-muted-foreground">min</span>
+      </div>
+      <button type="submit" disabled={busy} className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">
+        Save
+      </button>
+    </form>
   )
 }

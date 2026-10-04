@@ -82,6 +82,11 @@
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
 }
 
+/* No double-tap zoom: taps act at once, like an app. Pinch zoom still works. */
+html {
+  touch-action: manipulation;
+}
+
 body {
   @apply bg-background font-sans text-foreground antialiased;
   -webkit-tap-highlight-color: transparent;

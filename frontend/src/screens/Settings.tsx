@@ -50,7 +50,6 @@ export default function Settings() {
             </li>
           ))}
         </ul>
-        <p className="px-1 text-xs text-muted-foreground">Choosing your own key lifts comes later.</p>
       </section>
     </div>
   )

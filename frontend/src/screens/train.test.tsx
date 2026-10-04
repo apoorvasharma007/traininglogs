@@ -13,8 +13,8 @@ function program(patch: Partial<Program> = {}): Program {
     following_since: '2026-09-01', next_workout_id: 'w2',
     deload: { days_since: 3, due: false, in_progress: 0 },
     workouts: [
-      { id: 'w1', position: 1, name: 'Upper Strength', last_done: null, exercises: [] },
-      { id: 'w2', position: 2, name: 'Lower Strength', last_done: null, exercises: [
+      { id: 'w1', position: 1, name: 'Upper Strength', last_done: null, warmup: [], cooldown: [], exercises: [] },
+      { id: 'w2', position: 2, name: 'Lower Strength', last_done: null, warmup: [], cooldown: [], exercises: [
         { name: 'Seated Leg Hamstring Curl', warmup_sets: 2, working_sets: 3, target_reps: 12, amrap: false, alternatives: [] },
       ] },
     ],
@@ -37,14 +37,14 @@ describe('Train', () => {
     const location = renderApp('/')
     expect(await screen.findByText('Bodybuilding Transformation · Ramp-up')).toBeInTheDocument()
     expect(screen.getByText('2 · Lower Strength')).toBeInTheDocument()
-    expect(screen.getByText('2 warmup · 3 × 12')).toBeInTheDocument()
+    // A summary: exercise names only, no sets.
+    expect(screen.queryByText(/× 12/)).not.toBeInTheDocument()
     expect(screen.queryByText(/more$/)).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Start workout' }))
     await waitFor(() => expect(location.history.at(-1)).toBe('/session'))
     const started = await get('session-in-progress')
     expect(started.workoutId).toBe('w2')
-    expect(started.isDeload).toBe(false)
     expect(calls.some((c) => c.key.startsWith('GET /exercises/last'))).toBe(true)
   })
 
@@ -58,33 +58,34 @@ describe('Train', () => {
     expect(screen.getByText('+3 more')).toBeInTheDocument()
   })
 
-  it('points to Programs when none is followed', async () => {
-    fakeApi({ 'GET /programs': [program({ following: false })] })
+  it('without a program, offers recent sessions to do again', async () => {
+    fakeApi({
+      'GET /programs': [program({ following: false })],
+      'GET /sessions?limit=3': [{ session_id: 's1', date: '2026-10-02', program: null, focus: null, exercises: ['Squat', 'Bench press'] }],
+    })
     renderApp('/')
-    expect(await screen.findByText('No program followed')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Go to Programs' })).toBeInTheDocument()
+    expect(await screen.findByText('Squat · Bench press')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Do again' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Or follow a program' })).toBeInTheDocument()
   })
 
-  it('reminds about a deload; Start marks the next workout as one', async () => {
-    fakeApi({ 'GET /programs': [program({ deload: { days_since: 29, due: true, in_progress: 0 } })], 'GET /exercises/last?name=Seated%20Leg%20Hamstring%20Curl': [], 'GET /pins': [] })
-    const location = renderApp('/')
-    expect(await screen.findByText('Deload due')).toBeInTheDocument()
-    expect(screen.getByText(/29 days of training/)).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.queryByText('Deload due')).not.toBeInTheDocument()
-    expect(screen.getByText('Deload 1 of 2')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Start workout' }))
-    await waitFor(() => expect(location.history.at(-1)).toBe('/session'))
-    expect((await get('session-in-progress')).isDeload).toBe(true)
-  })
-
-  it('hides the reminder for 7 days', async () => {
+  it('a deload reminder is only a reminder: OK hides it', async () => {
     fakeApi({ 'GET /programs': [program({ deload: { days_since: 29, due: true, in_progress: 0 } })] })
     renderApp('/')
-    await userEvent.click(await screen.findByRole('button', { name: 'Remind me in 7 days' }))
+    expect(await screen.findByText('Deload due')).toBeInTheDocument()
+    expect(screen.getByText(/4 weeks of training/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
     expect(screen.queryByText('Deload due')).not.toBeInTheDocument()
-    expect(screen.queryByText(/Deload \d of/)).not.toBeInTheDocument()
+  })
+
+  it('makes Log from notes easy to find, with ad-hoc last', async () => {
+    fakeApi({ 'GET /programs': [program()] })
+    renderApp('/')
+    expect(await screen.findByText('Wrote it down instead?')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Log from notes' })).toHaveAttribute('href', '/log')
+    const links = screen.getAllByRole('link').concat(screen.getAllByRole('button')).map((e) => e.textContent)
+    expect(links).toContain('Repeat a past session')
+    expect(links).toContain('Ad-hoc workout')
   })
 
   it('offers to resume a session in progress', async () => {

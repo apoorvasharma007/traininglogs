@@ -163,8 +163,14 @@ class ValidationCardBuilder:
     def _set_uncertain(
         self, uncertain: set[str], ex_idx: int, set_key: str, set_idx: int
     ) -> set[str]:
-        prefix = f"exercises.{ex_idx}.{set_key}.{set_idx}."
-        return {path[len(prefix):].split(".")[0] for path in uncertain if path.startswith(prefix)}
+        # "exercises.0.sets.*.reps" means the reps of every set in that exercise.
+        prefixes = (f"exercises.{ex_idx}.{set_key}.{set_idx}.", f"exercises.{ex_idx}.{set_key}.*.")
+        return {
+            path[len(prefix):].split(".")[0]
+            for path in uncertain
+            for prefix in prefixes
+            if path.startswith(prefix)
+        }
 
     def _working_set_row(self, s: WorkingSet, uf: set[str], path: str) -> WorkingSetRow:
         return WorkingSetRow(

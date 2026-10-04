@@ -152,6 +152,22 @@ class TestWorkouts:
             r = client.put(f"/workouts/{w}/exercises", json={"exercises": [bad]}, headers=HEADERS)
             assert r.status_code == 422, bad
 
+    def test_warmup_and_cooldown_are_kept(self, client) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        body = {
+            "warmup": [{"name": " Easy cardio ", "duration_seconds": 180}, {"name": "Arm circles", "reps": 10}],
+            "cooldown": [{"name": "Stretch"}],
+        }
+        p = client.put(f"/workouts/{w}/movements", json=body, headers=HEADERS).json()
+        assert p["workouts"][0]["warmup"] == [
+            {"name": "Easy cardio", "reps": None, "duration_seconds": 180},
+            {"name": "Arm circles", "reps": 10, "duration_seconds": None},
+        ]
+        assert p["workouts"][0]["cooldown"] == [{"name": "Stretch", "reps": None, "duration_seconds": None}]
+        assert p["workouts"][1]["warmup"] == []
+        bad = client.put(f"/workouts/{w}/movements", json={"warmup": [{"name": " "}]}, headers=HEADERS)
+        assert bad.status_code == 422
+
     def test_rename_and_clear_name(self, client) -> None:
         w = _program(client)["workouts"][0]["id"]
         p = client.patch(f"/workouts/{w}", json={"name": "Push"}, headers=HEADERS).json()
@@ -186,6 +202,53 @@ class TestWorkouts:
         _session_from(conn, SESSION_IDS[1], "3000-01-03", w3)
         p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
         assert p["next_workout_id"] == w1
+
+
+class TestTemplates:
+    def test_lists_the_starter_templates(self, client) -> None:
+        r = client.get("/templates", headers=HEADERS)
+        assert r.status_code == 200
+        names = [t["name"] for t in r.json()]
+        assert names == ["5×5 strength", "Push / pull / legs", "Upper / lower", "Upper / lower / PPL"]
+        five = r.json()[0]
+        assert five["days"] == "3 days a week"
+        assert [e["name"] for e in five["workouts"][1]["exercises"]] == ["Squat", "Overhead press", "Deadlift"]
+
+    def test_needs_the_api_key(self, client) -> None:
+        assert client.get("/templates").status_code == 401
+
+    def test_copy_makes_a_program_with_every_workout_and_exercise(self, client) -> None:
+        r = client.post("/templates/push-pull-legs/copy", headers=HEADERS)
+        assert r.status_code == 201
+        p = r.json()
+        assert p["name"] == "Push / pull / legs"
+        assert p["following"] is False
+        assert [w["name"] for w in p["workouts"]] == ["Push", "Pull", "Legs"]
+        pull_up = p["workouts"][1]["exercises"][1]
+        assert pull_up == {
+            "name": "Pull-up", "warmup_sets": 0, "working_sets": 3, "target_reps": None, "amrap": True,
+            "alternatives": ["Lat pulldown"],
+        }
+
+    def test_copying_twice_gives_two_programs(self, client) -> None:
+        client.post("/templates/5x5-strength/copy", headers=HEADERS)
+        client.post("/templates/5x5-strength/copy", headers=HEADERS)
+        programs = client.get("/programs", headers=HEADERS).json()
+        assert [p["name"] for p in programs].count("5×5 strength") == 2
+
+    def test_unknown_template_is_404(self, client) -> None:
+        r = client.post("/templates/nope/copy", headers=HEADERS)
+        assert r.status_code == 404
+        assert r.json()["detail"] == "Couldn't find this template."
+
+    def test_a_failed_copy_leaves_nothing_behind(self, client, conn) -> None:
+        from traininglogs.db.programs import create_program_with_workouts
+
+        bad = [{"name": "A", "exercises": [{"name": "Squat", "warmup_sets": -1, "working_sets": 3,
+                                           "target_reps": 5, "amrap": False}]}]
+        with pytest.raises(Exception):
+            create_program_with_workouts(conn, "Broken", bad)
+        assert client.get("/programs", headers=HEADERS).json() == []
 
 
 class TestPins:

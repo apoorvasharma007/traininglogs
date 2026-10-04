@@ -89,6 +89,20 @@ class TestSaveSession:
         raw = get_raw_input(conn, b["client_id"])
         assert raw["source_kind"] == "manual"
 
+    def test_saves_warmup_and_cooldown(self, client, conn) -> None:
+        b = body(warmup=[{"name": "Easy cardio", "duration_seconds": 180}, {"name": "Arm circles", "reps": 10}],
+                 cooldown=[{"name": "Stretch", "duration_seconds": 300}])
+        r = client.post("/sessions", json=b, headers=HEADERS)
+        session = get_session(conn, r.json()["session_id"])
+        assert [(m["name"], m["reps"], m["duration_seconds"]) for m in session["warmup"]] == [
+            ("Easy cardio", None, 180), ("Arm circles", 10, None)]
+        assert [(m["name"], m["duration_seconds"]) for m in session["cooldown"]] == [("Stretch", 300)]
+
+    def test_a_session_under_a_minute_saves_without_a_duration(self, client, conn) -> None:
+        r = client.post("/sessions", json=body(duration_minutes=0), headers=HEADERS)
+        assert r.status_code == 201
+        assert get_session(conn, r.json()["session_id"])["duration_minutes"] is None
+
     def test_sending_again_returns_the_saved_session(self, client, conn) -> None:
         b = body()
         first = client.post("/sessions", json=b, headers=HEADERS).json()

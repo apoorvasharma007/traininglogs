@@ -31,11 +31,13 @@ from traininglogs.api.schemas import (
     ProgramIn,
     ProgramOut,
     ProgramPatch,
+    ProgramTemplate,
     SessionDetail,
     SessionSaved,
     SessionSummary,
     WorkoutExercisesIn,
     WorkoutIn,
+    WorkoutMovementsIn,
     WorkoutOrderIn,
 )
 
@@ -82,7 +84,7 @@ def _live_connection(pool: SimpleConnectionPool):
             pass
         _last_used.pop(id(conn), None)
         pool.putconn(conn, close=True)
-    raise HTTPException(status_code=503, detail="Database unavailable")
+    raise HTTPException(status_code=503, detail="Database unavailable (503). Try again in a minute.")
 
 
 def _db():
@@ -196,7 +198,7 @@ def repeat_session_endpoint(session_id: str, conn=Depends(_db), _=Depends(_auth)
 
     ids = repeat_session(conn, session_id)
     if ids is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this session.")
     raw_input_id, extraction_id = ids
     return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
 
@@ -205,7 +207,7 @@ def repeat_session_endpoint(session_id: str, conn=Depends(_db), _=Depends(_auth)
 def session_detail(session_id: str, conn=Depends(_db), _=Depends(_auth)):
     session = get_session(conn, session_id)
     if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this session.")
     return session
 
 
@@ -239,7 +241,7 @@ def progress_lift(name: str, conn=Depends(_db), _=Depends(_auth)):
 def exercise_history(name: str, conn=Depends(_db), _=Depends(_auth)):
     rows = get_exercise_history(conn, name)
     if not rows:
-        raise HTTPException(status_code=404, detail="No history found for this exercise")
+        raise HTTPException(status_code=404, detail="No sessions with this exercise yet.")
     return rows
 
 
@@ -263,8 +265,12 @@ def create_input(body: CaptureIn, response: Response, conn=Depends(_db), _=Depen
         provider = AnthropicProvider()
         extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)
     except Exception as exc:
+        print(f"Reading note {raw_input_id} failed: {exc}", flush=True)
         response.status_code = 502
-        return CaptureOut(raw_input_id=raw_input_id, error=str(exc))
+        return CaptureOut(
+            raw_input_id=raw_input_id,
+            error="Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.",
+        )
 
     response.status_code = 201
     return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
@@ -283,7 +289,7 @@ def get_extraction_card(extraction_id: str, conn=Depends(_db), _=Depends(_auth))
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
-        raise HTTPException(status_code=404, detail="Extraction not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this note.")
 
     extract_obj = TrainingLogLLMExtract.model_validate(stored["extract"])
     card = ValidationCardBuilder().build(extract_obj)
@@ -307,7 +313,7 @@ def confirm_extraction_endpoint(
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
-        raise HTTPException(status_code=404, detail="Extraction not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this note.")
 
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     final_extract = TrainingLogLLMExtract.model_validate(extract_dict)
@@ -321,7 +327,12 @@ def confirm_extraction_endpoint(
     try:
         session = confirm(conn, extraction_id, final_extract, corrections=body.corrections)
     except SystemExit as exc:
-        raise HTTPException(status_code=409, detail=str(exc))
+        # A session's id is its date plus a hash of the note's text, so this is the same note
+        # confirmed a second time for the same date.
+        print(f"Confirm refused for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(
+            status_code=409, detail="This note is already saved as a session. Find it in History."
+        )
 
     if body.program_workout_id is not None:
         from traininglogs.db.programs import link_session_to_workout
@@ -345,7 +356,7 @@ def correct_extraction(
 
     from fastapi.encoders import jsonable_encoder
 
-    from traininglogs.agent.llm_extract_validator import LLMExtractValidator
+    from traininglogs.agent.llm_extract_validator import CorrectionRejected, LLMExtractValidator
     from traininglogs.agent.patch import PatchError
     from traininglogs.agent.providers import AnthropicProvider
     from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
@@ -355,7 +366,7 @@ def correct_extraction(
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
-        raise HTTPException(status_code=404, detail="Extraction not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this note.")
 
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
@@ -366,8 +377,15 @@ def correct_extraction(
         updated_extract, edits = validator.apply_correction(current_extract, body.instruction)
     except PatchError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except CorrectionRejected as exc:
+        # The full technical reason goes to the server log; the person gets the plain one.
+        print(f"Correction rejected for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=422, detail=exc.plain)
     except LLMParserError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        print(f"Correction failed for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(
+            status_code=502, detail="The request failed. Try again in a minute."
+        )
     finally:
         # Logged whether the correction worked or not, same as extraction does: a failed
         # correction still cost money. Tied to the raw input, so a session's total cost is one
@@ -406,7 +424,7 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
 
     stored = get_extraction(conn, extraction_id)
     if stored is None:
-        raise HTTPException(status_code=404, detail="Extraction not found")
+        raise HTTPException(status_code=404, detail="Couldn't find this note.")
 
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
@@ -469,6 +487,27 @@ def programs_create(body: ProgramIn, conn=Depends(_db), _=Depends(_auth)):
     from traininglogs.db.programs import create_program
 
     return _program_or_404(conn, create_program(conn, body.name.strip()))
+
+
+@app.get("/templates", response_model=list[ProgramTemplate])
+def templates_list(_=Depends(_auth)):
+    """Ready-made programs to copy from."""
+    from traininglogs.program_templates import TEMPLATES
+
+    return TEMPLATES
+
+
+@app.post("/templates/{template_id}/copy", response_model=ProgramOut, status_code=201)
+def templates_copy(template_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Adds a copy of the template to your programs. Not followed; copying twice gives two."""
+    from traininglogs.db.programs import create_program_with_workouts
+    from traininglogs.program_templates import get_template
+
+    template = get_template(template_id)
+    if template is None:
+        raise HTTPException(status_code=404, detail="Couldn't find this template.")
+    workouts = [w.model_dump() for w in template.workouts]
+    return _program_or_404(conn, create_program_with_workouts(conn, template.name, workouts))
 
 
 @app.get("/programs/{program_id}", response_model=ProgramOut)
@@ -553,6 +592,18 @@ def workouts_set_exercises(workout_id: str, body: WorkoutExercisesIn, conn=Depen
 
     program_id = _workout_program_or_404(conn, workout_id)
     set_workout_exercises(conn, workout_id, [e.model_dump() for e in body.exercises])
+    return _program_or_404(conn, program_id)
+
+
+@app.put("/workouts/{workout_id}/movements", response_model=ProgramOut)
+def workouts_set_movements(workout_id: str, body: WorkoutMovementsIn, conn=Depends(_db), _=Depends(_auth)):
+    """Replaces the workout's warm-up and cool-down movements."""
+    from traininglogs.db.programs import set_workout_movements
+
+    program_id = _workout_program_or_404(conn, workout_id)
+    set_workout_movements(
+        conn, workout_id, [m.model_dump() for m in body.warmup], [m.model_dump() for m in body.cooldown]
+    )
     return _program_or_404(conn, program_id)
 
 

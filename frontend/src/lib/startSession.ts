@@ -1,9 +1,9 @@
 // Starting a session: from a planned workout (with last time's values) or blank.
 import { api } from '@/lib/api'
 import { workoutTitle } from '@/lib/programs'
-import { startBlank, startFromWorkout, type LastExercise, type LiveSession } from '@/lib/session'
+import { startBlank, startFromPast, startFromWorkout, type LastExercise, type LiveSession } from '@/lib/session'
 import { loadSession, saveSession } from '@/lib/store'
-import type { Program, Workout } from '@/lib/types'
+import type { Program, SessionDetail, Workout } from '@/lib/types'
 
 /** Last time for these exercises; empty when offline, so a session can still start. */
 async function lastTimes(names: string[]): Promise<LastExercise[]> {
@@ -20,20 +20,23 @@ async function lastTimes(names: string[]): Promise<LastExercise[]> {
  * Starts a session unless one is already in progress, which is kept: there is one session at a
  * time, and it is never thrown away without asking. Returns the session to open.
  */
-export async function startSession(from: { program: Program; workout: Workout; deload?: boolean } | 'blank'): Promise<LiveSession> {
+export async function startSession(
+  from: { program: Program; workout: Workout } | { past: SessionDetail } | 'blank',
+): Promise<LiveSession> {
   const current = await loadSession()
   if (current) return current
   const now = new Date()
   const session =
     from === 'blank'
       ? startBlank(now)
-      : startFromWorkout(
+      : 'past' in from
+        ? startFromPast(from.past, now)
+        : startFromWorkout(
           from.workout,
           workoutTitle(from.workout),
           from.program.id,
           await lastTimes(from.workout.exercises.flatMap((e) => [e.name, ...e.alternatives])),
           now,
-          from.deload,
         )
   await saveSession(session)
   return session
