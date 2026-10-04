@@ -134,7 +134,7 @@ def _process_ai_file(md_path: Path, conn, provider=None, orchestrator=None, outp
     source_file = relative_source_file(md_path)
     print(f">>> Loaded training log: {md_path}\n")
 
-    raw_input_id = capture(conn, md_text, source_kind="markdown", source_file=source_file)
+    raw_input_id = capture(conn, md_text, source_kind="text", source_file=source_file)
 
     provider = provider or AnthropicProvider()
     extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)

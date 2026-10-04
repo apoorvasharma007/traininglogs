@@ -16,7 +16,7 @@ def content_checksum(content: str) -> str:
 def insert_raw_input(
     conn: Connection,
     content: str,
-    source_kind: str = "markdown",
+    source_kind: str = "text",
     source_file: str | None = None,
     raw_input_id: str | None = None,
 ) -> str:

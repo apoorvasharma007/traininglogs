@@ -44,8 +44,49 @@ jobs:
       - name: Install test dependencies
         run: pip install pytest pytest-asyncio httpx
 
+      # The API serves the built app at /; the tests check that page.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the app
+        working-directory: frontend
+        run: npm ci && npm run build
+
       - name: Test
         run: pytest tests/
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build (fails over the size budget)
+        run: npm run build
 
   terraform:
     runs-on: ubuntu-latest
@@ -111,7 +152,7 @@ jobs:
             }
 
   release:
-    needs: test
+    needs: [test, frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:

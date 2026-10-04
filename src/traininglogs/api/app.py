@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,6 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
@@ -20,8 +22,21 @@ from traininglogs.api.schemas import (
     CorrectOut,
     EditIn,
     ExerciseHistoryRow,
+    LastExercise,
+    LiftDetail,
+    LiftsOut,
+    ManualSessionIn,
+    PinIn,
+    PinOut,
+    ProgramIn,
+    ProgramOut,
+    ProgramPatch,
     SessionDetail,
+    SessionSaved,
     SessionSummary,
+    WorkoutExercisesIn,
+    WorkoutIn,
+    WorkoutOrderIn,
 )
 
 load_dotenv()
@@ -35,13 +50,44 @@ def _get_pool() -> SimpleConnectionPool:
     global _pool
     if _pool is None:
         db_url = os.environ["DATABASE_URL"]
-        _pool = SimpleConnectionPool(minconn=1, maxconn=10, dsn=db_url)
+        # Keepalives stop an idle connection from being dropped along the way; the name lets the
+        # tests find this pool's connections in pg_stat_activity.
+        _pool = SimpleConnectionPool(
+            minconn=1, maxconn=10, dsn=db_url, application_name="traininglogs-api",
+            keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
+        )
     return _pool
+
+
+# A connection idle longer than this is checked before use; Supabase closes idle ones.
+IDLE_CHECK_SECONDS = 60.0
+_last_used: dict[int, float] = {}
+
+
+def _live_connection(pool: SimpleConnectionPool):
+    """A connection from the pool that the server hasn't closed. Reusing a closed one made every
+    request fail until a restart. One that sat idle gets a `SELECT 1` first; a failure replaces
+    it. Connections in steady use skip the check."""
+    for _ in range(pool.maxconn + 1):
+        conn = pool.getconn()
+        idle = time.monotonic() - _last_used.get(id(conn), 0.0)
+        try:
+            if not conn.closed:
+                if idle > IDLE_CHECK_SECONDS:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT 1")
+                    conn.rollback()
+                return conn
+        except psycopg2.Error:
+            pass
+        _last_used.pop(id(conn), None)
+        pool.putconn(conn, close=True)
+    raise HTTPException(status_code=503, detail="Database unavailable")
 
 
 def _db():
     pool = _get_pool()
-    conn = pool.getconn()
+    conn = _live_connection(pool)
     try:
         yield conn
     finally:
@@ -53,8 +99,16 @@ def _db():
         # its uncommitted writes as if they were its own -- invisible to every other
         # connection, including a test's own, but very visible to itself. Rollback is a safe
         # no-op when everything was already committed.
-        conn.rollback()
-        pool.putconn(conn)
+        if conn.closed:
+            # Lost mid-request: don't hand a dead connection to the next one.
+            pool.putconn(conn, close=True)
+        else:
+            try:
+                conn.rollback()
+                _last_used[id(conn)] = time.monotonic()
+                pool.putconn(conn)
+            except psycopg2.Error:
+                pool.putconn(conn, close=True)
 
 
 def _auth(x_api_key: Annotated[str, Header()] = ""):
@@ -107,6 +161,32 @@ def list_sessions(
     )
 
 
+@app.post("/sessions", response_model=SessionSaved, status_code=201)
+def save_session(body: ManualSessionIn, response: Response, conn=Depends(_db), _=Depends(_auth)):
+    """Saves a session entered in the app, with no model call. Sending the same `client_id` again
+    returns the session already saved, with 200 instead of 201."""
+    from traininglogs.db.programs import workout_program_id
+    from traininglogs.ingest.manual import save_manual_session
+
+    if body.program_workout_id is not None and workout_program_id(conn, body.program_workout_id) is None:
+        raise HTTPException(status_code=422, detail="That workout doesn't exist or was removed.")
+    try:
+        session_id, created = save_manual_session(conn, body.model_dump(mode="json"))
+    except SystemExit as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not created:
+        response.status_code = 200
+    return SessionSaved(session_id=session_id, created=created)
+
+
+@app.get("/exercises/last", response_model=list[LastExercise])
+def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), _=Depends(_auth)):
+    """Last time for each named exercise: the latest session that had it, from any program."""
+    from traininglogs.db.fetch import get_last_exercises
+
+    return get_last_exercises(conn, name)
+
+
 @app.post("/sessions/{session_id}/repeat", response_model=CaptureOut, status_code=201)
 def repeat_session_endpoint(session_id: str, conn=Depends(_db), _=Depends(_auth)):
     """Start a new session from a past one -- no LLM call. Returns the same ids as
@@ -127,6 +207,32 @@ def session_detail(session_id: str, conn=Depends(_db), _=Depends(_auth)):
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+@app.get("/progress/lifts", response_model=LiftsOut)
+def progress_lifts(conn=Depends(_db), _=Depends(_auth)):
+    """Key lifts, then other lifts trained in 3 or more sessions: each with its latest and best
+    estimated max (or best reps at bodyweight), and the trend over the last 4 weeks."""
+    from datetime import date
+
+    from traininglogs.analytics.progress import lift_summaries
+    from traininglogs.db.fetch import get_working_set_rows
+
+    return lift_summaries(get_working_set_rows(conn), date.today())
+
+
+@app.get("/progress/lifts/{name}", response_model=LiftDetail)
+def progress_lift(name: str, conn=Depends(_db), _=Depends(_auth)):
+    """One lift's sessions, oldest first: the value, the set behind it, records and goal."""
+    from datetime import date
+
+    from traininglogs.analytics.progress import lift_detail
+    from traininglogs.db.fetch import get_working_set_rows
+
+    detail = lift_detail(get_working_set_rows(conn), name, date.today())
+    if detail is None:
+        raise HTTPException(status_code=404, detail="No lift with that name")
+    return detail
 
 
 @app.get("/exercises/{name}/history", response_model=list[ExerciseHistoryRow])
@@ -206,10 +312,21 @@ def confirm_extraction_endpoint(
     extract_dict = body.extract if body.extract is not None else stored["extract"]
     final_extract = TrainingLogLLMExtract.model_validate(extract_dict)
 
+    if body.program_workout_id is not None:
+        from traininglogs.db.programs import workout_program_id
+
+        if workout_program_id(conn, body.program_workout_id) is None:
+            raise HTTPException(status_code=422, detail="That workout doesn't exist or was removed.")
+
     try:
         session = confirm(conn, extraction_id, final_extract, corrections=body.corrections)
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+
+    if body.program_workout_id is not None:
+        from traininglogs.db.programs import link_session_to_workout
+
+        link_session_to_workout(conn, session.session_id, body.program_workout_id)
 
     response.status_code = 201
     return ConfirmOut(session_id=session.session_id)
@@ -318,6 +435,161 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
     )
 
 
+# ---- programs, workouts and pinned notes ----
+# Every change to a program or one of its workouts returns the whole program, so the client
+# replaces what it shows with one reply.
+
+def _program_or_404(conn, program_id: str) -> dict:
+    from traininglogs.db.programs import get_program
+
+    program = get_program(conn, program_id)
+    if program is None:
+        raise HTTPException(status_code=404, detail="Program not found")
+    return program
+
+
+def _workout_program_or_404(conn, workout_id: str) -> str:
+    from traininglogs.db.programs import workout_program_id
+
+    program_id = workout_program_id(conn, workout_id)
+    if program_id is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return program_id
+
+
+@app.get("/programs", response_model=list[ProgramOut])
+def programs_list(conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import list_programs
+
+    return list_programs(conn)
+
+
+@app.post("/programs", response_model=ProgramOut, status_code=201)
+def programs_create(body: ProgramIn, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import create_program
+
+    return _program_or_404(conn, create_program(conn, body.name.strip()))
+
+
+@app.get("/programs/{program_id}", response_model=ProgramOut)
+def programs_get(program_id: str, conn=Depends(_db), _=Depends(_auth)):
+    return _program_or_404(conn, program_id)
+
+
+@app.patch("/programs/{program_id}", response_model=ProgramOut)
+def programs_update(program_id: str, body: ProgramPatch, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import update_program
+
+    name = body.name.strip() if body.name else None
+    if not update_program(conn, program_id, name=name, deload_after_days=body.deload_after_days):
+        raise HTTPException(status_code=404, detail="Program not found")
+    return _program_or_404(conn, program_id)
+
+
+@app.post("/programs/{program_id}/follow", response_model=ProgramOut)
+def programs_follow(program_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Follow this program; any other followed program stops being followed."""
+    from datetime import date
+
+    from traininglogs.db.programs import follow_program
+
+    if not follow_program(conn, program_id, date.today()):
+        raise HTTPException(status_code=404, detail="Program not found")
+    return _program_or_404(conn, program_id)
+
+
+@app.post("/programs/{program_id}/unfollow", response_model=ProgramOut)
+def programs_unfollow(program_id: str, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import unfollow_program
+
+    if not unfollow_program(conn, program_id):
+        raise HTTPException(status_code=404, detail="Program not found")
+    return _program_or_404(conn, program_id)
+
+
+@app.delete("/programs/{program_id}", status_code=204)
+def programs_archive(program_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Removes the program from the app. It is marked archived, not deleted."""
+    from traininglogs.db.programs import archive_program
+
+    if not archive_program(conn, program_id):
+        raise HTTPException(status_code=404, detail="Program not found")
+
+
+@app.post("/programs/{program_id}/workouts", response_model=ProgramOut, status_code=201)
+def workouts_add(program_id: str, body: WorkoutIn, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import add_workout
+
+    name = body.name.strip() if body.name and body.name.strip() else None
+    if add_workout(conn, program_id, name) is None:
+        raise HTTPException(status_code=404, detail="Program not found")
+    return _program_or_404(conn, program_id)
+
+
+@app.put("/programs/{program_id}/workout-order", response_model=ProgramOut)
+def workouts_reorder(program_id: str, body: WorkoutOrderIn, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import reorder_workouts
+
+    _program_or_404(conn, program_id)
+    if not reorder_workouts(conn, program_id, body.workout_ids):
+        raise HTTPException(status_code=422, detail="List every workout of the program once each.")
+    return _program_or_404(conn, program_id)
+
+
+@app.patch("/workouts/{workout_id}", response_model=ProgramOut)
+def workouts_rename(workout_id: str, body: WorkoutIn, conn=Depends(_db), _=Depends(_auth)):
+    """Renames a workout; an empty or null name clears it, so it shows as its number."""
+    from traininglogs.db.programs import rename_workout
+
+    program_id = _workout_program_or_404(conn, workout_id)
+    rename_workout(conn, workout_id, body.name.strip() if body.name and body.name.strip() else None)
+    return _program_or_404(conn, program_id)
+
+
+@app.put("/workouts/{workout_id}/exercises", response_model=ProgramOut)
+def workouts_set_exercises(workout_id: str, body: WorkoutExercisesIn, conn=Depends(_db), _=Depends(_auth)):
+    """Replaces the workout's plan with these exercises, in this order."""
+    from traininglogs.db.programs import set_workout_exercises
+
+    program_id = _workout_program_or_404(conn, workout_id)
+    set_workout_exercises(conn, workout_id, [e.model_dump() for e in body.exercises])
+    return _program_or_404(conn, program_id)
+
+
+@app.delete("/workouts/{workout_id}", response_model=ProgramOut)
+def workouts_archive(workout_id: str, conn=Depends(_db), _=Depends(_auth)):
+    """Removes a workout from its program (marked archived); the rest are renumbered."""
+    from traininglogs.db.programs import archive_workout
+
+    program_id = _workout_program_or_404(conn, workout_id)
+    archive_workout(conn, workout_id)
+    return _program_or_404(conn, program_id)
+
+
+@app.get("/pins", response_model=list[PinOut])
+def pins_list(conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import list_pins
+
+    return list_pins(conn)
+
+
+@app.put("/pins/{exercise_name}", response_model=list[PinOut])
+def pins_set(exercise_name: str, body: PinIn, conn=Depends(_db), _=Depends(_auth)):
+    """Pins a note to an exercise, replacing any note already pinned to it."""
+    from traininglogs.db.programs import list_pins, set_pin
+
+    set_pin(conn, exercise_name, body.note.strip())
+    return list_pins(conn)
+
+
+@app.delete("/pins/{exercise_name}", status_code=204)
+def pins_remove(exercise_name: str, conn=Depends(_db), _=Depends(_auth)):
+    from traininglogs.db.programs import remove_pin
+
+    if not remove_pin(conn, exercise_name):
+        raise HTTPException(status_code=404, detail="No note pinned to that exercise")
+
+
 class _NoCacheStaticFiles(StaticFiles):
     """The web UI, revalidated on every load. A browser serving a cached app.js after a deploy
     is how an old UI kept appearing locally (and cost two paid extractions)."""
@@ -328,9 +600,18 @@ class _NoCacheStaticFiles(StaticFiles):
         return response
 
 
-# Serve web/ from the same origin as the API -- one deploy, no CORS. Mounted last so every API
-# route above takes precedence. WEB_DIR is set in the container image; locally the repo's web/
-# is found from the working directory.
-_web_dir = Path(os.environ.get("WEB_DIR", "web"))
-if _web_dir.is_dir():
-    app.mount("/", _NoCacheStaticFiles(directory=_web_dir, html=True), name="web")
+@app.get("/app", include_in_schema=False)
+@app.get("/app/", include_in_schema=False)
+def old_app_address():
+    """The app lived at /app/ while it was being built; old bookmarks land on / instead."""
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse("/", status_code=301)
+
+
+# Serve the app (frontend/, built to frontend/dist) from the same origin as the API -- one deploy,
+# no CORS. Mounted last so every API route above takes precedence. APP_DIR is set in the container
+# image; locally `npm run build` in frontend/ makes frontend/dist.
+_app_dir = Path(os.environ.get("APP_DIR", "frontend/dist"))
+if _app_dir.is_dir():
+    app.mount("/", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")

@@ -88,7 +88,7 @@ def db_conn():
         cur.execute(
             "DELETE FROM sessions WHERE session_id = %s OR extraction_id IN ("
             "  SELECT x.id FROM extractions x JOIN raw_inputs r ON r.id = x.raw_input_id"
-            "  WHERE r.source_kind = 'repeat' AND r.source_file = %s)",
+            "  WHERE r.source_kind = 'manual' AND r.source_file = %s)",
             (SOURCE_ID, SOURCE_ID),
         )
     conn.commit()
@@ -156,7 +156,7 @@ class TestRepeatSession:
         raw_input_id, extraction_id = repeat_session(db_conn, SOURCE_ID, now=now)
 
         raw = get_raw_input(db_conn, raw_input_id)
-        assert (raw["source_kind"], raw["source_file"]) == ("repeat", SOURCE_ID)
+        assert (raw["source_kind"], raw["source_file"]) == ("manual", SOURCE_ID)
         assert raw["content"] == (
             f"Repeat of {SOURCE_ID} (Strength, 2026-09-19), started 2026-10-03T14:02:00+00:00 "
             f"[{raw_input_id}]"

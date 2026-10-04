@@ -118,7 +118,7 @@ class TestTheThreeLayersAreWritten:
         raw = get_raw_input(conn, extraction["raw_input_id"])
 
         assert raw["content"] == MARKDOWN
-        assert raw["source_kind"] == "markdown"
+        assert raw["source_kind"] == "text"
 
     def test_the_session_points_at_the_extraction_it_came_from(self, conn, md_file, monkeypatch) -> None:
         _stub_assemble(monkeypatch, make_extract())

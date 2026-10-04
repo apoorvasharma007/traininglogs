@@ -1,0 +1,259 @@
+"""Programs, workouts and pinned notes, through the API against the real test DB."""
+from __future__ import annotations
+
+import os
+from datetime import date
+
+import pytest
+from fastapi.testclient import TestClient
+
+from traininglogs.db.db import apply_schema, get_connection
+from traininglogs.db.insert import insert_session
+from traininglogs.models.models import TrainingSession
+
+TEST_DB_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
+)
+os.environ["DATABASE_URL"] = TEST_DB_URL
+os.environ["API_KEY"] = "testkey"
+HEADERS = {"x-api-key": "testkey"}
+
+SESSION_IDS = ["programs-test-001", "programs-test-002"]
+
+
+def _clean(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s) OR session_id LIKE 'programs-deload-%%'", (SESSION_IDS,))
+        cur.execute("DELETE FROM program_workout_exercises")
+        cur.execute("UPDATE sessions SET program_workout_id = NULL WHERE program_workout_id IS NOT NULL")
+        cur.execute("DELETE FROM program_workouts")
+        cur.execute("DELETE FROM programs")
+        cur.execute("DELETE FROM exercise_pins")
+    conn.commit()
+
+
+@pytest.fixture()
+def conn():
+    c = get_connection(TEST_DB_URL)
+    apply_schema(c)
+    _clean(c)
+    yield c
+    _clean(c)
+    c.close()
+
+
+@pytest.fixture()
+def client(conn):
+    from traininglogs.api.app import app
+
+    with TestClient(app) as c:
+        yield c
+
+
+def _program(client, name="Strength", workouts=("Bench", None, "Bench & pull-ups")) -> dict:
+    p = client.post("/programs", json={"name": name}, headers=HEADERS).json()
+    for w in workouts:
+        p = client.post(f"/programs/{p['id']}/workouts", json={"name": w}, headers=HEADERS).json()
+    return p
+
+
+def _session_from(conn, sid: str, day: str, workout_id: str) -> None:
+    insert_session(conn, TrainingSession.model_validate({
+        "data_model_version": "0.0.1", "data_model_type": "TrainingSession",
+        "session_id": sid, "user_id": "7", "user_name": "Apoorva Sharma", "date": day,
+        "exercises": [{"number": 1, "name": "Squat", "sets": [
+            {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
+    }))
+    with conn.cursor() as cur:
+        cur.execute("UPDATE sessions SET program_workout_id = %s WHERE session_id = %s", (workout_id, sid))
+    conn.commit()
+
+
+class TestPrograms:
+    def test_needs_the_api_key(self, client) -> None:
+        assert client.get("/programs").status_code == 401
+
+    def test_new_program_is_empty_and_not_followed(self, client) -> None:
+        r = client.post("/programs", json={"name": "  Strength "}, headers=HEADERS)
+        assert r.status_code == 201
+        p = r.json()
+        assert p["name"] == "Strength"
+        assert p["workouts"] == [] and p["next_workout_id"] is None
+        assert p["following"] is False and p["deload_after_days"] == 28
+
+    def test_blank_name_is_rejected(self, client) -> None:
+        assert client.post("/programs", json={"name": ""}, headers=HEADERS).status_code == 422
+
+    def test_workouts_are_numbered_in_order_and_next_starts_at_1(self, client) -> None:
+        p = _program(client)
+        assert [(w["position"], w["name"]) for w in p["workouts"]] == [
+            (1, "Bench"), (2, None), (3, "Bench & pull-ups")]
+        assert p["next_workout_id"] == p["workouts"][0]["id"]
+
+    def test_following_one_program_stops_following_the_other(self, client) -> None:
+        a = _program(client, "A", ())
+        b = _program(client, "B", ())
+        a = client.post(f"/programs/{a['id']}/follow", headers=HEADERS).json()
+        assert a["following"] is True and a["following_since"] == date.today().isoformat()
+        client.post(f"/programs/{b['id']}/follow", headers=HEADERS)
+        listed = client.get("/programs", headers=HEADERS).json()
+        assert [(p["name"], p["following"]) for p in listed] == [("B", True), ("A", False)]
+        b = client.post(f"/programs/{b['id']}/unfollow", headers=HEADERS).json()
+        assert b["following"] is False
+
+    def test_update_name_and_deload_days(self, client) -> None:
+        p = _program(client, workouts=())
+        r = client.patch(f"/programs/{p['id']}", json={"deload_after_days": 21}, headers=HEADERS)
+        assert r.json()["deload_after_days"] == 21 and r.json()["name"] == "Strength"
+        bad = client.patch(f"/programs/{p['id']}", json={"deload_after_days": 0}, headers=HEADERS)
+        assert bad.status_code == 422
+
+    def test_archived_program_is_gone_from_the_app(self, client, conn) -> None:
+        p = _program(client)
+        assert client.delete(f"/programs/{p['id']}", headers=HEADERS).status_code == 204
+        assert client.get(f"/programs/{p['id']}", headers=HEADERS).status_code == 404
+        assert client.get("/programs", headers=HEADERS).json() == []
+        with conn.cursor() as cur:
+            cur.execute("SELECT archived_at IS NOT NULL FROM programs WHERE id = %s", (p["id"],))
+            assert cur.fetchone() == (True,)
+
+    def test_unknown_program_is_404(self, client) -> None:
+        assert client.get("/programs/nope", headers=HEADERS).status_code == 404
+        assert client.post("/programs/nope/workouts", json={}, headers=HEADERS).status_code == 404
+
+
+class TestWorkouts:
+    def test_plan_is_replaced_in_order(self, client) -> None:
+        p = _program(client)
+        w = p["workouts"][0]["id"]
+        plan = [
+            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2},
+            {"name": "Chinups", "working_sets": 1, "amrap": True},
+        ]
+        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
+        assert p["workouts"][0]["exercises"] == [
+            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2, "amrap": False, "alternatives": []},
+            {"name": "Chinups", "warmup_sets": 0, "working_sets": 1, "target_reps": None, "amrap": True, "alternatives": []},
+        ]
+        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan[1:]}, headers=HEADERS).json()
+        assert [e["name"] for e in p["workouts"][0]["exercises"]] == ["Chinups"]
+        assert p["workouts"][1]["exercises"] == []
+
+    def test_alternatives_are_kept_cleaned(self, client) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        plan = [{"name": "Shoulder Press", "alternatives": [" Bench press ", "", "bench PRESS", "shoulder press", "Dips"]}]
+        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
+        assert p["workouts"][0]["exercises"][0]["alternatives"] == ["Bench press", "Dips"]
+
+    def test_bad_plan_is_rejected(self, client) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        for bad in ({"name": "  "}, {"name": "Squat", "working_sets": -1}, {"name": "Squat", "target_reps": 0}):
+            r = client.put(f"/workouts/{w}/exercises", json={"exercises": [bad]}, headers=HEADERS)
+            assert r.status_code == 422, bad
+
+    def test_rename_and_clear_name(self, client) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        p = client.patch(f"/workouts/{w}", json={"name": "Push"}, headers=HEADERS).json()
+        assert p["workouts"][0]["name"] == "Push"
+        p = client.patch(f"/workouts/{w}", json={"name": "  "}, headers=HEADERS).json()
+        assert p["workouts"][0]["name"] is None
+
+    def test_reorder_needs_every_workout_once(self, client) -> None:
+        p = _program(client)
+        ids = [w["id"] for w in p["workouts"]]
+        p = client.put(f"/programs/{p['id']}/workout-order", json={"workout_ids": ids[::-1]}, headers=HEADERS).json()
+        assert [w["id"] for w in p["workouts"]] == ids[::-1]
+        assert [w["position"] for w in p["workouts"]] == [1, 2, 3]
+        for bad in (ids[:2], ids + ids[:1], ids[:2] + ["nope"]):
+            r = client.put(f"/programs/{p['id']}/workout-order", json={"workout_ids": bad}, headers=HEADERS)
+            assert r.status_code == 422, bad
+
+    def test_removing_a_workout_renumbers_the_rest(self, client) -> None:
+        p = _program(client)
+        first, middle, last = (w["id"] for w in p["workouts"])
+        p = client.delete(f"/workouts/{middle}", headers=HEADERS).json()
+        assert [(w["id"], w["position"]) for w in p["workouts"]] == [(first, 1), (last, 2)]
+        assert client.patch(f"/workouts/{middle}", json={"name": "x"}, headers=HEADERS).status_code == 404
+
+    def test_next_workout_follows_the_latest_session_and_wraps(self, client, conn) -> None:
+        p = _program(client)
+        w1, w2, w3 = (w["id"] for w in p["workouts"])
+        _session_from(conn, SESSION_IDS[0], "3000-01-01", w1)
+        p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
+        assert p["next_workout_id"] == w2
+        assert p["workouts"][0]["last_done"] == "3000-01-01"
+        _session_from(conn, SESSION_IDS[1], "3000-01-03", w3)
+        p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
+        assert p["next_workout_id"] == w1
+
+
+class TestPins:
+    def test_pin_is_matched_ignoring_case_and_replaced(self, client) -> None:
+        r = client.put("/pins/Bench press", json={"note": "Practise at 85 kg"}, headers=HEADERS)
+        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Practise at 85 kg")]
+        r = client.put("/pins/BENCH PRESS ", json={"note": "Pause on the chest"}, headers=HEADERS)
+        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Pause on the chest")]
+
+    def test_unpin(self, client) -> None:
+        client.put("/pins/Squat", json={"note": "Brace"}, headers=HEADERS)
+        assert client.delete("/pins/squat", headers=HEADERS).status_code == 204
+        assert client.get("/pins", headers=HEADERS).json() == []
+        assert client.delete("/pins/squat", headers=HEADERS).status_code == 404
+
+    def test_empty_note_is_rejected(self, client) -> None:
+        assert client.put("/pins/Squat", json={"note": ""}, headers=HEADERS).status_code == 422
+
+
+class TestDeload:
+    """The deload count, on dates far from any other test's sessions."""
+
+    TODAY = date(2998, 3, 1)
+
+    def _program_with_sessions(self, client, conn, days_ago: list[int], deload_days_ago=(), following_days_ago=None):
+        from datetime import timedelta
+
+        p = _program(client, workouts=("A",))
+        w = p["workouts"][0]["id"]
+        for i, n in enumerate(days_ago):
+            sid = f"programs-deload-{i}"
+            SESSION_IDS.append(sid) if sid not in SESSION_IDS else None
+            _session_from(conn, sid, (self.TODAY - timedelta(days=n)).isoformat(), w)
+            if n in deload_days_ago:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE sessions SET is_deload_week = true WHERE session_id = %s", (sid,))
+                conn.commit()
+        if following_days_ago is not None:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE programs SET following = true, following_since = %s WHERE id = %s",
+                            (self.TODAY - timedelta(days=following_days_ago), p["id"]))
+            conn.commit()
+        from traininglogs.db.programs import deload_status, get_program
+
+        program = get_program(conn, p["id"])
+        return deload_status(conn, program, self.TODAY)
+
+    def test_due_after_28_days_of_training(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 1], following_days_ago=30)
+        assert status == {"days_since": 30, "due": True, "in_progress": 0}
+
+    def test_not_due_before_28_days(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [20, 15, 10, 5, 2], following_days_ago=20)
+        assert status == {"days_since": 20, "due": False, "in_progress": 0}
+
+    def test_a_break_of_7_days_restarts_the_count(self, client, conn) -> None:
+        # Trained 40 to 20 days ago, then nothing for 10 days, then again from 10 days ago.
+        status = self._program_with_sessions(client, conn, [40, 35, 30, 25, 20, 10, 6, 2], following_days_ago=40)
+        assert status["days_since"] == 10 and status["due"] is False
+
+    def test_a_break_still_going_counts_as_zero(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [40, 30, 20, 9], following_days_ago=40)
+        assert status["days_since"] == 0
+
+    def test_counts_from_the_day_after_the_last_deload(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [35, 32, 30, 25, 20, 15, 10, 5, 2], deload_days_ago=(32, 30), following_days_ago=35)
+        assert status["days_since"] == 29 and status["due"] is True
+
+    def test_a_deload_under_way_is_not_due(self, client, conn) -> None:
+        status = self._program_with_sessions(client, conn, [40, 35, 30, 25, 20, 15, 10, 5, 3, 1], deload_days_ago=(3, 1), following_days_ago=40)
+        assert status["in_progress"] == 2 and status["due"] is False

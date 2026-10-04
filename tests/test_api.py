@@ -209,7 +209,7 @@ class TestCreateInput:
         )
         r = client.post(
             "/inputs",
-            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "markdown"},
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "text"},
             headers={"x-api-key": "testkey"},
         )
         assert r.status_code == 201
@@ -395,6 +395,44 @@ class TestConfirmExtraction:
 
         from traininglogs.db.fetch import get_extraction
         assert get_extraction(db_conn, extraction_id)["corrections"] == corrections
+
+    def test_confirm_counts_as_a_planned_workout(self, client, db_conn) -> None:
+        from traininglogs.db.programs import add_workout, create_program
+
+        program_id = create_program(db_conn, "Confirm test program")
+        workout_id = add_workout(db_conn, program_id, "Bench")
+        extraction_id = self._insert_extraction(db_conn, "2026-05-08", "confirm test content 8")
+        try:
+            r = client.post(
+                f"/extractions/{extraction_id}/confirm",
+                json={"program_workout_id": workout_id},
+                headers={"x-api-key": "testkey"},
+            )
+            assert r.status_code == 201
+            with db_conn.cursor() as cur:
+                cur.execute(
+                    "SELECT program_workout_id FROM sessions WHERE session_id = %s",
+                    (r.json()["session_id"],),
+                )
+                assert cur.fetchone()[0] == workout_id
+        finally:
+            with db_conn.cursor() as cur:
+                cur.execute("DELETE FROM sessions WHERE program_workout_id = %s", (workout_id,))
+                cur.execute("DELETE FROM program_workouts WHERE program_id = %s", (program_id,))
+                cur.execute("DELETE FROM programs WHERE id = %s", (program_id,))
+            db_conn.commit()
+
+    def test_confirm_with_an_unknown_workout_saves_nothing(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-09", "confirm test content 9")
+        r = client.post(
+            f"/extractions/{extraction_id}/confirm",
+            json={"program_workout_id": "nope"},
+            headers={"x-api-key": "testkey"},
+        )
+        assert r.status_code == 422
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM sessions WHERE session_id LIKE '2026-05-09%'")
+            assert cur.fetchone()[0] == 0
 
     def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
         id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
@@ -729,22 +767,43 @@ class TestEditExtraction:
 
 
 class TestWebUi:
-    """web/ is served by the API itself (same origin, one deploy), never cached, and mounted
-    after every API route so it can't shadow one."""
+    """The app (frontend/dist, built by `npm run build`) is served by the API itself (same origin,
+    one deploy), never cached, and mounted after every API route so it can't shadow one."""
 
     def test_index_served_without_auth_and_not_cached(self, client) -> None:
         r = client.get("/")
         assert r.status_code == 200
         assert "text/html" in r.headers["content-type"]
-        assert 'id="extractBtn"' in r.text
+        assert 'id="root"' in r.text
         assert r.headers["cache-control"] == "no-cache"
 
-    def test_app_js_served(self, client) -> None:
-        r = client.get("/app.js")
-        assert r.status_code == 200
-        assert "FIELD_SPECS" in r.text
-        assert r.headers["cache-control"] == "no-cache"
+    def test_old_app_address_redirects(self, client) -> None:
+        r = client.get("/app/", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (301, "/")
 
     def test_api_routes_still_take_precedence(self, client) -> None:
         assert client.get("/sessions").status_code == 401
         assert client.get("/sessions", headers={"x-api-key": "testkey"}).status_code == 200
+
+
+class TestDeadConnections:
+    """Supabase closes idle connections. The pool must replace them instead of failing every
+    request until a restart."""
+
+    def test_requests_work_after_the_server_closes_the_pool_connections(self, client, monkeypatch) -> None:
+        import traininglogs.api.app as api_app
+
+        # Treat every pooled connection as idle, as after a quiet spell.
+        monkeypatch.setattr(api_app, "IDLE_CHECK_SECONDS", -1.0)
+        headers = {"x-api-key": "testkey"}
+        assert client.get("/sessions?limit=1", headers=headers).status_code == 200
+        killer = get_connection(TEST_DB_URL)
+        with killer.cursor() as cur:
+            cur.execute(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE application_name = 'traininglogs-api' AND pid <> pg_backend_pid()"
+            )
+            assert cur.rowcount >= 1
+        killer.close()
+        for _ in range(3):
+            assert client.get("/sessions?limit=1", headers=headers).status_code == 200

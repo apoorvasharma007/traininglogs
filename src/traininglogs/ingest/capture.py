@@ -13,7 +13,7 @@ from traininglogs.db.insert import insert_raw_input
 def capture(
     conn: Connection,
     content: str,
-    source_kind: str = "markdown",
+    source_kind: str = "text",
     source_file: str | None = None,
 ) -> str:
     """Store what the person actually wrote, before anything is asked of a model.
