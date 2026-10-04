@@ -1,37 +1,35 @@
-name: CD
+name: Deploy
 
-# Ships after CI has succeeded on a push: main to prod, dev to staging. First the infrastructure
-# (terraform apply on that environment's app layer), then the app (new image onto Cloud Run).
-# The job runs in the "prod" or "staging" GitHub environment, which holds that environment's
-# variables; prod's waits for Apoorva's approval.
+# Ships one environment: first the infrastructure (terraform apply on its app layer), then the app
+# (a new image onto Cloud Run). Called by CI once its checks pass on a push: main to prod, dev to
+# staging. The job runs in that GitHub environment, which holds its variables; prod's waits for
+# Apoorva's approval.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main, dev]
+  workflow_call:
+    inputs:
+      environment:
+        description: prod or staging
+        required: true
+        type: string
 
-# One release per environment at a time; a second merge waits for the first instead of racing it.
+# One release per environment at a time; a second push waits for the first instead of racing it.
 concurrency:
-  group: cd-${{ github.event.workflow_run.head_branch }}
+  group: deploy-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.workflow_run.head_branch == 'main' && 'prod' || 'staging' }}
+    environment: ${{ inputs.environment }}
     permissions:
       contents: read
       id-token: write
 
     env:
-      ENVIRONMENT: ${{ github.event.workflow_run.head_branch == 'main' && 'prod' || 'staging' }}
-      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/images/traininglogs:${{ github.event.workflow_run.head_sha }}
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/images/traininglogs:${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: hashicorp/setup-terraform@v4
         with:
@@ -47,7 +45,7 @@ jobs:
       # Plan, then apply exactly that plan. With no infra/ changes this is a no-op that also
       # catches anything changed by hand in the console.
       - name: Plan and apply app layer
-        working-directory: infra/environments/${{ env.ENVIRONMENT }}/app
+        working-directory: infra/environments/${{ inputs.environment }}/app
         run: |
           terraform init -input=false
           terraform plan -input=false -no-color -lock-timeout=120s -out=tfplan

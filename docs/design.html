@@ -570,17 +570,17 @@ exercise_pins
   environments/prod/app/      applied by the pipeline</div>
   <p>Terraform's state is in one bucket per environment, <code>prod-traininglogs-510513-terraform-state</code>, versioned. That bucket is the only thing created by hand. <code>infra/README.md</code> has the commands and the naming rules.</p>
 
-  <h3>CI and CD</h3>
-  <div class="diagram">pull request, or push to main
+  <h3>CI and deploys</h3>
+  <div class="diagram">pull request, or push to dev or main
       │
       ▼
-  CI    tests · terraform format and validate · plan of prod/app, posted on the pull request
-      │ checks only, changes nothing
-      ▼ main, all green
-  CD    waits for approval in the GitHub environment "prod"
-      ├── infra   terraform apply of prod/app (nothing to do when infra/ didn't change)
+  CI      tests · terraform format and validate · plan of prod/app, posted on the pull request
+      │ a pull request stops here
+      ▼ push, all green
+  deploy  (deploy.yml) dev → staging, no approval · main → prod, waits for approval
+      ├── infra   terraform apply of that environment's app layer (nothing when infra/ didn't change)
       └── app     build the image, push it, move Cloud Run onto it</div>
-  <p>Terraform owns how the service is set up; CD owns which image runs, so Terraform ignores the image. A release is merging <code>dev</code> into <code>main</code> and approving the run.</p>
+  <p>Terraform owns how the service is set up; the deploy owns which image runs, so Terraform ignores the image. Staging is a practice copy in its own Google Cloud and Supabase projects. A release is merging <code>dev</code> into <code>main</code> and approving the run.</p>
 </section>
 
 <section>
