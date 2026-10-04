@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
+  deploys production.
+
+### Changed
+
+- Row-level security is on for every table, with no rules, so Supabase's automatic web API can't
+  read or change any row. The server is unaffected.
+
 ## [4.1.0] - 2026-10-05
 
 ### Added

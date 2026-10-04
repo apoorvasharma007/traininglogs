@@ -1,27 +1,32 @@
 name: CD
 
-# Ships prod, only after CI has succeeded on main: first the infrastructure (terraform apply on
-# the app layer), then the app (new image onto Cloud Run). The infra job runs in the "prod"
-# GitHub environment, so it waits for Apoorva's approval; the app job runs only after it.
+# Ships after CI has succeeded on a push: main to prod, dev to staging. First the infrastructure
+# (terraform apply on that environment's app layer), then the app (new image onto Cloud Run).
+# The job runs in the "prod" or "staging" GitHub environment, which holds that environment's
+# variables; prod's waits for Apoorva's approval.
 on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [main]
+    branches: [main, dev]
 
-# One release at a time; a second merge waits for the first to finish instead of racing it.
+# One release per environment at a time; a second merge waits for the first instead of racing it.
 concurrency:
-  group: cd-prod
+  group: cd-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 jobs:
-  infra:
+  deploy:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
-    environment: prod
+    environment: ${{ github.event.workflow_run.head_branch == 'main' && 'prod' || 'staging' }}
     permissions:
       contents: read
       id-token: write
+
+    env:
+      ENVIRONMENT: ${{ github.event.workflow_run.head_branch == 'main' && 'prod' || 'staging' }}
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/images/traininglogs:${{ github.event.workflow_run.head_sha }}
 
     steps:
       - uses: actions/checkout@v7
@@ -42,28 +47,14 @@ jobs:
       # Plan, then apply exactly that plan. With no infra/ changes this is a no-op that also
       # catches anything changed by hand in the console.
       - name: Plan and apply app layer
-        working-directory: infra/environments/prod/app
+        working-directory: infra/environments/${{ env.ENVIRONMENT }}/app
         run: |
           terraform init -input=false
           terraform plan -input=false -no-color -lock-timeout=120s -out=tfplan
           terraform apply -input=false -no-color -lock-timeout=120s tfplan
 
-  app:
-    needs: infra
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    env:
-      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/images/traininglogs:${{ github.event.workflow_run.head_sha }}
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      # app-deploy can only be used from main (the workload identity grant checks the branch).
+      # app-deploy can only be used from the environment's branch (the workload identity grant
+      # checks it): main for prod, dev for staging.
       - name: Sign in to Google Cloud as app-deploy
         uses: google-github-actions/auth@v3
         with:

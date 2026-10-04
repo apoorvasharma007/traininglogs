@@ -40,8 +40,11 @@ into the base when both suites are 0 failed and 0 skipped.
     "Update the program?" matched by workout line, estimated max only from sets with an RPE, Done
     screen kept across restarts.
   - Prod at release: `program_workouts.warmup` and `.cooldown` columns (approval first).
-- [ ] 2. `staging`: a second Supabase project and Cloud Run service through Terraform
-  (`infra/environments/staging`); `dev` deploys to staging, `main` to production as today.
+- [x] 2. `staging` (2026-10-05): Supabase project `traininglogs-staging` (ap-northeast-2, the
+  free plan's region) and Google Cloud project `project-ff63b6ae-c18e-4350-961`, through Terraform
+  in `infra/environments/staging`. Server in us-east1 like prod, so outbound data stays free.
+  `dev` deploys to staging with no approval; `main` to prod with approval. Row-level security on
+  every table in both databases, no policies (blocks Supabase's automatic API).
 - [ ] 3. `accounts`: email-link login, an owner on every row, isolation tests, per-user fixes
   (session ids, the one followed program, pins, key lifts chosen per person), a cap on AI use, app and database in one region
   with the connection pooler, daily backups, installable app.
