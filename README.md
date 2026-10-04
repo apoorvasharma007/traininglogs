@@ -10,6 +10,10 @@ skills like reflex drills shouldn't need a different app, or a different format,
 input stays open: no form, no template. The app's job is to make sense of what you wrote and
 store it reliably enough that progress can be tracked from it later. 
 
+You can also log a session set by set while you train. Pick a program and the app starts its next
+workout with last time's weights filled in. The session stays on your phone until the server has
+it, so a gym with no signal loses nothing.
+
 The insights part of this application is being built: a user dashboard that turns the stored sessions into a picture of your progress.
 
 Right now it's a personal app with a single user, running at

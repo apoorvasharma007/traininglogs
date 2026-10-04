@@ -57,7 +57,7 @@ class TestRawInputs:
 
         assert row is not None
         assert row["content"] == MARKDOWN, "the raw layer must not normalise what was written"
-        assert row["source_kind"] == "markdown"
+        assert row["source_kind"] == "text"
         assert row["source_file"] == "inputs/legs.md"
         assert row["captured_at"] is not None
 
@@ -66,8 +66,8 @@ class TestRawInputs:
         assert get_raw_input(conn, raw_id)["checksum"] == content_checksum(MARKDOWN)
 
     def test_source_file_is_optional(self, conn) -> None:
-        """Speech and pasted text have no file to point at."""
-        raw_id = insert_raw_input(conn, "did 5 sets of squats", source_kind="speech")
+        """Pasted text has no file to point at."""
+        raw_id = insert_raw_input(conn, "did 5 sets of squats")
         assert get_raw_input(conn, raw_id)["source_file"] is None
 
     def test_an_unknown_source_kind_is_rejected(self, conn) -> None:

@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">3.1.0</span> · 2026-10-03 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">3.1.0</span> · 2026-10-04 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -201,12 +201,10 @@
 
 <section>
   <h2 id="web-app">The web app</h2>
-  <p>One page, served by the API itself. You paste a session into the text box and press Extract. A few seconds later the card appears: the session at the top (date, focus, program, phase, week), then each exercise with its warmup sets, working sets and notes. Values the model wasn't sure about carry an "AI inferred" flag, and anything the checks found suspicious shows in a warnings box above the exercises.</p>
-  <p>You can tap any line on the card. That opens a small form with every editable field for the line, filled in, so adding a missing RPE is as easy as fixing a wrong one. Save sends only the fields you changed. A bad value, like RPE 85 or reps the app can't read, keeps the form open with the reason underneath. The form outlines the uncertain fields, so you check those first.</p>
-  <p>Below each exercise are + Set and + Warmup set; at the bottom of the card, + Exercise. A set's form has + Set after this, for a set the model missed in the middle, and every form has Remove, which asks once more before it acts. None of this calls the model.</p>
-  <p>For a change that spans many lines ("all squat sets were 100 kg"), the text box under the card takes a correction in words. That one does call the model.</p>
-  <p>Confirm writes the session. Under the Extract button, "Or repeat a past session" lists the 15 newest sessions; picking one opens a card built from it, covered in <a href="#repeat">Repeating a session</a>.</p>
-  <p>The page keeps your API key in the browser after you paste it once, and talks to the API at its own address.</p>
+  <p>A React app in <code>frontend/</code>, built into static files and served by the API at <code>/</code>. It has five tabs: Train, Programs, Progress, History and Settings. Settings keeps your API key in the browser.</p>
+  <p>Train shows the program you follow and its next workout. Start opens a session: each exercise from the plan, with last time's weights and reps in grey. You type over them, tick each set when it's done, and add or remove sets and exercises as the day goes. Every change is saved in the browser (IndexedDB). Finish sends the ticked sets to <code>POST /sessions</code> once; with no connection, the session waits on the phone and sends itself when the connection returns. A plan line can name other exercises ("Shoulder Press or Bench press"); Start picks the one done longest ago.</p>
+  <p>Programs holds the programs: workouts in order, back to 1 after the last. Train shows a one-line deload reminder when the followed program reaches its deload days, 28 by default.</p>
+  <p>Log from notes is the original path: paste a note, the model reads it, and Review shows the card. You type over values on the card, open a set's drawer for RPE, type and notes, or describe a change in words, which calls the model. Confirm writes the session.</p>
 
   <h3>Progress</h3>
   <p>The Progress tab shows six key lifts first: Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean and Pull-up, each with its latest and best estimated max, the number of sessions and an arrow for the 4-week trend. Under "Other lifts" is every other exercise trained in 3 or more sessions. Tapping a lift opens a chart with one point per session, record sessions in red and the program's goal weight as a dashed line, and below it each session's sets.</p>
@@ -246,7 +244,7 @@
 
 <section>
   <h2 id="repeat">Repeating a session</h2>
-  <p>A repeat starts from a session you've already logged, with no model call at all.</p>
+  <p>A repeat starts from a session you've already logged, with no model call at all. The app has no screen for it since programs replaced it; the endpoint stays.</p>
   <div class="diagram">you pick a past session
       │
       ▼
@@ -294,18 +292,22 @@
 
 <section>
   <h2 id="data">The data</h2>
-  <p>Postgres, on Supabase, is the source of truth. Nine tables: three record how a session was read, six hold the session itself.</p>
+  <p>Postgres, on Supabase, is the source of truth. Thirteen tables: three record how a session was read, six hold the session itself, and four hold programs and pinned notes.</p>
   <table>
     <thead><tr><th>Table</th><th>One row per</th></tr></thead>
     <tbody>
-      <tr><td><code>raw_inputs</code></td><td>thing you pasted, kept untouched; a repeat gets one too, with kind <code>repeat</code></td></tr>
+      <tr><td><code>raw_inputs</code></td><td>what a session was made from, kept untouched: <code>text</code> you wrote, which the model reads, or <code>manual</code>, entered in the app or copied from a past session with no model call</td></tr>
       <tr><td><code>llm_calls</code></td><td>model call: step, tokens, cost, time, and the last raw answer even if it failed</td></tr>
       <tr><td><code>extractions</code></td><td>reading of a raw input: the model's reading, uncertain fields, warnings, status (pending, confirmed, rejected) and the list of corrections</td></tr>
-      <tr><td><code>sessions</code></td><td>workout: date, program, phase, week, focus, duration, notes, and the extraction it came from</td></tr>
+      <tr><td><code>sessions</code></td><td>session: date, program, phase, week, focus, duration, notes, the extraction it came from, and the planned workout it came from</td></tr>
       <tr><td><code>warmups</code>, <code>cooldowns</code></td><td>session-level warmup or cooldown movement</td></tr>
       <tr><td><code>exercises</code></td><td>exercise in a session, with its goal, notes and cues</td></tr>
       <tr><td><code>working_sets</code></td><td>set that counts: weight, reps (full, partial, or left and right), RPE, quality, rest, duration, distance, heart rate, failure technique</td></tr>
       <tr><td><code>warmup_sets</code></td><td>an exercise's own ramp-up set</td></tr>
+      <tr><td><code>programs</code></td><td>program: name, deload reminder in days, whether you follow it (one at a time) and since when</td></tr>
+      <tr><td><code>program_workouts</code></td><td>workout in a program: its number and optional name ("Push")</td></tr>
+      <tr><td><code>program_workout_exercises</code></td><td>exercise in a workout's plan: warmup sets, working sets, target reps or as many as you can, and other exercises that can take its place. No weights; a session takes them from the last time.</td></tr>
+      <tr><td><code>exercise_pins</code></td><td>note pinned to an exercise name, shown in every later session of it</td></tr>
     </tbody>
   </table>
   <p>The database stores weights in kilograms; the model converts pounds as it reads. Deleting a session deletes its exercises and sets with it, and deleting a raw input deletes its extractions and call log.</p>
@@ -362,7 +364,7 @@ WorkingSet                    one model for every kind of set; the fields presen
   <div class="diagram">raw_inputs
   id             TEXT PK
   content        TEXT
-  source_kind    TEXT          markdown (pasted text) | photo | speech | repeat
+  source_kind    TEXT          text (read by the model) | manual (no model call)
   source_file    TEXT          for a repeat: the session it came from
   checksum       TEXT
   captured_at    TIMESTAMPTZ
@@ -412,6 +414,7 @@ sessions
   source_file           TEXT
   notes                 TEXT
   extraction_id         TEXT        → extractions.id
+  program_workout_id    TEXT        → program_workouts.id; empty for blank workouts
   created_at            TIMESTAMPTZ
 
 warmups / cooldowns
@@ -472,7 +475,40 @@ warmup_sets
   number        INT
   weight_kg     NUMERIC
   rep_count     INT
-  notes         TEXT</div>
+  notes         TEXT
+
+programs
+  id                 TEXT PK
+  name               TEXT
+  deload_after_days  INT           default 28
+  following          BOOLEAN       at most one row true
+  following_since    DATE          the deload count starts here or at the last deload
+  archived_at        TIMESTAMPTZ   set instead of deleting
+  created_at         TIMESTAMPTZ
+
+program_workouts
+  id            TEXT PK
+  program_id    TEXT          → programs.id
+  position      INT           1..n among workouts not archived
+  name          TEXT          optional
+  archived_at   TIMESTAMPTZ
+  created_at    TIMESTAMPTZ
+
+program_workout_exercises
+  id            TEXT PK
+  workout_id    TEXT          → program_workouts.id
+  position      INT
+  name          TEXT
+  warmup_sets   INT
+  working_sets  INT
+  target_reps   INT           empty means no target
+  amrap         BOOLEAN       as many reps as you can
+  alternatives  TEXT[]        other exercises for this line; Start picks the one done longest ago
+
+exercise_pins
+  name_key      TEXT PK       the exercise name, lower case, trimmed
+  note          TEXT
+  pinned_at     TIMESTAMPTZ</div>
   </details>
 </section>
 
@@ -483,17 +519,28 @@ warmup_sets
     <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
     <tbody>
       <tr><td><code>GET /</code></td><td>The web page, never cached</td></tr>
+      <tr><td><code>GET /app/</code></td><td>The new React app, never cached. It replaces <code>/</code> when it's finished.</td></tr>
       <tr><td><code>POST /inputs</code></td><td>Saves the text, then runs the model. Returns <code>{raw_input_id, extraction_id}</code>; if the model fails, the app keeps the text anyway and the response says why.</td></tr>
       <tr><td><code>GET /extractions/{id}</code></td><td>The card for a reading, as JSON</td></tr>
       <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card, or one line added or removed. No model call. <code>400</code> names the field when a value is invalid.</td></tr>
       <tr><td><code>POST /extractions/{id}/correct</code></td><td>A correction in words. One model call.</td></tr>
-      <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session. <code>409</code> if that text was already confirmed.</td></tr>
+      <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session, optionally as a planned workout (<code>program_workout_id</code>) so the program moves on. <code>409</code> if that text was already confirmed; <code>422</code> for an unknown workout.</td></tr>
       <tr><td><code>POST /sessions/{id}/repeat</code></td><td>A new reading built from a past session. No model call. Same response as <code>POST /inputs</code>.</td></tr>
+      <tr><td><code>POST /sessions</code></td><td>Saves a session entered in the app, no model call: a raw input of kind <code>manual</code>, an extraction, the session. The phone's <code>client_id</code> makes a repeated send return the saved session (<code>200</code>) instead of a second one.</td></tr>
       <tr><td><code>GET /sessions</code></td><td>Sessions, newest first, each with its exercise names. Filters: phase, week, date range, limit.</td></tr>
       <tr><td><code>GET /sessions/{id}</code></td><td>One session in full</td></tr>
+      <tr><td><code>GET /exercises/last?name=…</code></td><td>For each name, the latest session that had it (any program): date, note, warmup and working sets. Names match ignoring case.</td></tr>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>Every working set of one exercise, across all sessions</td></tr>
       <tr><td><code>GET /progress/lifts</code></td><td>Key lifts, then other lifts with 3 or more sessions: latest and best value, sessions, 4-week trend</td></tr>
       <tr><td><code>GET /progress/lifts/{name}</code></td><td>One lift's sessions: the value, the set behind it, records and goal weight. <code>404</code> for an unknown lift.</td></tr>
+      <tr><td><code>GET /programs</code>, <code>POST /programs</code></td><td>Programs not archived, the followed one first, each with its workouts, their plans, when each was last done, the next workout, and the deload count (days since the program was followed, its last deload, or a break of 7 days or more; whether one is due or under way). Create one by name.</td></tr>
+      <tr><td><code>GET</code>, <code>PATCH</code>, <code>DELETE /programs/{id}</code></td><td>One program; change its name or deload days; archive it</td></tr>
+      <tr><td><code>POST /programs/{id}/follow</code>, <code>/unfollow</code></td><td>Follow this program (any other stops being followed), or stop</td></tr>
+      <tr><td><code>POST /programs/{id}/workouts</code></td><td>Add a workout after the last one</td></tr>
+      <tr><td><code>PUT /programs/{id}/workout-order</code></td><td>New order of all the program's workouts. <code>422</code> unless each is listed once.</td></tr>
+      <tr><td><code>PATCH</code>, <code>DELETE /workouts/{id}</code></td><td>Rename a workout (empty clears the name); archive it and renumber the rest</td></tr>
+      <tr><td><code>PUT /workouts/{id}/exercises</code></td><td>Replace a workout's plan</td></tr>
+      <tr><td><code>GET /pins</code>, <code>PUT</code>, <code>DELETE /pins/{exercise}</code></td><td>Pinned notes; pin or replace one; unpin. Exercise names match ignoring case.</td></tr>
     </tbody>
   </table>
 </section>
@@ -557,7 +604,7 @@ warmup_sets
 </section>
 
 <footer>
-  Last updated 2026-10-03
+  Last updated 2026-10-04
 </footer>
 
 </main>

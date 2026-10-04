@@ -7,6 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-04
+
+### Removed
+
+- The old one-page web UI (`web/`). The React app replaces it at `/`; `/app/` redirects there.
+- The "Repeat a past session" screen. `POST /sessions/{id}/repeat` stays.
+
+
+### Added — Phase 8 step 6b, choices in a workout's plan
+
+- A plan line can list other exercises that can take its place ("Shoulder Press or Bench
+  press"). Starting the workout picks the one done longest ago, so they take turns; the session
+  shows just that one and can still change anything. Renaming suggests the line's choices.
+- `program_workout_exercises.alternatives`.
+- `scripts/add_starting_strength.py` adds Starting Strength Phase 4 as three workouts with
+  choices, links the sessions logged under it, and follows it.
+
+### Added — Phase 8 step 6, the Train home screen
+
+- Train shows the program you follow and its next workout with Start, or the session in
+  progress with Resume, plus Blank workout and Log from notes, and how many finished sessions
+  are waiting to send.
+- A one-line deload reminder when a program reaches its deload days (28 by default). Start makes
+  the next pass through the program a deload; ✕ hides the reminder for 7 days.
+- `GET /programs` reports each program's deload count.
+
+### Fixed
+
+- The API replaces database connections the server has closed; before, every request failed
+  until a restart after Supabase dropped idle connections.
+
+### Added — Phase 8 step 5, logging a session in the app
+
+- Start a workout from a program, or a blank one. Last time's weights and reps fill in grey;
+  tick each set as you do it; add sets, warmup sets and exercises; pin a note to an exercise.
+- The session is saved on the phone (IndexedDB) on every change and sent once at Finish. Offline,
+  it waits on the phone and sends itself when the connection returns.
+- `POST /sessions` saves a session with no model call; `GET /exercises/last` gives last time.
+- Finish offers to update the workout's plan when the session differed from it.
+- Weight and reps are boxes on each set row, on the session screen and on Review; the set number
+  opens a drawer for warmup or working, RPE, note and delete.
+- `scripts/copy_prod_to_dev.py` copies production into a local `traininglogs_dev` database (prod
+  is only read), to try the app on real data; `scripts/add_bts_programs.py` adds Bodybuilding
+  Transformation as two programs, Foundation and Ramp-up, from the sessions already logged.
+
+### Fixed
+
+- A drawer opened from a set didn't slide into view until something else on screen changed.
+
+### Changed
+
+- Raw input kinds are `text` (a note the model reads) and `manual` (entered in the app, no model
+  call), replacing `markdown` and `repeat`; `photo` and `speech` were never used and are gone.
+
+### Added — Phase 8 step 4, the Programs tab
+
+- Programs list, a program's workouts (drag to reorder, follow, deload reminder, rename, delete)
+  and a workout's plan (name, exercises with warmup sets, working sets and target reps or as many
+  as you can, drag to reorder).
+- Review asks which workout a pasted session counts as; `POST /extractions/{id}/confirm` takes
+  `program_workout_id`.
+- Sheets are now the shadcn Drawer (drag to close); the lift chart uses Recharts; Motion drives
+  reordering. Only the Train screen is in the first download (81 KB); other screens load when
+  opened, and the tabs are fetched in the background.
+
+### Added — Phase 8 step 3, programs in the database
+
+- Tables `programs`, `program_workouts`, `program_workout_exercises` and `exercise_pins`, and
+  `sessions.program_workout_id`. Only additions; no existing column or row changes.
+- Endpoints to create, rename, follow, archive and reorder programs and workouts, set a
+  workout's plan, and pin notes to exercises. A program reports its next workout: the one after
+  its latest session, back to 1 after the last.
+
+### Added — Phase 8 step 2, the current screens in React
+
+- Progress (key lifts, other lifts, a lift's chart and sessions), History grouped by week with a
+  read-only session view, Settings, Log from notes and Review.
+- Review edits a set in a bottom sheet (±2.5 kg, ±1 rep, RPE, warmup or working, note), adds
+  sets, warmup sets and exercises from a ⋯ menu, and undoes a removal. It uses the existing
+  `/edit`, `/correct` and `/confirm` endpoints.
+- Charts are drawn as SVG instead of with a chart library; first-load JavaScript is 89 KB.
+
+### Added — Phase 8 step 1, the React app skeleton
+
+- `frontend/`: React, TypeScript and Vite, with Tailwind, TanStack Query, wouter, Lucide and the
+  Geist fonts. Five tabs (Train, Programs, Progress, History, Settings) with empty screens, and
+  the light and dark colours from `react-plan.md`.
+- The API serves the built app at `/app/`; the old UI stays at `/` until step 8. The Docker image
+  builds the app in a Node stage.
+- CI type-checks, lints, tests and builds the app. The build fails if first-load JavaScript passes
+  120 KB gzipped (78 KB now).
+
 ### Added — Phase 7, a Progress tab with estimated max per lift
 
 - The web app gets Log and Progress tabs. Progress lists six key lifts (Squat, Bench Press,

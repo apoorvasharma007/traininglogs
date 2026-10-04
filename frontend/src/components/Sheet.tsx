@@ -1,0 +1,29 @@
+import type { ReactNode } from 'react'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
+
+/**
+ * A panel that slides up from the bottom (shadcn Drawer, built on vaul): drag it down, tap
+ * outside or press Escape to close. `label` names it for screen readers.
+ */
+export default function Sheet({
+  open,
+  onClose,
+  label,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <Drawer open={open} onOpenChange={(next) => !next && onClose()}>
+      <DrawerContent aria-describedby={undefined} className="mx-auto max-w-md rounded-t-[20px] border-border bg-card">
+        <DrawerTitle className="sr-only">{label}</DrawerTitle>
+        <div className="flex flex-col gap-4 overflow-y-auto px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+          {children}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  )
+}

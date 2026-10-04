@@ -1,8 +1,8 @@
 -- ---------------------------------------------------------------------------
 -- Capture and interpretation layers.
 --
--- `raw_inputs` is what the person actually produced -- the markdown they typed, and later the
--- text off a photograph or a speech transcript. It is never edited. Everything downstream can
+-- `raw_inputs` is what the person actually produced -- a note they wrote, or a session entered
+-- set by set in the app. It is never edited. Everything downstream can
 -- be rebuilt from it, which is the point: an extraction is a *derived* artifact, and deriving
 -- it again with a better model or prompt must not require the person to write anything twice.
 --
@@ -20,7 +20,10 @@
 CREATE TABLE IF NOT EXISTS raw_inputs (
     id          TEXT PRIMARY KEY,
     content     TEXT NOT NULL,
-    -- What kind of capture this was. Markdown today; the other two are why this table exists.
+    -- How to read `content`: 'text' is something the person wrote, read by the model (it costs
+    -- money and can be read again with a better prompt); 'manual' was entered in the app, or
+    -- copied from a past session, with no model call -- anything that re-reads raw inputs with a
+    -- model must skip it.
     source_kind TEXT NOT NULL,
     -- Where it came from, when there is a where. Null for pasted or spoken input.
     source_file TEXT,
@@ -29,18 +32,18 @@ CREATE TABLE IF NOT EXISTS raw_inputs (
     checksum    TEXT NOT NULL,
     captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'))
+        CHECK (source_kind IN ('text', 'manual'))
 );
 
--- 'repeat' (a session started from a past one, ingest/repeat.py) was added after raw_inputs
--- existed in real databases, and CREATE TABLE IF NOT EXISTS doesn't touch an existing table's
--- constraints -- so the check is re-stated here, idempotently, for those databases too. Unlike
--- the other three kinds, a repeat's content is a line the app wrote, not a workout to read:
--- anything that re-reads raw inputs with a model must skip it.
+-- Until 2026-10-04 the kinds were 'markdown' (any pasted text), 'repeat' (copied from a past
+-- session) and the never-used 'photo' and 'speech'. Databases made before then get their rows
+-- renamed and the check replaced here; CREATE TABLE IF NOT EXISTS doesn't touch an existing
+-- table. Both updates do nothing once renamed.
+ALTER TABLE raw_inputs DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check;
+UPDATE raw_inputs SET source_kind = 'text' WHERE source_kind = 'markdown';
+UPDATE raw_inputs SET source_kind = 'manual' WHERE source_kind = 'repeat';
 ALTER TABLE raw_inputs
-    DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check,
-    ADD CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('markdown', 'photo', 'speech', 'repeat'));
+    ADD CONSTRAINT raw_inputs_source_kind_check CHECK (source_kind IN ('text', 'manual'));
 
 CREATE TABLE IF NOT EXISTS extractions (
     id               TEXT PRIMARY KEY,
@@ -200,3 +203,59 @@ CREATE INDEX IF NOT EXISTS idx_warmups_session_id   ON warmups(session_id);
 CREATE INDEX IF NOT EXISTS idx_cooldowns_session_id ON cooldowns(session_id);
 CREATE INDEX IF NOT EXISTS idx_exercises_session_id         ON exercises(session_id);
 CREATE INDEX IF NOT EXISTS idx_working_sets_exercise_id     ON working_sets(exercise_id);
+
+-- Programs (Phase 8). A program is workouts in order; after the last one it starts again at 1.
+-- Removing a program or workout marks it archived, so sessions that point at it keep the link.
+CREATE TABLE IF NOT EXISTS programs (
+    id                TEXT PRIMARY KEY,
+    name              TEXT NOT NULL,
+    deload_after_days INT  NOT NULL DEFAULT 28 CHECK (deload_after_days > 0),
+    following         BOOLEAN NOT NULL DEFAULT false,
+    -- The deload count starts here, or at the last deload session, whichever is later.
+    following_since   DATE,
+    archived_at       TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- At most one program is followed at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed ON programs (following) WHERE following;
+
+-- Workout 1, 2, 3 of a program. The name is optional ("Push").
+CREATE TABLE IF NOT EXISTS program_workouts (
+    id          TEXT PRIMARY KEY,
+    program_id  TEXT NOT NULL REFERENCES programs(id),
+    position    INT  NOT NULL CHECK (position > 0),
+    name        TEXT,
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- The plan inside a workout. No weights: a session takes them from the last time.
+CREATE TABLE IF NOT EXISTS program_workout_exercises (
+    id           TEXT PRIMARY KEY,
+    workout_id   TEXT NOT NULL REFERENCES program_workouts(id) ON DELETE CASCADE,
+    position     INT  NOT NULL CHECK (position > 0),
+    name         TEXT NOT NULL,
+    warmup_sets  INT  NOT NULL DEFAULT 0 CHECK (warmup_sets >= 0),
+    working_sets INT  NOT NULL DEFAULT 1 CHECK (working_sets >= 0),
+    target_reps  INT  CHECK (target_reps > 0),
+    -- "1 × max": as many reps as you can.
+    amrap        BOOLEAN NOT NULL DEFAULT false
+);
+
+-- Other exercises that can take a plan line's place ("Shoulder Press or Bench press"). Starting the
+-- workout picks whichever of them was done longest ago; the session can still change anything.
+ALTER TABLE program_workout_exercises ADD COLUMN IF NOT EXISTS alternatives TEXT[] NOT NULL DEFAULT '{}';
+
+-- A note pinned to an exercise shows in every later session of it. Matched ignoring case.
+CREATE TABLE IF NOT EXISTS exercise_pins (
+    name_key  TEXT PRIMARY KEY,
+    note      TEXT NOT NULL,
+    pinned_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Which planned workout a session came from; empty for blank workouts and older sessions.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS program_workout_id TEXT REFERENCES program_workouts(id);
+
+CREATE INDEX IF NOT EXISTS idx_program_workouts_program_id ON program_workouts(program_id);
+CREATE INDEX IF NOT EXISTS idx_program_workout_exercises_workout_id ON program_workout_exercises(workout_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_program_workout_id ON sessions(program_workout_id);

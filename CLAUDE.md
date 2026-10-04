@@ -59,14 +59,30 @@ docker compose up -d db_test      # Postgres for the tests, on port 5433
 `LOCAL_DATABASE_URL` and `REGEN_DATABASE_URL` in `.env.example` belong to the retired markdown
 flow; nothing in the app reads them.
 
-Run the app. It serves the API and the web UI from one process at `http://localhost:8000/`:
+Build the app once, then run it. One process serves the API and the app at `http://localhost:8000/`:
+
+```bash
+cd frontend && npm ci && npm run build && cd ..
+```
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/uvicorn traininglogs.api.app:app --reload
 ```
 
+While changing the app, `cd frontend && npm run dev` serves it at `http://localhost:5173/` and
+reloads on every save; it sends API calls to the server on port 8000.
+
 Point `DATABASE_URL` at the test database like this when trying things out. Without it, the app
 reads and writes production. Each Extract is a paid model call either way.
+
+To try things on real data without touching production, copy it into a local dev database (this
+only reads production) and run the app on port 8010 against the copy:
+
+```bash
+.venv/bin/python scripts/copy_prod_to_dev.py
+DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_dev \
+    .venv/bin/uvicorn traininglogs.api.app:app --port 8010
+```
 
 Run the tests:
 
@@ -102,7 +118,7 @@ main   what's deployed; only dev merges into it
   delete a test to get green.
 - New models get tests for valid construction, each validator's accept and reject cases, and a
   `model_dump(mode="json")` round trip.
-- A web UI change gets checked in a browser against the local app before it merges.
+- An app change gets checked in a browser against the local app before it merges.
 - After a deploy, open the live app and check that the page loads and a request without the API
   key gets `401`.
 
