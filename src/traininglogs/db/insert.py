@@ -160,8 +160,9 @@ def insert_session(
     session: TrainingSession,
     source_file: str | None = None,
     extraction_id: str | None = None,
+    user_id: str | None = None,
 ) -> bool:
-    """Insert a full training session and all child records.
+    """Insert a full training session and all child records, owned by `user_id` (users.id).
 
     Returns True if inserted, False if session_id already existed (skipped).
 
@@ -182,8 +183,8 @@ def insert_session(
             INSERT INTO sessions (
                 session_id, date, program, program_author, program_length_weeks,
                 phase, week, is_deload_week, focus, duration_minutes,
-                weight_unit, user_id, user_name, notes, source_file, extraction_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                weight_unit, user_id, notes, source_file, extraction_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session.session_id,
@@ -197,8 +198,7 @@ def insert_session(
                 session.focus,
                 session.session_duration_minutes,
                 session.weight_unit,
-                session.user_id,
-                session.user_name,
+                user_id,
                 session.notes,
                 source_file,
                 extraction_id,

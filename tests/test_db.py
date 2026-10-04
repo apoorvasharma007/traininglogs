@@ -296,8 +296,9 @@ def test_insert_session_fields(conn):
     assert row[3] == "Pull Hypertrophy"
     assert row[4] == 90
     assert row[5] == "kg"
-    assert row[6] == "7"
-    assert row[7] == "Apoorva Sharma"
+    # The owner comes from the caller, never from the session's own (retired) user fields.
+    assert row[6] is None
+    assert row[7] is None
 
 
 def test_insert_session_weight_unit_lbs(conn):

@@ -216,8 +216,6 @@ CREATE TABLE IF NOT EXISTS programs (
     archived_at       TIMESTAMPTZ,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
--- At most one program is followed at a time.
-CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed ON programs (following) WHERE following;
 
 -- Workout 1, 2, 3 of a program. The name is optional ("Push").
 CREATE TABLE IF NOT EXISTS program_workouts (
@@ -259,6 +257,57 @@ CREATE INDEX IF NOT EXISTS idx_program_workouts_program_id ON program_workouts(p
 CREATE INDEX IF NOT EXISTS idx_program_workout_exercises_workout_id ON program_workout_exercises(workout_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_program_workout_id ON sessions(program_workout_id);
 
+-- ---------------------------------------------------------------------------
+-- Accounts (phase 9, step 3).
+--
+-- `users` is the app's own list of people. Data points at users.id, never at the sign-in
+-- service's id: changing or adding a sign-in method, or copying data between environments (where
+-- the same person has a different Supabase id), then touches one row here instead of every row.
+-- auth_id is the Supabase account id ("sub" in the sign-in pass); the server adds the user on
+-- their first signed-in request.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+    id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    auth_id              UUID NOT NULL UNIQUE,
+    -- For recognising people; the sign-in service stays the source of truth.
+    email                TEXT,
+    ai_monthly_limit_usd NUMERIC NOT NULL DEFAULT 1.00 CHECK (ai_monthly_limit_usd >= 0),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- sessions.user_id held a fixed "7" from the retired notes flow. It becomes a real owner: values
+-- that aren't a UUID are dropped, and the release fills in each session's owner.
+DO $$
+BEGIN
+    IF (SELECT data_type FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'sessions' AND column_name = 'user_id') = 'text' THEN
+        ALTER TABLE sessions ALTER COLUMN user_id TYPE UUID USING
+            CASE WHEN user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN user_id::uuid END;
+    END IF;
+END $$;
+
+-- The owner, on every table the app looks up by its own id; the rest are only reached through
+-- one of these. A user who still has data can't be deleted (RESTRICT): removing an account is a
+-- deliberate step that removes the data first.
+ALTER TABLE raw_inputs       ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE extractions      ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE programs         ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_user_id_fkey;
+ALTER TABLE sessions ADD CONSTRAINT sessions_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
+
+CREATE INDEX IF NOT EXISTS idx_raw_inputs_user_id       ON raw_inputs(user_id);
+CREATE INDEX IF NOT EXISTS idx_extractions_user_id      ON extractions(user_id);
+CREATE INDEX IF NOT EXISTS idx_programs_user_id         ON programs(user_id);
+CREATE INDEX IF NOT EXISTS idx_program_workouts_user_id ON program_workouts(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id_date    ON sessions(user_id, date);
+
+-- Each person follows at most one program. (Replaces programs_one_followed, which allowed one in
+-- total.)
+DROP INDEX IF EXISTS programs_one_followed;
+CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed_per_user ON programs (user_id) WHERE following;
+
 -- Row-level security on, with no policies: Supabase's automatic web API (the anon key, signed-in
 -- users) can't read or change any row. The server is unaffected: it connects as the tables'
 -- owner, and Postgres doesn't apply these rules to a table's owner.
@@ -274,3 +323,4 @@ ALTER TABLE warmup_sets               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE programs                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE program_workouts          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE program_workout_exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users                     ENABLE ROW LEVEL SECURITY;
