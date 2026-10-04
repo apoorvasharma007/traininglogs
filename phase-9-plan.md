@@ -31,17 +31,55 @@ into the base when both suites are 0 failed and 0 skipped.
   - A set's note shows as a small marker on its row.
   - Alternatives: Start uses the first exercise; a swap icon (⇄) beside the name opens a drawer
     listing the alternatives; tapping one switches the session to it.
-  - Put Bench press back in Starting Strength's workout 2 (prod, with approval).
+  - Put Bench press back in Starting Strength's workout 2 (prod, with approval). Done 2026-10-04.
+  - View and edit modes for programs and workouts; the session collapses finished exercises.
+  - A lighter set drawer; effort as Moderate / Hard / All out (RPE 7 / 8.5 / 10); no LAST column.
+  - Warm-up ramps for weighted exercises; session warm-up and cool-down, programmable per workout.
+  - App-wide text review (2026-10-04): plain errors with codes, Warm-up / Remove / Update program
+    wording, program templates (`GET /templates`, `POST /templates/{id}/copy`), simpler home card,
+    "Update the program?" matched by workout line, estimated max only from sets with an RPE, Done
+    screen kept across restarts.
+  - Prod at release: `program_workouts.warmup` and `.cooldown` columns (approval first).
 - [ ] 2. `staging`: a second Supabase project and Cloud Run service through Terraform
   (`infra/environments/staging`); `dev` deploys to staging, `main` to production as today.
 - [ ] 3. `accounts`: email-link login, an owner on every row, isolation tests, per-user fixes
-  (session ids, the one followed program, pins), a cap on AI use, app and database in one region
+  (session ids, the one followed program, pins, key lifts chosen per person), a cap on AI use, app and database in one region
   with the connection pooler, daily backups, installable app.
+- [ ] 3b. `maxes`: a 1RM per lift, entered by a new user or taken from the estimated max in their
+  history; warm-ups and working weights suggested from it, and plans that say "5 x 5 at 75%".
 - [ ] 4. `exercise-names`: a "Your exercises" screen with likely duplicates (pg_trgm), merge into
   aliases, autocomplete wherever a name is typed.
 - [ ] 5. `insights`: an analytics landing page of cards each person picks and orders.
 - [ ] 6. `design`: a layout and visual pass, mockups first.
 
+## Ideas for later
+
+Not scheduled. Each needs accounts first, and its own design review.
+
+- **Leaderboards.** Top lifters by age range, gender and region, opt-in only. Records need some
+  check before they count (a video, or a judge), or the board fills with typos and fakes.
+- **Community contests.** Time-boxed and local: "heaviest bench press in Bangalore this month",
+  "biggest strength gain in 8 weeks". Prizes for winners. Same opt-in and checking as above.
+- **Training by sport.** A database of the body's regions and abilities (strength, power, mobility,
+  endurance, reflexes), each mapped to the exercises that train it and to the sports that need it,
+  so someone can see what to train to move like a sprinter, a climber or a fighter.
+- **AI-assisted program creation.** Describe what you want ("3 days a week, strength, home gym with
+  a barbell"); the model drafts a program, you edit it before it's saved. A few cents per draft,
+  behind the AI spending cap.
+- **Community programs: share, then sell.** People publish programs others can copy and run, then
+  sell them. Needs publishing and copying, moderation for junk and copied programs, and payments
+  (Razorpay or similar, GST, refunds, payouts). Builds on the built-in program templates.
+
+Rule for adding AI anywhere: use it where free text has to become structured data, or where the
+person asks for it once and reviews the result. Never inside a session, which has to work offline,
+instantly and for free; never where a simple rule is reliable.
+
 ## ▶ Resume here
 
-2026-10-04: plan written. Next: cut `phase-9/next-1-fixes` and build step 1.
+2026-10-04: step 1 (`fixes`), including the app-wide text review, is built on
+`phase-9/next-1-fixes` (last commit: the Done screen kept across restarts) and running on Apoorva's
+test server (`uvicorn ... --host 0.0.0.0 --port 8010` on the dev copy; phone at
+http://<laptop>:8010). Not released. Next: Apoorva tests on the phone; then, on "release", merge to
+`phase-9/next` and `dev`, PR to `main`, apply the program_workouts columns to prod with approval,
+approve CD. Open questions: move the offline / installable app earlier; drag to reorder exercises
+in a session (needs a design).

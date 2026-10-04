@@ -23,6 +23,8 @@ export function useReviewDoc(extractionId: string) {
   const [undoState, setUndoState] = useState<{ doc: Doc; corrections: Record<string, unknown>[] } | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // A failed AI fix shows its error in the fix box, next to the message, not in the floating bar.
+  const [errorFromFix, setErrorFromFix] = useState(false)
 
   const current: Doc | null = doc ?? (initial.data ? { extract: null, card: initial.data } : null)
 
@@ -48,7 +50,7 @@ export function useReviewDoc(extractionId: string) {
   async function run(
     steps: (Step | ((created: string | null, doc: Doc) => Step | null))[],
     options?: { undoable?: boolean },
-  ): Promise<{ doc: Doc; created: string | null } | undefined> {
+  ): Promise<{ doc: Doc; created: string | null; corrections: Record<string, unknown>[] } | undefined> {
     if (!current) return undefined
     setBusy(true)
     setError(null)
@@ -66,14 +68,16 @@ export function useReviewDoc(extractionId: string) {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
+      setErrorFromFix(steps.some((s) => typeof s !== 'function' && 'instruction' in s))
       setBusy(false)
       return undefined
     }
+    const all = [...corrections, ...added]
     setUndoState(options?.undoable ? { doc: current, corrections } : null)
     setDoc(working)
-    setCorrections([...corrections, ...added])
+    setCorrections(all)
     setBusy(false)
-    return { doc: working, created }
+    return { doc: working, created, corrections: all }
   }
 
   function undo() {
@@ -89,6 +93,7 @@ export function useReviewDoc(extractionId: string) {
     corrections,
     busy,
     error,
+    errorFromFix,
     clearError: () => setError(null),
     run,
     canUndo: undoState != null,

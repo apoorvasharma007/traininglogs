@@ -249,7 +249,7 @@ class LiftPoint(BaseModel):
         description="Best estimated max (kg), or best reps at bodyweight; null for a bodyweight "
         "lift's session with only weighted sets"
     )
-    method: Optional[Literal["rpe", "epley"]]
+    method: Optional[Literal["rpe"]]
     heaviest_kg: Optional[float]
     goal_weight_kg: Optional[float]
     records: list[str]
@@ -271,8 +271,8 @@ class PlanExercise(BaseModel):
     amrap: bool = Field(default=False, description="As many reps as you can.")
     alternatives: list[str] = Field(
         default_factory=list,
-        description="Other exercises that can take this line's place. Starting the workout picks "
-        "whichever of them was done longest ago.",
+        description="Other exercises that can take this one's place. A workout starts with the "
+        "first; the session can switch to an alternative.",
     )
 
     @model_validator(mode="after")
@@ -291,12 +291,48 @@ class PlanExercise(BaseModel):
         return self
 
 
+class Movement(BaseModel):
+    """A warm-up or cool-down movement: reps, a duration, or neither ("easy walk")."""
+
+    name: str = Field(min_length=1)
+    reps: Optional[int] = Field(default=None, ge=0, le=1000)
+    duration_seconds: Optional[int] = Field(default=None, ge=0, le=86400)
+
+    @model_validator(mode="after")
+    def strip_name(self) -> Movement:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("name can't be blank")
+        return self
+
+
 class WorkoutOut(BaseModel):
     id: str
     position: int
     name: Optional[str]
     last_done: Optional[date]
     exercises: list[PlanExercise]
+    warmup: list[Movement] = []
+    cooldown: list[Movement] = []
+
+
+class TemplateWorkout(BaseModel):
+    name: str
+    exercises: list[PlanExercise]
+
+
+class ProgramTemplate(BaseModel):
+    """A ready-made program to copy into your own programs."""
+
+    id: str
+    name: str
+    days: str = Field(description='How often it is run, e.g. "3 days a week".')
+    workouts: list[TemplateWorkout]
+
+
+class WorkoutMovementsIn(BaseModel):
+    warmup: list[Movement] = []
+    cooldown: list[Movement] = []
 
 
 class DeloadStatus(BaseModel):
@@ -379,6 +415,10 @@ class ManualExercise(BaseModel):
         return self
 
 
+class ManualMovement(Movement):
+    notes: Optional[str] = None
+
+
 class ManualSessionIn(BaseModel):
     """A session entered set by set in the app. Only the sets the person ticked are sent."""
 
@@ -393,6 +433,8 @@ class ManualSessionIn(BaseModel):
     program_workout_id: Optional[str] = None
     is_deload: bool = False
     notes: Optional[str] = None
+    warmup: list[ManualMovement] = []
+    cooldown: list[ManualMovement] = []
     exercises: list[ManualExercise] = Field(min_length=1)
 
 

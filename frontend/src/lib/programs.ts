@@ -2,7 +2,7 @@
 // is named and summarised on screen.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { PlanExercise, Program, Workout } from '@/lib/types'
+import type { PlanExercise, Program, ProgramTemplate, Workout } from '@/lib/types'
 
 /** "1 · Push", or "Workout 2" when it has no name, or a name that only repeats the number. */
 export function workoutTitle(w: Pick<Workout, 'position' | 'name'>): string {
@@ -11,16 +11,21 @@ export function workoutTitle(w: Pick<Workout, 'position' | 'name'>): string {
   return name && name.toLowerCase() !== plain.toLowerCase() ? `${w.position} · ${name}` : plain
 }
 
+/** The workout's name as shown in its name field: its own name, or "Workout N". */
+export function workoutName(w: Pick<Workout, 'position' | 'name'>): string {
+  return w.name?.trim() || `Workout ${w.position}`
+}
+
 /** "or Bench press", "or Deadlift or Barbell Clean"; empty without alternatives. */
 export function choicesText(e: PlanExercise): string {
   return e.alternatives.map((a) => `or ${a}`).join(' ')
 }
 
-/** "2 warmup · 3 × 2", "3 sets", "1 × max". */
+/** "2 warm-up · 3 × 2", "3 sets", "1 × max". */
 export function planText(e: PlanExercise): string {
   const reps = e.amrap ? 'max' : e.target_reps
   const sets = reps != null ? `${e.working_sets} × ${reps}` : `${e.working_sets} ${e.working_sets === 1 ? 'set' : 'sets'}`
-  return e.warmup_sets ? `${e.warmup_sets} warmup · ${sets}` : sets
+  return e.warmup_sets ? `${e.warmup_sets} warm-up · ${sets}` : sets
 }
 
 export function usePrograms() {
@@ -53,6 +58,22 @@ export function useCreateProgram() {
   const client = useQueryClient()
   return useMutation({
     mutationFn: (name: string) => api<Program>('/programs', { method: 'POST', body: { name } }),
+    onSuccess: (program) => {
+      client.setQueryData(['program', program.id], program)
+      client.invalidateQueries({ queryKey: ['programs'] })
+    },
+  })
+}
+
+export function useTemplates() {
+  return useQuery({ queryKey: ['templates'], queryFn: () => api<ProgramTemplate[]>('/templates') })
+}
+
+/** Copies a template into your programs, answered with the new program. */
+export function useCopyTemplate() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api<Program>(`/templates/${id}/copy`, { method: 'POST' }),
     onSuccess: (program) => {
       client.setQueryData(['program', program.id], program)
       client.invalidateQueries({ queryKey: ['programs'] })

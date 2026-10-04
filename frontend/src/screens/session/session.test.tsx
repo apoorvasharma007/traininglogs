@@ -1,13 +1,14 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { clear, get } from 'idb-keyval'
+import { clear, get, set } from 'idb-keyval'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { saveSession } from '@/lib/store'
 import { startFromWorkout } from '@/lib/session'
+import { clearLastFinished, type Finished } from '@/screens/session/finished'
 import { fakeApi, renderApp } from '@/test-utils'
 
 const workout = {
-  id: 'w1', position: 1, name: 'Bench', last_done: null,
+  id: 'w1', position: 1, name: 'Bench', last_done: null, warmup: [], cooldown: [],
   exercises: [{ name: 'Squat', warmup_sets: 0, working_sets: 2, target_reps: 2, amrap: false, alternatives: [] }],
 }
 const lasts = [{ name: 'Squat', date: '2026-10-02', notes: 'better depth', warmup_sets: [], sets: [{ weight_kg: 125, reps: 2, notes: null }] }]
@@ -19,6 +20,36 @@ async function seed() {
 describe('Session', () => {
   beforeEach(async () => {
     await clear()
+  })
+
+  it('after a restart on the Done screen, brings back the summary and the program offer', async () => {
+    await clearLastFinished() // the app's memory, as after a restart
+    const finished: Finished = {
+      clientId: 'c1', title: '1 · Bench', minutes: 40, sets: 3, programId: 'p1', workoutId: 'w1', workout,
+      changes: [{ id: 'sets-0', type: 'sets', index: 0, warmup_sets: 0, working_sets: 3, label: 'Squat: 3 working sets (was 2)', on: true }],
+    }
+    await set('last-finished', finished)
+    const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
+      deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
+    fakeApi({ 'GET /programs/p1': program })
+    const location = renderApp('/session/done')
+    expect(await screen.findByText('1 · Bench · 40 min · 3 sets')).toBeInTheDocument()
+    expect(screen.getByText('Update the program?')).toBeInTheDocument()
+
+    // Kept as is: remembered, so a second restart doesn't ask again.
+    await userEvent.click(screen.getByRole('button', { name: 'Keep as is' }))
+    await waitFor(async () => expect((await get('last-finished'))?.answered).toBe(true))
+
+    await userEvent.click(screen.getByRole('link', { name: 'Done' }))
+    await waitFor(() => expect(location.history.at(-1)).toBe('/'))
+    expect(await get('last-finished')).toBeUndefined()
+  })
+
+  it('the Done screen with nothing finished goes to Train', async () => {
+    await clearLastFinished()
+    fakeApi({ 'GET /programs': [] })
+    const location = renderApp('/session/done')
+    await waitFor(() => expect(location.history.at(-1)).toBe('/'))
   })
 
   it('shows last time and the pinned note, ticks a set and saves it at Finish', async () => {
@@ -33,10 +64,10 @@ describe('Session', () => {
 
     expect(await screen.findByText('better depth')).toBeInTheDocument()
     expect(await screen.findByText('Brace before each rep')).toBeInTheDocument()
-    expect(screen.getByText('0 of 2 sets done · saved on this phone')).toBeInTheDocument()
+    expect(screen.getByText(/0 of 2 sets/)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
-    expect(screen.getByText('1 of 2 sets done · saved on this phone')).toBeInTheDocument()
+    expect(screen.getByText(/1 of 2 sets/)).toBeInTheDocument()
     // Saved on the phone straight away.
     await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets[0].done).toBe(true))
 
@@ -50,6 +81,36 @@ describe('Session', () => {
     expect(sent.exercises[0].sets).toEqual([{ weight_kg: 125, reps: 2, rpe: null, notes: null }])
     expect(await get('session-in-progress')).toBeUndefined()
     expect(await get('sessions-to-send')).toEqual([])
+  })
+
+  it("offers to save a session's changes to the program", async () => {
+    await seed()
+    const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
+      deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
+    const calls = fakeApi({
+      'GET /pins': [], 'GET /programs': [program], 'GET /programs/p1': program,
+      'POST /sessions': { session_id: 's1', created: true }, 'PUT /workouts/w1/exercises': program,
+    })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await userEvent.click(screen.getByRole('button', { name: '+ Set' }))
+    // An extra set counts toward the plan only once it's done.
+    const sets = screen.getAllByRole('button', { name: /^Set \d done$/ })
+    await userEvent.click(sets[sets.length - 1])
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
+
+    expect(await screen.findByText('Update the program?')).toBeInTheDocument()
+    expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
+    await userEvent.click(screen.getByRole('button', { name: 'Update program' }))
+    // Nothing is written until the reminder is confirmed.
+    const reminder = await screen.findByRole('dialog', { name: 'Update 1 · Bench?' })
+    expect(reminder).toHaveTextContent('every session of 1 · Bench from now on')
+    expect(calls.some((c) => c.key === 'PUT /workouts/w1/exercises')).toBe(false)
+    await userEvent.click(within(reminder).getByRole('button', { name: 'Update program' }))
+    expect(await screen.findByText('Program updated.')).toBeInTheDocument()
+    const saved = calls.find((c) => c.key === 'PUT /workouts/w1/exercises')!.body as { exercises: { working_sets: number }[] }
+    expect(saved.exercises[0].working_sets).toBe(3)
   })
 
   it('keeps a finished session on the phone when it cannot be sent', async () => {
@@ -84,6 +145,94 @@ describe('Session', () => {
     await userEvent.type(weight, '127.5')
     expect(screen.getByLabelText('Reps for set 1')).toHaveValue('2')
     await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets[0].weight).toBe('127.5'))
+  })
+
+  it('switches an exercise to an alternative from the swap icon', async () => {
+    await saveSession(startFromWorkout(
+      { ...workout, exercises: [{ name: 'Shoulder Press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: ['Bench press'] }] },
+      '1 · Bench', 'p1',
+      [{ name: 'Bench press', date: '2026-10-02', notes: 'still hard', warmup_sets: [], sets: [{ weight_kg: 90, reps: 2, notes: null }] }],
+      new Date(2026, 9, 4, 10, 0)))
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Switch Shoulder Press to an alternative' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Bench press' }))
+    expect(await screen.findByRole('heading', { name: /Bench press/ })).toBeInTheDocument()
+    expect(screen.getByLabelText('Weight for set 1')).toHaveAttribute('placeholder', '90')
+    expect(screen.getByText('still hard')).toBeInTheDocument()
+  })
+
+  it('collapses an exercise when its last set is ticked, and opens it again on tap', async () => {
+    await saveSession(startFromWorkout(
+      { ...workout, exercises: [
+        { name: 'Squat', warmup_sets: 0, working_sets: 1, target_reps: 2, amrap: false, alternatives: [] },
+        { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 2, amrap: false, alternatives: [] },
+      ] },
+      '1 · Bench', 'p1', [], new Date(2026, 9, 4, 10, 0)))
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    expect(await screen.findByText('Squat', { selector: 'span.font-semibold' })).toBeInTheDocument()
+    await userEvent.click(screen.getAllByRole('button', { name: 'Set 1 done' })[0])
+
+    const collapsed = await screen.findByRole('button', { name: 'Squat: all 1 set done. Show sets' })
+    expect(screen.queryAllByRole('button', { name: 'Set 1 done' })).toHaveLength(1)
+    expect(screen.getByText('Bench press', { selector: 'span.font-semibold' })).toBeInTheDocument()
+
+    await userEvent.click(collapsed)
+    expect(screen.getAllByRole('button', { name: 'Set 1 done' })).toHaveLength(2)
+  })
+
+  it('fills the warmup sets from a ramp', async () => {
+    await seed()
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
+    // Warm-up set templates sit at the bottom of the menu, just above Remove exercise.
+    const items = (await screen.findAllByRole('button')).map((b) => b.textContent)
+    expect(items.indexOf('Warm-up set templates')).toBe(items.indexOf('Remove exercise') - 1)
+    await userEvent.click(screen.getByRole('button', { name: 'Warm-up set templates' }))
+    expect(await screen.findByText('Builds up to your first working set, 125 kg.')).toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: /Short ramp/ }))
+    // Built up to the first working set's 125 kg: 62.5 x 5, 87.5 x 4, 112.5 x 2.
+    await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets.filter((x: { kind: string }) => x.kind === 'warmup')
+      .map((x: { weight: string; reps: string }) => [x.weight, x.reps])).toEqual([['62.5', '5'], ['87.5', '4'], ['112.5', '2']]))
+  })
+
+  it('moves an exercise with Move down', async () => {
+    await saveSession(startFromWorkout(
+      { ...workout, exercises: [...workout.exercises, { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] }] },
+      '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0),
+    ))
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
+    const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
+    await userEvent.click(within(menu).getByRole('button', { name: 'Move down' }))
+    await waitFor(async () => expect((await get('session-in-progress'))?.exercises.map((e: { name: string }) => e.name))
+      .toEqual(['Bench press', 'Squat']))
+  })
+
+  it('nudges a warm-up first; Done records 5 minutes of easy cardio', async () => {
+    await seed()
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    expect(await screen.findByText('Warm up first')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Done' }))
+    expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
+    await waitFor(async () => {
+      const saved = await get('session-in-progress')
+      expect(saved.warmup.map((m: { name: string; amount: string; done: boolean }) => [m.name, m.amount, m.done])).toEqual([['Easy cardio', '1 min', true]])
+    })
+  })
+
+  it('lets the warm-up nudge be dismissed', async () => {
+    await seed()
+    fakeApi({ 'GET /pins': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Skip the warm-up' }))
+    expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress')).warmupNudge).toBe('skipped'))
   })
 
   it('will not finish with nothing ticked', async () => {

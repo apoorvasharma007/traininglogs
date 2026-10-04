@@ -1,6 +1,7 @@
-import { Check, ChevronDown, Clock, Ellipsis, Pin } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, Clock, Ellipsis, MessageSquareText, Pin } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import EffortBars from '@/components/EffortBars'
 import NumberBox from '@/components/NumberBox'
 import type { LiveExercise, LiveSet } from '@/lib/session'
 
@@ -14,6 +15,9 @@ export default function ExerciseCard({
   onAddSet,
   onMenu,
   onRename,
+  onSwitch,
+  collapsed,
+  onToggleCollapsed,
   onNote,
   onTogglePin,
 }: {
@@ -25,6 +29,10 @@ export default function ExerciseCard({
   onAddSet: () => void
   onMenu: () => void
   onRename: (name: string) => void
+  onSwitch: () => void
+  /** All sets ticked and not reopened: shown as one line. */
+  collapsed: boolean
+  onToggleCollapsed: () => void
   onNote: (note: string) => void
   onTogglePin: () => void
 }) {
@@ -35,14 +43,39 @@ export default function ExerciseCard({
   )
   const isPinned = pinned != null && e.note.trim() !== '' && pinned === e.note.trim()
 
+  if (collapsed) {
+    return (
+      <section id={`ex-${e.key}`} className="scroll-mt-28 overflow-hidden rounded-2xl border border-border bg-card">
+        <button type="button" onClick={onToggleCollapsed} aria-expanded={false}
+          aria-label={`${e.name}: all ${e.sets.length} ${e.sets.length === 1 ? 'set' : 'sets'} done. Show sets`}
+          className="flex min-h-13 w-full items-center gap-3 px-4 text-left">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-highlight text-background">
+            <Check size={14} strokeWidth={3} aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{e.name}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{e.sets.length} of {e.sets.length} sets</span>
+          <ChevronDown size={16} aria-hidden className="shrink-0 text-faint-foreground" />
+        </button>
+      </section>
+    )
+  }
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+    <section id={`ex-${e.key}`} className="scroll-mt-28 overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-start justify-between pt-2.5 pr-1 pb-1 pl-4">
         <div className="flex min-w-0 flex-col gap-1 pt-1">
           {e.naming ? (
             <NameField initial={e.name} choices={e.choices} onCommit={onRename} />
           ) : (
-            <h2 className="text-base font-semibold">{e.name}</h2>
+            <h2 className="flex items-center gap-1.5 text-base font-semibold">
+              {e.name}
+              {e.choices.length > 1 && (
+                <button type="button" onClick={onSwitch} aria-label={`Switch ${e.name} to an alternative`}
+                  className="-m-2 flex size-9 items-center justify-center text-muted-foreground active:scale-90">
+                  <ArrowLeftRight size={15} aria-hidden />
+                </button>
+              )}
+            </h2>
           )}
           {pinned && (
             <p className="flex items-start gap-1.5 text-xs leading-snug text-foreground/80">
@@ -81,9 +114,8 @@ export default function ExerciseCard({
         </div>
       )}
 
-      <div className="grid grid-cols-[44px_64px_minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-1.5 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
+      <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-1.5 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
         <span className="pl-1">SET</span>
-        <span>LAST</span>
         <span className="text-center">KG</span>
         <span className="text-center">REPS</span>
         <span className="text-center">DONE</span>
@@ -96,20 +128,18 @@ export default function ExerciseCard({
           return (
             <motion.div key={set.key} layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }}
-              className={`grid min-h-13 grid-cols-[44px_64px_minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-1.5 border-t border-border pl-3 transition-colors ${
+              className={`grid min-h-13 grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-1.5 border-t border-border pl-3 transition-colors ${
                 set.done ? 'bg-highlight-soft' : ''
               }`}>
               <button type="button" onClick={() => onOpenSet(set)} aria-label={`Set ${label} options`}
-                className={`flex h-10 items-center justify-center gap-0.5 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
+                className={`flex h-10 items-center justify-center gap-1 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
                   warm ? 'text-warning' : 'text-muted-foreground'
                 }`}>
                 {label}
-                <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />
+                <EffortBars rpe={set.rpe} />
+                {set.note && <MessageSquareText size={12} strokeWidth={2.2} aria-label="has a note" className="text-foreground" />}
+                {!set.note && set.rpe == null && <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />}
               </button>
-              <span className="truncate font-mono text-xs text-faint-foreground">
-                {set.last ?? '—'}
-                {set.rpe != null && <span className="block text-[10px] text-muted-foreground">RPE {set.rpe}</span>}
-              </span>
               <NumberBox label={`Weight for set ${label}`} done={set.done}
                 value={set.ghost ? '' : set.weight} placeholder={set.ghost && set.weight ? set.weight : 'kg'}
                 onChange={(v) => onValue(set, 'weight', v)} />

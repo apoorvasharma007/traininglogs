@@ -7,8 +7,8 @@ Estimated max uses Epley's formula with the reps the lifter had left added on:
     estimated max = weight × (1 + (reps + RIR) / 30),   RIR = 10 − RPE
 
 so 1 rep at RPE 9 and 2 reps at RPE 10 give the same answer, as they should. Published RPE charts
-disagree with each other, so none is used. Without an RPE the set is treated as taken to failure,
-which is plain Epley.
+disagree with each other, so none is used. A set without an RPE gives no estimate: how many reps
+were left is unknown, and guessing "none" understates the max.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ MIN_RPE = 6  # a set further than 4 reps from failure says too little about the 
 TREND_WINDOW = timedelta(days=28)
 FLAT_WITHIN = 0.02
 
-Method = Literal["rpe", "epley"]
+Method = Literal["rpe"]
 Trend = Literal["up", "flat", "down"]
 
 
@@ -53,9 +53,7 @@ def estimate_max(weight_kg: float | None, reps: int | None, rpe: float | None) -
     """(estimated max, method), or None for a set that can't support an estimate."""
     if weight_kg is None or weight_kg <= 0 or reps is None or not 1 <= reps <= MAX_REPS:
         return None
-    if rpe is None:
-        return round(weight_kg * (1 + reps / 30), 1), "epley"
-    if rpe < MIN_RPE:
+    if rpe is None or rpe < MIN_RPE:
         return None
     rir = 10 - rpe
     return round(weight_kg * (1 + (reps + rir) / 30), 1), "rpe"
@@ -79,7 +77,11 @@ class SessionPoint:
 
 
 def session_points(rows: list[SetRow]) -> list[SessionPoint]:
-    """Best estimated max per session, oldest first. Sessions with no countable set are left out."""
+    """Best estimated max per session, oldest first.
+
+    A session with weighted sets but none that gives an estimate (no RPE) is kept with no value,
+    its heaviest set as best_set, so it still shows through heaviest_kg. Sessions with no weighted
+    set are left out."""
     by_session: dict[str, list[SetRow]] = {}
     for row in rows:
         by_session.setdefault(row.session_id, []).append(row)
@@ -88,9 +90,13 @@ def session_points(rows: list[SetRow]) -> list[SessionPoint]:
     for sets in by_session.values():
         estimates = [(estimate_max(s.weight_kg, set_reps(s), s.rpe), s) for s in sets]
         estimates = [(e, s) for e, s in estimates if e is not None]
-        if not estimates:
+        weighted = [s for s in sets if s.weight_kg and s.weight_kg > 0 and set_reps(s)]
+        if estimates:
+            (value, method), best = max(estimates, key=lambda pair: pair[0][0])
+        elif weighted:
+            value, method, best = None, None, max(weighted, key=lambda s: s.weight_kg)
+        else:
             continue
-        (value, method), best = max(estimates, key=lambda pair: pair[0][0])
         weights = [s.weight_kg for s in sets if s.weight_kg]
         points.append(SessionPoint(
             session_id=best.session_id, date=best.date, value=value, method=method, best_set=best,

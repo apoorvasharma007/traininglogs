@@ -10,6 +10,7 @@ export default function NumberBox({
   placeholder,
   inputMode = 'decimal',
   done,
+  flagged,
   onChange,
   onBlur,
 }: {
@@ -18,6 +19,8 @@ export default function NumberBox({
   placeholder: string
   inputMode?: 'decimal' | 'numeric' | 'text'
   done?: boolean
+  /** The AI wasn't sure of this value: an amber outline until it's looked at. */
+  flagged?: boolean
   onChange: (value: string) => void
   onBlur?: () => void
 }) {
@@ -33,10 +36,13 @@ export default function NumberBox({
       onBlur={onBlur}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      data-check={flagged ? '' : undefined}
       className={cn(
         'h-10 w-full min-w-0 rounded-lg border border-transparent text-center font-mono text-[15px] tabular-nums transition-colors',
         'placeholder:text-faint-foreground focus:border-ring focus:bg-card focus:outline-none',
         done ? 'bg-transparent' : 'bg-muted',
+        // Last, so it wins over the plain transparent border.
+        flagged && 'border-warning',
       )}
     />
   )
