@@ -64,7 +64,7 @@ def _session_from(conn, sid: str, day: str, workout_id: str) -> None:
         "session_id": sid, "user_id": "7", "user_name": "Apoorva Sharma", "date": day,
         "exercises": [{"number": 1, "name": "Squat", "sets": [
             {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
-    }))
+    }), user_id=USER_A)
     with conn.cursor() as cur:
         cur.execute("UPDATE sessions SET program_workout_id = %s WHERE session_id = %s", (workout_id, sid))
     conn.commit()

@@ -1,7 +1,7 @@
 """The ingest/ module: three single-job functions, each reading its input from the database
 and saving its own output before returning (roadmap Phase 3, D1).
 
-capture() and confirm() are already covered end-to-end via test_processor_ai_path.py's use of
+capture(, user_id=USER_A) and confirm() are already covered end-to-end via test_processor_ai_path.py's use of
 process_md_file_with_ai. These tests exercise the ingest/ functions directly, including the
 behavior process_md_file_with_ai does not yet exercise: extract()'s idempotency (D3).
 """
@@ -19,6 +19,8 @@ from traininglogs.ingest.capture import capture
 from traininglogs.ingest.confirm import confirm
 from traininglogs.ingest.extract import extract
 from traininglogs.models.models import Exercise, RepCount, WorkingSet
+
+from signed_in import USER_A
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -70,7 +72,7 @@ class FakeProvider:
 
 class TestCapture:
     def test_stores_the_text_verbatim_and_returns_its_id(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN, source_kind="text", source_file="a.md")
+        raw_input_id = capture(conn, MARKDOWN, source_kind="text", source_file="a.md", user_id=USER_A)
 
         raw = get_raw_input(conn, raw_input_id)
         assert raw["content"] == MARKDOWN
@@ -88,7 +90,7 @@ class TestExtract:
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
 
         assert seen == [(MARKDOWN, seen[0][1])]
@@ -109,7 +111,7 @@ class TestExtract:
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         first_id = extract(conn, raw_input_id, provider=FakeProvider())
         second_id = extract(conn, raw_input_id, provider=FakeProvider())
 
@@ -125,7 +127,7 @@ class TestExtract:
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         first_id = extract(conn, raw_input_id, provider=FakeProvider())
         with conn.cursor() as cur:
             cur.execute("UPDATE extractions SET status = 'rejected' WHERE id = %s", (first_id,))
@@ -152,7 +154,7 @@ class TestExtract:
             lambda text, provider=None: make_extract(date="2000-01-01", uncertain_fields=["date"]),
         )
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         raw = get_raw_input(conn, raw_input_id)
         extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
 
@@ -166,7 +168,7 @@ class TestExtract:
             lambda text, provider=None: make_extract(date="2026-03-01"),
         )
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
 
         stored = get_extraction(conn, extraction_id)
@@ -203,7 +205,7 @@ class TestLLMCallsArePersisted:
         provider = FakeProviderWithCalls(
             [_call_record("segment"), _call_record("shell"), _call_record("worker")]
         )
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
         extract(conn, raw_input_id, provider=provider)
 
@@ -221,7 +223,7 @@ class TestLLMCallsArePersisted:
         provider = FakeProviderWithCalls(
             [_call_record("worker", input_tokens=1234, output_tokens=567, cost_usd=0.004532)]
         )
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
         extract(conn, raw_input_id, provider=provider)
 
@@ -245,7 +247,7 @@ class TestLLMCallsArePersisted:
             raise RuntimeError("worker blew up")
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", failing_assemble)
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
         with pytest.raises(RuntimeError):
             extract(conn, raw_input_id, provider=provider)
@@ -260,7 +262,7 @@ class TestLLMCallsArePersisted:
         monkeypatch.setattr(
             "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
         )
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
         extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
 
@@ -276,7 +278,7 @@ class TestLLMCallsArePersisted:
         provider = FakeProviderWithCalls(
             [_call_record("worker", failed="LLMParserError: bad payload", raw_payload={"bad": 1})]
         )
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
         extract(conn, raw_input_id, provider=provider)
 
@@ -291,12 +293,12 @@ class TestLLMCallsArePersisted:
 
 class TestConfirm:
     def test_writes_the_session_and_marks_the_extraction_confirmed(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
-                "VALUES ('x1', %s, 'm', 'v1', '{}')",
-                (raw_input_id,),
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
+                "VALUES ('x1', %s, 'm', 'v1', '{}', %s)",
+                (raw_input_id, USER_A),
             )
         conn.commit()
 
@@ -316,12 +318,12 @@ class TestConfirm:
     def test_returns_the_full_session_not_just_its_id(self, conn) -> None:
         from traininglogs.models.models import TrainingSession
 
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
-                "VALUES ('x3', %s, 'm', 'v1', '{}')",
-                (raw_input_id,),
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
+                "VALUES ('x3', %s, 'm', 'v1', '{}', %s)",
+                (raw_input_id, USER_A),
             )
         conn.commit()
 
@@ -332,12 +334,12 @@ class TestConfirm:
         assert session.focus == "Legs Hypertrophy"
 
     def test_records_corrections_on_the_extraction(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN)
+        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
-                "VALUES ('x2', %s, 'm', 'v1', '{}')",
-                (raw_input_id,),
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
+                "VALUES ('x2', %s, 'm', 'v1', '{}', %s)",
+                (raw_input_id, USER_A),
             )
         conn.commit()
 
@@ -357,12 +359,12 @@ class TestConfirmSessionIds:
     2026-08-10: identity is content, not source)."""
 
     def _extraction_for(self, conn, content: str, extraction_id: str) -> str:
-        raw_input_id = capture(conn, content)
+        raw_input_id = capture(conn, content, user_id=USER_A)
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract) "
-                "VALUES (%s, %s, 'm', 'v1', '{}')",
-                (extraction_id, raw_input_id),
+                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
+                "VALUES (%s, %s, 'm', 'v1', '{}', %s)",
+                (extraction_id, raw_input_id, USER_A),
             )
         conn.commit()
         return raw_input_id

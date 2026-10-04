@@ -88,3 +88,21 @@ def test_every_owner_column_is_a_uuid_pointing_at_users(cur) -> None:
         ("raw_inputs", "uuid", True),
         ("sessions", "uuid", True),
     ]
+
+
+@pytest.mark.parametrize(("table", "insert"), [
+    ("raw_inputs", "INSERT INTO raw_inputs (id, content, source_kind, checksum) VALUES ('t', 'x', 'text', 'c')"),
+    ("programs", "INSERT INTO programs (id, name) VALUES ('t', 'P')"),
+    ("sessions", "INSERT INTO sessions (session_id, date) VALUES ('t', '3000-01-01')"),
+])
+def test_nothing_is_saved_without_an_owner(cur, table, insert) -> None:
+    with pytest.raises(psycopg2.errors.NotNullViolation):
+        cur.execute(insert)
+
+
+def test_every_owner_column_is_required(cur) -> None:
+    cur.execute(
+        "SELECT table_name FROM information_schema.columns"
+        " WHERE table_schema = 'public' AND column_name = 'user_id' AND is_nullable = 'YES'"
+    )
+    assert cur.fetchall() == []

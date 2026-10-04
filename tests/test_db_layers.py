@@ -24,6 +24,8 @@ from traininglogs.db.fetch import (
 )
 from traininglogs.db.insert import content_checksum, insert_extraction, insert_raw_input
 
+from signed_in import USER_A
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
@@ -52,7 +54,7 @@ def conn():
 
 class TestRawInputs:
     def test_stores_the_text_verbatim(self, conn) -> None:
-        raw_id = insert_raw_input(conn, MARKDOWN, source_file="inputs/legs.md")
+        raw_id = insert_raw_input(conn, MARKDOWN, source_file="inputs/legs.md", user_id=USER_A)
         row = get_raw_input(conn, raw_id)
 
         assert row is not None
@@ -62,24 +64,24 @@ class TestRawInputs:
         assert row["captured_at"] is not None
 
     def test_checksum_is_of_the_content(self, conn) -> None:
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         assert get_raw_input(conn, raw_id)["checksum"] == content_checksum(MARKDOWN)
 
     def test_source_file_is_optional(self, conn) -> None:
         """Pasted text has no file to point at."""
-        raw_id = insert_raw_input(conn, "did 5 sets of squats")
+        raw_id = insert_raw_input(conn, "did 5 sets of squats", user_id=USER_A)
         assert get_raw_input(conn, raw_id)["source_file"] is None
 
     def test_an_unknown_source_kind_is_rejected(self, conn) -> None:
         with pytest.raises(psycopg2.errors.CheckViolation):
-            insert_raw_input(conn, MARKDOWN, source_kind="telepathy")
+            insert_raw_input(conn, MARKDOWN, source_kind="telepathy", user_id=USER_A)
         conn.rollback()
 
     def test_identical_text_is_stored_twice_not_collapsed(self, conn) -> None:
         """Repeating a session is a real thing a person does. Two captures must stay two
         captures; deduplication is the ingest path's decision, not storage's."""
-        first = insert_raw_input(conn, MARKDOWN)
-        second = insert_raw_input(conn, MARKDOWN)
+        first = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
+        second = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
 
         assert first != second
         found = find_raw_inputs_by_checksum(conn, content_checksum(MARKDOWN))
@@ -93,7 +95,7 @@ class TestExtractions:
     def test_stores_the_extract_and_both_confidence_signals(self, conn) -> None:
         """`uncertain_fields` and `warnings` were computed and then discarded on the way to the
         normalized tables, leaving no record of how much to trust a row."""
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         ext_id = insert_extraction(
             conn,
             raw_input_id=raw_id,
@@ -112,7 +114,7 @@ class TestExtractions:
         assert row["prompt_version"] == "6458a555c922"
 
     def test_defaults_to_pending_and_unconfirmed(self, conn) -> None:
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         ext_id = insert_extraction(conn, raw_id, "m", "v", EXTRACT)
         row = get_extraction(conn, ext_id)
 
@@ -122,7 +124,7 @@ class TestExtractions:
         assert row["warnings"] == []
 
     def test_an_unknown_status_is_rejected(self, conn) -> None:
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         with pytest.raises(psycopg2.errors.CheckViolation):
             insert_extraction(conn, raw_id, "m", "v", EXTRACT, status="probably-fine")
         conn.rollback()
@@ -130,7 +132,7 @@ class TestExtractions:
     def test_one_input_can_have_many_extractions(self, conn) -> None:
         """The whole point of separating the layers: re-reading the same text with a better
         model must not require re-writing it."""
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         first = insert_extraction(conn, raw_id, "gpt-oss-120b", "v1", EXTRACT)
         second = insert_extraction(conn, raw_id, "claude-haiku-4-5", "v2", EXTRACT)
 
@@ -139,12 +141,13 @@ class TestExtractions:
         assert [r["model"] for r in found][0] == "claude-haiku-4-5", "newest first"
 
     def test_an_extraction_cannot_orphan_itself_from_its_input(self, conn) -> None:
-        with pytest.raises(psycopg2.errors.ForeignKeyViolation):
+        # Refused either way: no such input, so no owner to inherit either.
+        with pytest.raises((psycopg2.errors.ForeignKeyViolation, psycopg2.errors.NotNullViolation)):
             insert_extraction(conn, "no-such-raw-input", "m", "v", EXTRACT)
         conn.rollback()
 
     def test_deleting_an_input_removes_its_extractions(self, conn) -> None:
-        raw_id = insert_raw_input(conn, MARKDOWN)
+        raw_id = insert_raw_input(conn, MARKDOWN, user_id=USER_A)
         ext_id = insert_extraction(conn, raw_id, "m", "v", EXTRACT)
 
         with conn.cursor() as cur:

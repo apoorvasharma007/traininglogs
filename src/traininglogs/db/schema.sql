@@ -297,6 +297,14 @@ ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_user_id_fkey;
 ALTER TABLE sessions ADD CONSTRAINT sessions_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
+-- Required: nothing can be saved without an owner. A database with rows from before accounts gets
+-- every row's owner filled in first (the release migration), then this applies.
+ALTER TABLE raw_inputs       ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE extractions      ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE sessions         ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE programs         ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE program_workouts ALTER COLUMN user_id SET NOT NULL;
+
 CREATE INDEX IF NOT EXISTS idx_raw_inputs_user_id       ON raw_inputs(user_id);
 CREATE INDEX IF NOT EXISTS idx_extractions_user_id      ON extractions(user_id);
 CREATE INDEX IF NOT EXISTS idx_programs_user_id         ON programs(user_id);

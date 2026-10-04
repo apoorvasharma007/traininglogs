@@ -25,6 +25,8 @@ from traininglogs.models.models import (
     WorkingSet,
 )
 
+from signed_in import USER_A
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
@@ -258,7 +260,7 @@ def clean_db(conn):
 
 
 def test_insert_session_row_counts(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM sessions WHERE session_id = 'test-session-v3-001'")
@@ -281,7 +283,7 @@ def test_insert_session_row_counts(conn):
 
 
 def test_insert_session_fields(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -297,12 +299,12 @@ def test_insert_session_fields(conn):
     assert row[4] == 90
     assert row[5] == "kg"
     # The owner comes from the caller, never from the session's own (retired) user fields.
-    assert row[6] is None
+    assert str(row[6]) == USER_A
     assert row[7] is None
 
 
 def test_insert_session_weight_unit_lbs(conn):
-    insert_session(conn, make_session_lbs())
+    insert_session(conn, make_session_lbs(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT weight_unit FROM sessions WHERE session_id = 'test-session-lbs-001'")
@@ -312,7 +314,7 @@ def test_insert_session_weight_unit_lbs(conn):
 def test_insert_session_notes(conn):
     session = make_session()
     session.notes = "Legs are sore, warmup ran long."
-    insert_session(conn, session)
+    insert_session(conn, session, user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
@@ -320,7 +322,7 @@ def test_insert_session_notes(conn):
 
 
 def test_insert_session_notes_null_by_default(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
@@ -328,7 +330,7 @@ def test_insert_session_notes_null_by_default(conn):
 
 
 def test_insert_exercise_with_goal(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -352,7 +354,7 @@ def test_insert_exercise_with_goal(conn):
 
 
 def test_insert_exercise_without_goal(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -369,7 +371,7 @@ def test_insert_exercise_without_goal(conn):
 
 
 def test_insert_exercise_activity_goal(conn):
-    insert_session(conn, make_session_with_activity())
+    insert_session(conn, make_session_with_activity(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -384,7 +386,7 @@ def test_insert_exercise_activity_goal(conn):
 
 
 def test_insert_working_set_partial_reps(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -399,7 +401,7 @@ def test_insert_working_set_partial_reps(conn):
 
 
 def test_insert_working_set_activity_fields(conn):
-    insert_session(conn, make_session_with_activity())
+    insert_session(conn, make_session_with_activity(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -416,7 +418,7 @@ def test_insert_working_set_activity_fields(conn):
 
 
 def test_insert_working_set_unilateral_reps(conn):
-    insert_session(conn, make_session_with_unilateral())
+    insert_session(conn, make_session_with_unilateral(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -433,7 +435,7 @@ def test_insert_working_set_unilateral_reps(conn):
 
 
 def test_insert_working_set_myo_reps_failure_technique(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -448,7 +450,7 @@ def test_insert_working_set_myo_reps_failure_technique(conn):
 
 
 def test_insert_working_set_llp_failure_technique(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -463,7 +465,7 @@ def test_insert_working_set_llp_failure_technique(conn):
 
 
 def test_insert_working_set_null_rpe_and_rep_quality(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -477,7 +479,7 @@ def test_insert_working_set_null_rpe_and_rep_quality(conn):
 
 
 def test_insert_exercise_with_no_warmup_sets(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -488,7 +490,7 @@ def test_insert_exercise_with_no_warmup_sets(conn):
 
 
 def test_insert_warmups_and_cooldowns(conn):
-    insert_session(conn, make_session_with_warmup_cooldown())
+    insert_session(conn, make_session_with_warmup_cooldown(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -516,7 +518,7 @@ def test_insert_warmups_and_cooldowns(conn):
 
 
 def test_insert_session_with_no_warmup_cooldown(conn):
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM warmups WHERE session_id = 'test-session-v3-001'")
@@ -526,8 +528,8 @@ def test_insert_session_with_no_warmup_cooldown(conn):
 
 
 def test_insert_session_is_idempotent(conn):
-    insert_session(conn, make_session())
-    insert_session(conn, make_session())
+    insert_session(conn, make_session(), user_id=USER_A)
+    insert_session(conn, make_session(), user_id=USER_A)
 
     with conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM sessions WHERE session_id = 'test-session-v3-001'")
