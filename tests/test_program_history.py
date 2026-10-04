@@ -68,8 +68,8 @@ def test_plan_comes_from_the_chosen_week_and_sessions_are_linked(conn) -> None:
     program = get_program(conn, summary["program_id"])
     assert [(w["position"], w["name"]) for w in program["workouts"]] == [(1, "Upper"), (2, "Lower")]
     assert program["workouts"][0]["exercises"] == [
-        {"name": "Incline DB Press", "warmup_sets": 1, "working_sets": 3, "target_reps": 10, "amrap": False},
-        {"name": "Pec Dec", "warmup_sets": 0, "working_sets": 2, "target_reps": None, "amrap": False},
+        {"name": "Incline DB Press", "warmup_sets": 1, "working_sets": 3, "target_reps": 10, "amrap": False, "alternatives": []},
+        {"name": "Pec Dec", "warmup_sets": 0, "working_sets": 2, "target_reps": None, "amrap": False, "alternatives": []},
     ]
     assert program["workouts"][0]["last_done"].isoformat() == "3002-01-12"
     # The latest linked session is Upper in week 2, so Lower comes next.

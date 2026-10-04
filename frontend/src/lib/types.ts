@@ -122,6 +122,7 @@ export type PlanExercise = {
   working_sets: number
   target_reps: number | null
   amrap: boolean
+  alternatives: string[] // other exercises that can take this line's place
 }
 
 export type Workout = {

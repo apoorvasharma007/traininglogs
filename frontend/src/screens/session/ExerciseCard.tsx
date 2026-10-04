@@ -40,7 +40,7 @@ export default function ExerciseCard({
       <div className="flex items-start justify-between pt-2.5 pr-1 pb-1 pl-4">
         <div className="flex min-w-0 flex-col gap-1 pt-1">
           {e.naming ? (
-            <NameField initial={e.name} onCommit={onRename} />
+            <NameField initial={e.name} choices={e.choices} onCommit={onRename} />
           ) : (
             <h2 className="text-base font-semibold">{e.name}</h2>
           )}
@@ -141,14 +141,20 @@ export default function ExerciseCard({
   )
 }
 
-function NameField({ initial, onCommit }: { initial: string; onCommit: (name: string) => void }) {
+/** The exercise's name, typed; the plan line's other choices are offered while typing. */
+function NameField({ initial, choices, onCommit }: { initial: string; choices: string[]; onCommit: (name: string) => void }) {
   const [name, setName] = useState(initial)
   return (
     <>
+      <datalist id="exercise-choices">
+        {choices.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
       <label htmlFor="new-exercise-name" className="sr-only">
         Exercise name
       </label>
-      <input id="new-exercise-name" autoFocus value={name} placeholder="Exercise name"
+      <input id="new-exercise-name" list="exercise-choices" autoFocus value={name} placeholder="Exercise name"
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && onCommit(name.trim())}
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}

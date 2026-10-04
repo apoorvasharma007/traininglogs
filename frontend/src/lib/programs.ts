@@ -9,6 +9,11 @@ export function workoutTitle(w: Pick<Workout, 'position' | 'name'>): string {
   return w.name ? `${w.position} · ${w.name}` : `Workout ${w.position}`
 }
 
+/** "or Bench press", "or Deadlift or Barbell Clean"; empty without alternatives. */
+export function choicesText(e: PlanExercise): string {
+  return e.alternatives.map((a) => `or ${a}`).join(' ')
+}
+
 /** "2 warmup · 3 × 2", "3 sets", "1 × max". */
 export function planText(e: PlanExercise): string {
   const reps = e.amrap ? 'max' : e.target_reps

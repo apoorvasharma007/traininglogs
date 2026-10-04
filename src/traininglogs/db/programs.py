@@ -70,7 +70,7 @@ def _attach_workouts(conn: Connection, program: dict[str, Any]) -> dict[str, Any
         workouts = _rows(cur)
         cur.execute(
             """
-            SELECT e.workout_id, e.name, e.warmup_sets, e.working_sets, e.target_reps, e.amrap
+            SELECT e.workout_id, e.name, e.warmup_sets, e.working_sets, e.target_reps, e.amrap, e.alternatives
             FROM program_workout_exercises e
             JOIN program_workouts w ON w.id = e.workout_id
             WHERE w.program_id = %s
@@ -322,12 +322,12 @@ def set_workout_exercises(conn: Connection, workout_id: str, exercises: list[dic
             cur.execute(
                 """
                 INSERT INTO program_workout_exercises
-                    (id, workout_id, position, name, warmup_sets, working_sets, target_reps, amrap)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    (id, workout_id, position, name, warmup_sets, working_sets, target_reps, amrap, alternatives)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     _new_id(), workout_id, position, e["name"], e["warmup_sets"],
-                    e["working_sets"], e["target_reps"], e["amrap"],
+                    e["working_sets"], e["target_reps"], e["amrap"], list(e.get("alternatives") or []),
                 ),
             )
     conn.commit()

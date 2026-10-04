@@ -133,12 +133,18 @@ class TestWorkouts:
         ]
         p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
         assert p["workouts"][0]["exercises"] == [
-            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2, "amrap": False},
-            {"name": "Chinups", "warmup_sets": 0, "working_sets": 1, "target_reps": None, "amrap": True},
+            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2, "amrap": False, "alternatives": []},
+            {"name": "Chinups", "warmup_sets": 0, "working_sets": 1, "target_reps": None, "amrap": True, "alternatives": []},
         ]
         p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan[1:]}, headers=HEADERS).json()
         assert [e["name"] for e in p["workouts"][0]["exercises"]] == ["Chinups"]
         assert p["workouts"][1]["exercises"] == []
+
+    def test_alternatives_are_kept_cleaned(self, client) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        plan = [{"name": "Shoulder Press", "alternatives": [" Bench press ", "", "bench PRESS", "shoulder press", "Dips"]}]
+        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
+        assert p["workouts"][0]["exercises"][0]["alternatives"] == ["Bench press", "Dips"]
 
     def test_bad_plan_is_rejected(self, client) -> None:
         w = _program(client)["workouts"][0]["id"]

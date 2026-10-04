@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { deloadView, snoozeDeload, startDeload } from '@/lib/deload'
-import { planText, usePrograms, workoutTitle } from '@/lib/programs'
+import { choicesText, planText, usePrograms, workoutTitle } from '@/lib/programs'
 import { counts, type LiveSession } from '@/lib/session'
 import { startSession } from '@/lib/startSession'
 import { flush, loadSession, useOutbox } from '@/lib/store'
@@ -107,7 +107,10 @@ export default function Train() {
               <ul className="flex flex-col">
                 {next.exercises.slice(0, SHOWN).map((e) => (
                   <li key={e.name} className="flex min-h-8.5 items-center justify-between gap-3 border-t border-border text-sm">
-                    <span className="truncate">{e.name}</span>
+                    <span className="truncate">
+                      {e.name}
+                      {e.alternatives.length > 0 && <span className="text-muted-foreground"> {choicesText(e)}</span>}
+                    </span>
                     <span className="shrink-0 font-mono text-xs text-muted-foreground">{planText(e)}</span>
                   </li>
                 ))}

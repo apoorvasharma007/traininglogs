@@ -242,6 +242,10 @@ CREATE TABLE IF NOT EXISTS program_workout_exercises (
     amrap        BOOLEAN NOT NULL DEFAULT false
 );
 
+-- Other exercises that can take a plan line's place ("Shoulder Press or Bench press"). Starting the
+-- workout picks whichever of them was done longest ago; the session can still change anything.
+ALTER TABLE program_workout_exercises ADD COLUMN IF NOT EXISTS alternatives TEXT[] NOT NULL DEFAULT '{}';
+
 -- A note pinned to an exercise shows in every later session of it. Matched ignoring case.
 CREATE TABLE IF NOT EXISTS exercise_pins (
     name_key  TEXT PRIMARY KEY,

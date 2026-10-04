@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addWarmupSet,
   counts,
+  pickChoice,
   planFromSession,
   saveSet,
   startFromWorkout,
@@ -17,9 +18,9 @@ const workout: Workout = {
   name: 'Bench',
   last_done: null,
   exercises: [
-    { name: 'Squat', warmup_sets: 1, working_sets: 3, target_reps: 2, amrap: false },
-    { name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true },
-    { name: 'Deadlift', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false },
+    { name: 'Squat', warmup_sets: 1, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] },
+    { name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true, alternatives: [] },
+    { name: 'Deadlift', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] },
   ],
 }
 const lasts: LastExercise[] = [
@@ -84,7 +85,7 @@ describe('Finish', () => {
     expect(planFromSession(s, workout.exercises)).toBeNull()
     const more = addWarmupSet(s, s.exercises[2].key).session
     expect(planFromSession(more, workout.exercises)?.[2]).toEqual(
-      { name: 'Deadlift', warmup_sets: 1, working_sets: 1, target_reps: 5, amrap: false },
+      { name: 'Deadlift', warmup_sets: 1, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] },
     )
   })
 })
@@ -96,5 +97,40 @@ describe('adding a warmup set', () => {
     expect(session.exercises[0].sets.map((x) => [x.kind, x.weight])).toEqual([
       ['warmup', '60'], ['working', '120'], ['working', '125'], ['working', '125'],
     ])
+  })
+})
+
+describe('choices on a plan line', () => {
+  const line = { name: 'Shoulder Press', warmup_sets: 0, working_sets: 5, target_reps: 5, amrap: false, alternatives: ['Bench press'] }
+  const dates: Record<string, string> = { 'shoulder press': '2026-09-30', 'bench press': '2026-10-02' }
+  const lastDate = (n: string) => dates[n.toLowerCase()]
+
+  it('starts with the one done longest ago', () => {
+    expect(pickChoice(line, lastDate)).toBe('Shoulder Press')
+    expect(pickChoice(line, (n) => ({ 'shoulder press': '2026-10-02', 'bench press': '2026-09-30' })[n.toLowerCase()])).toBe('Bench press')
+  })
+
+  it('treats never done as oldest, and a tie as the first in the plan', () => {
+    expect(pickChoice({ ...line, alternatives: ['Bench press', 'Dips'] }, lastDate)).toBe('Dips')
+    expect(pickChoice(line, () => undefined)).toBe('Shoulder Press')
+  })
+
+  it('starts the session with the picked one and its own last time, keeping all choices', () => {
+    const w = { ...workout, exercises: [line] }
+    const s = startFromWorkout(w, 't', 'p1', [
+      { name: 'Shoulder Press', date: '2026-10-02', notes: null, warmup_sets: [], sets: [{ weight_kg: 60, reps: 5, notes: null }] },
+      { name: 'Bench press', date: '2026-09-30', notes: 'still hard', warmup_sets: [], sets: [{ weight_kg: 90, reps: 2, notes: null }] },
+    ], now)
+    expect(s.exercises[0].name).toBe('Bench press')
+    expect(s.exercises[0].lastNote).toBe('still hard')
+    expect(s.exercises[0].sets[0].weight).toBe('90')
+    expect(s.exercises[0].choices).toEqual(['Shoulder Press', 'Bench press'])
+  })
+
+  it('doing another choice is not a change to the plan', () => {
+    const w = { ...workout, exercises: [line] }
+    const s = startFromWorkout(w, 't', 'p1', [], now)
+    const swapped = { ...s, exercises: [{ ...s.exercises[0], name: 'Bench press' }] }
+    expect(planFromSession(swapped, w.exercises)).toBeNull()
   })
 })

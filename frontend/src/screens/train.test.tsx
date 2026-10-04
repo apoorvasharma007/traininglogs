@@ -15,7 +15,7 @@ function program(patch: Partial<Program> = {}): Program {
     workouts: [
       { id: 'w1', position: 1, name: 'Upper Strength', last_done: null, exercises: [] },
       { id: 'w2', position: 2, name: 'Lower Strength', last_done: null, exercises: [
-        { name: 'Seated Leg Hamstring Curl', warmup_sets: 2, working_sets: 3, target_reps: 12, amrap: false },
+        { name: 'Seated Leg Hamstring Curl', warmup_sets: 2, working_sets: 3, target_reps: 12, amrap: false, alternatives: [] },
       ] },
     ],
     ...patch,
@@ -50,7 +50,7 @@ describe('Train', () => {
 
   it('lists the first 5 exercises and counts the rest', async () => {
     const many = program()
-    many.workouts[1].exercises = Array.from({ length: 8 }, (_, i) => ({ name: `Exercise ${i + 1}`, warmup_sets: 0, working_sets: 3, target_reps: 10, amrap: false }))
+    many.workouts[1].exercises = Array.from({ length: 8 }, (_, i) => ({ name: `Exercise ${i + 1}`, warmup_sets: 0, working_sets: 3, target_reps: 10, amrap: false, alternatives: [] }))
     fakeApi({ 'GET /programs': [many] })
     renderApp('/')
     expect(await screen.findByText('Exercise 5')).toBeInTheDocument()

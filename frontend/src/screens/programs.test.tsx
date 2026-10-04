@@ -16,7 +16,7 @@ function program(patch: Partial<Program> = {}): Program {
     deload: { days_since: 0, due: false, in_progress: 0 },
     workouts: [
       { id: 'w1', position: 1, name: 'Bench', last_done: '2026-09-28', exercises: [
-        { name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false },
+        { name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] },
       ] },
       { id: 'w2', position: 2, name: null, last_done: null, exercises: [] },
     ],
@@ -31,9 +31,9 @@ describe('workout display', () => {
   })
 
   it('summarises a plan', () => {
-    expect(planText({ name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false })).toBe('2 warmup · 3 × 2')
-    expect(planText({ name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true })).toBe('1 × max')
-    expect(planText({ name: 'Row', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: false })).toBe('3 sets')
+    expect(planText({ name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] })).toBe('2 warmup · 3 × 2')
+    expect(planText({ name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true, alternatives: [] })).toBe('1 × max')
+    expect(planText({ name: 'Row', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: false, alternatives: [] })).toBe('3 sets')
   })
 })
 
@@ -72,9 +72,27 @@ describe('Programs', () => {
     expect(calls.some((c) => c.key === 'POST /programs/p1/follow')).toBe(true)
   })
 
+  it('adds alternatives that take turns', async () => {
+    const after = program()
+    after.workouts[1].exercises = [{ name: 'Shoulder Press', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false, alternatives: ['Bench press'] }]
+    const calls = fakeApi({ 'GET /programs/p1': program(), 'PUT /workouts/w2/exercises': after, 'GET /programs': [after] })
+    renderApp('/programs/p1/workouts/w2')
+    await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Add exercise' })
+    await userEvent.type(within(sheet).getByLabelText('Exercise'), 'Shoulder Press')
+    await userEvent.type(within(sheet).getByLabelText('Another exercise for this line'), 'Bench press{Enter}')
+    await userEvent.type(within(sheet).getByLabelText('Another exercise for this line'), 'shoulder press{Enter}')
+    expect(within(sheet).getAllByText('Bench press')).toHaveLength(1)
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Add exercise' }))
+    await waitFor(() => expect(calls.some((c) => c.key === 'PUT /workouts/w2/exercises')).toBe(true))
+    const sent = calls.find((c) => c.key === 'PUT /workouts/w2/exercises')!.body as { exercises: { alternatives: string[] }[] }
+    expect(sent.exercises[0].alternatives).toEqual(['Bench press'])
+    expect(await screen.findByText('or Bench press')).toBeInTheDocument()
+  })
+
   it('adds an exercise to a workout plan', async () => {
     const after = program()
-    after.workouts[1].exercises = [{ name: 'Deadlift', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false }]
+    after.workouts[1].exercises = [{ name: 'Deadlift', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false, alternatives: [] }]
     const calls = fakeApi({
       'GET /programs/p1': program(),
       'PUT /workouts/w2/exercises': after,
@@ -84,12 +102,12 @@ describe('Programs', () => {
     await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
     const sheet = await screen.findByRole('dialog', { name: 'Add exercise' })
     await userEvent.type(within(sheet).getByLabelText('Exercise'), 'Deadlift')
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Add' }))
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Add exercise' }))
 
     expect(await screen.findByText('Deadlift')).toBeInTheDocument()
     expect(screen.getByText('3 × 5')).toBeInTheDocument()
     expect(calls.find((c) => c.key === 'PUT /workouts/w2/exercises')?.body).toEqual({
-      exercises: [{ name: 'Deadlift', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false }],
+      exercises: [{ name: 'Deadlift', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false, alternatives: [] }],
     })
   })
 })

@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -6,11 +7,11 @@ import DragList from '@/components/DragList'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
-import { planText, useProgram, useProgramChange } from '@/lib/programs'
+import { choicesText, planText, useProgram, useProgramChange } from '@/lib/programs'
 import { startSession } from '@/lib/startSession'
 import type { PlanExercise } from '@/lib/types'
 
-const BLANK: PlanExercise = { name: '', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false }
+const BLANK: PlanExercise = { name: '', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false, alternatives: [] }
 
 /** One workout's plan: its name, and each exercise with its sets and target reps. */
 export default function WorkoutPlan({ params }: { params: { id: string; wid: string } }) {
@@ -63,8 +64,11 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
               {({ e, key }) => (
                 <button type="button" onClick={() => setEditing(Number(key))}
                   className="flex min-h-14 w-full items-center justify-between gap-3 py-2 pl-4 text-left active:bg-muted">
-                  <span className="text-[15px] font-semibold">{e.name}</span>
-                  <span className="font-mono text-[13px] text-muted-foreground">{planText(e)}</span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-[15px] font-semibold">{e.name}</span>
+                    {e.alternatives.length > 0 && <span className="text-xs text-muted-foreground">{choicesText(e)}</span>}
+                  </span>
+                  <span className="shrink-0 font-mono text-[13px] text-muted-foreground">{planText(e)}</span>
                 </button>
               )}
             </DragList>
@@ -158,6 +162,7 @@ function ExerciseForm(props: {
             onChange={(ev) => set({ name: ev.target.value })}
             className="h-12 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
         </div>
+        <Alternatives name={e.name} list={e.alternatives} onChange={(alternatives) => set({ alternatives })} />
         <div className="flex flex-col divide-y divide-border rounded-2xl border border-border px-4">
           <CountStepper label="Warmup sets" value={e.warmup_sets} max={20} onChange={(v) => set({ warmup_sets: v })} />
           <CountStepper label="Working sets" value={e.working_sets} min={1} max={20} onChange={(v) => set({ working_sets: v })} />
@@ -190,10 +195,57 @@ function ExerciseForm(props: {
           )}
           <button type="submit" disabled={props.busy || !e.name.trim()}
             className="h-13 flex-1 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
-            {props.busy ? 'Saving…' : props.isNew ? 'Add' : 'Done'}
+            {props.busy ? 'Saving…' : props.isNew ? 'Add exercise' : 'Done'}
           </button>
         </div>
       </form>
     </>
+  )
+}
+
+/**
+ * Other exercises that can take this line's place. Starting the workout picks the one done
+ * longest ago; the session can still change it.
+ */
+function Alternatives({ name, list, onChange }: { name: string; list: string[]; onChange: (list: string[]) => void }) {
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    const value = draft.trim()
+    const taken = [name, ...list].some((x) => x.trim().toLowerCase() === value.toLowerCase())
+    if (value && !taken) onChange([...list, value])
+    setDraft('')
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[13px] font-semibold">
+        Or <span className="font-normal text-muted-foreground">· they take turns</span>
+      </span>
+      {list.map((alt) => (
+        <div key={alt} className="flex h-11 items-center justify-between rounded-xl border border-border pr-1 pl-3.5 text-[15px]">
+          <span>{alt}</span>
+          <button type="button" aria-label={`Remove ${alt}`} onClick={() => onChange(list.filter((x) => x !== alt))}
+            className="flex size-10 items-center justify-center text-muted-foreground">
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <label htmlFor="alternative" className="sr-only">
+          Another exercise for this line
+        </label>
+        <input id="alternative" value={draft} placeholder="Another exercise" onChange={(ev) => setDraft(ev.target.value)}
+          onKeyDown={(ev) => {
+            if (ev.key === 'Enter') {
+              ev.preventDefault()
+              add()
+            }
+          }}
+          className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
+        <button type="button" onClick={add} disabled={!draft.trim()}
+          className="h-11 rounded-xl border border-border px-3.5 text-sm font-semibold disabled:opacity-40">
+          Add
+        </button>
+      </div>
+    </div>
   )
 }

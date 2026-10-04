@@ -31,7 +31,7 @@ export async function startSession(from: { program: Program; workout: Workout; d
           from.workout,
           workoutTitle(from.workout),
           from.program.id,
-          await lastTimes(from.workout.exercises.map((e) => e.name)),
+          await lastTimes(from.workout.exercises.flatMap((e) => [e.name, ...e.alternatives])),
           now,
           from.deload,
         )

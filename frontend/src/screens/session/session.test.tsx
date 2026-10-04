@@ -8,7 +8,7 @@ import { fakeApi, renderApp } from '@/test-utils'
 
 const workout = {
   id: 'w1', position: 1, name: 'Bench', last_done: null,
-  exercises: [{ name: 'Squat', warmup_sets: 0, working_sets: 2, target_reps: 2, amrap: false }],
+  exercises: [{ name: 'Squat', warmup_sets: 0, working_sets: 2, target_reps: 2, amrap: false, alternatives: [] }],
 }
 const lasts = [{ name: 'Squat', date: '2026-10-02', notes: 'better depth', warmup_sets: [], sets: [{ weight_kg: 125, reps: 2, notes: null }] }]
 
@@ -66,7 +66,8 @@ describe('Session', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
 
-    expect(await screen.findByText('Waiting to send')).toBeInTheDocument()
+    // The queue makes several IndexedDB reads and writes first; slower when the whole suite runs.
+    expect(await screen.findByText('Waiting to send', {}, { timeout: 3000 })).toBeInTheDocument()
     const queued = (await get('sessions-to-send')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
   })

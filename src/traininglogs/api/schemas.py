@@ -269,12 +269,25 @@ class PlanExercise(BaseModel):
     working_sets: int = Field(default=1, ge=0, le=20)
     target_reps: Optional[int] = Field(default=None, gt=0, le=100)
     amrap: bool = Field(default=False, description="As many reps as you can.")
+    alternatives: list[str] = Field(
+        default_factory=list,
+        description="Other exercises that can take this line's place. Starting the workout picks "
+        "whichever of them was done longest ago.",
+    )
 
     @model_validator(mode="after")
     def strip_name(self) -> PlanExercise:
         self.name = self.name.strip()
         if not self.name:
             raise ValueError("name can't be blank")
+        # Blank, repeated, or the same as the name (ignoring case): dropped.
+        seen = {self.name.lower()}
+        kept = []
+        for alt in (a.strip() for a in self.alternatives):
+            if alt and alt.lower() not in seen:
+                seen.add(alt.lower())
+                kept.append(alt)
+        self.alternatives = kept
         return self
 
 

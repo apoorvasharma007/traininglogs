@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 8 step 6b, choices in a workout's plan
+
+- A plan line can list other exercises that can take its place ("Shoulder Press or Bench
+  press"). Starting the workout picks the one done longest ago, so they take turns; the session
+  shows just that one and can still change anything. Renaming suggests the line's choices.
+- `program_workout_exercises.alternatives`.
+- `scripts/add_starting_strength.py` adds Starting Strength Phase 4 as three workouts with
+  choices, links the sessions logged under it, and follows it.
+
 ### Added — Phase 8 step 6, the Train home screen
 
 - Train shows the program you follow and its next workout with Start, or the session in

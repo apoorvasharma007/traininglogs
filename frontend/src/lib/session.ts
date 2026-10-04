@@ -20,6 +20,7 @@ export type LiveSet = {
 export type LiveExercise = {
   key: string
   name: string
+  choices: string[] // the plan line's exercise and its alternatives, suggested when renaming
   naming: boolean // a new exercise whose name is still being typed
   note: string // today's note
   noteOpen: boolean
@@ -73,6 +74,24 @@ export function lastText(s: LastSet): string {
 
 const nameKey = (name: string) => name.trim().toLowerCase()
 
+/**
+ * Which of a plan line's choices to start with: the one done longest ago, never done counting as
+ * oldest, so alternatives take turns by themselves. Ties go to the earlier one in the plan.
+ */
+export function pickChoice(plan: PlanExercise, lastDate: (name: string) => string | undefined): string {
+  const choices = [plan.name, ...plan.alternatives]
+  let best = choices[0]
+  let bestDate = lastDate(best) ?? ''
+  for (const c of choices.slice(1)) {
+    const d = lastDate(c) ?? ''
+    if (d < bestDate) {
+      best = c
+      bestDate = d
+    }
+  }
+  return best
+}
+
 function blankSet(kind: SetKind): LiveSet {
   return { key: newKey(), kind, weight: '', reps: '', rpe: null, note: '', done: false, ghost: false, last: null }
 }
@@ -113,10 +132,12 @@ export function startFromWorkout(
     title,
     isDeload,
     exercises: workout.exercises.map((plan) => {
-      const last = byName.get(nameKey(plan.name))
+      const name = pickChoice(plan, (n) => byName.get(nameKey(n))?.date)
+      const last = byName.get(nameKey(name))
       return {
         key: newKey(),
-        name: plan.name,
+        name,
+        choices: [plan.name, ...plan.alternatives],
         naming: false,
         note: '',
         noteOpen: false,
@@ -220,7 +241,7 @@ export function addWarmupSet(s: LiveSession, exKey: string): { session: LiveSess
 
 export function addExercise(s: LiveSession): { session: LiveSession; exKey: string } {
   const ex: LiveExercise = {
-    key: newKey(), name: '', naming: true, note: '', noteOpen: false, lastNote: null, sets: [blankSet('working')],
+    key: newKey(), name: '', choices: [], naming: true, note: '', noteOpen: false, lastNote: null, sets: [blankSet('working')],
   }
   return { session: { ...s, exercises: [...s.exercises, ex] }, exKey: ex.key }
 }
@@ -278,17 +299,18 @@ export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
  * or null when it matches the plan. Finish offers to update the workout with it.
  */
 export function planFromSession(s: LiveSession, plan: PlanExercise[]): PlanExercise[] | null {
-  const byName = new Map(plan.map((p) => [nameKey(p.name), p]))
   const next = s.exercises
     .filter((e) => e.name.trim())
     .map((e) => {
-      const old = byName.get(nameKey(e.name))
+      // Matched by any of the line's choices, so a swap on the day keeps the line's settings.
+      const old = plan.find((p) => [p.name, ...p.alternatives].some((c) => nameKey(c) === nameKey(e.name)))
       return {
-        name: e.name.trim(),
+        name: old && nameKey(old.name) !== nameKey(e.name) ? old.name : e.name.trim(),
         warmup_sets: e.sets.filter((x) => x.kind === 'warmup').length,
         working_sets: e.sets.filter((x) => x.kind === 'working').length,
         target_reps: old?.target_reps ?? null,
         amrap: old?.amrap ?? false,
+        alternatives: old?.alternatives ?? [],
       }
     })
   const same =
