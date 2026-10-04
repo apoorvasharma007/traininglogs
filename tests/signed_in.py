@@ -16,6 +16,8 @@ TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
+# The server under test always uses the test database, never one named in .env.
+os.environ["DATABASE_URL"] = TEST_DB_URL
 
 _KEY = ec.generate_private_key(ec.SECP256R1())
 
