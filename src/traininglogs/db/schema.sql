@@ -264,3 +264,20 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS program_workout_id TEXT REFERENCES
 CREATE INDEX IF NOT EXISTS idx_program_workouts_program_id ON program_workouts(program_id);
 CREATE INDEX IF NOT EXISTS idx_program_workout_exercises_workout_id ON program_workout_exercises(workout_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_program_workout_id ON sessions(program_workout_id);
+
+-- Row-level security on, with no policies: Supabase's automatic web API (the anon key, signed-in
+-- users) can't read or change any row. The server is unaffected: it connects as the tables'
+-- owner, and Postgres doesn't apply these rules to a table's owner.
+ALTER TABLE raw_inputs                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extractions               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE llm_calls                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE warmups                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cooldowns                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercises                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE working_sets              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE warmup_sets               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE programs                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_workouts          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_workout_exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercise_pins             ENABLE ROW LEVEL SECURITY;

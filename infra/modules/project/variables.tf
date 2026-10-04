@@ -22,3 +22,9 @@ variable "terraform_state_bucket" {
   description = "The state bucket created by hand (infra/README.md); the terraform account gets access to it."
   type        = string
 }
+
+variable "deploy_branch" {
+  description = "The branch whose workflow runs may deploy the app: main for prod, dev for staging."
+  type        = string
+  default     = "main"
+}

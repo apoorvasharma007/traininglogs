@@ -9,8 +9,16 @@ modules/
 environments/
   prod/
     project/        prod's project layer, applied by hand
-    app/            prod's app layer, applied by the pipeline
+    app/            prod's app layer, applied by the pipeline on main
+  staging/
+    project/        staging's project layer, applied by hand
+    app/            staging's app layer, applied by the pipeline on dev
 ```
+
+Staging is a practice copy in its own project (`project-ff63b6ae-c18e-4350-961`), with its own
+Supabase database. A push to `dev` deploys it with no approval; a merge to `main` deploys prod
+after approval. Each environment's variables live in its GitHub environment (`staging`), or for
+prod on the repository itself.
 
 Each environment is its own Google Cloud project. The modules hold the resources, written once.
 Each folder under `environments/` is where Terraform runs: it names a module, gives it that

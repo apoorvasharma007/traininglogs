@@ -1,10 +1,10 @@
 name: CI
 
 # Checks only -- nothing here changes Google Cloud. Runs on every pull request and every push to
-# main; CD (cd.yml) ships, and only after this succeeds on main.
+# main or dev; CD (cd.yml) ships, only after this succeeds: main to prod, dev to staging.
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
 
 jobs:
@@ -107,13 +107,11 @@ jobs:
       - name: Format
         run: terraform fmt -check -recursive infra
 
-      - name: Validate project layer
-        working-directory: infra/environments/prod/project
-        run: terraform init -backend=false -input=false && terraform validate
-
-      - name: Validate app layer
-        working-directory: infra/environments/prod/app
-        run: terraform init -backend=false -input=false && terraform validate
+      - name: Validate every layer
+        run: |
+          for dir in infra/environments/*/*/; do
+            (cd "$dir" && terraform init -backend=false -input=false >/dev/null && terraform validate)
+          done
 
       # Fork pull requests get no sign-in token, so only this repository's own branches plan.
       - name: Sign in to Google Cloud as terraform
