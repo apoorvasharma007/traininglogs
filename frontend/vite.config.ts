@@ -8,8 +8,6 @@ import { defineConfig } from 'vite'
 const API_PATHS = ['/sessions', '/progress', '/exercises', '/inputs', '/extractions', '/programs', '/workouts', '/pins']
 
 export default defineConfig({
-  // Served at /app/ next to the old web/ UI until step 8 of react-plan.md moves it to /.
-  base: '/app/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

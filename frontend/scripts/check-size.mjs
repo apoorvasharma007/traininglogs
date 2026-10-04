@@ -7,7 +7,7 @@ import { gzipSync } from 'node:zlib'
 const BUDGET_KB = 120
 const dist = new URL('../dist/', import.meta.url)
 const html = readFileSync(new URL('index.html', dist), 'utf8')
-const initial = new Set([...html.matchAll(/(?:src|href)="\/app\/assets\/([^"]+\.js)"/g)].map((m) => m[1]))
+const initial = new Set([...html.matchAll(/(?:src|href)="\/assets\/([^"]+\.js)"/g)].map((m) => m[1]))
 
 let total = 0
 for (const f of readdirSync(new URL('assets/', dist)).filter((f) => f.endsWith('.js')).sort()) {

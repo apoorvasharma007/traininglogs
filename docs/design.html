@@ -201,12 +201,10 @@
 
 <section>
   <h2 id="web-app">The web app</h2>
-  <p>One page, served by the API itself. You paste a session into the text box and press Extract. A few seconds later the card appears: the session at the top (date, focus, program, phase, week), then each exercise with its warmup sets, working sets and notes. Values the model wasn't sure about carry an "AI inferred" flag, and anything the checks found suspicious shows in a warnings box above the exercises.</p>
-  <p>You can tap any line on the card. That opens a small form with every editable field for the line, filled in, so adding a missing RPE is as easy as fixing a wrong one. Save sends only the fields you changed. A bad value, like RPE 85 or reps the app can't read, keeps the form open with the reason underneath. The form outlines the uncertain fields, so you check those first.</p>
-  <p>Below each exercise are + Set and + Warmup set; at the bottom of the card, + Exercise. A set's form has + Set after this, for a set the model missed in the middle, and every form has Remove, which asks once more before it acts. None of this calls the model.</p>
-  <p>For a change that spans many lines ("all squat sets were 100 kg"), the text box under the card takes a correction in words. That one does call the model.</p>
-  <p>Confirm writes the session. Under the Extract button, "Or repeat a past session" lists the 15 newest sessions; picking one opens a card built from it, covered in <a href="#repeat">Repeating a session</a>.</p>
-  <p>The page keeps your API key in the browser after you paste it once, and talks to the API at its own address.</p>
+  <p>A React app in <code>frontend/</code>, built into static files and served by the API at <code>/</code>. It has five tabs: Train, Programs, Progress, History and Settings. Settings keeps your API key in the browser.</p>
+  <p>Train shows the program you follow and its next workout. Start opens a session: each exercise from the plan, with last time's weights and reps in grey. You type over them, tick each set when it's done, and add or remove sets and exercises as the day goes. Every change is saved in the browser (IndexedDB). Finish sends the ticked sets to <code>POST /sessions</code> once; with no connection, the session waits on the phone and sends itself when the connection returns. A plan line can name other exercises ("Shoulder Press or Bench press"); Start picks the one done longest ago.</p>
+  <p>Programs holds the programs: workouts in order, back to 1 after the last. Train shows a one-line deload reminder when the followed program reaches its deload days, 28 by default.</p>
+  <p>Log from notes is the original path: paste a note, the model reads it, and Review shows the card. You type over values on the card, open a set's drawer for RPE, type and notes, or describe a change in words, which calls the model. Confirm writes the session.</p>
 
   <h3>Progress</h3>
   <p>The Progress tab shows six key lifts first: Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean and Pull-up, each with its latest and best estimated max, the number of sessions and an arrow for the 4-week trend. Under "Other lifts" is every other exercise trained in 3 or more sessions. Tapping a lift opens a chart with one point per session, record sessions in red and the program's goal weight as a dashed line, and below it each session's sets.</p>
@@ -246,7 +244,7 @@
 
 <section>
   <h2 id="repeat">Repeating a session</h2>
-  <p>A repeat starts from a session you've already logged, with no model call at all.</p>
+  <p>A repeat starts from a session you've already logged, with no model call at all. The app has no screen for it since programs replaced it; the endpoint stays.</p>
   <div class="diagram">you pick a past session
       │
       ▼

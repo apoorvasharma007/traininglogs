@@ -767,21 +767,19 @@ class TestEditExtraction:
 
 
 class TestWebUi:
-    """web/ is served by the API itself (same origin, one deploy), never cached, and mounted
-    after every API route so it can't shadow one."""
+    """The app (frontend/dist, built by `npm run build`) is served by the API itself (same origin,
+    one deploy), never cached, and mounted after every API route so it can't shadow one."""
 
     def test_index_served_without_auth_and_not_cached(self, client) -> None:
         r = client.get("/")
         assert r.status_code == 200
         assert "text/html" in r.headers["content-type"]
-        assert 'id="extractBtn"' in r.text
+        assert 'id="root"' in r.text
         assert r.headers["cache-control"] == "no-cache"
 
-    def test_app_js_served(self, client) -> None:
-        r = client.get("/app.js")
-        assert r.status_code == 200
-        assert "FIELD_SPECS" in r.text
-        assert r.headers["cache-control"] == "no-cache"
+    def test_old_app_address_redirects(self, client) -> None:
+        r = client.get("/app/", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (301, "/")
 
     def test_api_routes_still_take_precedence(self, client) -> None:
         assert client.get("/sessions").status_code == 401

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-04
+
+### Removed
+
+- The old one-page web UI (`web/`). The React app replaces it at `/`; `/app/` redirects there.
+- The "Repeat a past session" screen. `POST /sessions/{id}/repeat` stays.
+
+
 ### Added — Phase 8 step 6b, choices in a workout's plan
 
 - A plan line can list other exercises that can take its place ("Shoulder Press or Bench

@@ -600,15 +600,18 @@ class _NoCacheStaticFiles(StaticFiles):
         return response
 
 
-# Serve web/ from the same origin as the API -- one deploy, no CORS. Mounted last so every API
-# route above takes precedence. WEB_DIR is set in the container image; locally the repo's web/
-# is found from the working directory.
-# The React app (frontend/, built to frontend/dist) is served at /app/ until it replaces web/ in
-# step 8 of react-plan.md. It must be mounted before "/", which would otherwise catch /app/ too.
+@app.get("/app", include_in_schema=False)
+@app.get("/app/", include_in_schema=False)
+def old_app_address():
+    """The app lived at /app/ while it was being built; old bookmarks land on / instead."""
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse("/", status_code=301)
+
+
+# Serve the app (frontend/, built to frontend/dist) from the same origin as the API -- one deploy,
+# no CORS. Mounted last so every API route above takes precedence. APP_DIR is set in the container
+# image; locally `npm run build` in frontend/ makes frontend/dist.
 _app_dir = Path(os.environ.get("APP_DIR", "frontend/dist"))
 if _app_dir.is_dir():
-    app.mount("/app", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")
-
-_web_dir = Path(os.environ.get("WEB_DIR", "web"))
-if _web_dir.is_dir():
-    app.mount("/", _NoCacheStaticFiles(directory=_web_dir, html=True), name="web")
+    app.mount("/", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")

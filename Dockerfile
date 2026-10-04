@@ -28,10 +28,8 @@ USER app
 
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
-COPY --chown=app web/ web/
 COPY --chown=app --from=frontend /frontend/dist frontend/
 
-ENV WEB_DIR=/home/app/web
 ENV APP_DIR=/home/app/frontend
 
 EXPOSE 8080

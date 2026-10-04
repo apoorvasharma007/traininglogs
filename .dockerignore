@@ -4,8 +4,6 @@
 !pyproject.toml
 !src/
 !src/**
-!web/
-!web/**
 !frontend/
 !frontend/**
 frontend/node_modules/
