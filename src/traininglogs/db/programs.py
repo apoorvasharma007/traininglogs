@@ -1,4 +1,4 @@
-"""Programs, their workouts, and pinned exercise notes.
+"""Programs and their workouts.
 
 A program is workouts in order; after the last one it starts again at 1. Workouts keep their
 order in `position`, always 1..n among the ones not archived. Each function that writes commits
@@ -388,33 +388,3 @@ def link_session_to_workout(conn: Connection, session_id: str, workout_id: str) 
         )
     conn.commit()
 
-
-def name_key(name: str) -> str:
-    """How exercise names are matched for pins: case and outer spaces ignored."""
-    return name.strip().lower()
-
-
-def list_pins(conn: Connection) -> list[dict[str, Any]]:
-    with conn.cursor() as cur:
-        cur.execute("SELECT name_key, note, pinned_at FROM exercise_pins ORDER BY name_key")
-        return _rows(cur)
-
-
-def set_pin(conn: Connection, exercise_name: str, note: str) -> None:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO exercise_pins (name_key, note) VALUES (%s, %s)
-            ON CONFLICT (name_key) DO UPDATE SET note = EXCLUDED.note, pinned_at = now()
-            """,
-            (name_key(exercise_name), note),
-        )
-    conn.commit()
-
-
-def remove_pin(conn: Connection, exercise_name: str) -> bool:
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM exercise_pins WHERE name_key = %s", (name_key(exercise_name),))
-        found = cur.rowcount == 1
-    conn.commit()
-    return found

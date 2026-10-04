@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Row-level security is on for every table, with no rules, so Supabase's automatic web API can't
   read or change any row. The server is unaffected.
 
+### Removed
+
+- Pinned exercise notes, with `/pins` and the `exercise_pins` table. Each exercise already shows
+  last time's note.
+
 ## [4.1.0] - 2026-10-05
 
 ### Added

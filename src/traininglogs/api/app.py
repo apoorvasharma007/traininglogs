@@ -26,8 +26,6 @@ from traininglogs.api.schemas import (
     LiftDetail,
     LiftsOut,
     ManualSessionIn,
-    PinIn,
-    PinOut,
     ProgramIn,
     ProgramOut,
     ProgramPatch,
@@ -453,7 +451,7 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), _=Depen
     )
 
 
-# ---- programs, workouts and pinned notes ----
+# ---- programs and workouts ----
 # Every change to a program or one of its workouts returns the whole program, so the client
 # replaces what it shows with one reply.
 
@@ -615,30 +613,6 @@ def workouts_archive(workout_id: str, conn=Depends(_db), _=Depends(_auth)):
     program_id = _workout_program_or_404(conn, workout_id)
     archive_workout(conn, workout_id)
     return _program_or_404(conn, program_id)
-
-
-@app.get("/pins", response_model=list[PinOut])
-def pins_list(conn=Depends(_db), _=Depends(_auth)):
-    from traininglogs.db.programs import list_pins
-
-    return list_pins(conn)
-
-
-@app.put("/pins/{exercise_name}", response_model=list[PinOut])
-def pins_set(exercise_name: str, body: PinIn, conn=Depends(_db), _=Depends(_auth)):
-    """Pins a note to an exercise, replacing any note already pinned to it."""
-    from traininglogs.db.programs import list_pins, set_pin
-
-    set_pin(conn, exercise_name, body.note.strip())
-    return list_pins(conn)
-
-
-@app.delete("/pins/{exercise_name}", status_code=204)
-def pins_remove(exercise_name: str, conn=Depends(_db), _=Depends(_auth)):
-    from traininglogs.db.programs import remove_pin
-
-    if not remove_pin(conn, exercise_name):
-        raise HTTPException(status_code=404, detail="No note pinned to that exercise")
 
 
 class _NoCacheStaticFiles(StaticFiles):

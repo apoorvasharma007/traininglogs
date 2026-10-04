@@ -45,9 +45,23 @@ into the base when both suites are 0 failed and 0 skipped.
   in `infra/environments/staging`. Server in us-east1 like prod, so outbound data stays free.
   `dev` deploys to staging with no approval; `main` to prod with approval. Row-level security on
   every table in both databases, no policies (blocks Supabase's automatic API).
-- [ ] 3. `accounts`: email-link login, an owner on every row, isolation tests, per-user fixes
-  (session ids, the one followed program, pins, key lifts chosen per person), a cap on AI use, app and database in one region
-  with the connection pooler, daily backups, installable app.
+- [ ] 3. `accounts` (decided 2026-10-05): Supabase Auth, invite only (sign-up closed; Apoorva adds
+  emails). The app asks Supabase for a sign-in link and sends the pass (JWT) with every request;
+  the server checks it and filters by user. Row-level security is on with no policies (step 2), so
+  Supabase's automatic API can't reach any row even with the app's public key.
+  - [ ] 3.0 Remove pinned notes: the `exercise_pins` table, `/pins`, the pin button. "Last time"
+    already shows the previous note. Prod's only pin was a test; the table is dropped at release.
+  - [ ] 3.1 `user_id` on the four top-level tables only: `raw_inputs`, `sessions` (reusing its old
+    `user_id` column, "7" on all 130 rows; `user_name` no longer written), `programs`. Children
+    (extractions, llm_calls, exercises, sets, warmups, cooldowns, workouts and their exercises)
+    belong to their parent; every call that takes a child's id checks the parent's owner.
+  - [ ] 3.2 Server: verify the pass, filter every query; isolation tests for every endpoint.
+  - [ ] 3.3 Per-user rules: one followed program per user; session ids hash the user in.
+  - [ ] 3.4 App: sign-in screen, sign out in Settings; the API key goes.
+  - [ ] 3.5 AI cap per user per month, summed from `llm_calls` through `raw_inputs`.
+  - [ ] 3.6 Daily backup of prod to a private bucket.
+  - [ ] 3.7 Release: staging first, then prod with a backup and approval.
+  - Later: key lifts chosen per person, app and database in one region, installable app.
 - [ ] 3b. `maxes`: a 1RM per lift, entered by a new user or taken from the estimated max in their
   history; warm-ups and working weights suggested from it, and plans that say "5 x 5 at 75%".
 - [ ] 4. `exercise-names`: a "Your exercises" screen with likely duplicates (pg_trgm), merge into

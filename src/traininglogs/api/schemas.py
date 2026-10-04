@@ -376,16 +376,6 @@ class WorkoutExercisesIn(BaseModel):
     exercises: list[PlanExercise]
 
 
-class PinIn(BaseModel):
-    note: str = Field(min_length=1)
-
-
-class PinOut(BaseModel):
-    name_key: str
-    note: str
-    pinned_at: Any
-
-
 class ManualWarmupSet(BaseModel):
     weight_kg: float = Field(ge=0)
     reps: Optional[int] = Field(default=None, ge=0)

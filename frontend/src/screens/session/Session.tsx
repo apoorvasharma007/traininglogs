@@ -8,7 +8,6 @@ import { Loading } from '@/components/QueryStatus'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import Sheet from '@/components/Sheet'
 import { api } from '@/lib/api'
-import { pinKey, usePinChange, usePins } from '@/lib/pins'
 import { planChanges } from '@/lib/planChanges'
 import { COOLDOWN_PRESETS, WARMUP_PRESETS } from '@/lib/movements'
 import { WARMUPS, warmupSets } from '@/lib/warmup'
@@ -52,8 +51,6 @@ export default function Session() {
   const { session, update } = useLiveSession()
   const [, navigate] = useLocation()
   const queryClient = useQueryClient()
-  const pins = usePins()
-  const pinChange = usePinChange()
   const [openSet, setOpenSet] = useState<SetTarget | null>(null)
   const [menuFor, setMenuFor] = useState<LiveExercise | null>(null)
   const [switchFor, setSwitchFor] = useState<LiveExercise | null>(null)
@@ -189,7 +186,6 @@ export default function Session() {
             <ExerciseCard
               key={ex.key}
               exercise={ex}
-              pinned={pins.data?.get(pinKey(ex.name)) ?? null}
               onOpenSet={(set) => open(ex.key, set.key)}
               onValue={(set, field, value) => change(setValue(s, set.key, field, value))}
               onTick={(set) => {
@@ -213,11 +209,6 @@ export default function Session() {
               onRename={(name) => change(updateExercise(s, ex.key, { name, naming: false }))}
               onSwitch={() => setSwitchFor(ex)}
               onNote={(note) => change(updateExercise(s, ex.key, { note }))}
-              onTogglePin={() => {
-                const pinned = pins.data?.get(pinKey(ex.name))
-                const note = ex.note.trim()
-                pinChange.mutate({ name: ex.name, note: pinned === note ? null : note })
-              }}
             />
           ))}
           <button type="button" onClick={() => change(addExercise(s).session)}
@@ -227,7 +218,6 @@ export default function Session() {
           <MovementCard title="Cool-down" movements={movementsOf(s, 'cooldown')} presets={COOLDOWN_PRESETS}
             onChange={(list) => change(setMovements(s, 'cooldown', list))}
             onAddPreset={(m) => change(addPreset(s, 'cooldown', m))} />
-          {pinChange.isError && <p role="alert" className="text-sm text-destructive">{pinChange.error.message}</p>}
         </div>
 
         {undo && (

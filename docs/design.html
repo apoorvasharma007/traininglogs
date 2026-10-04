@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-04 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-05 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -292,7 +292,7 @@
 
 <section>
   <h2 id="data">The data</h2>
-  <p>Postgres, on Supabase, is the source of truth. Thirteen tables: three record how a session was read, six hold the session itself, and four hold programs and pinned notes.</p>
+  <p>Postgres, on Supabase, is the source of truth. Twelve tables: three record how a session was read, six hold the session itself, and three hold programs.</p>
   <table>
     <thead><tr><th>Table</th><th>One row per</th></tr></thead>
     <tbody>
@@ -307,7 +307,6 @@
       <tr><td><code>programs</code></td><td>program: name, deload reminder in days, whether you follow it (one at a time) and since when</td></tr>
       <tr><td><code>program_workouts</code></td><td>workout in a program: its number and optional name ("Push")</td></tr>
       <tr><td><code>program_workout_exercises</code></td><td>exercise in a workout's plan: warmup sets, working sets, target reps or as many as you can, and other exercises that can take its place. No weights; a session takes them from the last time.</td></tr>
-      <tr><td><code>exercise_pins</code></td><td>note pinned to an exercise name, shown in every later session of it</td></tr>
     </tbody>
   </table>
   <p>The database stores weights in kilograms; the model converts pounds as it reads. Deleting a session deletes its exercises and sets with it, and deleting a raw input deletes its extractions and call log.</p>
@@ -503,12 +502,7 @@ program_workout_exercises
   working_sets  INT
   target_reps   INT           empty means no target
   amrap         BOOLEAN       as many reps as you can
-  alternatives  TEXT[]        other exercises that can take this one's place
-
-exercise_pins
-  name_key      TEXT PK       the exercise name, lower case, trimmed
-  note          TEXT
-  pinned_at     TIMESTAMPTZ</div>
+  alternatives  TEXT[]        other exercises that can take this one's place</div>
   </details>
 </section>
 
@@ -542,7 +536,6 @@ exercise_pins
       <tr><td><code>PUT /programs/{id}/workout-order</code></td><td>New order of all the program's workouts. <code>422</code> unless each is listed once.</td></tr>
       <tr><td><code>PATCH</code>, <code>DELETE /workouts/{id}</code></td><td>Rename a workout (empty clears the name); archive it and renumber the rest</td></tr>
       <tr><td><code>PUT /workouts/{id}/exercises</code></td><td>Replace a workout's plan</td></tr>
-      <tr><td><code>GET /pins</code>, <code>PUT</code>, <code>DELETE /pins/{exercise}</code></td><td>Pinned notes; pin or replace one; unpin. Exercise names match ignoring case.</td></tr>
     </tbody>
   </table>
 </section>
@@ -606,7 +599,7 @@ exercise_pins
 </section>
 
 <footer>
-  Last updated 2026-10-04
+  Last updated 2026-10-05
 </footer>
 
 </main>

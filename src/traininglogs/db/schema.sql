@@ -251,12 +251,6 @@ ALTER TABLE program_workout_exercises ADD COLUMN IF NOT EXISTS alternatives TEXT
 ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS warmup JSONB NOT NULL DEFAULT '[]';
 ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS cooldown JSONB NOT NULL DEFAULT '[]';
 
--- A note pinned to an exercise shows in every later session of it. Matched ignoring case.
-CREATE TABLE IF NOT EXISTS exercise_pins (
-    name_key  TEXT PRIMARY KEY,
-    note      TEXT NOT NULL,
-    pinned_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
 
 -- Which planned workout a session came from; empty for blank workouts and older sessions.
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS program_workout_id TEXT REFERENCES program_workouts(id);
@@ -280,4 +274,3 @@ ALTER TABLE warmup_sets               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE programs                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE program_workouts          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE program_workout_exercises ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exercise_pins             ENABLE ROW LEVEL SECURITY;

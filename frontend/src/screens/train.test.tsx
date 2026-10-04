@@ -32,7 +32,6 @@ describe('Train', () => {
     const calls = fakeApi({
       'GET /programs': [program()],
       'GET /exercises/last?name=Seated%20Leg%20Hamstring%20Curl': [],
-      'GET /pins': [],
     })
     const location = renderApp('/')
     expect(await screen.findByText('Bodybuilding Transformation · Ramp-up')).toBeInTheDocument()

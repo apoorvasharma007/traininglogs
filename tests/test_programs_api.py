@@ -1,4 +1,4 @@
-"""Programs, workouts and pinned notes, through the API against the real test DB."""
+"""Programs and workouts, through the API against the real test DB."""
 from __future__ import annotations
 
 import os
@@ -29,7 +29,6 @@ def _clean(conn) -> None:
         cur.execute("UPDATE sessions SET program_workout_id = NULL WHERE program_workout_id IS NOT NULL")
         cur.execute("DELETE FROM program_workouts")
         cur.execute("DELETE FROM programs")
-        cur.execute("DELETE FROM exercise_pins")
     conn.commit()
 
 
@@ -249,23 +248,6 @@ class TestTemplates:
         with pytest.raises(Exception):
             create_program_with_workouts(conn, "Broken", bad)
         assert client.get("/programs", headers=HEADERS).json() == []
-
-
-class TestPins:
-    def test_pin_is_matched_ignoring_case_and_replaced(self, client) -> None:
-        r = client.put("/pins/Bench press", json={"note": "Practise at 85 kg"}, headers=HEADERS)
-        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Practise at 85 kg")]
-        r = client.put("/pins/BENCH PRESS ", json={"note": "Pause on the chest"}, headers=HEADERS)
-        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Pause on the chest")]
-
-    def test_unpin(self, client) -> None:
-        client.put("/pins/Squat", json={"note": "Brace"}, headers=HEADERS)
-        assert client.delete("/pins/squat", headers=HEADERS).status_code == 204
-        assert client.get("/pins", headers=HEADERS).json() == []
-        assert client.delete("/pins/squat", headers=HEADERS).status_code == 404
-
-    def test_empty_note_is_rejected(self, client) -> None:
-        assert client.put("/pins/Squat", json={"note": ""}, headers=HEADERS).status_code == 422
 
 
 class TestDeload:
