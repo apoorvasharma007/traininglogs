@@ -1,334 +1,340 @@
 -- ---------------------------------------------------------------------------
--- Capture and interpretation layers.
+-- traininglogs' database. Design and reasons: db-redesign-plan.md (2026-10-06).
 --
--- `raw_inputs` is what the person actually produced -- a note they wrote, or a session entered
--- set by set in the app. It is never edited. Everything downstream can
--- be rebuilt from it, which is the point: an extraction is a *derived* artifact, and deriving
--- it again with a better model or prompt must not require the person to write anything twice.
+-- Every row's `id` is a time-ordered UUID (version 7) made by the code (db/ids.py); no id is
+-- built from data or chosen by the phone. Every owned table has `user_id`, and each child points
+-- at its parent by (user_id, parent id), so the database itself refuses a child owned by someone
+-- other than its parent's owner, and any link to another person's row. Indexes on owned data lead
+-- with user_id. Shared reference data (`exercises`) has no owner.
 --
--- `extractions` is one attempt at reading a raw input. Several may exist for the same input --
--- different model, different prompt, a re-run after a fix -- so this is deliberately not a
--- one-to-one relationship. The extract is stored whole, as sent, including the fields the
--- normalized tables drop: `uncertain_fields` (what the model was unsure of) and `warnings`
--- (what the checks found). Those were being computed and then discarded, which threw away the
--- only signal about how much to trust a row.
+-- Row-level security is on everywhere with no policies (end of file): Supabase's automatic web
+-- API can't reach any row. The server connects as the tables' owner, which Postgres exempts.
 --
--- Every child table's foreign key cascades on delete -- deleting a session removes its
--- exercises, sets, and warmups with it; deleting a raw_input removes its extractions.
+-- A database made before this design is converted by scripts/migrate_to_accounts.py, not here.
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS raw_inputs (
-    id          TEXT PRIMARY KEY,
-    content     TEXT NOT NULL,
-    -- How to read `content`: 'text' is something the person wrote, read by the model (it costs
-    -- money and can be read again with a better prompt); 'manual' was entered in the app, or
-    -- copied from a past session, with no model call -- anything that re-reads raw inputs with a
-    -- model must skip it.
-    source_kind TEXT NOT NULL,
-    -- Where it came from, when there is a where. Null for pasted or spoken input.
-    source_file TEXT,
-    -- sha256 of `content`. Lets a re-run recognise text it has already seen without comparing
-    -- whole documents, and proves the row was not altered after the fact.
-    checksum    TEXT NOT NULL,
-    captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT raw_inputs_source_kind_check
-        CHECK (source_kind IN ('text', 'manual'))
+-- People ---------------------------------------------------------------------
+
+-- The private account. auth_id is the sign-in service's id for the person ("sub" in their pass);
+-- data points at users.id instead, so changing sign-in services touches only this table.
+CREATE TABLE IF NOT EXISTS users (
+    id                   UUID PRIMARY KEY,
+    auth_id              UUID NOT NULL UNIQUE,
+    email                TEXT,
+    status               TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
+    role                 TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
+    timezone             TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+    weight_unit          TEXT NOT NULL DEFAULT 'kg' CHECK (weight_unit IN ('kg', 'lb')),
+    ai_monthly_limit_usd NUMERIC NOT NULL DEFAULT 1.00 CHECK (ai_monthly_limit_usd >= 0),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen_at         TIMESTAMPTZ,
+    -- "Delete my account" asked for: the data is removed after a grace period.
+    deleted_at           TIMESTAMPTZ
 );
 
--- Until 2026-10-04 the kinds were 'markdown' (any pasted text), 'repeat' (copied from a past
--- session) and the never-used 'photo' and 'speech'. Databases made before then get their rows
--- renamed and the check replaced here; CREATE TABLE IF NOT EXISTS doesn't touch an existing
--- table. Both updates do nothing once renamed.
-ALTER TABLE raw_inputs DROP CONSTRAINT IF EXISTS raw_inputs_source_kind_check;
-UPDATE raw_inputs SET source_kind = 'text' WHERE source_kind = 'markdown';
-UPDATE raw_inputs SET source_kind = 'manual' WHERE source_kind = 'repeat';
-ALTER TABLE raw_inputs
-    ADD CONSTRAINT raw_inputs_source_kind_check CHECK (source_kind IN ('text', 'manual'));
+-- The public-facing part, kept apart so a shared screen can never show account details.
+CREATE TABLE IF NOT EXISTS profiles (
+    user_id      UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    display_name TEXT,
+    username     TEXT UNIQUE,
+    avatar_url   TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-CREATE TABLE IF NOT EXISTS extractions (
-    id               TEXT PRIMARY KEY,
-    raw_input_id     TEXT NOT NULL REFERENCES raw_inputs(id) ON DELETE CASCADE,
-    -- Which model and which prompts produced this. Without both, a change in accuracy months
-    -- from now is unattributable.
+-- Exercises ------------------------------------------------------------------
+
+-- The shared, curated list. Equipment and muscles live here, never on people's own names.
+CREATE TABLE IF NOT EXISTS exercises (
+    id          UUID PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,
+    equipment   TEXT NOT NULL CHECK (equipment IN
+                    ('barbell', 'dumbbell', 'kettlebell', 'band', 'cable', 'machine', 'bodyweight', 'other')),
+    movement    TEXT,
+    muscles     TEXT[] NOT NULL DEFAULT '{}',
+    -- Other ways people write it, lower case, for linking automatically ("back squat", "squats").
+    other_names TEXT[] NOT NULL DEFAULT '{}',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- A person's own exercise, in their words; made the first time they use a name. name_key is the
+-- name ignoring case and extra spaces, so "Bench press" and "bench  Press" are one exercise.
+CREATE TABLE IF NOT EXISTS user_exercises (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    name        TEXT NOT NULL,
+    name_key    TEXT NOT NULL GENERATED ALWAYS AS (lower(regexp_replace(btrim(name), '\s+', ' ', 'g'))) STORED,
+    exercise_id UUID REFERENCES exercises(id),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id),
+    UNIQUE (user_id, name_key)
+);
+
+-- What people wrote or entered ------------------------------------------------
+
+-- Exactly as given and never edited: a note (`text`, read by the AI) or a session logged in the
+-- app (`manual`, stored as its JSON). client_id is the phone's id for an app session, so sending it
+-- twice is recognised.
+CREATE TABLE IF NOT EXISTS input_text (
+    id         UUID PRIMARY KEY,
+    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    content    TEXT NOT NULL,
+    kind       TEXT NOT NULL CHECK (kind IN ('text', 'manual')),
+    client_id  TEXT,
+    checksum   TEXT NOT NULL,
+    -- Where it came from, when there is a where.
+    source     TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id),
+    UNIQUE (user_id, client_id)
+);
+
+-- The AI's reading of a note, with the person's fixes, waiting for Confirm. `extract` stays the AI's
+-- own reading; `corrections` is appended to, one entry per fix.
+CREATE TABLE IF NOT EXISTS input_text_confirmation_cards (
+    id               UUID PRIMARY KEY,
+    user_id          UUID NOT NULL,
+    input_id         UUID NOT NULL,
     model            TEXT NOT NULL,
     prompt_version   TEXT NOT NULL,
     extract          JSONB NOT NULL,
     uncertain_fields TEXT[] NOT NULL DEFAULT '{}',
     warnings         TEXT[] NOT NULL DEFAULT '{}',
-    status           TEXT NOT NULL DEFAULT 'pending',
-    -- Appended to, never rewritten. `extract` stays the model's own reading; each entry here is
-    -- one thing the person said and the edits it produced. Keeps three facts permanently
-    -- separable -- what the model said, what the person changed, what was stored -- and makes
-    -- "which fields do I correct most often?" a query rather than a guess.
+    status           TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
     corrections      JSONB NOT NULL DEFAULT '[]',
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     confirmed_at     TIMESTAMPTZ,
-    CONSTRAINT extractions_status_check
-        CHECK (status IN ('pending', 'confirmed', 'rejected'))
+    UNIQUE (user_id, id),
+    FOREIGN KEY (user_id, input_id) REFERENCES input_text(user_id, id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
-    session_id           TEXT PRIMARY KEY,
+-- One paid AI call, kept whether it worked or not: a failed call still cost money.
+CREATE TABLE IF NOT EXISTS ai_call_logs (
+    id            UUID PRIMARY KEY,
+    user_id       UUID NOT NULL,
+    input_id      UUID NOT NULL,
+    step          TEXT NOT NULL,
+    model         TEXT NOT NULL,
+    attempts      INT NOT NULL,
+    input_tokens  INT NOT NULL DEFAULT 0,
+    output_tokens INT NOT NULL DEFAULT 0,
+    cost_usd      NUMERIC NOT NULL DEFAULT 0,
+    ms            INT NOT NULL,
+    cached        BOOLEAN NOT NULL DEFAULT false,
+    failed        TEXT,
+    raw_payload   JSONB,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id, input_id) REFERENCES input_text(user_id, id) ON DELETE CASCADE
+);
+
+-- Programs -------------------------------------------------------------------
+
+-- Workouts in order; after the last it starts again at the first. Removing one marks it archived,
+-- so sessions that point at it keep the link.
+CREATE TABLE IF NOT EXISTS programs (
+    id                UUID PRIMARY KEY,
+    user_id           UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    name              TEXT NOT NULL,
+    deload_after_days INT NOT NULL DEFAULT 28 CHECK (deload_after_days > 0),
+    following         BOOLEAN NOT NULL DEFAULT false,
+    -- The deload count starts here, or at the last deload session, whichever is later.
+    following_since   DATE,
+    archived_at       TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id)
+);
+-- Each person follows at most one program.
+CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed_per_user ON programs (user_id) WHERE following;
+
+CREATE TABLE IF NOT EXISTS program_workouts (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL,
+    program_id  UUID NOT NULL,
+    position    INT NOT NULL CHECK (position > 0),
+    name        TEXT,
+    -- Warm-up and cool-down movements, [{name, reps, duration_seconds}], copied into a session.
+    warmup      JSONB NOT NULL DEFAULT '[]',
+    cooldown    JSONB NOT NULL DEFAULT '[]',
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id),
+    FOREIGN KEY (user_id, program_id) REFERENCES programs(user_id, id)
+);
+
+-- The plan inside a workout. No weights: a session takes them from last time.
+CREATE TABLE IF NOT EXISTS program_workout_exercises (
+    id               UUID PRIMARY KEY,
+    user_id          UUID NOT NULL,
+    workout_id       UUID NOT NULL,
+    position         INT NOT NULL CHECK (position > 0),
+    user_exercise_id UUID NOT NULL,
+    name             TEXT NOT NULL,
+    warmup_sets      INT NOT NULL DEFAULT 0 CHECK (warmup_sets >= 0),
+    working_sets     INT NOT NULL DEFAULT 1 CHECK (working_sets >= 0),
+    target_reps      INT CHECK (target_reps > 0),
+    -- As many reps as you can.
+    amrap            BOOLEAN NOT NULL DEFAULT false,
+    -- Other exercises that can take this one's place; a session can switch to one.
+    alternatives     TEXT[] NOT NULL DEFAULT '{}',
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id, workout_id) REFERENCES program_workouts(user_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id, user_exercise_id) REFERENCES user_exercises(user_id, id)
+);
+
+-- Sessions -------------------------------------------------------------------
+
+-- A saved session. dedup_key is the date and a fingerprint of the input's text, so the same note
+-- confirmed twice for the same day is refused, per person. The markdown-era columns (program,
+-- program_author, program_length_weeks, phase, week) are still read by the app.
+CREATE TABLE IF NOT EXISTS workout_sessions (
+    id                   UUID PRIMARY KEY,
+    user_id              UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     date                 DATE NOT NULL,
+    started_at           TIMESTAMPTZ,
+    ended_at             TIMESTAMPTZ,
+    duration_minutes     INT,
+    focus                TEXT,
+    notes                TEXT,
+    dedup_key            TEXT NOT NULL,
+    input_id             UUID NOT NULL,
+    confirmation_card_id UUID,
+    program_workout_id   UUID,
     program              TEXT,
     program_author       TEXT,
     program_length_weeks INT,
     phase                INT,
     week                 INT,
     is_deload_week       BOOLEAN,
-    focus                TEXT,
-    duration_minutes     INT,
     weight_unit          TEXT NOT NULL DEFAULT 'kg',
-    user_id              TEXT,
-    user_name            TEXT,
-    source_file          TEXT,
-    notes                TEXT,
-    created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+    source               TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id),
+    UNIQUE (user_id, dedup_key),
+    FOREIGN KEY (user_id, input_id) REFERENCES input_text(user_id, id),
+    FOREIGN KEY (user_id, confirmation_card_id) REFERENCES input_text_confirmation_cards(user_id, id),
+    FOREIGN KEY (user_id, program_workout_id) REFERENCES program_workouts(user_id, id)
 );
 
--- Added after `sessions` already existed in real databases, so it is an ALTER rather than a
--- column in the CREATE above: `CREATE TABLE IF NOT EXISTS` does nothing to a table that is
--- already there, and would silently skip the new column. Nullable because sessions written
--- before this existed have no extraction to point at, and because the rules parser has none.
-ALTER TABLE sessions ADD COLUMN IF NOT EXISTS extraction_id TEXT REFERENCES extractions(id);
--- For databases where `extractions` was created before this column existed.
-ALTER TABLE extractions ADD COLUMN IF NOT EXISTS corrections JSONB NOT NULL DEFAULT '[]';
-
-CREATE TABLE IF NOT EXISTS warmups (
-    id               SERIAL PRIMARY KEY,
-    session_id       TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
-    number           INT NOT NULL,
+CREATE TABLE IF NOT EXISTS workout_session_warmups (
+    id               UUID PRIMARY KEY,
+    user_id          UUID NOT NULL,
+    session_id       UUID NOT NULL,
+    position         INT NOT NULL,
     name             TEXT NOT NULL,
     reps             INT,
     duration_seconds INT,
-    notes            TEXT
-);
-
-CREATE TABLE IF NOT EXISTS cooldowns (
-    id               SERIAL PRIMARY KEY,
-    session_id       TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
-    number           INT NOT NULL,
-    name             TEXT NOT NULL,
-    reps             INT,
-    duration_seconds INT,
-    notes            TEXT
-);
-
-CREATE TABLE IF NOT EXISTS exercises (
-    id               SERIAL PRIMARY KEY,
-    session_id       TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
-    number           INT NOT NULL,
-    name             TEXT NOT NULL,
-    tags             TEXT[],
-    modality         TEXT,
-    movement_pattern TEXT[],
     notes            TEXT,
-    warmup_notes     TEXT,
-    form_cues        TEXT[],
-    goal_weight_kg             NUMERIC,
-    goal_sets                  INT,
-    goal_rep_min               INT,
-    goal_rep_max               INT,
-    goal_rest_min              INT,
-    goal_rest_seconds          INT,
-    goal_distance_meters       NUMERIC,
-    goal_target_duration_sec   INT,
-    target_muscle_groups       TEXT[],
-    rep_tempo                  TEXT
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id, session_id) REFERENCES workout_sessions(user_id, id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS working_sets (
-    id                  SERIAL PRIMARY KEY,
-    exercise_id         INT NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
-    number              INT NOT NULL,
-    weight_kg           NUMERIC,
-    reps_full           INT,
-    reps_partial        INT,
-    left_reps_full      INT,
-    left_reps_partial   INT,
-    right_reps_full     INT,
-    right_reps_partial  INT,
-    rpe                 NUMERIC,
-    rep_quality         TEXT,
-    rest_minutes        NUMERIC,
-    rest_seconds        INT,
-    duration_seconds    INT,
-    distance_meters     NUMERIC,
-    heart_rate_bpm      INT,
-    notes               TEXT,
-    failure_technique   JSONB
+CREATE TABLE IF NOT EXISTS workout_session_cooldowns (
+    id               UUID PRIMARY KEY,
+    user_id          UUID NOT NULL,
+    session_id       UUID NOT NULL,
+    position         INT NOT NULL,
+    name             TEXT NOT NULL,
+    reps             INT,
+    duration_seconds INT,
+    notes            TEXT,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id, session_id) REFERENCES workout_sessions(user_id, id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS warmup_sets (
-    id          SERIAL PRIMARY KEY,
-    exercise_id INT NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
-    number      INT NOT NULL,
-    weight_kg   NUMERIC,
-    rep_count   INT,
-    notes       TEXT
+-- An exercise in a session: always one of the person's own exercises, and the name as typed.
+CREATE TABLE IF NOT EXISTS workout_session_exercises (
+    id                       UUID PRIMARY KEY,
+    user_id                  UUID NOT NULL,
+    session_id               UUID NOT NULL,
+    position                 INT NOT NULL,
+    user_exercise_id         UUID NOT NULL,
+    name                     TEXT NOT NULL,
+    notes                    TEXT,
+    warmup_notes             TEXT,
+    tags                     TEXT[],
+    modality                 TEXT,
+    movement_pattern         TEXT[],
+    form_cues                TEXT[],
+    target_muscle_groups     TEXT[],
+    rep_tempo                TEXT,
+    goal_weight_kg           NUMERIC,
+    goal_sets                INT,
+    goal_rep_min             INT,
+    goal_rep_max             INT,
+    goal_rest_min            INT,
+    goal_rest_seconds        INT,
+    goal_distance_meters     NUMERIC,
+    goal_target_duration_sec INT,
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id),
+    FOREIGN KEY (user_id, session_id) REFERENCES workout_sessions(user_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id, user_exercise_id) REFERENCES user_exercises(user_id, id)
 );
 
--- ---------------------------------------------------------------------------
--- One row per LLM call site (segment/shell/worker/correction), not per raw HTTP attempt --
--- `attempts` says how many of those an extract() call needed, so a retry storm is visible as a
--- number instead of showing up only as inflated tokens. Makes cost a SQL query instead of
--- something read out of console output (roadmap D4). `raw_payload` is the last tool-call
--- payload seen even when `failed` is set, so a validation rejection does not also cost the
--- response that triggered it (D6).
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS llm_calls (
-    id           SERIAL PRIMARY KEY,
-    raw_input_id TEXT NOT NULL REFERENCES raw_inputs(id) ON DELETE CASCADE,
-    step         TEXT NOT NULL,
-    model        TEXT NOT NULL,
-    attempts     INT NOT NULL,
-    input_tokens  INT NOT NULL DEFAULT 0,
-    output_tokens INT NOT NULL DEFAULT 0,
-    cost_usd     NUMERIC NOT NULL DEFAULT 0,
-    ms           INT NOT NULL,
-    -- Always false today -- prompt caching was measured and dropped (roadmap B9). Reserved so a
-    -- future caching decision doesn't need a new column, just a value.
-    cached       BOOLEAN NOT NULL DEFAULT false,
-    failed       TEXT,
-    raw_payload  JSONB,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Warm-up and working sets in one table. Drop sets, myo-reps and the like stay as detail on their
+-- set (failure_technique).
+CREATE TABLE IF NOT EXISTS workout_session_sets (
+    id                 UUID PRIMARY KEY,
+    user_id            UUID NOT NULL,
+    exercise_id        UUID NOT NULL,
+    position           INT NOT NULL,
+    kind               TEXT NOT NULL CHECK (kind IN ('warmup', 'working')),
+    weight_kg          NUMERIC,
+    reps_full          INT,
+    reps_partial       INT,
+    left_reps_full     INT,
+    left_reps_partial  INT,
+    right_reps_full    INT,
+    right_reps_partial INT,
+    rpe                NUMERIC,
+    rep_quality        TEXT,
+    rest_minutes       NUMERIC,
+    rest_seconds       INT,
+    duration_seconds   INT,
+    distance_meters    NUMERIC,
+    heart_rate_bpm     INT,
+    notes              TEXT,
+    failure_technique  JSONB,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id, exercise_id) REFERENCES workout_session_exercises(user_id, id) ON DELETE CASCADE
 );
 
--- Finding earlier captures of the same text, and every attempt at reading one input.
-CREATE INDEX IF NOT EXISTS idx_raw_inputs_checksum      ON raw_inputs(checksum);
-CREATE INDEX IF NOT EXISTS idx_extractions_raw_input_id ON extractions(raw_input_id);
-CREATE INDEX IF NOT EXISTS idx_llm_calls_raw_input_id   ON llm_calls(raw_input_id);
+-- Indexes: owner first --------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_input_text_user                ON input_text (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_input_text_checksum            ON input_text (user_id, checksum);
+CREATE INDEX IF NOT EXISTS idx_cards_input                    ON input_text_confirmation_cards (user_id, input_id);
+CREATE INDEX IF NOT EXISTS idx_ai_call_logs_user_month        ON ai_call_logs (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_call_logs_input             ON ai_call_logs (user_id, input_id);
+CREATE INDEX IF NOT EXISTS idx_programs_user                  ON programs (user_id);
+CREATE INDEX IF NOT EXISTS idx_program_workouts_program       ON program_workouts (user_id, program_id);
+CREATE INDEX IF NOT EXISTS idx_program_workout_exercises      ON program_workout_exercises (user_id, workout_id);
+CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_date     ON workout_sessions (user_id, date);
+CREATE INDEX IF NOT EXISTS idx_workout_sessions_workout       ON workout_sessions (user_id, program_workout_id);
+CREATE INDEX IF NOT EXISTS idx_workout_session_warmups        ON workout_session_warmups (user_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_workout_session_cooldowns      ON workout_session_cooldowns (user_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_workout_session_exercises      ON workout_session_exercises (user_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_workout_session_exercises_name ON workout_session_exercises (user_id, user_exercise_id);
+CREATE INDEX IF NOT EXISTS idx_workout_session_sets           ON workout_session_sets (user_id, exercise_id);
 
-CREATE INDEX IF NOT EXISTS idx_warmups_session_id   ON warmups(session_id);
-CREATE INDEX IF NOT EXISTS idx_cooldowns_session_id ON cooldowns(session_id);
-CREATE INDEX IF NOT EXISTS idx_exercises_session_id         ON exercises(session_id);
-CREATE INDEX IF NOT EXISTS idx_working_sets_exercise_id     ON working_sets(exercise_id);
-
--- Programs (Phase 8). A program is workouts in order; after the last one it starts again at 1.
--- Removing a program or workout marks it archived, so sessions that point at it keep the link.
-CREATE TABLE IF NOT EXISTS programs (
-    id                TEXT PRIMARY KEY,
-    name              TEXT NOT NULL,
-    deload_after_days INT  NOT NULL DEFAULT 28 CHECK (deload_after_days > 0),
-    following         BOOLEAN NOT NULL DEFAULT false,
-    -- The deload count starts here, or at the last deload session, whichever is later.
-    following_since   DATE,
-    archived_at       TIMESTAMPTZ,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Workout 1, 2, 3 of a program. The name is optional ("Push").
-CREATE TABLE IF NOT EXISTS program_workouts (
-    id          TEXT PRIMARY KEY,
-    program_id  TEXT NOT NULL REFERENCES programs(id),
-    position    INT  NOT NULL CHECK (position > 0),
-    name        TEXT,
-    archived_at TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- The plan inside a workout. No weights: a session takes them from the last time.
-CREATE TABLE IF NOT EXISTS program_workout_exercises (
-    id           TEXT PRIMARY KEY,
-    workout_id   TEXT NOT NULL REFERENCES program_workouts(id) ON DELETE CASCADE,
-    position     INT  NOT NULL CHECK (position > 0),
-    name         TEXT NOT NULL,
-    warmup_sets  INT  NOT NULL DEFAULT 0 CHECK (warmup_sets >= 0),
-    working_sets INT  NOT NULL DEFAULT 1 CHECK (working_sets >= 0),
-    target_reps  INT  CHECK (target_reps > 0),
-    -- "1 × max": as many reps as you can.
-    amrap        BOOLEAN NOT NULL DEFAULT false
-);
-
--- Other exercises that can take this one's place ("Shoulder Press or Bench press"). A workout
--- starts with the first; the session can switch to an alternative.
-ALTER TABLE program_workout_exercises ADD COLUMN IF NOT EXISTS alternatives TEXT[] NOT NULL DEFAULT '{}';
-
--- A workout's warm-up and cool-down movements: [{name, reps, duration_seconds}], copied into a
--- session at Start, where each is optional.
-ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS warmup JSONB NOT NULL DEFAULT '[]';
-ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS cooldown JSONB NOT NULL DEFAULT '[]';
-
-
--- Which planned workout a session came from; empty for blank workouts and older sessions.
-ALTER TABLE sessions ADD COLUMN IF NOT EXISTS program_workout_id TEXT REFERENCES program_workouts(id);
-
-CREATE INDEX IF NOT EXISTS idx_program_workouts_program_id ON program_workouts(program_id);
-CREATE INDEX IF NOT EXISTS idx_program_workout_exercises_workout_id ON program_workout_exercises(workout_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_program_workout_id ON sessions(program_workout_id);
-
--- ---------------------------------------------------------------------------
--- Accounts (phase 9, step 3).
---
--- `users` is the app's own list of people. Data points at users.id, never at the sign-in
--- service's id: changing or adding a sign-in method, or copying data between environments (where
--- the same person has a different Supabase id), then touches one row here instead of every row.
--- auth_id is the Supabase account id ("sub" in the sign-in pass); the server adds the user on
--- their first signed-in request.
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS users (
-    id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    auth_id              UUID NOT NULL UNIQUE,
-    -- For recognising people; the sign-in service stays the source of truth.
-    email                TEXT,
-    ai_monthly_limit_usd NUMERIC NOT NULL DEFAULT 1.00 CHECK (ai_monthly_limit_usd >= 0),
-    created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- sessions.user_id held a fixed "7" from the retired notes flow. It becomes a real owner: values
--- that aren't a UUID are dropped, and the release fills in each session's owner.
-DO $$
-BEGIN
-    IF (SELECT data_type FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'sessions' AND column_name = 'user_id') = 'text' THEN
-        ALTER TABLE sessions ALTER COLUMN user_id TYPE UUID USING
-            CASE WHEN user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN user_id::uuid END;
-    END IF;
-END $$;
-
--- The owner, on every table the app looks up by its own id; the rest are only reached through
--- one of these. A user who still has data can't be deleted (RESTRICT): removing an account is a
--- deliberate step that removes the data first.
-ALTER TABLE raw_inputs       ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
-ALTER TABLE extractions      ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
-ALTER TABLE programs         ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
-ALTER TABLE program_workouts ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE RESTRICT;
-ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_user_id_fkey;
-ALTER TABLE sessions ADD CONSTRAINT sessions_user_id_fkey
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
-
--- Required: nothing can be saved without an owner. A database with rows from before accounts gets
--- every row's owner filled in first (the release migration), then this applies.
-ALTER TABLE raw_inputs       ALTER COLUMN user_id SET NOT NULL;
-ALTER TABLE extractions      ALTER COLUMN user_id SET NOT NULL;
-ALTER TABLE sessions         ALTER COLUMN user_id SET NOT NULL;
-ALTER TABLE programs         ALTER COLUMN user_id SET NOT NULL;
-ALTER TABLE program_workouts ALTER COLUMN user_id SET NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_raw_inputs_user_id       ON raw_inputs(user_id);
-CREATE INDEX IF NOT EXISTS idx_extractions_user_id      ON extractions(user_id);
-CREATE INDEX IF NOT EXISTS idx_programs_user_id         ON programs(user_id);
-CREATE INDEX IF NOT EXISTS idx_program_workouts_user_id ON program_workouts(user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id_date    ON sessions(user_id, date);
-
--- Each person follows at most one program. (Replaces programs_one_followed, which allowed one in
--- total.)
-DROP INDEX IF EXISTS programs_one_followed;
-CREATE UNIQUE INDEX IF NOT EXISTS programs_one_followed_per_user ON programs (user_id) WHERE following;
-
--- Row-level security on, with no policies: Supabase's automatic web API (the anon key, signed-in
--- users) can't read or change any row. The server is unaffected: it connects as the tables'
--- owner, and Postgres doesn't apply these rules to a table's owner.
-ALTER TABLE raw_inputs                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE extractions               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE llm_calls                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions                  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE warmups                   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cooldowns                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exercises                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE working_sets              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE warmup_sets               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE programs                  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE program_workouts          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE program_workout_exercises ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users                     ENABLE ROW LEVEL SECURITY;
+-- Row-level security on, no policies (see the top of this file) ---------------
+ALTER TABLE users                         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercises                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_exercises                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE input_text                    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE input_text_confirmation_cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_call_logs                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE programs                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_workouts              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_workout_exercises     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_sessions              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_session_warmups       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_session_cooldowns     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_session_exercises     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_session_sets          ENABLE ROW LEVEL SECURITY;
