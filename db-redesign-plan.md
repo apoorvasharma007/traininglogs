@@ -179,6 +179,10 @@ All on `phase-9/next-3-accounts`, locally, nothing pushed until the whole of ste
 
 ## Later (saved, not now)
 
+- **The release after accounts:** remove `API_KEY` from the Cloud Run settings and the `api-key`
+  secret (Terraform, both environments). It stays for one release because the deploy applies
+  Terraform, restarting the old code, before the new image goes out.
+
 - **Supersets and circuits:** one optional `group_number` on session and program exercises;
   exercises sharing a number are done back to back in rounds (two is a superset, three or more a
   circuit; set N of each is round N). Screens and AI support designed separately.

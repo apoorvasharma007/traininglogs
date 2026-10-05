@@ -34,4 +34,5 @@ module "app" {
   environment                = local.environment
   app_deploy_service_account = data.terraform_remote_state.project.outputs.app_deploy_service_account
   anthropic_workspace_id     = "wrkspc_011QiVX8TkGjpXRWKN8trAtn"
+  supabase_url               = "https://sjpxpjilamtumdmdvmtg.supabase.co"
 }

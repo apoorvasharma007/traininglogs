@@ -23,6 +23,11 @@ variable "anthropic_workspace_id" {
   type        = string
 }
 
+variable "supabase_url" {
+  description = "The Supabase project whose sign-in passes the server accepts, https://<ref>.supabase.co. Not a secret."
+  type        = string
+}
+
 variable "memory" {
   description = "Memory per Cloud Run instance."
   type        = string
