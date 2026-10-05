@@ -113,6 +113,11 @@ Starts with about 30 basic lifts.
 
 Dropped: `exercise_pins` (pinned notes were removed).
 
+Also not carried over: two leftover columns production has but no schema file describes since an
+early version, `exercises.exercise_type` and `working_sets.set_type`; every row holds the default
+`'strength'` (checked 2026-10-06), so they carry nothing. Old sessions imported from the markdown
+logs have no input; each gets one of kind `import`, holding the session as it was stored.
+
 **Production's drafts in the migration** (checked 2026-10-06): the 13 AI readings of notes (9
 confirmed, 4 rejected) become `input_text_confirmation_cards`. Not carried over: 1 draft from an
 app session (its session keeps its link to its input) and 1 pending draft from the old repeat

@@ -59,6 +59,47 @@ CREATE TABLE IF NOT EXISTS exercises (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- The starter shared list: basic lifts, and the ways people commonly write them (lower case, each
+-- name used once, so linking is never ambiguous). Grows from the names people create that don't
+-- link to anything (db-redesign-plan.md).
+INSERT INTO exercises (id, name, equipment, movement, muscles, other_names)
+SELECT gen_random_uuid(), v.name, v.equipment, v.movement, v.muscles, v.other_names
+FROM (VALUES
+    ('Barbell Back Squat', 'barbell', 'squat', ARRAY['quads', 'glutes']::text[], ARRAY['squat', 'squats', 'back squat', 'bb squat', 'barbell squat']::text[]),
+    ('Barbell Front Squat', 'barbell', 'squat', ARRAY['quads']::text[], ARRAY['front squat', 'front squats']::text[]),
+    ('Barbell Bench Press', 'barbell', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['bench press', 'bench', 'bb bench', 'flat bench press', 'barbell bench']::text[]),
+    ('Incline Barbell Bench Press', 'barbell', 'push', ARRAY['chest', 'shoulders']::text[], ARRAY['incline bench press', 'incline bench']::text[]),
+    ('Dumbbell Bench Press', 'dumbbell', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['db bench press', 'db bench', 'dumbbell bench']::text[]),
+    ('Incline Dumbbell Press', 'dumbbell', 'push', ARRAY['chest', 'shoulders']::text[], ARRAY['incline db press', 'incline dumbbell bench press']::text[]),
+    ('Barbell Overhead Press', 'barbell', 'push', ARRAY['shoulders', 'triceps']::text[], ARRAY['overhead press', 'ohp', 'shoulder press', 'military press']::text[]),
+    ('Dumbbell Shoulder Press', 'dumbbell', 'push', ARRAY['shoulders', 'triceps']::text[], ARRAY['db shoulder press', 'seated db shoulder press']::text[]),
+    ('Barbell Deadlift', 'barbell', 'hinge', ARRAY['hamstrings', 'glutes', 'back']::text[], ARRAY['deadlift', 'deadlifts', 'conventional deadlift']::text[]),
+    ('Romanian Deadlift', 'barbell', 'hinge', ARRAY['hamstrings', 'glutes']::text[], ARRAY['rdl', 'romanian deadlifts']::text[]),
+    ('Barbell Row', 'barbell', 'pull', ARRAY['back', 'lats']::text[], ARRAY['bent over row', 'bb row']::text[]),
+    ('Dumbbell Row', 'dumbbell', 'pull', ARRAY['back', 'lats']::text[], ARRAY['db row', 'single-arm row', 'one arm dumbbell row']::text[]),
+    ('Pull-up', 'bodyweight', 'pull', ARRAY['lats', 'biceps']::text[], ARRAY['pull up', 'pull ups', 'pullups', 'pull-ups']::text[]),
+    ('Chin-up', 'bodyweight', 'pull', ARRAY['lats', 'biceps']::text[], ARRAY['chin up', 'chin ups', 'chinups', 'chin-ups']::text[]),
+    ('Lat Pulldown', 'cable', 'pull', ARRAY['lats']::text[], ARRAY['lat pull down', 'pulldown']::text[]),
+    ('Seated Cable Row', 'cable', 'pull', ARRAY['back']::text[], ARRAY['cable row']::text[]),
+    ('Dip', 'bodyweight', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['dips', 'parallel bar dip']::text[]),
+    ('Push-up', 'bodyweight', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['push up', 'push ups', 'pushups']::text[]),
+    ('Leg Press', 'machine', 'squat', ARRAY['quads', 'glutes']::text[], '{}'::text[]),
+    ('Leg Extension', 'machine', 'isolation', ARRAY['quads']::text[], ARRAY['leg extensions']::text[]),
+    ('Leg Curl', 'machine', 'isolation', ARRAY['hamstrings']::text[], ARRAY['lying leg curl', 'seated leg curl', 'hamstring curl']::text[]),
+    ('Standing Calf Raise', 'machine', 'isolation', ARRAY['calves']::text[], ARRAY['calf raise', 'calf raises']::text[]),
+    ('Walking Lunge', 'dumbbell', 'lunge', ARRAY['quads', 'glutes']::text[], ARRAY['lunges', 'walking lunges', 'lunge']::text[]),
+    ('Hip Thrust', 'barbell', 'hinge', ARRAY['glutes']::text[], ARRAY['barbell hip thrust', 'hip thrusts']::text[]),
+    ('Barbell Curl', 'barbell', 'isolation', ARRAY['biceps']::text[], ARRAY['bb curl']::text[]),
+    ('Dumbbell Curl', 'dumbbell', 'isolation', ARRAY['biceps']::text[], ARRAY['db curl', 'bicep curl', 'biceps curl']::text[]),
+    ('Triceps Pushdown', 'cable', 'isolation', ARRAY['triceps']::text[], ARRAY['tricep pushdown', 'cable pushdown']::text[]),
+    ('Lateral Raise', 'dumbbell', 'isolation', ARRAY['shoulders']::text[], ARRAY['lateral raises', 'side raise', 'db lateral raise']::text[]),
+    ('Face Pull', 'cable', 'pull', ARRAY['rear delts']::text[], ARRAY['face pulls']::text[]),
+    ('Power Clean', 'barbell', 'olympic', ARRAY['full body']::text[], ARRAY['barbell clean', 'clean']::text[]),
+    ('Kettlebell Swing', 'kettlebell', 'hinge', ARRAY['glutes', 'hamstrings']::text[], ARRAY['kb swing', 'kettlebell swings']::text[]),
+    ('Plank', 'bodyweight', 'core', ARRAY['core']::text[], ARRAY['planks']::text[])
+) AS v (name, equipment, movement, muscles, other_names)
+ON CONFLICT (name) DO NOTHING;
+
 -- A person's own exercise, in their words; made the first time they use a name. name_key is the
 -- name ignoring case and extra spaces, so "Bench press" and "bench  Press" are one exercise.
 CREATE TABLE IF NOT EXISTS user_exercises (
@@ -75,14 +116,15 @@ CREATE TABLE IF NOT EXISTS user_exercises (
 
 -- What people wrote or entered ------------------------------------------------
 
--- Exactly as given and never edited: a note (`text`, read by the AI) or a session logged in the
--- app (`manual`, stored as its JSON). client_id is the phone's id for an app session, so sending it
--- twice is recognised.
+-- Exactly as given and never edited: a note (`text`, read by the AI), a session logged in the app
+-- (`manual`, stored as its JSON), or a session imported from the old markdown logs (`import`,
+-- stored as it was in the database; the file was never stored). client_id is the phone's id for an
+-- app session, so sending it twice is recognised.
 CREATE TABLE IF NOT EXISTS input_text (
     id         UUID PRIMARY KEY,
     user_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     content    TEXT NOT NULL,
-    kind       TEXT NOT NULL CHECK (kind IN ('text', 'manual')),
+    kind       TEXT NOT NULL CHECK (kind IN ('text', 'manual', 'import')),
     client_id  TEXT,
     checksum   TEXT NOT NULL,
     -- Where it came from, when there is a where.
