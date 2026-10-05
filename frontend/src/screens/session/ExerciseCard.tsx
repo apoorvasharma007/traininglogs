@@ -1,14 +1,13 @@
-import { ArrowLeftRight, Check, ChevronDown, Clock, Ellipsis, MessageSquareText, Pin } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, Clock, Ellipsis, MessageSquareText } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import EffortBars from '@/components/EffortBars'
 import NumberBox from '@/components/NumberBox'
 import type { LiveExercise, LiveSet } from '@/lib/session'
 
-/** One exercise in the session: pinned and last-time notes, today's note, and its sets. */
+/** One exercise in the session: last time's note, today's note, and its sets. */
 export default function ExerciseCard({
   exercise,
-  pinned,
   onOpenSet,
   onValue,
   onTick,
@@ -19,10 +18,8 @@ export default function ExerciseCard({
   collapsed,
   onToggleCollapsed,
   onNote,
-  onTogglePin,
 }: {
   exercise: LiveExercise
-  pinned: string | null
   onOpenSet: (set: LiveSet) => void
   onValue: (set: LiveSet, field: 'weight' | 'reps', value: string) => void
   onTick: (set: LiveSet) => void
@@ -34,14 +31,12 @@ export default function ExerciseCard({
   collapsed: boolean
   onToggleCollapsed: () => void
   onNote: (note: string) => void
-  onTogglePin: () => void
 }) {
   const e = exercise
   // Warmup sets show "W"; working sets are numbered 1, 2, 3.
   const labels = e.sets.map((x, i) =>
     x.kind === 'warmup' ? 'W' : String(e.sets.slice(0, i + 1).filter((y) => y.kind === 'working').length),
   )
-  const isPinned = pinned != null && e.note.trim() !== '' && pinned === e.note.trim()
 
   if (collapsed) {
     return (
@@ -77,12 +72,6 @@ export default function ExerciseCard({
               )}
             </h2>
           )}
-          {pinned && (
-            <p className="flex items-start gap-1.5 text-xs leading-snug text-foreground/80">
-              <Pin size={13} aria-label="Pinned note" className="mt-0.5 shrink-0" />
-              <span>{pinned}</span>
-            </p>
-          )}
           {e.lastNote && (
             <p className="flex items-start gap-1.5 text-xs leading-snug text-faint-foreground">
               <Clock size={13} aria-label="Last time" className="mt-0.5 shrink-0" />
@@ -104,13 +93,6 @@ export default function ExerciseCard({
           <input id={`note-${e.key}`} autoFocus={e.noteOpen && !e.note} value={e.note} placeholder="Note for today"
             onChange={(ev) => onNote(ev.target.value)}
             className="h-11 min-w-0 flex-1 rounded-xl border border-muted-foreground/60 bg-card px-3 text-sm" />
-          <button type="button" aria-pressed={isPinned} disabled={!e.note.trim()} onClick={onTogglePin}
-            aria-label={isPinned ? 'Unpin this note' : 'Pin this note to every session'}
-            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition active:scale-90 disabled:opacity-40 ${
-              isPinned ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-muted-foreground'
-            }`}>
-            <Pin size={18} aria-hidden />
-          </button>
         </div>
       )}
 

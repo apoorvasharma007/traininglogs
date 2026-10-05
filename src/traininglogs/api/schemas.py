@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
@@ -376,16 +376,6 @@ class WorkoutExercisesIn(BaseModel):
     exercises: list[PlanExercise]
 
 
-class PinIn(BaseModel):
-    note: str = Field(min_length=1)
-
-
-class PinOut(BaseModel):
-    name_key: str
-    note: str
-    pinned_at: Any
-
-
 class ManualWarmupSet(BaseModel):
     weight_kg: float = Field(ge=0)
     reps: Optional[int] = Field(default=None, ge=0)
@@ -433,6 +423,8 @@ class ManualSessionIn(BaseModel):
     program_workout_id: Optional[str] = None
     is_deload: bool = False
     notes: Optional[str] = None
+    started_at: Optional[datetime] = Field(default=None, description="When the session started, from the phone.")
+    ended_at: Optional[datetime] = Field(default=None, description="When Finish was tapped.")
     warmup: list[ManualMovement] = []
     cooldown: list[ManualMovement] = []
     exercises: list[ManualExercise] = Field(min_length=1)

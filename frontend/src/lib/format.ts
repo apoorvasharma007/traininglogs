@@ -26,7 +26,7 @@ export function kg(value: number): string {
 }
 
 /** Monday of the week a date falls in, as a local date. */
-export function weekStart(d: Date): Date {
+function weekStart(d: Date): Date {
   const start = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
   return start

@@ -52,6 +52,19 @@ resource "google_cloud_run_v2_service" "traininglogs" {
       }
 
       env {
+        name  = "SUPABASE_URL"
+        value = var.supabase_url
+      }
+
+      env {
+        name  = "SUPABASE_PUBLISHABLE_KEY"
+        value = var.supabase_publishable_key
+      }
+
+      # Only the code from before accounts reads this. It stays for one release, so that release's
+      # Terraform step (which restarts the old code before the new image goes out) still starts;
+      # the release after removes it and the api-key secret (db-redesign-plan.md).
+      env {
         name = "API_KEY"
         value_source {
           secret_key_ref {
@@ -85,8 +98,8 @@ resource "google_cloud_run_v2_service" "traininglogs" {
   depends_on = [google_secret_manager_secret_iam_member.app_runtime]
 }
 
-# Anyone may open the URL -- the page itself is public. Every data endpoint still requires the
-# X-Api-Key header (API_KEY above).
+# Anyone may open the URL -- the page itself is public. Every data endpoint still requires a
+# Supabase sign-in pass from SUPABASE_URL's project (api/auth.py).
 resource "google_cloud_run_v2_service_iam_member" "public" {
   project  = var.project_id
   location = google_cloud_run_v2_service.traininglogs.location

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
 // The API paths the dev server forwards to FastAPI on :8000, so `npm run dev` talks to the real API.
-const API_PATHS = ['/sessions', '/progress', '/exercises', '/inputs', '/extractions', '/programs', '/workouts', '/pins']
+const API_PATHS = ['/sessions', '/progress', '/exercises', '/inputs', '/extractions', '/programs', '/workouts', '/templates', '/config']
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

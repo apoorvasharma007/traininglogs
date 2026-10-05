@@ -52,10 +52,9 @@ describe('Session', () => {
     await waitFor(() => expect(location.history.at(-1)).toBe('/'))
   })
 
-  it('shows last time and the pinned note, ticks a set and saves it at Finish', async () => {
+  it('shows last time, ticks a set and saves it at Finish', async () => {
     await seed()
     const calls = fakeApi({
-      'GET /pins': [{ name_key: 'squat', note: 'Brace before each rep', pinned_at: '' }],
       'POST /sessions': { session_id: 's1', created: true },
       'GET /programs': [],
       'GET /programs/p1': { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1', workouts: [workout] },
@@ -63,7 +62,6 @@ describe('Session', () => {
     const location = renderApp('/session')
 
     expect(await screen.findByText('better depth')).toBeInTheDocument()
-    expect(await screen.findByText('Brace before each rep')).toBeInTheDocument()
     expect(screen.getByText(/0 of 2 sets/)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
@@ -88,7 +86,7 @@ describe('Session', () => {
     const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
       deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
     const calls = fakeApi({
-      'GET /pins': [], 'GET /programs': [program], 'GET /programs/p1': program,
+      'GET /programs': [program], 'GET /programs/p1': program,
       'POST /sessions': { session_id: 's1', created: true }, 'PUT /workouts/w1/exercises': program,
     })
     renderApp('/session')
@@ -115,7 +113,7 @@ describe('Session', () => {
 
   it('keeps a finished session on the phone when it cannot be sent', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [], 'GET /programs': [] })
+    fakeApi({ 'GET /programs': [] })
     const offline = globalThis.fetch
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
       if (init?.method === 'POST') throw new TypeError('Failed to fetch')
@@ -136,7 +134,7 @@ describe('Session', () => {
 
   it('takes a typed weight over last time and keeps it on the phone', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     const weight = await screen.findByLabelText('Weight for set 1')
     // Last time's value is a grey hint until something is typed.
@@ -153,7 +151,7 @@ describe('Session', () => {
       '1 · Bench', 'p1',
       [{ name: 'Bench press', date: '2026-10-02', notes: 'still hard', warmup_sets: [], sets: [{ weight_kg: 90, reps: 2, notes: null }] }],
       new Date(2026, 9, 4, 10, 0)))
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Switch Shoulder Press to an alternative' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Bench press' }))
@@ -169,7 +167,7 @@ describe('Session', () => {
         { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 2, amrap: false, alternatives: [] },
       ] },
       '1 · Bench', 'p1', [], new Date(2026, 9, 4, 10, 0)))
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     expect(await screen.findByText('Squat', { selector: 'span.font-semibold' })).toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: 'Set 1 done' })[0])
@@ -184,7 +182,7 @@ describe('Session', () => {
 
   it('fills the warmup sets from a ramp', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
     // Warm-up set templates sit at the bottom of the menu, just above Remove exercise.
@@ -203,7 +201,7 @@ describe('Session', () => {
       { ...workout, exercises: [...workout.exercises, { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] }] },
       '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0),
     ))
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
     const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
@@ -214,7 +212,7 @@ describe('Session', () => {
 
   it('nudges a warm-up first; Done records 5 minutes of easy cardio', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     expect(await screen.findByText('Warm up first')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -228,7 +226,7 @@ describe('Session', () => {
 
   it('lets the warm-up nudge be dismissed', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Skip the warm-up' }))
     expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
@@ -237,7 +235,7 @@ describe('Session', () => {
 
   it('will not finish with nothing ticked', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
@@ -246,7 +244,7 @@ describe('Session', () => {
 
   it('adds an exercise as a blank card with a name field', async () => {
     await seed()
-    fakeApi({ 'GET /pins': [] })
+    fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
     const name = await screen.findByLabelText('Exercise name')

@@ -5,7 +5,16 @@ table.
 
 1. Write the change in `src/traininglogs/db/schema.sql`. Only add things: a new column or a new
    table. Never rename or delete in place, because existing data and the API depend on those
-   names.
+   names. A change that has to rename or restructure goes through a migration script instead, as
+   `scripts/migrate_to_accounts.py` did: one transaction, a dry run by default, counts compared
+   old against new.
+
+   A new table follows the design in `db-redesign-plan.md`: `id UUID PRIMARY KEY` made by
+   `db/ids.py` (never built from data or chosen by the phone); `user_id UUID NOT NULL`, unless it's
+   shared reference data; `UNIQUE (user_id, id)`; a child points at its parent by
+   `FOREIGN KEY (user_id, parent_id) REFERENCES parent(user_id, id)`; indexes lead with `user_id`;
+   `ENABLE ROW LEVEL SECURITY` at the end of the file; and a test in
+   `tests/test_accounts_schema.py` if it adds a rule.
 
 2. Add a new column as its own line, `ALTER TABLE <table> ADD COLUMN IF NOT EXISTS ...`, not only
    inside the `CREATE TABLE` block. A database that already exists skips the `CREATE TABLE` block

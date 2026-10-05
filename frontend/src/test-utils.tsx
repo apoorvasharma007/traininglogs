@@ -20,7 +20,7 @@ export function renderApp(path: string) {
 
 type Handler = (body: unknown) => unknown
 
-/** Replaces fetch with canned replies keyed by "METHOD /path"; records every call. */
+/** Replaces fetch with canned replies keyed by "METHOD /path" (or a full URL); records every call. */
 export function fakeApi(routes: Record<string, unknown | Handler>) {
   const calls: { key: string; body: unknown }[] = []
   globalThis.fetch = (async (url: string, init?: RequestInit) => {
@@ -30,7 +30,8 @@ export function fakeApi(routes: Record<string, unknown | Handler>) {
     if (!(key in routes)) return new Response(JSON.stringify({ detail: `no fake for ${key}` }), { status: 404 })
     const route = routes[key]
     const reply = typeof route === 'function' ? (route as Handler)(body) : route
-    return new Response(JSON.stringify(reply), { status: 200 })
+    // A Response is sent as it is, for errors.
+    return reply instanceof Response ? reply : new Response(JSON.stringify(reply), { status: 200 })
   }) as typeof fetch
   return calls
 }

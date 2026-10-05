@@ -1,7 +1,7 @@
 // Warm-up ramps: weight climbs and reps fall toward the first working set. Each step is a share
 // of that set's weight; "bar" is the empty bar. Weights round to 2.5 kg and never go below the bar.
 
-export const BAR_KG = 20
+const BAR_KG = 20
 
 type Step = { of: number | 'bar'; reps: number }
 

@@ -9,7 +9,7 @@ export type SessionSummary = {
   exercises: string[]
 }
 
-export type WarmupSet = { number: number; weight_kg: number | null; rep_count: number | null; notes: string | null }
+type WarmupSet = { number: number; weight_kg: number | null; rep_count: number | null; notes: string | null }
 
 export type WorkingSet = {
   number: number

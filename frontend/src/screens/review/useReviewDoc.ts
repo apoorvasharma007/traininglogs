@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 import type { Card, CardEdit, CardOp, EditReply } from '@/lib/types'
 
 /** The review being edited: the extract to round-trip to the API, and the card to show. */
-export type Doc = { extract: Record<string, unknown> | null; card: Card }
+type Doc = { extract: Record<string, unknown> | null; card: Card }
 
 type Step = { edits: CardEdit[] } | { op: CardOp } | { instruction: string }
 
