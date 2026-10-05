@@ -1,20 +1,18 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import ConfirmSheet from '@/components/ConfirmSheet'
 import PageTitle from '@/components/PageTitle'
-import { api, getApiKey, setApiKey } from '@/lib/api'
+import { api } from '@/lib/api'
+import { signOut, useSignedIn } from '@/lib/auth'
+import { useOutbox } from '@/lib/store'
 import type { LiftsOut } from '@/lib/types'
 
 export default function Settings() {
   const queryClient = useQueryClient()
-  const [key, setKey] = useState(getApiKey)
+  const email = useSignedIn()
+  const unsent = useOutbox().pending.length
+  const [signingOut, setSigningOut] = useState(false)
   const lifts = useQuery({ queryKey: ['lifts'], queryFn: () => api<LiftsOut>('/progress/lifts') })
-
-  function saveKey(value: string) {
-    setKey(value)
-    setApiKey(value)
-    // Everything loaded with the old key may have failed; load it again with the new one.
-    queryClient.invalidateQueries()
-  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -22,19 +20,11 @@ export default function Settings() {
 
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold">Access</h2>
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
-          <label htmlFor="api-key" className="text-[13px] font-semibold">
-            API key
-          </label>
-          <input
-            id="api-key"
-            type="password"
-            autoComplete="off"
-            value={key}
-            onChange={(e) => saveKey(e.target.value)}
-            className="h-11 rounded-xl border border-border bg-background px-3.5"
-          />
-          <p className="text-xs text-muted-foreground">Saved on this device only.</p>
+        <div className="flex min-h-13 items-center justify-between gap-3 rounded-2xl border border-border bg-card py-1 pr-1 pl-4">
+          <span className="min-w-0 truncate text-[15px]">{email}</span>
+          <button type="button" onClick={() => setSigningOut(true)} className="h-11 shrink-0 px-3 text-sm font-semibold text-destructive">
+            Sign out
+          </button>
         </div>
       </section>
 
@@ -51,6 +41,23 @@ export default function Settings() {
           ))}
         </ul>
       </section>
+
+      <ConfirmSheet
+        open={signingOut}
+        title="Sign out?"
+        body={
+          unsent
+            ? `${unsent} ${unsent === 1 ? "session hasn't" : "sessions haven't"} sent yet. ${unsent === 1 ? 'It stays' : 'They stay'} on this phone and ${unsent === 1 ? 'sends' : 'send'} after you sign in again.`
+            : 'You can sign in again with a code by email.'
+        }
+        confirmLabel="Sign out"
+        onClose={() => setSigningOut(false)}
+        onConfirm={() => {
+          setSigningOut(false)
+          queryClient.clear()
+          signOut()
+        }}
+      />
     </div>
   )
 }

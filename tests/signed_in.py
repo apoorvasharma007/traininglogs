@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 SUPABASE_URL = "https://test-project.supabase.co"
 os.environ["SUPABASE_URL"] = SUPABASE_URL
+os.environ["SUPABASE_PUBLISHABLE_KEY"] = "sb_publishable_test"
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",

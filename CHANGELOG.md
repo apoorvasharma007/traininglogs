@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A sign-in screen: your email, then a 6-digit code emailed to you. You stay signed in; the app
+  renews the pass itself. Settings shows your email with Sign out in place of the API key box,
+  and warns before signing out if a session hasn't sent yet. The app reads which Supabase project
+  to use from the server (`GET /config`), so one build works in staging and production.
 - Accounts: sign-in by a Supabase pass instead of the API key; every row belongs to one person,
   and the database itself refuses a row owned by someone other than its parent's owner or linked
   to another person's row. One followed program per person; "today" in each person's timezone.

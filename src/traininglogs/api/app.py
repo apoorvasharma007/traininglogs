@@ -119,10 +119,11 @@ def _user(conn=Depends(_db), token: str = Depends(bearer)) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.environ.get("SUPABASE_URL"):
+    missing = [name for name in ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY") if not os.environ.get(name)]
+    if missing:
         print(
-            "ERROR: SUPABASE_URL is not set: the server checks sign-ins against that Supabase "
-            "project. Set it in .env before starting the server.",
+            f"ERROR: {' and '.join(missing)} not set: sign-in goes through that Supabase project. "
+            "Set them in .env before starting the server.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -145,6 +146,14 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+
+@app.get("/config")
+def public_config():
+    """What the app needs before anyone signs in: this environment's Supabase project and its
+    publishable key. Both are public by design (the key can do only what row-level security
+    allows, which is nothing); one build of the app then works in every environment."""
+    return {"supabase_url": os.environ["SUPABASE_URL"], "supabase_publishable_key": os.environ["SUPABASE_PUBLISHABLE_KEY"]}
 
 
 @app.get("/sessions", response_model=list[SessionSummary])

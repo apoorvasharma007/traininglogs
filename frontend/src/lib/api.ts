@@ -1,23 +1,5 @@
-// The one place that talks to the API. Every request carries the API key saved in Settings.
-
-// Same storage key as the old web/ UI, so a key saved there works here too (same origin).
-const KEY_STORAGE = 'tl_apiKey'
-
-export function getApiKey(): string {
-  try {
-    return localStorage.getItem(KEY_STORAGE) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-export function setApiKey(key: string): void {
-  try {
-    localStorage.setItem(KEY_STORAGE, key)
-  } catch {
-    // Storage blocked (private mode): the key lasts until the page closes.
-  }
-}
+// The one place that talks to the API. Every request carries the signed-in person's pass.
+import { accessToken, signedOutByServer } from '@/lib/auth'
 
 export class ApiError extends Error {
   status: number
@@ -36,7 +18,6 @@ function detailOf(body: unknown, status: number): string {
   // POST /inputs reports a failed extraction in `error`, with the note already saved.
   const error = (body as { error?: unknown } | null)?.error
   if (typeof error === 'string') return error
-  if (status === 401) return 'The API key is missing or wrong. Set it in Settings.'
   return `Server error (${status}). Try again in a minute.`
 }
 
@@ -44,13 +25,14 @@ export async function api<T>(
   path: string,
   init?: { method?: string; body?: unknown; timeoutMs?: number },
 ): Promise<T> {
+  const token = await accessToken()
   let res: Response
   try {
     res = await fetch(path, {
       method: init?.method ?? 'GET',
       // A request that never answers would otherwise wait forever (no timeout by default).
       signal: init?.timeoutMs ? AbortSignal.timeout(init.timeoutMs) : undefined,
-      headers: { 'Content-Type': 'application/json', 'X-Api-Key': getApiKey() },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
     })
   } catch (e) {
@@ -60,6 +42,8 @@ export async function api<T>(
     throw e
   }
   const body: unknown = await res.json().catch(() => null)
+  // The pass was refused: the sign-in screen takes over.
+  if (res.status === 401) signedOutByServer()
   if (!res.ok) throw new ApiError(res.status, detailOf(body, res.status))
   return body as T
 }

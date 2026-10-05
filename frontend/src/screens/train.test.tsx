@@ -25,7 +25,7 @@ function program(patch: Partial<Program> = {}): Program {
 describe('Train', () => {
   beforeEach(async () => {
     await clear()
-    localStorage.clear()
+    Object.keys(localStorage).filter((k) => k !== 'tl_session').forEach((k) => localStorage.removeItem(k)) // keep the sign-in
   })
 
   it('shows the program you follow and starts its next workout', async () => {
