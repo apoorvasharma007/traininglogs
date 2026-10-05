@@ -160,19 +160,19 @@ call, which nothing can reach.
 
 All on `phase-9/next-3-accounts`, locally, nothing pushed until the whole of step 3 is ready.
 
-- [ ] 1. `ids.py` (uuid7) with tests.
-- [ ] 2. The new `schema.sql`: every table above, keys, links, indexes, row-level security, and a
+- [x] 1. `ids.py` (uuid7) with tests.
+- [x] 2. The new `schema.sql`: every table above, keys, links, indexes, row-level security, and a
       test per rule (owners match parents, links can't cross users, uniqueness per user).
-- [ ] 3. Saving and reading on the new tables (`db/`, `ingest/`), with exercises found or created
+- [x] 3. Saving and reading on the new tables (`db/`, `ingest/`), with exercises found or created
       on save; app sessions saved without a card; the repeat call deleted. The suite green.
-- [ ] 4. The API on the new tables; the isolation and account tests green.
-- [ ] 5. The migration script: from today's tables to the new ones, every row owned by one given
+- [x] 4. The API on the new tables; the isolation and account tests green.
+- [x] 5. The migration script: from today's tables to the new ones, every row owned by one given
       user, new ids, links rebuilt, distinct exercise names made into that user's exercises.
       Tested on a copy of production in the local dev database, comparing counts and a sample of
       sessions before and after.
-- [ ] 6. The copy script on the new tables, remapping sign-in ids by email.
-- [ ] 7. The starter shared list (about 30 lifts) and automatic linking.
-- [ ] 8. Docs.
+- [x] 6. The copy script on the new tables, remapping sign-in ids by email.
+- [x] 7. The starter shared list (about 30 lifts) and automatic linking.
+- [x] 8. Docs.
 - Then the rest of step 3: Terraform (`SUPABASE_URL`, the API key removed), the app's sign-in
   screen (3.4, design first), the AI cap (3.5), daily backups (3.6), and the release: staging
   first, then production with a backup and approval.

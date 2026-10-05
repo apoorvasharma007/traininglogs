@@ -140,6 +140,9 @@ main   what's deployed; only dev merges into it
   type sizes, spacing, icons, and the layout of existing screens. New screens reuse those pieces.
   Propose any visual change and wait for Apoorva's yes before making it.
 - Anything that changes saved data (programs, following, deleting) asks first or offers Undo.
+- Every person's data is theirs alone. A function that reads or writes it takes the owner and
+  filters by it; the database refuses a row whose owner differs from its parent's. A new endpoint
+  that names a thing by id goes into `tests/test_isolation.py`, whose guard fails otherwise.
 - A screen's main action goes in `BottomBar` (fixed at the bottom; `aboveTabs` on screens with
   tabs). Secondary and destructive actions stay as small text at the end of the content. Sheets
   use `Sheet`, which grows with its content up to the visible screen.

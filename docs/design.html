@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-05 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-06 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -219,9 +219,9 @@
       │
       ▼
   POST /inputs
-      ├── capture()    the text, untouched                     → raw_inputs
-      └── extract()    the model reads it (several calls)      → llm_calls
-                       the assembled reading, status pending   → extractions
+      ├── the text, untouched                                  → input_text
+      └── extract()    the model reads it (several calls)      → ai_call_logs
+                       the assembled reading, status pending   → input_text_confirmation_cards
       │
       ▼
   GET /extractions/{id}    the card
@@ -229,41 +229,18 @@
       ▼
   you change things (repeat as often as needed)
       ├── POST /extractions/{id}/edit      tap to edit, add, remove   no model call
-      └── POST /extractions/{id}/correct   a correction in words      one model call → llm_calls
+      └── POST /extractions/{id}/correct   a correction in words      one model call → ai_call_logs
       │
       ▼
   POST /extractions/{id}/confirm
-      └── confirm()    the final reading, as one session       → sessions, exercises,
-                                                                  working_sets, warmup_sets,
-                                                                  warmups, cooldowns
-                       extraction marked confirmed, every change kept in extractions.corrections</div>
-  <p>Nothing overwrites the model's reading. The app records each change, from a tap or a typed correction, as a list of <code>{path, value}</code> edits, appends it to <code>extractions.corrections</code> and marks it <code>manual</code> or <code>ai</code>. So what the model read, what you changed and what the database holds stay separate for good. <code>scripts/correction_stats.py</code> reads that log to show which fields you correct most, and how many sets the model missed.</p>
+      └── confirm()    the final reading, as one session       → workout_sessions and its
+                                                                  exercises, sets, warm-ups,
+                                                                  cool-downs
+                       card marked confirmed, every change kept in its corrections</div>
+  <p>Nothing overwrites the model's reading. The app records each change, from a tap or a typed correction, as a list of <code>{path, value}</code> edits, appends it to the card's <code>corrections</code> and marks it <code>manual</code> or <code>ai</code>. So what the model read, what you changed and what the database holds stay separate for good. <code>scripts/correction_stats.py</code> reads that log to show which fields you correct most, and how many sets the model missed.</p>
   <p>The page doesn't keep any state on the server between steps. Each edit or correction sends the current reading and gets the new one back, and Confirm sends the final reading with the list of changes.</p>
-  <p>A session's id is its date plus a short hash of the text you pasted. Pasting the same text twice collides on that id, and confirm refuses the second copy instead of storing a duplicate.</p>
-</section>
-
-<section>
-  <h2 id="repeat">Repeating a session</h2>
-  <p>A repeat starts from a session you've already logged, with no model call at all. The app has no screen for it since programs replaced it; the endpoint stays.</p>
-  <div class="diagram">you pick a past session
-      │
-      ▼
-  POST /sessions/{id}/repeat
-      ├── reads the stored session
-      ├── copies the plan: exercises, goals, cues, warmup sets,
-      │   every set's weight and reps, program, phase, week
-      ├── leaves out how that day went: RPE, quality, failure technique,
-      │   rest, heart rate, duration, and every note
-      ├── date = today, flagged for you to check                → raw_inputs (kind: repeat)
-      └── a pending extraction, model "none"                    → extractions
-      │
-      ▼
-  the same card, the same edits, the same confirm as above
-      │
-      └── alongside it: the source session's notes, shown read-only
-          as "Last time" under each exercise (GET /sessions/{id})</div>
-  <p>Notes are shown, never copied: a note belongs to the day it was written, and copying it would save last week's note as today's. The page matches the "Last time" lines to exercises by name, so adding or removing sets doesn't move them.</p>
-  <p>Repeating is the start of saved programs: a week of sessions you save once and run each workout, the way Hevy does, with the card filled in and only today's numbers to change.</p>
+  <p>A session logged in the app skips the card: <code>POST /sessions</code> saves it straight from its input, with no model call.</p>
+  <p>Each session has a dedup key: its date plus a short fingerprint of the text you pasted. The same text confirmed twice for the same day has the same key, and confirm refuses the second copy instead of storing a duplicate. The key is unique per person, so two people's identical notes never collide.</p>
 </section>
 
 <section>
@@ -287,29 +264,33 @@
     <li>The model marks fields it was unsure of. A session with no date in the text gets today's date, marked unsure, because "logged today" isn't the same as "trained today".</li>
   </ul>
   <p>A typed correction comes back as edits that Python applies, so a field the correction didn't name can't change.</p>
-  <p>The app logs every call in <code>llm_calls</code> with its tokens and cost, failed calls included. Haiku 4.5 costs $1 per million input tokens and $5 per million output tokens. A session makes two calls plus one per exercise; across the first nine sessions logged in the app (September to October 2026), reading one cost between 1.5 and 4 cents.</p>
+  <p>The app logs every call in <code>ai_call_logs</code> with its tokens and cost, failed calls included. Haiku 4.5 costs $1 per million input tokens and $5 per million output tokens. A session makes two calls plus one per exercise; across the first nine sessions logged in the app (September to October 2026), reading one cost between 1.5 and 4 cents.</p>
 </section>
 
 <section>
   <h2 id="data">The data</h2>
-  <p>Postgres, on Supabase, is the source of truth. Twelve tables: three record how a session was read, six hold the session itself, and three hold programs.</p>
+  <p>Postgres, on Supabase, is the source of truth. The design, and why, is in <code>db-redesign-plan.md</code>; <code>schema.sql</code> has every column.</p>
+  <p>Every row belongs to one person. Every table except the shared exercise list carries <code>user_id</code>, and each child points at its parent by <code>(user_id, parent id)</code>, so the database itself refuses a row owned by someone other than its parent's owner, and any link to another person's row. Ids are time-ordered UUIDs (version 7) made by the code; none is built from data or chosen by the phone. Row-level security is on everywhere with no rules, so Supabase's automatic web API can't reach any row; the server connects as the tables' owner, which Postgres exempts.</p>
   <table>
     <thead><tr><th>Table</th><th>One row per</th></tr></thead>
     <tbody>
-      <tr><td><code>raw_inputs</code></td><td>what a session was made from, kept untouched: <code>text</code> you wrote, which the model reads, or <code>manual</code>, entered in the app or copied from a past session with no model call</td></tr>
-      <tr><td><code>llm_calls</code></td><td>model call: step, tokens, cost, time, and the last raw answer even if it failed</td></tr>
-      <tr><td><code>extractions</code></td><td>reading of a raw input: the model's reading, uncertain fields, warnings, status (pending, confirmed, rejected) and the list of corrections</td></tr>
-      <tr><td><code>sessions</code></td><td>session: date, program, phase, week, focus, duration, notes, the extraction it came from, and the planned workout it came from</td></tr>
-      <tr><td><code>warmups</code>, <code>cooldowns</code></td><td>session-level warmup or cooldown movement</td></tr>
-      <tr><td><code>exercises</code></td><td>exercise in a session, with its goal, notes and cues</td></tr>
-      <tr><td><code>working_sets</code></td><td>set that counts: weight, reps (full, partial, or left and right), RPE, quality, rest, duration, distance, heart rate, failure technique</td></tr>
-      <tr><td><code>warmup_sets</code></td><td>an exercise's own ramp-up set</td></tr>
-      <tr><td><code>programs</code></td><td>program: name, deload reminder in days, whether you follow it (one at a time) and since when</td></tr>
-      <tr><td><code>program_workouts</code></td><td>workout in a program: its number and optional name ("Push")</td></tr>
-      <tr><td><code>program_workout_exercises</code></td><td>exercise in a workout's plan: warmup sets, working sets, target reps or as many as you can, and other exercises that can take its place. No weights; a session takes them from the last time.</td></tr>
+      <tr><td><code>users</code></td><td>person: their Supabase sign-in id, email, timezone, units, monthly AI limit, status and role. Private.</td></tr>
+      <tr><td><code>profiles</code></td><td>person's public-facing part: display name, username, picture</td></tr>
+      <tr><td><code>exercises</code></td><td>exercise in the shared, curated list: equipment, movement, muscles, and the other ways people write it. No owner.</td></tr>
+      <tr><td><code>user_exercises</code></td><td>a person's own exercise, in their words, made the first time they use a name (ignoring case and spaces), linked to a shared exercise when the name matches one</td></tr>
+      <tr><td><code>input_text</code></td><td>what a session was made from, untouched: <code>text</code> you wrote, which the model reads; <code>manual</code>, a session logged in the app; or <code>import</code>, a session from the old markdown logs. An app session's phone id is its <code>client_id</code>, unique per person.</td></tr>
+      <tr><td><code>input_text_confirmation_cards</code></td><td>model's reading of a note: the reading, uncertain fields, warnings, status (pending, confirmed, rejected) and the list of corrections</td></tr>
+      <tr><td><code>ai_call_logs</code></td><td>model call: step, tokens, cost, time, and the last raw answer even if it failed</td></tr>
+      <tr><td><code>workout_sessions</code></td><td>session: date, start and end, focus, duration, notes, the input it came from, the card (notes only), the planned workout, and its dedup key</td></tr>
+      <tr><td><code>workout_session_warmups</code>, <code>workout_session_cooldowns</code></td><td>session-level warm-up or cool-down movement</td></tr>
+      <tr><td><code>workout_session_exercises</code></td><td>exercise in a session: one of the person's own exercises, the name as typed, its goal, notes and cues</td></tr>
+      <tr><td><code>workout_session_sets</code></td><td>set, warm-up or working: weight, reps (full, partial, or left and right), RPE, quality, rest, duration, distance, heart rate, failure technique</td></tr>
+      <tr><td><code>programs</code></td><td>program: name, deload reminder in days, whether its owner follows it (one at a time each) and since when</td></tr>
+      <tr><td><code>program_workouts</code></td><td>workout in a program: its number, optional name ("Push"), warm-up and cool-down</td></tr>
+      <tr><td><code>program_workout_exercises</code></td><td>exercise in a workout's plan: one of the person's own exercises, warm-up sets, working sets, target reps or as many as you can, and other exercises that can take its place. No weights; a session takes them from the last time.</td></tr>
     </tbody>
   </table>
-  <p>The database stores weights in kilograms; the model converts pounds as it reads. Deleting a session deletes its exercises and sets with it, and deleting a raw input deletes its extractions and call log.</p>
+  <p>The database stores weights in kilograms; the model converts pounds as it reads. Deleting a session deletes its exercises and sets with it; deleting an input deletes its cards and call log. A person who still has data can't be deleted.</p>
 
   <details>
   <summary><h3 style="display:inline">The Pydantic models</h3></summary>
@@ -358,178 +339,31 @@ WorkingSet                    one model for every kind of set; the fields presen
     └── DropSet    drops, each {number, weight_kg, rep_count}</code></pre>
   </details>
 
-  <details>
-  <summary><h3 style="display:inline">Every column</h3></summary>
-  <div class="diagram">raw_inputs
-  id             TEXT PK
-  content        TEXT
-  source_kind    TEXT          text (read by the model) | manual (no model call)
-  source_file    TEXT          for a repeat: the session it came from
-  checksum       TEXT
-  captured_at    TIMESTAMPTZ
-
-llm_calls
-  id             SERIAL PK
-  raw_input_id   TEXT          → raw_inputs.id
-  step           TEXT          split_exercises | extract_session_shell | extract_exercise | edit_extraction
-  model          TEXT
-  attempts       INT
-  input_tokens   INT
-  output_tokens  INT
-  cost_usd       NUMERIC
-  ms             INT
-  cached         BOOLEAN
-  failed         TEXT
-  raw_payload    JSONB
-  created_at     TIMESTAMPTZ
-
-extractions
-  id                TEXT PK
-  raw_input_id      TEXT        → raw_inputs.id
-  model             TEXT        "none" for a repeat
-  prompt_version    TEXT        a hash of the prompts; "repeat" for a repeat
-  extract           JSONB
-  uncertain_fields  TEXT[]
-  warnings          TEXT[]
-  status            TEXT        pending | confirmed | rejected
-  corrections       JSONB       [{at, source, edits, instruction | op + path}]
-  created_at        TIMESTAMPTZ
-  confirmed_at      TIMESTAMPTZ
-
-sessions
-  session_id            TEXT PK
-  date                  DATE
-  program               TEXT
-  program_author        TEXT
-  program_length_weeks  INT
-  phase                 INT
-  week                  INT
-  is_deload_week        BOOLEAN
-  focus                 TEXT
-  duration_minutes      INT
-  weight_unit           TEXT
-  user_id               TEXT
-  user_name             TEXT
-  source_file           TEXT
-  notes                 TEXT
-  extraction_id         TEXT        → extractions.id
-  program_workout_id    TEXT        → program_workouts.id; empty for blank workouts
-  created_at            TIMESTAMPTZ
-
-warmups / cooldowns
-  id                SERIAL PK
-  session_id        TEXT          → sessions.session_id
-  number            INT
-  name              TEXT
-  reps              INT
-  duration_seconds  INT
-  notes             TEXT
-
-exercises
-  id                        SERIAL PK
-  session_id                TEXT        → sessions.session_id
-  number                    INT
-  name                      TEXT
-  tags                      TEXT[]
-  modality                  TEXT
-  movement_pattern          TEXT[]
-  notes                     TEXT
-  warmup_notes              TEXT
-  form_cues                 TEXT[]
-  goal_weight_kg            NUMERIC
-  goal_sets                 INT
-  goal_rep_min              INT
-  goal_rep_max              INT
-  goal_rest_min             INT
-  goal_rest_seconds         INT
-  goal_distance_meters      NUMERIC
-  goal_target_duration_sec  INT
-  target_muscle_groups      TEXT[]
-  rep_tempo                 TEXT
-
-working_sets
-  id                  SERIAL PK
-  exercise_id         INT          → exercises.id
-  number              INT
-  weight_kg           NUMERIC
-  reps_full           INT
-  reps_partial        INT
-  left_reps_full      INT
-  left_reps_partial   INT
-  right_reps_full     INT
-  right_reps_partial  INT
-  rpe                 NUMERIC
-  rep_quality         TEXT
-  rest_minutes        NUMERIC
-  rest_seconds        INT
-  duration_seconds    INT
-  distance_meters     NUMERIC
-  heart_rate_bpm      INT
-  notes               TEXT
-  failure_technique   JSONB
-
-warmup_sets
-  id            SERIAL PK
-  exercise_id   INT        → exercises.id
-  number        INT
-  weight_kg     NUMERIC
-  rep_count     INT
-  notes         TEXT
-
-programs
-  id                 TEXT PK
-  name               TEXT
-  deload_after_days  INT           default 28
-  following          BOOLEAN       at most one row true
-  following_since    DATE          the deload count starts here or at the last deload
-  archived_at        TIMESTAMPTZ   set instead of deleting
-  created_at         TIMESTAMPTZ
-
-program_workouts
-  id            TEXT PK
-  program_id    TEXT          → programs.id
-  position      INT           1..n among workouts not archived
-  name          TEXT          optional
-  archived_at   TIMESTAMPTZ
-  created_at    TIMESTAMPTZ
-
-program_workout_exercises
-  id            TEXT PK
-  workout_id    TEXT          → program_workouts.id
-  position      INT
-  name          TEXT
-  warmup_sets   INT
-  working_sets  INT
-  target_reps   INT           empty means no target
-  amrap         BOOLEAN       as many reps as you can
-  alternatives  TEXT[]        other exercises that can take this one's place</div>
-  </details>
+  <p>Every column, with its type and rules, is in <code>src/traininglogs/db/schema.sql</code>, which is applied to every database the app and the tests use.</p>
 </section>
 
 <section>
   <h2 id="api">The API</h2>
-  <p>FastAPI. Every endpoint except the page itself needs the <code>X-Api-Key</code> header, and the app won't start without <code>API_KEY</code> set.</p>
+  <p>FastAPI. Every endpoint except the page itself needs a Supabase sign-in pass, <code>Authorization: Bearer &lt;pass&gt;</code>, and answers <code>401</code> without a valid one. The server checks the pass's signature against Supabase's published keys, that it was issued by this environment's project for signed-in users, and that it hasn't expired; the person is the pass's account, mapped to <code>users</code> (a first sign-in adds them). Sign-up is closed in Supabase, so only invited people get a pass. Everything an endpoint reads or changes is that person's own: someone else's program, session or card answers <code>404</code>, as if it didn't exist. The app won't start without <code>SUPABASE_URL</code> set.</p>
   <table>
     <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
     <tbody>
       <tr><td><code>GET /</code></td><td>The web page, never cached</td></tr>
-      <tr><td><code>GET /app/</code></td><td>The new React app, never cached. It replaces <code>/</code> when it's finished.</td></tr>
       <tr><td><code>POST /inputs</code></td><td>Saves the text, then runs the model. Returns <code>{raw_input_id, extraction_id}</code>; if the model fails, the app keeps the text anyway and the response says why.</td></tr>
       <tr><td><code>GET /extractions/{id}</code></td><td>The card for a reading, as JSON</td></tr>
       <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card, or one line added or removed. No model call. <code>400</code> names the field when a value is invalid.</td></tr>
       <tr><td><code>POST /extractions/{id}/correct</code></td><td>A correction in words. One model call.</td></tr>
       <tr><td><code>POST /extractions/{id}/confirm</code></td><td>Writes the session, optionally as a planned workout (<code>program_workout_id</code>) so the program moves on. <code>409</code> if that text was already confirmed; <code>422</code> for an unknown workout.</td></tr>
-      <tr><td><code>POST /sessions/{id}/repeat</code></td><td>A new reading built from a past session. No model call. Same response as <code>POST /inputs</code>.</td></tr>
-      <tr><td><code>POST /sessions</code></td><td>Saves a session entered in the app, no model call: a raw input of kind <code>manual</code>, an extraction, the session. The phone's <code>client_id</code> makes a repeated send return the saved session (<code>200</code>) instead of a second one.</td></tr>
+      <tr><td><code>POST /sessions</code></td><td>Saves a session logged in the app, no model call and no card: its input (kind <code>manual</code>), then the session, with its start and end time when the phone sends them. The phone's <code>client_id</code> makes a repeated send return the saved session (<code>200</code>) instead of a second one.</td></tr>
       <tr><td><code>GET /sessions</code></td><td>Sessions, newest first, each with its exercise names. Filters: phase, week, date range, limit.</td></tr>
       <tr><td><code>GET /sessions/{id}</code></td><td>One session in full</td></tr>
-      <tr><td><code>GET /exercises/last?name=…</code></td><td>For each name, the latest session that had it (any program): date, note, warmup and working sets. Names match ignoring case.</td></tr>
+      <tr><td><code>GET /exercises/last?name=…</code></td><td>For each name, the latest session that had it (any program): date, note, warm-up and working sets. Names match the person's own exercises, ignoring case and spaces.</td></tr>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>Every working set of one exercise, across all sessions</td></tr>
       <tr><td><code>GET /progress/lifts</code></td><td>Key lifts, then other lifts with 3 or more sessions: latest and best value, sessions, 4-week trend</td></tr>
       <tr><td><code>GET /progress/lifts/{name}</code></td><td>One lift's sessions: the value, the set behind it, records and goal weight. <code>404</code> for an unknown lift.</td></tr>
       <tr><td><code>GET /programs</code>, <code>POST /programs</code></td><td>Programs not archived, the followed one first, each with its workouts, their plans, when each was last done, the next workout, and the deload count (days since the program was followed, its last deload, or a break of 7 days or more; whether one is due or under way). Create one by name.</td></tr>
       <tr><td><code>GET</code>, <code>PATCH</code>, <code>DELETE /programs/{id}</code></td><td>One program; change its name or deload days; archive it</td></tr>
-      <tr><td><code>POST /programs/{id}/follow</code>, <code>/unfollow</code></td><td>Follow this program (any other stops being followed), or stop</td></tr>
+      <tr><td><code>POST /programs/{id}/follow</code>, <code>/unfollow</code></td><td>Follow this program (the person's other followed program stops being followed), or stop</td></tr>
       <tr><td><code>GET /templates</code></td><td>Ready-made programs to copy from, each with its workouts and their plans. Kept in the server's code (<code>program_templates.py</code>) while there are a few.</td></tr>
       <tr><td><code>POST /templates/{id}/copy</code></td><td>Add a copy of the template to your programs, in one transaction. Not followed; copying twice gives two programs.</td></tr>
       <tr><td><code>POST /programs/{id}/workouts</code></td><td>Add a workout after the last one</td></tr>
@@ -580,8 +414,8 @@ program_workout_exercises
   <h2 id="limits">Limits and costs</h2>
   <ul class="body">
     <li>Hosting is free inside Google's limits: Cloud Run's monthly free tier, 0.5 GB of image storage, 6 secrets. Supabase is on its free plan.</li>
-    <li>The model costs money: 1.5 to 4 cents to read a session, and about one call's worth per typed correction. Editing on the card and repeating cost nothing.</li>
-    <li>One user. Everyone with the API key reads and writes as that user.</li>
+    <li>The model costs money: 1.5 to 4 cents to read a session, and about one call's worth per typed correction. Editing on the card and logging in the app cost nothing.</li>
+    <li>Invite only: people sign in by an email link from Supabase, and sign-up is closed. Supabase's built-in email allows only a few sign-in emails an hour, enough for a handful of people.</li>
     <li>The app runs in the US and the database in Singapore, so every query crosses the Pacific. I haven't measured how much that slows a page down yet. An instance that has scaled to zero also takes a few seconds to start.</li>
     <li>The old static dashboard (<code>docs/index.html</code>) is frozen: the command-line flow that rebuilt it was deleted on 2026-10-05. The user dashboard planned next replaces it.</li>
   </ul>
@@ -592,14 +426,13 @@ program_workout_exercises
   <ul class="body">
     <li>More of the insights dashboard, after the Progress tab: hard sets per muscle per week, strength per muscle, next-session suggestions that show their working, then load and recovery once wearable data is connected.</li>
     <li>Installable on the phone: an app icon and manifest, so the page opens from the home screen.</li>
-    <li>A UI with screens (Home, Review, History, Settings), rebuilt with htmx and server-rendered templates so the logic stays in Python.</li>
-    <li>Saved programs, growing out of repeat.</li>
-    <li>Accounts for other people, through Supabase Auth, with every write scoped to the person who made it.</li>
+    <li>Exercise names: suggestions while typing from your own exercises and the shared list, merging duplicates, and growing the shared list from names that didn't link.</li>
+    <li>Supersets and circuits: exercises done back to back in rounds.</li>
   </ul>
 </section>
 
 <footer>
-  Last updated 2026-10-05
+  Last updated 2026-10-06
 </footer>
 
 </main>
@@ -610,7 +443,6 @@ program_workout_exercises
     <li><a href="#what">What it is</a></li>
     <li><a href="#web-app">The web app</a></li>
     <li><a href="#flow">How a session flows</a></li>
-    <li><a href="#repeat">Repeating a session</a></li>
     <li><a href="#ai">The AI step</a></li>
     <li><a href="#data">The data</a></li>
     <li><a href="#api">The API</a></li>
