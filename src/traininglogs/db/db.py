@@ -10,8 +10,10 @@ def get_connection(database_url: str | None = None) -> Connection:
     return psycopg2.connect(url)
 
 
-def apply_schema(conn: Connection) -> None:
-    db_dir = Path(__file__).parent
+def apply_schema(conn: Connection, commit: bool = True) -> None:
+    """Creates whatever schema.sql describes that doesn't exist yet. `commit=False` leaves it in
+    the caller's transaction (the accounts migration)."""
     with conn.cursor() as cur:
-        cur.execute((db_dir / "schema.sql").read_text())
-    conn.commit()
+        cur.execute((Path(__file__).parent / "schema.sql").read_text())
+    if commit:
+        conn.commit()

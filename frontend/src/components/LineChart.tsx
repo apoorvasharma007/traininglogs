@@ -13,7 +13,7 @@ import {
 import { niceScale } from '@/lib/chart'
 
 // `hollow`: a different measure stood in for this session, drawn as an outline.
-export type ChartPoint = { value: number; tick: string; record: boolean; hollow?: boolean }
+type ChartPoint = { value: number; tick: string; record: boolean; hollow?: boolean }
 
 const AXIS = { fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--faint-foreground)' }
 

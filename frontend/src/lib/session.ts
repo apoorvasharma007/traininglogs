@@ -81,17 +81,17 @@ export type SessionRequest = {
 }
 
 /** 32 random hex characters. getRandomValues, unlike randomUUID, also works over plain http. */
-export function newKey(): string {
+function newKey(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-export function localDate(d: Date): string {
+function localDate(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 /** "120 × 2", "BW × 19", "80 × ?" */
-export function lastText(s: LastSet): string {
+function lastText(s: LastSet): string {
   return `${s.weight_kg ? kg(s.weight_kg) : 'BW'} × ${s.reps ?? '?'}`
 }
 

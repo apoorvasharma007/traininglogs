@@ -25,14 +25,13 @@ function program(patch: Partial<Program> = {}): Program {
 describe('Train', () => {
   beforeEach(async () => {
     await clear()
-    localStorage.clear()
+    Object.keys(localStorage).filter((k) => k !== 'tl_session').forEach((k) => localStorage.removeItem(k)) // keep the sign-in
   })
 
   it('shows the program you follow and starts its next workout', async () => {
     const calls = fakeApi({
       'GET /programs': [program()],
       'GET /exercises/last?name=Seated%20Leg%20Hamstring%20Curl': [],
-      'GET /pins': [],
     })
     const location = renderApp('/')
     expect(await screen.findByText('Bodybuilding Transformation · Ramp-up')).toBeInTheDocument()

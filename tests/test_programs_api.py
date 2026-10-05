@@ -1,4 +1,4 @@
-"""Programs, workouts and pinned notes, through the API against the real test DB."""
+"""Programs and workouts, through the API against the real test DB."""
 from __future__ import annotations
 
 import os
@@ -8,38 +8,23 @@ import pytest
 from fastapi.testclient import TestClient
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert import insert_session
-from traininglogs.models.models import TrainingSession
+
+from signed_in import clean_test_data, USER_A, USER_B_AUTH, auth
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
-HEADERS = {"x-api-key": "testkey"}
-
-SESSION_IDS = ["programs-test-001", "programs-test-002"]
-
-
-def _clean(conn) -> None:
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s) OR session_id LIKE 'programs-deload-%%'", (SESSION_IDS,))
-        cur.execute("DELETE FROM program_workout_exercises")
-        cur.execute("UPDATE sessions SET program_workout_id = NULL WHERE program_workout_id IS NOT NULL")
-        cur.execute("DELETE FROM program_workouts")
-        cur.execute("DELETE FROM programs")
-        cur.execute("DELETE FROM exercise_pins")
-    conn.commit()
-
+HEADERS = auth()
 
 @pytest.fixture()
 def conn():
     c = get_connection(TEST_DB_URL)
     apply_schema(c)
-    _clean(c)
+    clean_test_data(c)
     yield c
-    _clean(c)
+    clean_test_data(c)
     c.close()
 
 
@@ -58,16 +43,18 @@ def _program(client, name="Strength", workouts=("Bench", None, "Bench & pull-ups
     return p
 
 
-def _session_from(conn, sid: str, day: str, workout_id: str) -> None:
-    insert_session(conn, TrainingSession.model_validate({
-        "data_model_version": "0.0.1", "data_model_type": "TrainingSession",
-        "session_id": sid, "user_id": "7", "user_name": "Apoorva Sharma", "date": day,
-        "exercises": [{"number": 1, "name": "Squat", "sets": [
-            {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
-    }))
-    with conn.cursor() as cur:
-        cur.execute("UPDATE sessions SET program_workout_id = %s WHERE session_id = %s", (workout_id, sid))
-    conn.commit()
+def _session_from(conn, sid: str, day: str, workout_id: str, deload: bool = False) -> None:
+    """A session of `workout_id` on `day`, for user A; `sid` only keeps each one's text different."""
+    from traininglogs.db.insert import insert_input, insert_session
+    from traininglogs.ingest.confirm import build_session_from_extract
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+
+    extract = TrainingLogLLMExtract.model_validate({
+        "date": day, "is_deload_week": deload or None,
+        "exercises": [{"number": 1, "name": "Squat", "sets": [{"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
+    })
+    input_id = insert_input(conn, USER_A, sid, kind="manual")
+    insert_session(conn, USER_A, build_session_from_extract(extract, sid), input_id, program_workout_id=workout_id)
 
 
 class TestPrograms:
@@ -195,11 +182,11 @@ class TestWorkouts:
     def test_next_workout_follows_the_latest_session_and_wraps(self, client, conn) -> None:
         p = _program(client)
         w1, w2, w3 = (w["id"] for w in p["workouts"])
-        _session_from(conn, SESSION_IDS[0], "3000-01-01", w1)
+        _session_from(conn, "programs-test-001", "3000-01-01", w1)
         p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
         assert p["next_workout_id"] == w2
         assert p["workouts"][0]["last_done"] == "3000-01-01"
-        _session_from(conn, SESSION_IDS[1], "3000-01-03", w3)
+        _session_from(conn, "programs-test-002", "3000-01-03", w3)
         p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
         assert p["next_workout_id"] == w1
 
@@ -242,30 +229,13 @@ class TestTemplates:
         assert r.json()["detail"] == "Couldn't find this template."
 
     def test_a_failed_copy_leaves_nothing_behind(self, client, conn) -> None:
-        from traininglogs.db.programs import create_program_with_workouts
+        from traininglogs.db.programs import create_program
 
         bad = [{"name": "A", "exercises": [{"name": "Squat", "warmup_sets": -1, "working_sets": 3,
                                            "target_reps": 5, "amrap": False}]}]
         with pytest.raises(Exception):
-            create_program_with_workouts(conn, "Broken", bad)
+            create_program(conn, USER_A, "Broken", bad)
         assert client.get("/programs", headers=HEADERS).json() == []
-
-
-class TestPins:
-    def test_pin_is_matched_ignoring_case_and_replaced(self, client) -> None:
-        r = client.put("/pins/Bench press", json={"note": "Practise at 85 kg"}, headers=HEADERS)
-        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Practise at 85 kg")]
-        r = client.put("/pins/BENCH PRESS ", json={"note": "Pause on the chest"}, headers=HEADERS)
-        assert [(p["name_key"], p["note"]) for p in r.json()] == [("bench press", "Pause on the chest")]
-
-    def test_unpin(self, client) -> None:
-        client.put("/pins/Squat", json={"note": "Brace"}, headers=HEADERS)
-        assert client.delete("/pins/squat", headers=HEADERS).status_code == 204
-        assert client.get("/pins", headers=HEADERS).json() == []
-        assert client.delete("/pins/squat", headers=HEADERS).status_code == 404
-
-    def test_empty_note_is_rejected(self, client) -> None:
-        assert client.put("/pins/Squat", json={"note": ""}, headers=HEADERS).status_code == 422
 
 
 class TestDeload:
@@ -279,13 +249,7 @@ class TestDeload:
         p = _program(client, workouts=("A",))
         w = p["workouts"][0]["id"]
         for i, n in enumerate(days_ago):
-            sid = f"programs-deload-{i}"
-            SESSION_IDS.append(sid) if sid not in SESSION_IDS else None
-            _session_from(conn, sid, (self.TODAY - timedelta(days=n)).isoformat(), w)
-            if n in deload_days_ago:
-                with conn.cursor() as cur:
-                    cur.execute("UPDATE sessions SET is_deload_week = true WHERE session_id = %s", (sid,))
-                conn.commit()
+            _session_from(conn, f"programs-deload-{i}", (self.TODAY - timedelta(days=n)).isoformat(), w, n in deload_days_ago)
         if following_days_ago is not None:
             with conn.cursor() as cur:
                 cur.execute("UPDATE programs SET following = true, following_since = %s WHERE id = %s",
@@ -293,8 +257,8 @@ class TestDeload:
             conn.commit()
         from traininglogs.db.programs import deload_status, get_program
 
-        program = get_program(conn, p["id"])
-        return deload_status(conn, program, self.TODAY)
+        program = get_program(conn, USER_A, p["id"])
+        return deload_status(conn, USER_A, program, self.TODAY)
 
     def test_due_after_28_days_of_training(self, client, conn) -> None:
         status = self._program_with_sessions(client, conn, [30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 1], following_days_ago=30)

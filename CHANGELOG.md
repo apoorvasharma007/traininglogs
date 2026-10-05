@@ -9,13 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A sign-in screen: your email, then a 6-digit code emailed to you. You stay signed in; the app
+  renews the pass itself. Settings shows your email with Sign out in place of the API key box,
+  and warns before signing out if a session hasn't sent yet. The app reads which Supabase project
+  to use from the server (`GET /config`), so one build works in staging and production.
+- Accounts: sign-in by a Supabase pass instead of the API key; every row belongs to one person,
+  and the database itself refuses a row owned by someone other than its parent's owner or linked
+  to another person's row. One followed program per person; "today" in each person's timezone.
+- A database designed for many people (`db-redesign-plan.md`): time-ordered UUID ids, an owner on
+  every table, `users` and `profiles`, and renamed tables (`input_text`,
+  `input_text_confirmation_cards`, `ai_call_logs`, `workout_sessions` and its exercises, sets,
+  warm-ups and cool-downs). Sessions keep when they started and ended.
+- Exercises are each person's own, made the first time a name is used (ignoring case and spaces),
+  and linked to a shared list of 32 basic lifts when the name matches.
+- `scripts/migrate_to_accounts.py` converts an existing database in one transaction, dry run by
+  default.
 - Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
   deploys production.
 
 ### Changed
 
+- Opening a session or "last time" takes four database queries however many exercises it has;
+  it took two per exercise.
 - Row-level security is on for every table, with no rules, so Supabase's automatic web API can't
   read or change any row. The server is unaffected.
+
+### Fixed
+
+- The deload count's break check counted every person's training days, not only yours.
+
+### Removed
+
+- The unused repeat call (`POST /sessions/{id}/repeat`): "Do this again" builds the session on
+  the phone. Sessions logged in the app no longer pass through a card.
+- The one-off script that built programs from history, and other code nothing called.
+- The retired command-line flow (`traininglogs log`, `dashboard`, `validate`), its markdown parser,
+  the terminal confirm loop and their tests, and the `rich` and `pyyaml` dependencies. The app is
+  the only way in now; the old static dashboard (`docs/index.html`) stays as it is.
+- Pinned exercise notes, with `/pins` and the `exercise_pins` table. Each exercise already shows
+  last time's note.
 
 ## [4.1.0] - 2026-10-05
 

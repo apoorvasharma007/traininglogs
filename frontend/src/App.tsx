@@ -1,9 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
+import { useQueryClient } from '@tanstack/react-query'
 import { Loading } from '@/components/QueryStatus'
 import TabBar from '@/components/TabBar'
 import { useIsEditing } from '@/lib/editing'
-import { startOutbox } from '@/lib/store'
+import { useSignedIn } from '@/lib/auth'
+import { flush, startOutbox } from '@/lib/store'
+import SignIn from '@/screens/SignIn'
 import Train from '@/screens/Train'
 
 // Only Train, the screen the app opens on, is in the first download. Everything else loads when
@@ -42,6 +45,23 @@ export default function App() {
     const id = setTimeout(() => Object.values(tabs).forEach((load) => load()), 1500)
     return () => clearTimeout(id)
   }, [])
+
+  // Signing in (again) reloads everything, and sends sessions that waited on the phone meanwhile.
+  const email = useSignedIn()
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    if (!email) return
+    queryClient.invalidateQueries()
+    flush()
+  }, [email, queryClient])
+
+  if (!email) {
+    return (
+      <div className="mx-auto min-h-dvh max-w-md px-4 pt-[env(safe-area-inset-top)]">
+        <SignIn />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
