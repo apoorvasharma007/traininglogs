@@ -189,6 +189,11 @@ All on `phase-9/next-3-accounts`, locally, nothing pushed until the whole of ste
 
 ## ▶ Resume here
 
-2026-10-06: design approved, table names confirmed by Apoorva; nothing built yet. Branch `phase-9/next-3-accounts` (local only)
-has 3.1 and 3.2 on the old tables (users, sign-in passes, owners on every endpoint, isolation
-tests, the command-line flow deleted), last commit `2df2b0b`. Next: step 1, `ids.py`.
+2026-10-06: all 8 steps built and reviewed on `phase-9/next-3-accounts`, local only (nothing
+pushed), last commit `c907062`. Server suite 718 passed, 96% line coverage; app suite 102 passed.
+Rehearsed on a copy of production: every count and all 131 sessions identical.
+
+Next, the rest of step 3: Terraform (`SUPABASE_URL` for each server, the API key and its secret
+removed), the app's sign-in screen (3.4, design first; until it exists the app can't talk to this
+server, so nothing deploys before it), the AI cap (3.5), daily backups (3.6), then the release:
+staging first, then production with a backup and approval.
