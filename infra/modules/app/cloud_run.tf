@@ -56,6 +56,11 @@ resource "google_cloud_run_v2_service" "traininglogs" {
         value = var.supabase_url
       }
 
+      env {
+        name  = "SUPABASE_PUBLISHABLE_KEY"
+        value = var.supabase_publishable_key
+      }
+
       # Only the code from before accounts reads this. It stays for one release, so that release's
       # Terraform step (which restarts the old code before the new image goes out) still starts;
       # the release after removes it and the api-key secret (db-redesign-plan.md).

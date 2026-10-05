@@ -35,4 +35,5 @@ module "app" {
   app_deploy_service_account = data.terraform_remote_state.project.outputs.app_deploy_service_account
   anthropic_workspace_id     = "wrkspc_011QiVX8TkGjpXRWKN8trAtn"
   supabase_url               = "https://sjpxpjilamtumdmdvmtg.supabase.co"
+  supabase_publishable_key   = "sb_publishable_iZBRzCus4nQl-oof4fvoTQ_mtW5RGO1"
 }

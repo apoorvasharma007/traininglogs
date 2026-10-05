@@ -35,4 +35,6 @@ module "app" {
   app_deploy_service_account = data.terraform_remote_state.project.outputs.app_deploy_service_account
   anthropic_workspace_id     = "wrkspc_011QiVX8TkGjpXRWKN8trAtn"
   supabase_url               = "https://rjmkdhmvmbbpkmjrqrdc.supabase.co"
+  # Production's publishable key goes here before the release; until then the new server won't start.
+  supabase_publishable_key = ""
 }
