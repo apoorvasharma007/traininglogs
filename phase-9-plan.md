@@ -51,6 +51,8 @@ into the base when both suites are 0 failed and 0 skipped.
   Supabase's automatic API can't reach any row even with the app's public key.
   - [ ] 3.0 Remove pinned notes: the `exercise_pins` table, `/pins`, the pin button. "Last time"
     already shows the previous note. Prod's only pin was a test; the table is dropped at release.
+  - Database redesign (decided 2026-10-06, supersedes 3.1 and 3.3 below): see
+    [`db-redesign-plan.md`](db-redesign-plan.md).
   - [ ] 3.1 `user_id` on the four top-level tables only: `raw_inputs`, `sessions` (reusing its old
     `user_id` column, "7" on all 130 rows; `user_name` no longer written), `programs`. Children
     (extractions, llm_calls, exercises, sets, warmups, cooldowns, workouts and their exercises)
@@ -83,6 +85,7 @@ Not scheduled. Each needs accounts first, and its own design review.
 - **AI-assisted program creation.** Describe what you want ("3 days a week, strength, home gym with
   a barbell"); the model drafts a program, you edit it before it's saved. A few cents per draft,
   behind the AI spending cap.
+- **Supersets and circuits:** see `db-redesign-plan.md`, Later.
 - **Community programs: share, then sell.** People publish programs others can copy and run, then
   sell them. Needs publishing and copying, moderation for junk and copied programs, and payments
   (Razorpay or similar, GST, refunds, payouts). Builds on the built-in program templates.
