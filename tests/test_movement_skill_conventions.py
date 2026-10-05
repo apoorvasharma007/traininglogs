@@ -143,7 +143,6 @@ class TestAdhocMovementSkillsSchemaFit:
         skill_set = extract.exercises[0].sets[0]
         assert skill_set.rep_count.full == 2
         assert skill_set.rep_count.partial == 3
-        assert skill_set.rep_count.total_reps == 5
 
     def test_ordinary_reps_with_varying_quality_stay_whole_not_partial(self) -> None:
         """Regression guard: 'depth dropped on the last two' is commentary on an

@@ -24,3 +24,8 @@ def test_later_ids_sort_after_earlier_ones() -> None:
 
 def test_unique() -> None:
     assert len({new_id() for _ in range(10_000)}) == 10_000
+
+
+def test_ids_made_in_the_same_millisecond_keep_their_order() -> None:
+    ids = [new_id() for _ in range(5_000)]
+    assert ids == sorted(ids)

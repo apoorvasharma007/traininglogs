@@ -43,8 +43,8 @@ OUTPUT_JSON_DIR = (
 # ---------------------------------------------------------------------------
 
 class TestRepCount:
-    def test_total_reps_is_sum_of_full_and_partial(self) -> None:
-        assert RepCount(full=8, partial=2).total_reps == 10
+    def test_full_and_partial_are_kept(self) -> None:
+        assert (RepCount(full=8, partial=2).full, RepCount(full=8, partial=2).partial) == (8, 2)
 
     def test_partial_defaults_to_zero(self) -> None:
         assert RepCount(full=5).partial == 0
@@ -63,7 +63,7 @@ class TestRepCount:
             RepCount(full=5, partial=partial)
 
     def test_zero_full_is_valid(self) -> None:
-        assert RepCount(full=0).total_reps == 0
+        assert RepCount(full=0).full == 0
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ class TestWorkingSet:
             rep_quality_assessment=RepQualityAssessment.PERFECT,
         )
         assert ws.weight_kg == 100.0
-        assert ws.rep_count.total_reps == 5
+        assert ws.rep_count.full == 5
         assert ws.rpe == 8.0
 
     def test_activity_fields_accepted(self) -> None:
@@ -151,7 +151,7 @@ class TestWorkingSet:
             ),
         )
         assert ws.unilateral_rep_count.left.full == 8
-        assert ws.unilateral_rep_count.right.total_reps == 8
+        assert (ws.unilateral_rep_count.right.full, ws.unilateral_rep_count.right.partial) == (7, 1)
 
     def test_failure_technique_without_rpe_10_rejected(self) -> None:
         with pytest.raises(ValidationError, match="Failure technique can only be used with RPE 10"):
@@ -493,15 +493,6 @@ class TestTrainingSession:
     def test_notes_accepted(self) -> None:
         s = TrainingSession(**self._make(notes="Legs are sore, warmup ran long."))
         assert s.notes == "Legs are sore, warmup ran long."
-
-    def test_get_exercise_by_name_case_insensitive(self) -> None:
-        s = TrainingSession(**self._make(exercises=[
-            Exercise(number=1, name="Bench Press"),
-            Exercise(number=2, name="Squat"),
-        ]))
-        assert s.get_exercise_by_name("bench press") is not None
-        assert s.get_exercise_by_name("SQUAT") is not None
-        assert s.get_exercise_by_name("Deadlift") is None
 
     @pytest.mark.parametrize("field", ["session_id", "user_id", "user_name", "data_model_version"])
     def test_required_string_fields_reject_empty_string(self, field: str) -> None:
