@@ -96,3 +96,17 @@ def test_a_known_account_maps_to_its_user() -> None:
     conn = get_connection(TEST_DB_URL)
     assert user_for(conn, {"sub": USER_A_AUTH}) == USER_A
     conn.close()
+
+
+def test_a_failure_to_fetch_supabases_keys_is_503_not_signed_out(client, monkeypatch) -> None:
+    import jwt
+
+    from traininglogs.api import auth as server_auth
+
+    def unreachable(_token):
+        raise jwt.PyJWKClientConnectionError("Fail to fetch data from the url")
+
+    monkeypatch.setattr(server_auth, "_signing_key", unreachable)
+    r = _get(client, {"Authorization": f"Bearer {token()}"})
+    assert r.status_code == 503
+    assert r.json()["detail"] == "Couldn't check your sign-in (503). Try again in a minute."

@@ -105,6 +105,27 @@ class TestSaveSession:
             cur.execute("SELECT count(*) FROM workout_sessions WHERE date::text LIKE %s", (FAR + "%",))
             assert cur.fetchone()[0] == 1
 
+    def test_a_resend_racing_the_first_send_returns_the_same_session(self, conn) -> None:
+        """After a timeout the phone sends again while the first send may still be saving."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        from traininglogs.api.schemas import ManualSessionIn
+        from traininglogs.ingest.manual import save_manual_session
+
+        b = ManualSessionIn.model_validate(body()).model_dump(mode="json")
+
+        def send(_):
+            c = get_connection(TEST_DB_URL)
+            try:
+                return save_manual_session(c, USER_A, b)
+            finally:
+                c.close()
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(send, range(4)))
+        assert len({session_id for session_id, _ in results}) == 1
+        assert sum(created for _, created in results) == 1
+
     def test_two_sessions_on_one_day_are_two_sessions(self, client) -> None:
         a = client.post("/sessions", json=body(), headers=HEADERS).json()
         b = client.post("/sessions", json=body(), headers=HEADERS).json()

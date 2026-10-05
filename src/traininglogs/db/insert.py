@@ -175,10 +175,12 @@ def insert_session(
     source: str | None = None,
     started_at: datetime | None = None,
     ended_at: datetime | None = None,
+    commit: bool = True,
 ) -> str | None:
     """Save a whole session for `user_id` and return its id, or None when the person already has
     a session with the same dedup key (session.session_id: the date and a fingerprint of the
-    input's text), so nothing is saved twice. One transaction: all of it or none."""
+    input's text), so nothing is saved twice. All of it or none; `commit=False` leaves it in the
+    caller's transaction."""
     session_id = new_id()
     with conn.cursor() as cur:
         cur.execute(
@@ -268,5 +270,6 @@ def insert_session(
                 """,
                 set_rows,
             )
-    conn.commit()
+    if commit:
+        conn.commit()
     return session_id

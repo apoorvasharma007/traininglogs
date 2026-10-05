@@ -18,6 +18,7 @@ from fastapi import Header, HTTPException
 from traininglogs.db.ids import new_id
 
 SIGNED_OUT = "You're signed out. Sign in again."
+CANT_CHECK = "Couldn't check your sign-in (503). Try again in a minute."
 
 
 @lru_cache(maxsize=1)
@@ -42,6 +43,9 @@ def verify(token: str) -> dict:
             issuer=f"{os.environ['SUPABASE_URL']}/auth/v1",
             options={"require": ["exp", "sub", "aud", "iss"]},
         )
+    except jwt.PyJWKClientConnectionError as exc:
+        # Supabase's keys couldn't be fetched: the pass may be fine, so it isn't "signed out".
+        raise HTTPException(status_code=503, detail=CANT_CHECK) from exc
     except (jwt.PyJWTError, KeyError) as exc:
         raise HTTPException(status_code=401, detail=SIGNED_OUT) from exc
 

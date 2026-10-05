@@ -55,8 +55,9 @@ def confirm(
         raise ValueError(f"no card with id {card_id!r}")
     note = get_input(conn, user_id, card["input_id"])
     session = build_session_from_extract(final_extract, note["content"])
+    # The session and the card's confirmation commit together, so neither is ever left without the other.
     session_id = insert_session(
-        conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id
+        conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id, commit=False
     )
     if session_id is None:
         raise AlreadySaved(card_id)

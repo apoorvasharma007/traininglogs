@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import psycopg2
 from psycopg2.extensions import connection as Connection
 
 from traininglogs.agent.schemas import TrainingLogLLMExtract
@@ -74,14 +75,18 @@ def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any])
     """Saves the session for `user_id`; returns its id and whether it was new (False for a repeated
     send)."""
     known = get_input_by_client_id(conn, user_id, session["client_id"])
-    if known is not None:
-        saved = _session_for(conn, user_id, known["id"])
-        if saved is not None:
-            return saved, False
-        input_id, content = known["id"], known["content"]
-    else:
+    if known is None:
         content = json.dumps(session, sort_keys=True, default=str)
-        input_id = insert_input(conn, user_id, content, kind="manual", client_id=session["client_id"])
+        try:
+            insert_input(conn, user_id, content, kind="manual", client_id=session["client_id"])
+        except psycopg2.errors.UniqueViolation:
+            # A resend arrived while the first send was still being saved; carry on with its input.
+            conn.rollback()
+        known = get_input_by_client_id(conn, user_id, session["client_id"])
+    saved = _session_for(conn, user_id, known["id"])
+    if saved is not None:
+        return saved, False
+    input_id, content = known["id"], known["content"]
 
     workout = build_session_from_extract(to_extract(session), content)
     session_id = insert_session(
@@ -89,5 +94,9 @@ def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any])
         started_at=session.get("started_at"), ended_at=session.get("ended_at"),
     )
     if session_id is None:
-        raise AlreadySaved(session["client_id"])
+        # The first send saved the session in the meantime.
+        saved = _session_for(conn, user_id, input_id)
+        if saved is None:
+            raise AlreadySaved(session["client_id"])
+        return saved, False
     return session_id, True
