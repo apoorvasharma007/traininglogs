@@ -7,10 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert import insert_session
-from traininglogs.models.models import TrainingSession
-
-from signed_in import USER_A, USER_B_AUTH, auth
+from signed_in import USER_A, USER_B_AUTH, auth, clean_test_data, save_session
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -19,13 +16,9 @@ TEST_DB_URL = os.environ.get(
 os.environ["DATABASE_URL"] = TEST_DB_URL
 HEADERS = auth()
 
-IDS = ["progress-test-001", "progress-test-002"]
-
-
-def session(sid: str, day: str, weight: float) -> TrainingSession:
-    return TrainingSession.model_validate({
-        "data_model_version": "0.0.1", "data_model_type": "TrainingSession",
-        "session_id": sid, "user_id": "7", "user_name": "Apoorva Sharma", "date": day,
+def session(day: str, weight: float) -> dict:
+    return {
+        "date": day,
         "focus": "Strength",
         "exercises": [{
             "number": 1, "name": "Squats",
@@ -33,25 +26,21 @@ def session(sid: str, day: str, weight: float) -> TrainingSession:
             "sets": [{"number": 1, "weight_kg": weight, "rep_count": {"full": 3, "partial": 0},
                       "rpe": 9.0}],
         }],
-    })
+    }
 
 
 @pytest.fixture(scope="module")
 def client():
     conn = get_connection(TEST_DB_URL)
     apply_schema(conn)
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s)", (IDS,))
-    conn.commit()
-    insert_session(conn, session(IDS[0], "3000-01-01", 120.0), user_id=USER_A)
-    insert_session(conn, session(IDS[1], "3000-01-08", 125.0), user_id=USER_A)
+    clean_test_data(conn)
+    save_session(conn, session("3000-01-01", 120.0))
+    save_session(conn, session("3000-01-08", 125.0))
     from traininglogs.api.app import app
 
     with TestClient(app) as c:
         yield c
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id = ANY(%s)", (IDS,))
-    conn.commit()
+    clean_test_data(conn)
     conn.close()
 
 
@@ -65,7 +54,7 @@ def test_lifts_lists_key_lifts_with_squat_found_under_its_variant(client) -> Non
 def test_lift_detail_points_records_and_goal(client) -> None:
     r = client.get("/progress/lifts/Squat", headers=HEADERS)
     assert r.status_code == 200
-    mine = [p for p in r.json()["points"] if p["session_id"] in IDS]
+    mine = r.json()["points"]
     assert [(p["value"], p["method"], p["goal_weight_kg"]) for p in mine] == [
         (136.0, "rpe", 140.0), (141.7, "rpe", 140.0),
     ]

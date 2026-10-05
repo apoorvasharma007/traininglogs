@@ -1,4 +1,15 @@
+"""Reading people's data. Every function takes the owner and only ever returns that person's rows.
+The shapes match what the API has always sent, so the app doesn't change."""
+from __future__ import annotations
+
 from psycopg2.extensions import connection as Connection
+
+from traininglogs.db.insert import name_key
+
+
+def _rows(cur) -> list[dict]:
+    cols = [d[0] for d in cur.description]
+    return [dict(zip(cols, r)) for r in cur.fetchall()]
 
 
 def get_sessions(
@@ -10,212 +21,156 @@ def get_sessions(
     to_date: str | None = None,
     limit: int | None = None,
 ) -> list[dict]:
-    filters = ["user_id = %s"]
-    params: list = [user_id]
-
-    if phase is not None:
-        filters.append("phase = %s")
-        params.append(phase)
-    if week is not None:
-        filters.append("week = %s")
-        params.append(week)
-    if from_date is not None:
-        filters.append("date >= %s")
-        params.append(from_date)
-    if to_date is not None:
-        filters.append("date <= %s")
-        params.append(to_date)
-
-    where = "WHERE " + " AND ".join(filters)
-
+    filters, params = ["s.user_id = %s"], [user_id]
+    for clause, value in (("s.phase = %s", phase), ("s.week = %s", week),
+                          ("s.date >= %s", from_date), ("s.date <= %s", to_date)):
+        if value is not None:
+            filters.append(clause)
+            params.append(value)
     with conn.cursor() as cur:
         cur.execute(
             f"""
-            SELECT session_id, date, program, phase, week, focus, duration_minutes,
-                   is_deload_week, weight_unit,
-                   ARRAY(
-                       SELECT e.name FROM exercises e
-                       WHERE e.session_id = sessions.session_id ORDER BY e.number
-                   ) AS exercises
-            FROM sessions
-            {where}
-            ORDER BY date DESC, created_at DESC
+            SELECT s.id::text AS session_id, s.date, s.program, s.phase, s.week, s.focus,
+                   s.duration_minutes, s.is_deload_week, s.weight_unit,
+                   ARRAY(SELECT e.name FROM workout_session_exercises e
+                         WHERE e.user_id = s.user_id AND e.session_id = s.id ORDER BY e.position) AS exercises
+            FROM workout_sessions s
+            WHERE {" AND ".join(filters)}
+            ORDER BY s.date DESC, s.created_at DESC
             {"LIMIT %s" if limit is not None else ""}
             """,
             params + ([limit] if limit is not None else []),
         )
-        rows = cur.fetchall()
-        cols = [d[0] for d in cur.description]
-
-    return [dict(zip(cols, row)) for row in rows]
+        return _rows(cur)
 
 
-def get_session(conn: Connection, session_id: str) -> dict | None:
+_SET_COLUMNS = """position AS number, weight_kg, reps_full, reps_partial, left_reps_full,
+    left_reps_partial, right_reps_full, right_reps_partial, rpe, rep_quality, rest_minutes,
+    rest_seconds, duration_seconds, distance_meters, heart_rate_bpm, notes, failure_technique"""
+
+
+def get_session(conn: Connection, user_id: str, session_id: str) -> dict | None:
+    """A whole session: four queries, however many exercises and sets it has."""
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT session_id, date, program, program_author, program_length_weeks,
-                   phase, week, is_deload_week, focus, duration_minutes, weight_unit,
-                   user_id, user_name, source_file, notes
-            FROM sessions WHERE session_id = %s
+            SELECT id::text AS session_id, date, program, program_author, program_length_weeks, phase,
+                   week, is_deload_week, focus, duration_minutes, weight_unit, user_id::text AS user_id,
+                   NULL AS user_name, source AS source_file, notes
+            FROM workout_sessions WHERE user_id = %s AND id = %s
             """,
-            (session_id,),
+            (user_id, session_id),
         )
-        row = cur.fetchone()
-        if row is None:
+        found = _rows(cur)
+        if not found:
             return None
-        session = dict(zip([d[0] for d in cur.description], row))
-
-        cur.execute(
-            "SELECT number, name, reps, duration_seconds, notes "
-            "FROM warmups WHERE session_id = %s ORDER BY number",
-            (session_id,),
-        )
-        session["warmup"] = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
-
-        cur.execute(
-            "SELECT number, name, reps, duration_seconds, notes "
-            "FROM cooldowns WHERE session_id = %s ORDER BY number",
-            (session_id,),
-        )
-        session["cooldown"] = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
-
+        session = found[0]
+        for key, table in (("warmup", "workout_session_warmups"), ("cooldown", "workout_session_cooldowns")):
+            cur.execute(
+                f"SELECT position AS number, name, reps, duration_seconds, notes FROM {table}"
+                " WHERE user_id = %s AND session_id = %s ORDER BY position",
+                (user_id, session_id),
+            )
+            session[key] = _rows(cur)
         cur.execute(
             """
-            SELECT id, number, name, tags, modality, movement_pattern,
-                   notes, warmup_notes, form_cues,
-                   goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
+            SELECT id, position AS number, name, tags, modality, movement_pattern, notes, warmup_notes,
+                   form_cues, goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
                    goal_rest_seconds, goal_distance_meters, goal_target_duration_sec,
                    target_muscle_groups, rep_tempo
-            FROM exercises WHERE session_id = %s ORDER BY number
+            FROM workout_session_exercises WHERE user_id = %s AND session_id = %s ORDER BY position
             """,
-            (session_id,),
+            (user_id, session_id),
         )
-        exercises = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
-
-        for exercise in exercises:
-            exercise_id = exercise.pop("id")
-
-            cur.execute(
-                """
-                SELECT number, weight_kg, reps_full, reps_partial,
-                       left_reps_full, left_reps_partial, right_reps_full, right_reps_partial,
-                       rpe, rep_quality, rest_minutes, rest_seconds,
-                       duration_seconds, distance_meters, heart_rate_bpm,
-                       notes, failure_technique
-                FROM working_sets WHERE exercise_id = %s ORDER BY number
-                """,
-                (exercise_id,),
-            )
-            exercise["sets"] = [
-                dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()
-            ]
-
-            cur.execute(
-                """
-                SELECT number, weight_kg, rep_count, notes
-                FROM warmup_sets WHERE exercise_id = %s ORDER BY number
-                """,
-                (exercise_id,),
-            )
-            exercise["warmup_sets"] = [
-                dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()
-            ]
-
-        session["exercises"] = exercises
-
+        exercises = _rows(cur)
+        cur.execute(
+            f"""
+            SELECT exercise_id, kind, {_SET_COLUMNS}
+            FROM workout_session_sets
+            WHERE user_id = %s AND exercise_id = ANY(%s::uuid[]) ORDER BY position
+            """,
+            (user_id, [str(e["id"]) for e in exercises]),
+        )
+        sets = _rows(cur)
+    for exercise in exercises:
+        mine = [s for s in sets if s["exercise_id"] == exercise["id"]]
+        exercise["sets"] = [_set(s) for s in mine if s["kind"] == "working"]
+        exercise["warmup_sets"] = [
+            {"number": s["number"], "weight_kg": s["weight_kg"], "rep_count": s["reps_full"], "notes": s["notes"]}
+            for s in mine if s["kind"] == "warmup"
+        ]
+        del exercise["id"]
+    session["exercises"] = exercises
     return session
+
+
+def _set(row: dict) -> dict:
+    return {k: v for k, v in row.items() if k not in ("exercise_id", "kind")}
 
 
 def get_exercise_history(conn: Connection, name: str, user_id: str) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT
-                s.date,
-                s.phase,
-                s.week,
-                s.session_id,
-                ws.number,
-                ws.weight_kg,
-                ws.reps_full,
-                ws.reps_partial,
-                ws.rpe,
-                ws.rep_quality,
-                ws.failure_technique
-            FROM working_sets ws
-            JOIN exercises e ON e.id = ws.exercise_id
-            JOIN sessions s ON s.session_id = e.session_id
-            WHERE LOWER(e.name) = LOWER(%s) AND s.user_id = %s
-            ORDER BY s.date ASC, ws.number ASC
+            SELECT s.date, s.phase, s.week, s.id::text AS session_id, ws.position AS number, ws.weight_kg,
+                   ws.reps_full, ws.reps_partial, ws.rpe, ws.rep_quality, ws.failure_technique
+            FROM workout_session_sets ws
+            JOIN workout_session_exercises e ON e.user_id = ws.user_id AND e.id = ws.exercise_id
+            JOIN user_exercises ue ON ue.user_id = e.user_id AND ue.id = e.user_exercise_id
+            JOIN workout_sessions s ON s.user_id = e.user_id AND s.id = e.session_id
+            WHERE ws.user_id = %s AND ue.name_key = %s AND ws.kind = 'working'
+            ORDER BY s.date, ws.position
             """,
-            (name, user_id),
+            (user_id, name_key(name)),
         )
-        rows = cur.fetchall()
-        cols = [d[0] for d in cur.description]
-
-    return [dict(zip(cols, row)) for row in rows]
+        return _rows(cur)
 
 
-def get_raw_input(conn: Connection, raw_input_id: str) -> dict | None:
+def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
-            """
-            SELECT id, content, source_kind, source_file, checksum, captured_at, user_id
-            FROM raw_inputs WHERE id = %s
-            """,
-            (raw_input_id,),
+            "SELECT id::text AS id, content, kind, client_id, source, created_at FROM input_text"
+            " WHERE user_id = %s AND id = %s",
+            (user_id, input_id),
         )
-        row = cur.fetchone()
-    if row is None:
-        return None
-    keys = ("id", "content", "source_kind", "source_file", "checksum", "captured_at", "user_id")
-    return dict(zip(keys, row))
+        found = _rows(cur)
+    return found[0] if found else None
 
 
-def find_raw_inputs_by_checksum(conn: Connection, checksum: str) -> list[dict]:
-    """Every capture of identical text, oldest first. Storage does not deduplicate (see
-    insert_raw_input); this is how the ingest path can notice it has seen a file before."""
+def get_input_by_client_id(conn: Connection, user_id: str, client_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
-            """
-            SELECT id, source_kind, source_file, captured_at
-            FROM raw_inputs WHERE checksum = %s ORDER BY captured_at
-            """,
-            (checksum,),
+            "SELECT id::text AS id, content, kind, client_id, source, created_at FROM input_text"
+            " WHERE user_id = %s AND client_id = %s",
+            (user_id, client_id),
         )
-        rows = cur.fetchall()
-    keys = ("id", "source_kind", "source_file", "captured_at")
-    return [dict(zip(keys, r)) for r in rows]
+        found = _rows(cur)
+    return found[0] if found else None
 
 
-_EXTRACTION_COLUMNS = (
-    "id", "raw_input_id", "model", "prompt_version", "extract",
-    "uncertain_fields", "warnings", "status", "corrections", "created_at", "confirmed_at",
-)
+_CARD_COLUMNS = """id::text AS id, input_id::text AS input_id, model, prompt_version, extract,
+    uncertain_fields, warnings, status, corrections, created_at, confirmed_at"""
 
 
-def get_extraction(conn: Connection, extraction_id: str) -> dict | None:
+def get_card(conn: Connection, user_id: str, card_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
-            f"SELECT {', '.join(_EXTRACTION_COLUMNS)} FROM extractions WHERE id = %s",
-            (extraction_id,),
+            f"SELECT {_CARD_COLUMNS} FROM input_text_confirmation_cards WHERE user_id = %s AND id = %s",
+            (user_id, card_id),
         )
-        row = cur.fetchone()
-    return dict(zip(_EXTRACTION_COLUMNS, row)) if row else None
+        found = _rows(cur)
+    return found[0] if found else None
 
 
-def get_extractions_for_raw_input(conn: Connection, raw_input_id: str) -> list[dict]:
-    """Every attempt at reading one input, newest first. More than one is normal -- a re-run
-    with a better model or prompt is the reason the raw layer exists."""
+def get_cards_for_input(conn: Connection, user_id: str, input_id: str) -> list[dict]:
+    """Every reading of one note, newest first."""
     with conn.cursor() as cur:
         cur.execute(
-            f"SELECT {', '.join(_EXTRACTION_COLUMNS)} FROM extractions "
-            "WHERE raw_input_id = %s ORDER BY created_at DESC",
-            (raw_input_id,),
+            f"SELECT {_CARD_COLUMNS} FROM input_text_confirmation_cards"
+            " WHERE user_id = %s AND input_id = %s ORDER BY created_at DESC",
+            (user_id, input_id),
         )
-        rows = cur.fetchall()
-    return [dict(zip(_EXTRACTION_COLUMNS, r)) for r in rows]
+        return _rows(cur)
 
 
 def get_working_set_rows(conn: Connection, user_id: str) -> list[dict]:
@@ -224,67 +179,57 @@ def get_working_set_rows(conn: Connection, user_id: str) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT
-                s.session_id,
-                s.date,
-                e.name AS exercise,
-                ws.number,
-                ws.weight_kg,
-                ws.reps_full,
-                ws.left_reps_full,
-                ws.right_reps_full,
-                ws.rpe,
-                e.goal_weight_kg
-            FROM working_sets ws
-            JOIN exercises e ON e.id = ws.exercise_id
-            JOIN sessions s ON s.session_id = e.session_id
-            WHERE s.user_id = %s
-            ORDER BY s.date ASC, e.number ASC, ws.number ASC
+            SELECT s.id::text AS session_id, s.date, e.name AS exercise, ws.position AS number,
+                   ws.weight_kg, ws.reps_full, ws.left_reps_full, ws.right_reps_full, ws.rpe,
+                   e.goal_weight_kg
+            FROM workout_session_sets ws
+            JOIN workout_session_exercises e ON e.user_id = ws.user_id AND e.id = ws.exercise_id
+            JOIN workout_sessions s ON s.user_id = e.user_id AND s.id = e.session_id
+            WHERE ws.user_id = %s AND ws.kind = 'working'
+            ORDER BY s.date, e.position, ws.position
             """,
             (user_id,),
         )
-        rows = cur.fetchall()
-        cols = [d[0] for d in cur.description]
-
-    return [dict(zip(cols, row)) for row in rows]
+        return _rows(cur)
 
 
 def get_last_exercises(conn: Connection, names: list[str], user_id: str) -> list[dict]:
-    """For each name, the latest session that had that exercise (matched ignoring case and outer
-    spaces): its date, the exercise note, and its warmup and working sets. Names never logged are
-    left out. Reps of a set done one side at a time are the weaker side."""
-    keys = sorted({n.strip().lower() for n in names if n.strip()})
+    """For each name, the latest session that had that exercise (the person's exercise with that
+    name, ignoring case and spaces): its date, the exercise note, and its warm-up and working sets.
+    Names never logged are left out. Reps of a set done one side at a time are the weaker side."""
+    keys = sorted({name_key(n) for n in names if n.strip()})
     if not keys:
         return []
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT DISTINCT ON (lower(trim(e.name)))
-                   lower(trim(e.name)), e.id, e.name, e.notes, s.date, s.session_id
-            FROM exercises e JOIN sessions s ON s.session_id = e.session_id
-            WHERE lower(trim(e.name)) = ANY(%s) AND s.user_id = %s
-            ORDER BY lower(trim(e.name)), s.date DESC, s.created_at DESC, e.number
+            SELECT DISTINCT ON (ue.name_key) e.id, e.name, e.notes, s.date, s.id::text AS session_id
+            FROM workout_session_exercises e
+            JOIN user_exercises ue ON ue.user_id = e.user_id AND ue.id = e.user_exercise_id
+            JOIN workout_sessions s ON s.user_id = e.user_id AND s.id = e.session_id
+            WHERE e.user_id = %s AND ue.name_key = ANY(%s)
+            ORDER BY ue.name_key, s.date DESC, s.created_at DESC, e.position
             """,
-            (keys, user_id),
+            (user_id, keys),
         )
-        found = cur.fetchall()
-        result = []
-        for _key, exercise_id, name, notes, day, session_id in found:
-            cur.execute(
-                "SELECT weight_kg, rep_count, notes FROM warmup_sets WHERE exercise_id = %s ORDER BY number",
-                (exercise_id,),
-            )
-            warmups = [{"weight_kg": w, "reps": r, "notes": n} for w, r, n in cur.fetchall()]
-            cur.execute(
-                """
-                SELECT weight_kg, COALESCE(reps_full, LEAST(left_reps_full, right_reps_full)), rpe, notes
-                FROM working_sets WHERE exercise_id = %s ORDER BY number
-                """,
-                (exercise_id,),
-            )
-            sets = [{"weight_kg": w, "reps": r, "rpe": rpe, "notes": n} for w, r, rpe, n in cur.fetchall()]
-            result.append({
-                "name": name, "date": day, "session_id": session_id, "notes": notes,
-                "warmup_sets": warmups, "sets": sets,
-            })
+        found = _rows(cur)
+        cur.execute(
+            """
+            SELECT exercise_id, kind, weight_kg, COALESCE(reps_full, LEAST(left_reps_full, right_reps_full)) AS reps,
+                   rpe, notes
+            FROM workout_session_sets WHERE user_id = %s AND exercise_id = ANY(%s::uuid[]) ORDER BY position
+            """,
+            (user_id, [str(f["id"]) for f in found]),
+        )
+        sets = _rows(cur)
+    result = []
+    for f in found:
+        mine = [s for s in sets if s["exercise_id"] == f["id"]]
+        result.append({
+            "name": f["name"], "date": f["date"], "session_id": f["session_id"], "notes": f["notes"],
+            "warmup_sets": [{"weight_kg": s["weight_kg"], "reps": s["reps"], "notes": s["notes"]}
+                            for s in mine if s["kind"] == "warmup"],
+            "sets": [{"weight_kg": s["weight_kg"], "reps": s["reps"], "rpe": s["rpe"], "notes": s["notes"]}
+                     for s in mine if s["kind"] == "working"],
+        })
     return result

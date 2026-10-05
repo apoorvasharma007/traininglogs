@@ -44,3 +44,33 @@ def token(sub: str = USER_A_AUTH, key=None, **claims) -> str:
 def auth(sub: str = USER_A_AUTH) -> dict:
     """Request headers signed in as `sub` (user A by default)."""
     return {"Authorization": f"Bearer {token(sub)}"}
+
+
+def save_session(conn, session: dict, user: str = USER_A, text: str | None = None) -> str:
+    """Save a session (a TrainingSession as a dict) for `user` the way the app does: its input,
+    then the session. Returns the new session id."""
+    from traininglogs.db.insert import insert_input, insert_session
+    from traininglogs.ingest.confirm import dedup_key
+    from traininglogs.models.models import TrainingSession
+
+    text = text or repr(session)
+    model = TrainingSession.model_validate({
+        "data_model_version": "0.0.1", "data_model_type": "TrainingSession", "user_id": "-",
+        "user_name": "-", **session, "session_id": dedup_key(text, str(session["date"])),
+    })
+    input_id = insert_input(conn, user, text, kind="manual")
+    session_id = insert_session(conn, user, model, input_id)
+    assert session_id is not None
+    return session_id
+
+
+def clean_test_data(conn) -> None:
+    """Empty every table of people's data (the test database holds nothing else). Users A and B
+    and the shared exercise list stay."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "TRUNCATE input_text, input_text_confirmation_cards, ai_call_logs, workout_sessions,"
+            " workout_session_warmups, workout_session_cooldowns, workout_session_exercises,"
+            " workout_session_sets, programs, program_workouts, program_workout_exercises, user_exercises"
+        )
+    conn.commit()

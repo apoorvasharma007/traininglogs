@@ -7,36 +7,21 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-from signed_in import TEST_DB_URL, USER_A, USER_B, USER_B_AUTH, auth
+from signed_in import TEST_DB_URL, clean_test_data, USER_A, USER_B, USER_B_AUTH, auth
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert import insert_extraction, insert_raw_input
+from traininglogs.db.insert import insert_card, insert_input
 
 A = auth()
 B = auth(USER_B_AUTH)
-
-
-def _clean(conn) -> None:
-    owners = [USER_A, USER_B]
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE user_id = ANY(%s::uuid[])", (owners,))
-        cur.execute("DELETE FROM raw_inputs WHERE user_id = ANY(%s::uuid[])", (owners,))
-        cur.execute(
-            "DELETE FROM program_workout_exercises WHERE workout_id IN"
-            " (SELECT id FROM program_workouts WHERE user_id = ANY(%s::uuid[]))",
-            (owners,),
-        )
-        cur.execute("DELETE FROM program_workouts WHERE user_id = ANY(%s::uuid[])", (owners,))
-        cur.execute("DELETE FROM programs WHERE user_id = ANY(%s::uuid[])", (owners,))
-    conn.commit()
 
 
 @pytest.fixture()
 def conn():
     c = get_connection(TEST_DB_URL)
     apply_schema(c)
-    _clean(c)
+    clean_test_data(c)
     yield c
-    _clean(c)
+    clean_test_data(c)
     c.close()
 
 
@@ -62,10 +47,10 @@ def a(client, conn) -> dict:
         "exercises": [{"name": "Squat", "sets": [{"weight_kg": 100, "reps": 5, "rpe": 8}]}],
     })
     assert saved.status_code == 201
-    raw_input_id = insert_raw_input(conn, "Squat 100 x 5", user_id=USER_A)
+    raw_input_id = insert_input(conn, USER_A, "Squat 100 x 5")
     extract = {"date": "3002-01-06", "exercises": [{"number": 1, "name": "Squat", "sets": [
         {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}], "uncertain_fields": []}
-    extraction_id = insert_extraction(conn, raw_input_id, "m", "v1", extract)
+    extraction_id = insert_card(conn, USER_A, raw_input_id, "m", "v1", extract)
     return {
         "program_id": program["id"], "workout_id": workout_id, "client_id": client_id,
         "session_id": saved.json()["session_id"], "extraction_id": extraction_id,
@@ -88,7 +73,6 @@ def test_lists_show_only_your_own(client, a) -> None:
 # Every endpoint that names one of A's things, called by B. (method, path, json body)
 ATTEMPTS = [
     ("GET", "/sessions/{session_id}", None),
-    ("POST", "/sessions/{session_id}/repeat", None),
     ("GET", "/extractions/{extraction_id}", None),
     ("POST", "/extractions/{extraction_id}/confirm", {}),
     ("POST", "/extractions/{extraction_id}/correct", {"instruction": "make it 200 kg"}),
@@ -124,7 +108,7 @@ def test_someone_elses_things_are_not_found_and_unchanged(client, conn, a, metho
     assert client.get(f"/programs/{a['program_id']}", headers=A).json() == a["program"]
     assert client.get(f"/extractions/{a['extraction_id']}", headers=A).status_code == 200
     with conn.cursor() as cur:
-        cur.execute("SELECT count(*) FROM raw_inputs WHERE user_id = %s", (USER_B,))
+        cur.execute("SELECT count(*) FROM input_text WHERE user_id = %s", (USER_B,))
         assert cur.fetchone()[0] == 0, "nothing is created for B either"
 
 
@@ -134,21 +118,23 @@ def test_someone_elses_workout_cant_be_named_in_a_session(client, conn, a) -> No
         "program_workout_id": a["workout_id"], "exercises": [{"name": "Curl", "sets": [{"weight_kg": 10, "reps": 8}]}],
     })
     assert r.status_code == 422
-    raw = insert_raw_input(conn, "Curl 10 x 8", user_id=USER_B)
-    mine = insert_extraction(conn, raw, "m", "v1", {"date": "3002-01-07", "exercises": [{"number": 1, "name": "Curl",
+    raw = insert_input(conn, USER_B, "Curl 10 x 8")
+    mine = insert_card(conn, USER_B, raw, "m", "v1", {"date": "3002-01-07", "exercises": [{"number": 1, "name": "Curl",
         "sets": [{"number": 1, "weight_kg": 10.0, "rep_count": {"full": 8, "partial": 0}}]}], "uncertain_fields": []})
     r = client.post(f"/extractions/{mine}/confirm", json={"program_workout_id": a["workout_id"]}, headers=B)
     assert r.status_code == 422
     assert client.get("/sessions", headers=B).json() == []
 
 
-def test_someone_elses_session_id_from_the_phone_is_refused(client, a) -> None:
+def test_a_phone_id_someone_else_used_is_just_a_new_session(client, a) -> None:
+    """Phone ids are unique per person: B sending A's id gets B's own new session, and nothing of
+    A's is touched or revealed."""
     r = client.post("/sessions", headers=B, json={
         "client_id": a["client_id"], "date": "3002-01-07", "duration_minutes": 10,
         "exercises": [{"name": "Curl", "sets": [{"weight_kg": 10, "reps": 8}]}],
     })
-    assert r.status_code == 409
-    assert a["session_id"] not in r.text
+    assert r.status_code == 201 and r.json()["session_id"] != a["session_id"]
+    assert [s["session_id"] for s in client.get("/sessions", headers=A).json()] == [a["session_id"]]
 
 
 def test_following_is_per_person(client, a) -> None:

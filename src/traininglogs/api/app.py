@@ -117,20 +117,6 @@ def _user(conn=Depends(_db), token: str = Depends(bearer)) -> str:
     return user_for(conn, verify(token))
 
 
-# The tables the API looks things up in by their own id, and that id's column.
-_OWNED = {"sessions": "session_id", "extractions": "id", "programs": "id", "program_workouts": "id"}
-
-
-def _owned(conn, table: str, row_id: str, user: str, missing: str, status: int = 404) -> None:
-    """`status` (404, or 422 for an id named in a request body) unless the row exists and belongs
-    to `user`. Someone else's row answers exactly like one that doesn't exist, so its existence
-    isn't revealed."""
-    with conn.cursor() as cur:
-        cur.execute(f"SELECT 1 FROM {table} WHERE {_OWNED[table]} = %s AND user_id = %s", (row_id, user))
-        if cur.fetchone() is None:
-            raise HTTPException(status_code=status, detail=missing)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not os.environ.get("SUPABASE_URL"):
@@ -171,25 +157,32 @@ def list_sessions(
     conn=Depends(_db),
     user: str = Depends(_user),
 ):
-    return get_sessions(
-        conn, user, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit
-    )
+    return get_sessions(conn, user, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit)
+
+
+NO_WORKOUT = "That workout doesn't exist or was removed."
+
+
+def _check_workout(conn, user: str, workout_id: str | None) -> None:
+    """422 when a request names a workout the person doesn't have."""
+    from traininglogs.db.programs import workout_program_id
+
+    if workout_id is not None and (not _is_id(workout_id) or workout_program_id(conn, user, workout_id) is None):
+        raise HTTPException(status_code=422, detail=NO_WORKOUT)
 
 
 @app.post("/sessions", response_model=SessionSaved, status_code=201)
 def save_session(body: ManualSessionIn, response: Response, conn=Depends(_db), user: str = Depends(_user)):
-    """Saves a session entered in the app, with no model call. Sending the same `client_id` again
-    returns the session already saved, with 200 instead of 201."""
-    from traininglogs.ingest.manual import ClientIdTaken, save_manual_session
+    """Saves a session logged in the app, with no AI. Sending the same `client_id` again returns the
+    session already saved, with 200 instead of 201."""
+    from traininglogs.ingest.confirm import AlreadySaved
+    from traininglogs.ingest.manual import save_manual_session
 
-    if body.program_workout_id is not None:
-        _owned(conn, "program_workouts", body.program_workout_id, user, "That workout doesn't exist or was removed.", 422)
+    _check_workout(conn, user, body.program_workout_id)
     try:
-        session_id, created = save_manual_session(conn, body.model_dump(mode="json"), user)
-    except ClientIdTaken:
-        raise HTTPException(status_code=409, detail="This session's id is already in use. Start it again.")
-    except SystemExit as exc:
-        raise HTTPException(status_code=409, detail=str(exc))
+        session_id, created = save_manual_session(conn, user, body.model_dump(mode="json"))
+    except AlreadySaved:
+        raise HTTPException(status_code=409, detail="This session is already saved. Find it in History.")
     if not created:
         response.status_code = 200
     return SessionSaved(session_id=session_id, created=created)
@@ -203,51 +196,45 @@ def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), user:
     return get_last_exercises(conn, name, user)
 
 
-@app.post("/sessions/{session_id}/repeat", response_model=CaptureOut, status_code=201)
-def repeat_session_endpoint(session_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    """Start a new session from a past one -- no LLM call. Returns the same ids as
-    POST /inputs, so the client loads and confirms the card exactly as after an extraction.
-    """
-    from traininglogs.ingest.repeat import repeat_session
-
-    _owned(conn, "sessions", session_id, user, "Couldn't find this session.")
-    ids = repeat_session(conn, session_id, user)
-    if ids is None:
-        raise HTTPException(status_code=404, detail="Couldn't find this session.")
-    raw_input_id, extraction_id = ids
-    return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
-
-
 @app.get("/sessions/{session_id}", response_model=SessionDetail)
 def session_detail(session_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    _owned(conn, "sessions", session_id, user, "Couldn't find this session.")
-    session = get_session(conn, session_id)
+    session = get_session(conn, user, session_id) if _is_id(session_id) else None
     if session is None:
         raise HTTPException(status_code=404, detail="Couldn't find this session.")
     return session
+
+
+def _is_id(value: str) -> bool:
+    """Whether a path's id could be one of ours, so a malformed one is a plain 404, not a database
+    error."""
+    import uuid
+
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
 
 
 @app.get("/progress/lifts", response_model=LiftsOut)
 def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     """Key lifts, then other lifts trained in 3 or more sessions: each with its latest and best
     estimated max (or best reps at bodyweight), and the trend over the last 4 weeks."""
-    from datetime import date
-
     from traininglogs.analytics.progress import lift_summaries
     from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.programs import today_for
 
-    return lift_summaries(get_working_set_rows(conn, user), date.today())
+    return lift_summaries(get_working_set_rows(conn, user), today_for(conn, user))
 
 
 @app.get("/progress/lifts/{name}", response_model=LiftDetail)
 def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     """One lift's sessions, oldest first: the value, the set behind it, records and goal."""
-    from datetime import date
-
     from traininglogs.analytics.progress import lift_detail
     from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.programs import today_for
 
-    detail = lift_detail(get_working_set_rows(conn, user), name, date.today())
+    detail = lift_detail(get_working_set_rows(conn, user), name, today_for(conn, user))
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
@@ -263,54 +250,52 @@ def exercise_history(name: str, conn=Depends(_db), user: str = Depends(_user)):
 
 @app.post("/inputs", response_model=CaptureOut)
 def create_input(body: CaptureIn, response: Response, conn=Depends(_db), user: str = Depends(_user)):
-    """capture() then extract(), over HTTP.
+    """Store the note, then have the AI read it into a confirmation card.
 
-    capture() commits before extract() is ever attempted, so a failed extraction still leaves
-    `raw_input_id` in the response -- the text is not lost, and the caller can retry extraction
-    against the same raw input (extract() is idempotent) rather than resubmitting it.
+    The note is saved before the AI is asked, so a failed reading still leaves `raw_input_id` in
+    the answer: nothing is lost, and reading it again uses the same note.
     """
     from traininglogs.agent.providers import AnthropicProvider
-    from traininglogs.ingest.capture import capture
+    from traininglogs.db.insert import insert_input
     from traininglogs.ingest.extract import extract
 
-    raw_input_id = capture(
-        conn, body.content, source_kind=body.source_kind, source_file=body.source_file, user_id=user
-    )
-
+    input_id = insert_input(conn, user, body.content, kind=body.source_kind, source=body.source_file)
     try:
         provider = AnthropicProvider()
-        extraction_id = extract(conn, raw_input_id, provider=provider, model=provider.model)
+        card_id = extract(conn, user, input_id, provider=provider, model=provider.model)
     except Exception as exc:
-        print(f"Reading note {raw_input_id} failed: {exc}", flush=True)
+        print(f"Reading note {input_id} failed: {exc}", flush=True)
         response.status_code = 502
         return CaptureOut(
-            raw_input_id=raw_input_id,
+            raw_input_id=input_id,
             error="Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.",
         )
-
     response.status_code = 201
-    return CaptureOut(raw_input_id=raw_input_id, extraction_id=extraction_id)
+    return CaptureOut(raw_input_id=input_id, extraction_id=card_id)
+
+
+NO_NOTE = "Couldn't find this note."
+
+
+def _card_or_404(conn, user: str, card_id: str) -> dict:
+    from traininglogs.db.fetch import get_card
+
+    card = get_card(conn, user, card_id) if _is_id(card_id) else None
+    if card is None:
+        raise HTTPException(status_code=404, detail=NO_NOTE)
+    return card
 
 
 @app.get("/extractions/{extraction_id}")
 def get_extraction_card(extraction_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    """The same card the CLI's confirm loop renders to a terminal, as JSON instead --
-    ValidationCardBuilder is DB-free and shared by both, only the renderer differs.
-    """
+    """The confirmation card for a note, as JSON."""
     from fastapi.encoders import jsonable_encoder
 
     from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
-    from traininglogs.db.fetch import get_extraction
 
-    _owned(conn, "extractions", extraction_id, user, "Couldn't find this note.")
-    stored = get_extraction(conn, extraction_id)
-    if stored is None:
-        raise HTTPException(status_code=404, detail="Couldn't find this note.")
-
-    extract_obj = TrainingLogLLMExtract.model_validate(stored["extract"])
-    card = ValidationCardBuilder().build(extract_obj)
-    return jsonable_encoder(card)
+    card = _card_or_404(conn, user, extraction_id)
+    return jsonable_encoder(ValidationCardBuilder().build(TrainingLogLLMExtract.model_validate(card["extract"])))
 
 
 @app.post("/extractions/{extraction_id}/confirm", response_model=ConfirmOut)
@@ -321,52 +306,30 @@ def confirm_extraction_endpoint(
     conn=Depends(_db),
     user: str = Depends(_user),
 ):
-    """ingest.confirm() over HTTP. `body.extract` lets a client submit the result of one or
-    more /correct calls; omitted, the extraction's own stored reading is confirmed as-is.
-    """
+    """Save the card as a session. `body.extract` carries the result of any fixes; omitted, the
+    card's own reading is saved as it is."""
     from traininglogs.agent.schemas import TrainingLogLLMExtract
-    from traininglogs.db.fetch import get_extraction
-    from traininglogs.ingest.confirm import confirm
+    from traininglogs.ingest.confirm import AlreadySaved, confirm
 
-    _owned(conn, "extractions", extraction_id, user, "Couldn't find this note.")
-    stored = get_extraction(conn, extraction_id)
-    if stored is None:
-        raise HTTPException(status_code=404, detail="Couldn't find this note.")
-
-    extract_dict = body.extract if body.extract is not None else stored["extract"]
-    final_extract = TrainingLogLLMExtract.model_validate(extract_dict)
-
-    if body.program_workout_id is not None:
-        _owned(conn, "program_workouts", body.program_workout_id, user, "That workout doesn't exist or was removed.", 422)
-
+    card = _card_or_404(conn, user, extraction_id)
+    _check_workout(conn, user, body.program_workout_id)
+    final_extract = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
     try:
-        session = confirm(conn, extraction_id, final_extract, corrections=body.corrections)
-    except SystemExit as exc:
-        # A session's id is its date plus a hash of the note's text, so this is the same note
-        # confirmed a second time for the same date.
-        print(f"Confirm refused for {extraction_id}: {exc}", flush=True)
-        raise HTTPException(
-            status_code=409, detail="This note is already saved as a session. Find it in History."
+        session_id = confirm(
+            conn, user, extraction_id, final_extract, corrections=body.corrections,
+            program_workout_id=body.program_workout_id,
         )
-
-    if body.program_workout_id is not None:
-        from traininglogs.db.programs import link_session_to_workout
-
-        link_session_to_workout(conn, session.session_id, body.program_workout_id)
-
+    except AlreadySaved:
+        raise HTTPException(status_code=409, detail="This note is already saved as a session. Find it in History.")
     response.status_code = 201
-    return ConfirmOut(session_id=session.session_id)
+    return ConfirmOut(session_id=session_id)
 
 
 @app.post("/extractions/{extraction_id}/correct", response_model=CorrectOut)
-def correct_extraction(
-    extraction_id: str, body: CorrectIn, conn=Depends(_db), user: str = Depends(_user)
-):
-    """Apply one correction and hand back the result -- fully stateless, same as every other
-    endpoint here. `body.extract` (the previous response's own `extract`) carries state
-    between calls instead of the server holding any; the extraction's own stored reading is
-    the starting point when it's omitted, on the first correction.
-    """
+def correct_extraction(extraction_id: str, body: CorrectIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Apply one typed fix with the AI and hand back the result, keeping nothing on the server:
+    `body.extract` (the previous answer's `extract`) carries the state between fixes; the card's own
+    reading is the starting point on the first."""
     from datetime import datetime, timezone
 
     from fastapi.encoders import jsonable_encoder
@@ -376,21 +339,13 @@ def correct_extraction(
     from traininglogs.agent.providers import AnthropicProvider
     from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
-    from traininglogs.db.fetch import get_extraction
-    from traininglogs.db.insert import insert_llm_calls
+    from traininglogs.db.insert import insert_ai_calls
 
-    _owned(conn, "extractions", extraction_id, user, "Couldn't find this note.")
-    stored = get_extraction(conn, extraction_id)
-    if stored is None:
-        raise HTTPException(status_code=404, detail="Couldn't find this note.")
-
-    extract_dict = body.extract if body.extract is not None else stored["extract"]
-    current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
-
+    card = _card_or_404(conn, user, extraction_id)
+    current = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
     provider = AnthropicProvider()
-    validator = LLMExtractValidator(provider)
     try:
-        updated_extract, edits = validator.apply_correction(current_extract, body.instruction)
+        updated, edits = LLMExtractValidator(provider).apply_correction(current, body.instruction)
     except PatchError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except CorrectionRejected as exc:
@@ -399,36 +354,27 @@ def correct_extraction(
         raise HTTPException(status_code=422, detail=exc.plain)
     except LLMParserError as exc:
         print(f"Correction failed for {extraction_id}: {exc}", flush=True)
-        raise HTTPException(
-            status_code=502, detail="The request failed. Try again in a minute."
-        )
+        raise HTTPException(status_code=502, detail="The request failed. Try again in a minute.")
     finally:
-        # Logged whether the correction worked or not, same as extraction does: a failed
-        # correction still cost money. Tied to the raw input, so a session's total cost is one
-        # query across extraction and corrections alike.
-        insert_llm_calls(conn, stored["raw_input_id"], provider.calls)
-
-    correction = {
-        "at": datetime.now(timezone.utc).isoformat(),
-        "source": "ai",
-        "instruction": body.instruction,
-        "edits": [e.model_dump(mode="json") for e in edits],
-    }
-    card = ValidationCardBuilder().build(updated_extract)
+        # Kept whether the fix worked or not: a failed fix still cost money.
+        insert_ai_calls(conn, user, card["input_id"], provider.calls)
 
     return CorrectOut(
-        extract=updated_extract.model_dump(mode="json"),
-        card=jsonable_encoder(card),
-        correction=correction,
+        extract=updated.model_dump(mode="json"),
+        card=jsonable_encoder(ValidationCardBuilder().build(updated)),
+        correction={
+            "at": datetime.now(timezone.utc).isoformat(),
+            "source": "ai",
+            "instruction": body.instruction,
+            "edits": [e.model_dump(mode="json") for e in edits],
+        },
     )
 
 
 @app.post("/extractions/{extraction_id}/edit", response_model=CorrectOut)
 def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: str = Depends(_user)):
-    """Apply values changed directly on the card, or add/remove one line -- no LLM call.
-    Stateless and round-tripped exactly like /correct, and replies in the same shape, so a
-    client treats both alike.
-    """
+    """Apply values changed directly on the card, or add or remove one line, with no AI. Kept
+    nothing on the server, like /correct, and answered in the same shape."""
     from datetime import datetime, timezone
 
     from fastapi.encoders import jsonable_encoder
@@ -436,62 +382,60 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: s
     from traininglogs.agent.card_edits import CardEditError, apply_card_edits, apply_card_op
     from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
-    from traininglogs.db.fetch import get_extraction
 
-    _owned(conn, "extractions", extraction_id, user, "Couldn't find this note.")
-    stored = get_extraction(conn, extraction_id)
-    if stored is None:
-        raise HTTPException(status_code=404, detail="Couldn't find this note.")
-
-    extract_dict = body.extract if body.extract is not None else stored["extract"]
-    current_extract = TrainingLogLLMExtract.model_validate(extract_dict)
-
+    card = _card_or_404(conn, user, extraction_id)
+    current = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
     created_path = None
     try:
         if body.op is not None:
-            updated_extract, edits, created_path = apply_card_op(current_extract, body.op)
+            updated, edits, created_path = apply_card_op(current, body.op)
         else:
-            updated_extract, edits = apply_card_edits(current_extract, body.edits)
+            updated, edits = apply_card_edits(current, body.edits)
     except CardEditError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    correction = {
-        "at": datetime.now(timezone.utc).isoformat(),
-        "source": "manual",
-        **({"op": body.op.op, "path": body.op.path} if body.op is not None else {}),
-        "edits": [e.model_dump(mode="json") for e in edits],
-    }
-    card = ValidationCardBuilder().build(updated_extract)
     return CorrectOut(
-        extract=updated_extract.model_dump(mode="json"),
-        card=jsonable_encoder(card),
-        correction=correction,
+        extract=updated.model_dump(mode="json"),
+        card=jsonable_encoder(ValidationCardBuilder().build(updated)),
+        correction={
+            "at": datetime.now(timezone.utc).isoformat(),
+            "source": "manual",
+            **({"op": body.op.op, "path": body.op.path} if body.op is not None else {}),
+            "edits": [e.model_dump(mode="json") for e in edits],
+        },
         created_path=created_path,
     )
 
 
 # ---- programs and workouts ----
-# Every change to a program or one of its workouts returns the whole program, so the client
-# replaces what it shows with one reply.
+# Every change to a program or one of its workouts returns the whole program, so the app replaces
+# what it shows with one answer. Someone else's program or workout is "not found".
 
-def _program_or_404(conn, program_id: str, user: str) -> dict:
+NO_PROGRAM = "Program not found"
+NO_WORKOUT_HERE = "Workout not found"
+
+
+def _program_or_404(conn, user: str, program_id: str) -> dict:
     from traininglogs.db.programs import get_program
 
-    _owned(conn, "programs", program_id, user, "Program not found")
-    program = get_program(conn, program_id)
+    program = get_program(conn, user, program_id) if _is_id(program_id) else None
     if program is None:
-        raise HTTPException(status_code=404, detail="Program not found")
+        raise HTTPException(status_code=404, detail=NO_PROGRAM)
     return program
 
 
-def _workout_program_or_404(conn, workout_id: str, user: str) -> str:
+def _workout_program_or_404(conn, user: str, workout_id: str) -> str:
     from traininglogs.db.programs import workout_program_id
 
-    _owned(conn, "program_workouts", workout_id, user, "Workout not found")
-    program_id = workout_program_id(conn, workout_id)
+    program_id = workout_program_id(conn, user, workout_id) if _is_id(workout_id) else None
     if program_id is None:
-        raise HTTPException(status_code=404, detail="Workout not found")
+        raise HTTPException(status_code=404, detail=NO_WORKOUT_HERE)
     return program_id
+
+
+def _done(found: bool, missing: str = NO_PROGRAM) -> None:
+    if not found:
+        raise HTTPException(status_code=404, detail=missing)
 
 
 @app.get("/programs", response_model=list[ProgramOut])
@@ -505,7 +449,7 @@ def programs_list(conn=Depends(_db), user: str = Depends(_user)):
 def programs_create(body: ProgramIn, conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.programs import create_program
 
-    return _program_or_404(conn, create_program(conn, body.name.strip(), user), user)
+    return _program_or_404(conn, user, create_program(conn, user, body.name.strip()))
 
 
 @app.get("/templates", response_model=list[ProgramTemplate])
@@ -518,54 +462,46 @@ def templates_list(user: str = Depends(_user)):
 
 @app.post("/templates/{template_id}/copy", response_model=ProgramOut, status_code=201)
 def templates_copy(template_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    """Adds a copy of the template to your programs. Not followed; copying twice gives two."""
-    from traininglogs.db.programs import create_program_with_workouts
+    """Adds a copy of the template to the person's programs. Not followed; copying twice gives two."""
+    from traininglogs.db.programs import create_program
     from traininglogs.program_templates import get_template
 
     template = get_template(template_id)
     if template is None:
         raise HTTPException(status_code=404, detail="Couldn't find this template.")
     workouts = [w.model_dump() for w in template.workouts]
-    return _program_or_404(conn, create_program_with_workouts(conn, template.name, workouts, user), user)
+    return _program_or_404(conn, user, create_program(conn, user, template.name, workouts))
 
 
 @app.get("/programs/{program_id}", response_model=ProgramOut)
 def programs_get(program_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    return _program_or_404(conn, program_id, user)
+    return _program_or_404(conn, user, program_id)
 
 
 @app.patch("/programs/{program_id}", response_model=ProgramOut)
 def programs_update(program_id: str, body: ProgramPatch, conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.programs import update_program
 
-    _owned(conn, "programs", program_id, user, "Program not found")
     name = body.name.strip() if body.name else None
-    if not update_program(conn, program_id, name=name, deload_after_days=body.deload_after_days):
-        raise HTTPException(status_code=404, detail="Program not found")
-    return _program_or_404(conn, program_id, user)
+    _done(_is_id(program_id) and update_program(conn, user, program_id, name=name, deload_after_days=body.deload_after_days))
+    return _program_or_404(conn, user, program_id)
 
 
 @app.post("/programs/{program_id}/follow", response_model=ProgramOut)
 def programs_follow(program_id: str, conn=Depends(_db), user: str = Depends(_user)):
-    """Follow this program; any other followed program stops being followed."""
-    from datetime import date
-
+    """Follow this program; the person's other followed program stops being followed."""
     from traininglogs.db.programs import follow_program
 
-    _owned(conn, "programs", program_id, user, "Program not found")
-    if not follow_program(conn, program_id, date.today()):
-        raise HTTPException(status_code=404, detail="Program not found")
-    return _program_or_404(conn, program_id, user)
+    _done(_is_id(program_id) and follow_program(conn, user, program_id))
+    return _program_or_404(conn, user, program_id)
 
 
 @app.post("/programs/{program_id}/unfollow", response_model=ProgramOut)
 def programs_unfollow(program_id: str, conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.programs import unfollow_program
 
-    _owned(conn, "programs", program_id, user, "Program not found")
-    if not unfollow_program(conn, program_id):
-        raise HTTPException(status_code=404, detail="Program not found")
-    return _program_or_404(conn, program_id, user)
+    _done(_is_id(program_id) and unfollow_program(conn, user, program_id))
+    return _program_or_404(conn, user, program_id)
 
 
 @app.delete("/programs/{program_id}", status_code=204)
@@ -573,30 +509,26 @@ def programs_archive(program_id: str, conn=Depends(_db), user: str = Depends(_us
     """Removes the program from the app. It is marked archived, not deleted."""
     from traininglogs.db.programs import archive_program
 
-    _owned(conn, "programs", program_id, user, "Program not found")
-    if not archive_program(conn, program_id):
-        raise HTTPException(status_code=404, detail="Program not found")
+    _done(_is_id(program_id) and archive_program(conn, user, program_id))
 
 
 @app.post("/programs/{program_id}/workouts", response_model=ProgramOut, status_code=201)
 def workouts_add(program_id: str, body: WorkoutIn, conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.programs import add_workout
 
-    _owned(conn, "programs", program_id, user, "Program not found")
     name = body.name.strip() if body.name and body.name.strip() else None
-    if add_workout(conn, program_id, name) is None:
-        raise HTTPException(status_code=404, detail="Program not found")
-    return _program_or_404(conn, program_id, user)
+    _done(_is_id(program_id) and add_workout(conn, user, program_id, name) is not None)
+    return _program_or_404(conn, user, program_id)
 
 
 @app.put("/programs/{program_id}/workout-order", response_model=ProgramOut)
 def workouts_reorder(program_id: str, body: WorkoutOrderIn, conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.programs import reorder_workouts
 
-    _program_or_404(conn, program_id, user)
-    if not reorder_workouts(conn, program_id, body.workout_ids):
+    _program_or_404(conn, user, program_id)
+    if not all(_is_id(w) for w in body.workout_ids) or not reorder_workouts(conn, user, program_id, body.workout_ids):
         raise HTTPException(status_code=422, detail="List every workout of the program once each.")
-    return _program_or_404(conn, program_id, user)
+    return _program_or_404(conn, user, program_id)
 
 
 @app.patch("/workouts/{workout_id}", response_model=ProgramOut)
@@ -604,9 +536,9 @@ def workouts_rename(workout_id: str, body: WorkoutIn, conn=Depends(_db), user: s
     """Renames a workout; an empty or null name clears it, so it shows as its number."""
     from traininglogs.db.programs import rename_workout
 
-    program_id = _workout_program_or_404(conn, workout_id, user)
-    rename_workout(conn, workout_id, body.name.strip() if body.name and body.name.strip() else None)
-    return _program_or_404(conn, program_id, user)
+    program_id = _workout_program_or_404(conn, user, workout_id)
+    rename_workout(conn, user, workout_id, body.name.strip() if body.name and body.name.strip() else None)
+    return _program_or_404(conn, user, program_id)
 
 
 @app.put("/workouts/{workout_id}/exercises", response_model=ProgramOut)
@@ -614,9 +546,9 @@ def workouts_set_exercises(workout_id: str, body: WorkoutExercisesIn, conn=Depen
     """Replaces the workout's plan with these exercises, in this order."""
     from traininglogs.db.programs import set_workout_exercises
 
-    program_id = _workout_program_or_404(conn, workout_id, user)
-    set_workout_exercises(conn, workout_id, [e.model_dump() for e in body.exercises])
-    return _program_or_404(conn, program_id, user)
+    program_id = _workout_program_or_404(conn, user, workout_id)
+    set_workout_exercises(conn, user, workout_id, [e.model_dump() for e in body.exercises])
+    return _program_or_404(conn, user, program_id)
 
 
 @app.put("/workouts/{workout_id}/movements", response_model=ProgramOut)
@@ -624,11 +556,11 @@ def workouts_set_movements(workout_id: str, body: WorkoutMovementsIn, conn=Depen
     """Replaces the workout's warm-up and cool-down movements."""
     from traininglogs.db.programs import set_workout_movements
 
-    program_id = _workout_program_or_404(conn, workout_id, user)
+    program_id = _workout_program_or_404(conn, user, workout_id)
     set_workout_movements(
-        conn, workout_id, [m.model_dump() for m in body.warmup], [m.model_dump() for m in body.cooldown]
+        conn, user, workout_id, [m.model_dump() for m in body.warmup], [m.model_dump() for m in body.cooldown]
     )
-    return _program_or_404(conn, program_id, user)
+    return _program_or_404(conn, user, program_id)
 
 
 @app.delete("/workouts/{workout_id}", response_model=ProgramOut)
@@ -636,9 +568,9 @@ def workouts_archive(workout_id: str, conn=Depends(_db), user: str = Depends(_us
     """Removes a workout from its program (marked archived); the rest are renumbered."""
     from traininglogs.db.programs import archive_workout
 
-    program_id = _workout_program_or_404(conn, workout_id, user)
-    archive_workout(conn, workout_id)
-    return _program_or_404(conn, program_id, user)
+    program_id = _workout_program_or_404(conn, user, workout_id)
+    archive_workout(conn, user, workout_id)
+    return _program_or_404(conn, user, program_id)
 
 
 class _NoCacheStaticFiles(StaticFiles):

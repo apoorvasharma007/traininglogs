@@ -15,6 +15,8 @@ from typing import Annotated
 import jwt
 from fastapi import Header, HTTPException
 
+from traininglogs.db.ids import new_id
+
 SIGNED_OUT = "You're signed out. Sign in again."
 
 
@@ -45,20 +47,31 @@ def verify(token: str) -> dict:
 
 
 def user_for(conn, claims: dict) -> str:
-    """users.id for the pass's account, adding the user on their first request. Two first requests
-    at once still make one user: the second insert does nothing and both read the same row."""
+    """users.id for the pass's account. A first sign-in adds the user and their (empty) profile;
+    two first requests at once still make one user, since the second insert does nothing and both
+    read the same row. last_seen_at is kept to the day, so most requests write nothing."""
     with conn.cursor() as cur:
-        cur.execute("SELECT id FROM users WHERE auth_id = %s", (claims["sub"],))
+        cur.execute(
+            "SELECT id::text, last_seen_at > now() - interval '1 day' FROM users WHERE auth_id = %s", (claims["sub"],)
+        )
         row = cur.fetchone()
         if row is None:
             cur.execute(
-                "INSERT INTO users (auth_id, email) VALUES (%s, %s) ON CONFLICT (auth_id) DO NOTHING",
-                (claims["sub"], claims.get("email")),
+                "INSERT INTO users (id, auth_id, email, last_seen_at) VALUES (%s, %s, %s, now())"
+                " ON CONFLICT (auth_id) DO NOTHING RETURNING id::text",
+                (new_id(), claims["sub"], claims.get("email")),
             )
+            added = cur.fetchone()
+            if added is not None:
+                cur.execute("INSERT INTO profiles (user_id) VALUES (%s)", (added[0],))
             conn.commit()
-            cur.execute("SELECT id FROM users WHERE auth_id = %s", (claims["sub"],))
-            row = cur.fetchone()
-    return str(row[0])
+            cur.execute("SELECT id::text FROM users WHERE auth_id = %s", (claims["sub"],))
+            return cur.fetchone()[0]
+        user_id, seen_today = row
+        if not seen_today:
+            cur.execute("UPDATE users SET last_seen_at = now() WHERE id = %s", (user_id,))
+            conn.commit()
+        return user_id
 
 
 def bearer(authorization: Annotated[str, Header()] = "") -> str:

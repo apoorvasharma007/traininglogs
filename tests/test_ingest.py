@@ -14,13 +14,14 @@ import pytest
 
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.fetch import get_extraction, get_raw_input
-from traininglogs.ingest.capture import capture
-from traininglogs.ingest.confirm import confirm
+from traininglogs.db.fetch import get_card, get_input, get_session
+from traininglogs.db.ids import new_id
+from traininglogs.db.insert import insert_card, insert_input
+from traininglogs.ingest.confirm import AlreadySaved, confirm, dedup_key
 from traininglogs.ingest.extract import extract
 from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
-from signed_in import USER_A
+from signed_in import USER_A, clean_test_data
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -58,11 +59,9 @@ def make_extract(**overrides) -> TrainingLogLLMExtract:
 def conn():
     connection = get_connection(TEST_DB_URL)
     apply_schema(connection)
-    with connection.cursor() as cur:
-        cur.execute("TRUNCATE sessions CASCADE")
-        cur.execute("TRUNCATE raw_inputs CASCADE")
-    connection.commit()
+    clean_test_data(connection)
     yield connection
+    clean_test_data(connection)
     connection.close()
 
 
@@ -70,18 +69,12 @@ class FakeProvider:
     model = "fake-model"
 
 
-class TestCapture:
-    def test_stores_the_text_verbatim_and_returns_its_id(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN, source_kind="text", source_file="a.md", user_id=USER_A)
-
-        raw = get_raw_input(conn, raw_input_id)
-        assert raw["content"] == MARKDOWN
-        assert raw["source_kind"] == "text"
-        assert raw["source_file"] == "a.md"
+def _note(conn, text: str = MARKDOWN) -> str:
+    return insert_input(conn, USER_A, text)
 
 
 class TestExtract:
-    def test_calls_assemble_and_saves_a_pending_extraction(self, conn, monkeypatch) -> None:
+    def test_calls_assemble_and_saves_a_pending_card(self, conn, monkeypatch) -> None:
         seen = []
 
         def fake_assemble(text, provider=None):
@@ -89,20 +82,15 @@ class TestExtract:
             return make_extract()
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
+        input_id = _note(conn)
+        card_id = extract(conn, USER_A, input_id, provider=FakeProvider())
 
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
+        assert [text for text, _ in seen] == [MARKDOWN]
+        stored = get_card(conn, USER_A, card_id)
+        assert (stored["input_id"], stored["status"], stored["confirmed_at"], stored["model"]) == (
+            input_id, "pending", None, "fake-model")
 
-        assert seen == [(MARKDOWN, seen[0][1])]
-        assert seen[0][1] is not None
-
-        stored = get_extraction(conn, extraction_id)
-        assert stored["raw_input_id"] == raw_input_id
-        assert stored["status"] == "pending"
-        assert stored["confirmed_at"] is None
-        assert stored["model"] == "fake-model"
-
-    def test_is_idempotent_for_a_pending_extraction(self, conn, monkeypatch) -> None:
+    def test_is_idempotent_for_a_pending_card(self, conn, monkeypatch) -> None:
         calls = {"n": 0}
 
         def fake_assemble(text, provider=None):
@@ -110,75 +98,44 @@ class TestExtract:
             return make_extract()
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
+        input_id = _note(conn)
+        assert extract(conn, USER_A, input_id, provider=FakeProvider()) == extract(conn, USER_A, input_id, provider=FakeProvider())
+        assert calls["n"] == 1, "reading a note again must not pay for a second call"
 
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        first_id = extract(conn, raw_input_id, provider=FakeProvider())
-        second_id = extract(conn, raw_input_id, provider=FakeProvider())
-
-        assert first_id == second_id
-        assert calls["n"] == 1, "re-running extract on an already-extracted input must not pay for a second call"
-
-    def test_a_rejected_extraction_does_not_block_a_new_attempt(self, conn, monkeypatch) -> None:
-        calls = {"n": 0}
-
-        def fake_assemble(text, provider=None):
-            calls["n"] += 1
-            return make_extract()
-
-        monkeypatch.setattr("traininglogs.ingest.extract.assemble", fake_assemble)
-
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        first_id = extract(conn, raw_input_id, provider=FakeProvider())
+    def test_a_rejected_card_does_not_block_a_new_reading(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract())
+        input_id = _note(conn)
+        first = extract(conn, USER_A, input_id, provider=FakeProvider())
         with conn.cursor() as cur:
-            cur.execute("UPDATE extractions SET status = 'rejected' WHERE id = %s", (first_id,))
+            cur.execute("UPDATE input_text_confirmation_cards SET status = 'rejected' WHERE id = %s", (first,))
         conn.commit()
+        assert extract(conn, USER_A, input_id, provider=FakeProvider()) != first
 
-        second_id = extract(conn, raw_input_id, provider=FakeProvider())
-
-        assert second_id != first_id
-        assert calls["n"] == 2
-
-    def test_raises_for_an_unknown_raw_input(self, conn) -> None:
+    def test_raises_for_an_unknown_note(self, conn) -> None:
         with pytest.raises(ValueError):
-            extract(conn, "does-not-exist")
+            extract(conn, USER_A, new_id())
 
-    def test_a_date_the_model_flagged_uncertain_is_backfilled_from_captured_at(
-        self, conn, monkeypatch
-    ) -> None:
-        """The model can't know the real date if the text doesn't state one -- the prompt has
-        it write a placeholder and flag "date" uncertain instead of inventing something
-        plausible. Python replaces the placeholder with when this was actually captured, and
-        leaves it flagged: "captured today" isn't the same claim as "the workout was today"."""
+    def test_a_date_the_ai_flagged_unsure_is_filled_from_when_the_note_was_saved(self, conn, monkeypatch) -> None:
+        """The AI can't know the date if the text doesn't say; the day the note was saved fills the
+        gap, still flagged, since "saved today" isn't "trained today"."""
         monkeypatch.setattr(
             "traininglogs.ingest.extract.assemble",
             lambda text, provider=None: make_extract(date="2000-01-01", uncertain_fields=["date"]),
         )
-
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        raw = get_raw_input(conn, raw_input_id)
-        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
-
-        stored = get_extraction(conn, extraction_id)
-        assert stored["extract"]["date"] == raw["captured_at"].strftime("%Y-%m-%d")
+        input_id = _note(conn)
+        stored = get_card(conn, USER_A, extract(conn, USER_A, input_id, provider=FakeProvider()))
+        assert stored["extract"]["date"] == get_input(conn, USER_A, input_id)["created_at"].strftime("%Y-%m-%d")
         assert "date" in stored["uncertain_fields"]
 
-    def test_a_date_the_model_is_confident_about_is_left_alone(self, conn, monkeypatch) -> None:
-        monkeypatch.setattr(
-            "traininglogs.ingest.extract.assemble",
-            lambda text, provider=None: make_extract(date="2026-03-01"),
-        )
-
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
-
-        stored = get_extraction(conn, extraction_id)
+    def test_a_date_the_ai_is_sure_of_is_left_alone(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract(date="2026-03-01"))
+        stored = get_card(conn, USER_A, extract(conn, USER_A, _note(conn), provider=FakeProvider()))
         assert stored["extract"]["date"] == "2026-03-01"
         assert "date" not in stored["uncertain_fields"]
 
 
 class FakeProviderWithCalls:
-    """A provider whose `.calls` is already populated, standing in for what
-    AnthropicProvider looks like after assemble() has driven it through a few steps."""
+    """A provider whose `.calls` is already filled, as AnthropicProvider is after a reading."""
 
     model = "fake-model"
 
@@ -187,214 +144,88 @@ class FakeProviderWithCalls:
 
 
 def _call_record(step: str, **overrides) -> dict:
-    base = dict(
-        step=step, model="fake-model", attempts=1, input_tokens=100, output_tokens=50,
-        cost_usd=0.0007, ms=250, cached=False, failed=None, raw_payload={"ok": True},
-    )
-    base.update(overrides)
-    return base
+    return dict(step=step, model="fake-model", attempts=1, input_tokens=100, output_tokens=50,
+                cost_usd=0.0007, ms=250, cached=False, failed=None, raw_payload={"ok": True}) | overrides
 
 
-class TestLLMCallsArePersisted:
-    """D4: cost becomes a SQL query. D5: every row is findable by raw_input_id."""
+def _logged(conn, input_id: str, columns: str = "step") -> list[tuple]:
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT {columns} FROM ai_call_logs WHERE input_id = %s ORDER BY id", (input_id,))
+        return cur.fetchall()
 
-    def test_each_call_the_provider_made_becomes_a_row(self, conn, monkeypatch) -> None:
-        monkeypatch.setattr(
-            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
-        )
-        provider = FakeProviderWithCalls(
-            [_call_record("segment"), _call_record("shell"), _call_record("worker")]
-        )
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
 
-        extract(conn, raw_input_id, provider=provider)
+class TestAiCallsAreLogged:
+    def test_each_call_becomes_a_row_with_its_tokens_and_cost(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract())
+        input_id = _note(conn)
+        extract(conn, USER_A, input_id, provider=FakeProviderWithCalls(
+            [_call_record("segment"), _call_record("worker", input_tokens=1234, output_tokens=567, cost_usd=0.004532)]))
+        rows = _logged(conn, input_id, "step, input_tokens, output_tokens, cost_usd")
+        assert [r[0] for r in rows] == ["segment", "worker"]
+        assert (rows[1][1], rows[1][2], float(rows[1][3])) == (1234, 567, pytest.approx(0.004532))
 
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT step FROM llm_calls WHERE raw_input_id = %s ORDER BY id", (raw_input_id,)
-            )
-            steps = [r[0] for r in cur.fetchall()]
-        assert steps == ["segment", "shell", "worker"]
-
-    def test_tokens_and_cost_are_stored(self, conn, monkeypatch) -> None:
-        monkeypatch.setattr(
-            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
-        )
-        provider = FakeProviderWithCalls(
-            [_call_record("worker", input_tokens=1234, output_tokens=567, cost_usd=0.004532)]
-        )
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-
-        extract(conn, raw_input_id, provider=provider)
-
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT input_tokens, output_tokens, cost_usd FROM llm_calls "
-                "WHERE raw_input_id = %s",
-                (raw_input_id,),
-            )
-            row = cur.fetchone()
-        assert row[0] == 1234
-        assert row[1] == 567
-        assert float(row[2]) == pytest.approx(0.004532)
-
-    def test_calls_are_persisted_even_if_assemble_raises(self, conn, monkeypatch) -> None:
-        """A run that fails partway through still spent money on the calls it made -- that
-        cost must not vanish with the exception (roadmap D4's whole point)."""
-        provider = FakeProviderWithCalls([_call_record("segment"), _call_record("shell")])
-
+    def test_calls_are_logged_even_if_the_reading_fails(self, conn, monkeypatch) -> None:
+        """A run that fails partway still paid for its calls."""
         def failing_assemble(text, provider=None):
             raise RuntimeError("worker blew up")
 
         monkeypatch.setattr("traininglogs.ingest.extract.assemble", failing_assemble)
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-
+        input_id = _note(conn)
         with pytest.raises(RuntimeError):
-            extract(conn, raw_input_id, provider=provider)
+            extract(conn, USER_A, input_id, provider=FakeProviderWithCalls([_call_record("segment"), _call_record("shell")]))
+        assert len(_logged(conn, input_id)) == 2
 
-        with conn.cursor() as cur:
-            cur.execute("SELECT count(*) FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,))
-            assert cur.fetchone()[0] == 2
+    def test_a_provider_with_no_calls_logs_nothing(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract())
+        input_id = _note(conn)
+        assert extract(conn, USER_A, input_id, provider=FakeProvider())
+        assert _logged(conn, input_id) == []
 
-    def test_a_provider_with_no_calls_attribute_does_not_break_extract(self, conn, monkeypatch) -> None:
-        """Most test doubles (FakeProvider above, StubProvider elsewhere) have no `.calls` --
-        extract() must not require it."""
-        monkeypatch.setattr(
-            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
-        )
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
+    def test_a_failed_call_is_kept_with_its_error_and_raw_payload(self, conn, monkeypatch) -> None:
+        monkeypatch.setattr("traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract())
+        input_id = _note(conn)
+        extract(conn, USER_A, input_id, provider=FakeProviderWithCalls(
+            [_call_record("worker", failed="LLMParserError: bad payload", raw_payload={"bad": 1})]))
+        assert _logged(conn, input_id, "failed, raw_payload") == [("LLMParserError: bad payload", {"bad": 1})]
 
-        extraction_id = extract(conn, raw_input_id, provider=FakeProvider())
 
-        assert extraction_id is not None
-        with conn.cursor() as cur:
-            cur.execute("SELECT count(*) FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,))
-            assert cur.fetchone()[0] == 0
-
-    def test_a_failed_call_is_stored_with_its_error_and_raw_payload(self, conn, monkeypatch) -> None:
-        monkeypatch.setattr(
-            "traininglogs.ingest.extract.assemble", lambda text, provider=None: make_extract()
-        )
-        provider = FakeProviderWithCalls(
-            [_call_record("worker", failed="LLMParserError: bad payload", raw_payload={"bad": 1})]
-        )
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-
-        extract(conn, raw_input_id, provider=provider)
-
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT failed, raw_payload FROM llm_calls WHERE raw_input_id = %s", (raw_input_id,)
-            )
-            failed, raw_payload = cur.fetchone()
-        assert failed == "LLMParserError: bad payload"
-        assert raw_payload == {"bad": 1}
+def _card(conn, text: str = MARKDOWN) -> str:
+    return insert_card(conn, USER_A, _note(conn, text), "m", "v1", {})
 
 
 class TestConfirm:
-    def test_writes_the_session_and_marks_the_extraction_confirmed(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
+    def test_saves_the_session_and_marks_the_card_confirmed(self, conn) -> None:
+        card_id = _card(conn)
+        session_id = confirm(conn, USER_A, card_id, make_extract())
         with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
-                "VALUES ('x1', %s, 'm', 'v1', '{}', %s)",
-                (raw_input_id, USER_A),
-            )
-        conn.commit()
+            cur.execute("SELECT confirmation_card_id::text FROM workout_sessions WHERE id = %s", (session_id,))
+            assert cur.fetchone()[0] == card_id
+        stored = get_card(conn, USER_A, card_id)
+        assert stored["status"] == "confirmed" and stored["confirmed_at"] is not None
+        assert get_session(conn, USER_A, session_id)["focus"] == "Legs Hypertrophy"
 
-
-        session = confirm(conn, "x1", make_extract())
-
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT extraction_id FROM sessions WHERE session_id = %s", (session.session_id,)
-            )
-            assert cur.fetchone()[0] == "x1"
-
-        stored = get_extraction(conn, "x1")
-        assert stored["status"] == "confirmed"
-        assert stored["confirmed_at"] is not None
-
-    def test_returns_the_full_session_not_just_its_id(self, conn) -> None:
-        from traininglogs.models.models import TrainingSession
-
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
-                "VALUES ('x3', %s, 'm', 'v1', '{}', %s)",
-                (raw_input_id, USER_A),
-            )
-        conn.commit()
-
-
-        session = confirm(conn, "x3", make_extract())
-
-        assert isinstance(session, TrainingSession)
-        assert session.focus == "Legs Hypertrophy"
-
-    def test_records_corrections_on_the_extraction(self, conn) -> None:
-        raw_input_id = capture(conn, MARKDOWN, user_id=USER_A)
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
-                "VALUES ('x2', %s, 'm', 'v1', '{}', %s)",
-                (raw_input_id, USER_A),
-            )
-        conn.commit()
-
+    def test_records_corrections_on_the_card(self, conn) -> None:
+        card_id = _card(conn)
         corrections = [{"at": "2026-08-09T10:00:00+00:00", "instruction": "fix it", "edits": []}]
+        confirm(conn, USER_A, card_id, make_extract(), corrections=corrections)
+        assert get_card(conn, USER_A, card_id)["corrections"] == corrections
 
-        confirm(conn, "x2", make_extract(), corrections=corrections)
-
-        assert get_extraction(conn, "x2")["corrections"] == corrections
-
-    def test_raises_for_an_unknown_extraction(self, conn) -> None:
+    def test_raises_for_an_unknown_card(self, conn) -> None:
         with pytest.raises(ValueError):
-            confirm(conn, "does-not-exist", make_extract())
+            confirm(conn, USER_A, new_id(), make_extract())
 
-
-class TestConfirmSessionIds:
-    """confirm() derives session_id from the raw input's own content (roadmap decision
-    2026-08-10: identity is content, not source)."""
-
-    def _extraction_for(self, conn, content: str, extraction_id: str) -> str:
-        raw_input_id = capture(conn, content, user_id=USER_A)
+    def test_the_dedup_key_comes_from_the_notes_text_and_date(self, conn) -> None:
+        session_id = confirm(conn, USER_A, _card(conn), make_extract())
         with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO extractions (id, raw_input_id, model, prompt_version, extract, user_id) "
-                "VALUES (%s, %s, 'm', 'v1', '{}', %s)",
-                (extraction_id, raw_input_id, USER_A),
-            )
-        conn.commit()
-        return raw_input_id
+            cur.execute("SELECT dedup_key FROM workout_sessions WHERE id = %s", (session_id,))
+            assert cur.fetchone()[0] == dedup_key(MARKDOWN, "2026-03-01")
 
-    def test_confirm_takes_nothing_from_a_file(self, conn) -> None:
-        self._extraction_for(conn, MARKDOWN, "y1")
-        session = confirm(conn, "y1", make_extract())
-        assert session.session_id.startswith("2026-03-01-")
-        assert session.program is None
-        assert session.phase is None
-        assert session.week is None
+    def test_the_same_note_confirmed_twice_is_refused(self, conn) -> None:
+        confirm(conn, USER_A, _card(conn), make_extract())
+        with pytest.raises(AlreadySaved):
+            confirm(conn, USER_A, _card(conn), make_extract())
 
-    def test_session_id_comes_from_the_captured_content(self, conn) -> None:
-        self._extraction_for(conn, MARKDOWN, "y2")
-        from traininglogs.ingest.confirm import compute_session_id
-
-        assert confirm(conn, "y2", make_extract()).session_id == compute_session_id(MARKDOWN, make_extract().date)
-
-    def test_identical_content_confirmed_twice_collides_instead_of_duplicating(self, conn) -> None:
-        self._extraction_for(conn, MARKDOWN, "y3")
-        confirm(conn, "y3", make_extract())
-
-        self._extraction_for(conn, MARKDOWN, "y4")
-        with pytest.raises(SystemExit, match="already exists"):
-            confirm(conn, "y4", make_extract())
-
-    def test_whitespace_only_differences_still_collide(self, conn) -> None:
-        self._extraction_for(conn, MARKDOWN, "y5")
-        confirm(conn, "y5", make_extract())
-
-        self._extraction_for(conn, MARKDOWN + "\n\n", "y6")
-        with pytest.raises(SystemExit, match="already exists"):
-            confirm(conn, "y6", make_extract())
+    def test_whitespace_only_differences_are_the_same_note(self, conn) -> None:
+        confirm(conn, USER_A, _card(conn), make_extract())
+        with pytest.raises(AlreadySaved):
+            confirm(conn, USER_A, _card(conn, MARKDOWN + "\n\n"), make_extract())

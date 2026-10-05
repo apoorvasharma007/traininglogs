@@ -1,12 +1,9 @@
-"""manual: a session entered set by set in the app -> a confirmed session, with no model call.
+"""manual: a session logged in the app -> a workout session, with no AI and no card.
 
-It goes through the same three rows as a note the model reads -- a raw input (kind `manual`), an
-extraction, the session -- so History, Progress and the correction log treat it like any other
-session. The raw input's content is the request itself, as JSON: what the person produced.
-
-The phone names each session with an id when it starts (`client_id`) and uses that id as the raw
-input's id. Sending the same session again -- a retry after a dropped connection -- finds that
-raw input and returns the session already saved instead of saving it twice.
+Its input is the session as the phone sent it, stored as JSON (kind `manual`), so History, Progress
+and the record of what was entered treat it like any other session. The phone names each session
+with an id when it starts (`client_id`); sending the same session again (a retry after a dropped
+connection) finds that input and returns the session already saved instead of saving it twice.
 """
 from __future__ import annotations
 
@@ -16,14 +13,9 @@ from typing import Any
 from psycopg2.extensions import connection as Connection
 
 from traininglogs.agent.schemas import TrainingLogLLMExtract
-from traininglogs.db.fetch import get_raw_input
-from traininglogs.db.insert import insert_extraction, insert_raw_input
-from traininglogs.db.programs import link_session_to_workout
-from traininglogs.ingest.confirm import confirm
-
-MANUAL_MODEL = "none"
-MANUAL_PROMPT_VERSION = "manual"
-
+from traininglogs.db.fetch import get_input_by_client_id
+from traininglogs.db.insert import insert_input, insert_session
+from traininglogs.ingest.confirm import AlreadySaved, build_session_from_extract
 
 def to_extract(session: dict[str, Any]) -> TrainingLogLLMExtract:
     """The request, in the shape every other session is written from."""
@@ -69,52 +61,33 @@ def _movements(items: list[dict] | None) -> list[dict] | None:
     ] or None
 
 
-def _saved_session_id(conn: Connection, raw_input_id: str) -> str | None:
+def _session_for(conn: Connection, user_id: str, input_id: str) -> str | None:
     with conn.cursor() as cur:
         cur.execute(
-            """
-            SELECT s.session_id FROM sessions s
-            JOIN extractions e ON e.id = s.extraction_id
-            WHERE e.raw_input_id = %s
-            """,
-            (raw_input_id,),
+            "SELECT id::text FROM workout_sessions WHERE user_id = %s AND input_id = %s", (user_id, input_id)
         )
         row = cur.fetchone()
     return row[0] if row else None
 
 
-class ClientIdTaken(Exception):
-    """The phone's id for the session already belongs to someone else's input."""
-
-
-def save_manual_session(conn: Connection, session: dict[str, Any], user_id: str) -> tuple[str, bool]:
-    """Saves the session for `user_id`; returns its id and whether it was new (False for a
-    repeated send). The phone chooses `client_id`, so an id already used by another person is
-    refused rather than answered with their session."""
-    raw_input_id = session["client_id"]
-    existing_input = get_raw_input(conn, raw_input_id)
-    if existing_input is not None:
-        if str(existing_input.get("user_id")) != user_id:
-            raise ClientIdTaken(raw_input_id)
-        existing = _saved_session_id(conn, raw_input_id)
-        if existing is not None:
-            return existing, False
-
-    extract = to_extract(session)
-    if existing_input is None:
+def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any]) -> tuple[str, bool]:
+    """Saves the session for `user_id`; returns its id and whether it was new (False for a repeated
+    send)."""
+    known = get_input_by_client_id(conn, user_id, session["client_id"])
+    if known is not None:
+        saved = _session_for(conn, user_id, known["id"])
+        if saved is not None:
+            return saved, False
+        input_id, content = known["id"], known["content"]
+    else:
         content = json.dumps(session, sort_keys=True, default=str)
-        insert_raw_input(conn, content, source_kind="manual", raw_input_id=raw_input_id, user_id=user_id)
-    extraction_id = insert_extraction(
-        conn,
-        raw_input_id=raw_input_id,
-        model=MANUAL_MODEL,
-        prompt_version=MANUAL_PROMPT_VERSION,
-        extract=extract.model_dump(mode="json"),
-        uncertain_fields=[],
-        warnings=[],
-        status="pending",
+        input_id = insert_input(conn, user_id, content, kind="manual", client_id=session["client_id"])
+
+    workout = build_session_from_extract(to_extract(session), content)
+    session_id = insert_session(
+        conn, user_id, workout, input_id, program_workout_id=session.get("program_workout_id"),
+        started_at=session.get("started_at"), ended_at=session.get("ended_at"),
     )
-    saved = confirm(conn, extraction_id, extract)
-    if session.get("program_workout_id"):
-        link_session_to_workout(conn, saved.session_id, session["program_workout_id"])
-    return saved.session_id, True
+    if session_id is None:
+        raise AlreadySaved(session["client_id"])
+    return session_id, True
