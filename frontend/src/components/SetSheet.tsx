@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
+import NoteBox from '@/components/NoteBox'
 import Sheet from '@/components/Sheet'
 import { EFFORT_FILL, EFFORT_OUTLINE, EFFORTS, effortLevel } from '@/lib/effort'
 import { kg } from '@/lib/format'
@@ -86,13 +88,13 @@ function SetForm({
         ))}
       </div>
 
-      {/* Both tabs are the same height, so switching doesn't move the buttons under your finger. */}
-      <div className="h-[12.5rem]">
+      {/* Both tabs are at least the effort's height, so switching doesn't move the buttons under your finger. */}
+      <div className="flex min-h-38 flex-col">
         {draft.kind === 'warmup' &&
           (onRamp ? (
             <RampUp from={rampFrom} onAdd={onRamp} />
           ) : (
-            <div className="flex h-full items-center justify-center rounded-xl bg-muted/50 text-sm text-muted-foreground">
+            <div className="flex flex-1 items-center justify-center rounded-xl bg-muted/50 text-sm text-muted-foreground">
               Warm-up sets don't track effort
             </div>
           ))}
@@ -107,12 +109,12 @@ function SetForm({
                   <button key={e.level} type="button" aria-pressed={on} onClick={() => set({ rpe: on ? null : e.rpe })}
                     className={`flex h-17 flex-col items-center justify-center gap-0.5 rounded-[14px] transition-colors ${on ? EFFORT_FILL[e.level] : 'bg-muted text-foreground'}`}>
                     <span className="text-base font-semibold">{e.label}</span>
-                    <span className={`text-xs ${on ? '' : 'text-muted-foreground'}`}>{e.means}</span>
+                    {e.means && <span className={`text-xs ${on ? '' : 'text-muted-foreground'}`}>{e.means}</span>}
                   </button>
                 )
               })}
             </div>
-            <div className="-mr-5 flex gap-2 overflow-x-auto pr-5 pb-1">
+            <div className="scrollbar-none -mr-5 flex gap-2 overflow-x-auto pr-5">
               {RPES.map((r) => {
                 const on = draft.rpe === r
                 const level = effortLevel(r) as 1 | 2 | 3
@@ -133,8 +135,8 @@ function SetForm({
       <label htmlFor="set-note" className="sr-only">
         Note
       </label>
-      <input id="set-note" value={draft.note} placeholder="Note" onChange={(e) => set({ note: e.target.value })}
-        className="h-11 rounded-xl bg-muted px-3.5 text-[15px] placeholder:text-faint-foreground" />
+      <NoteBox id="set-note" value={draft.note} placeholder={draft.kind === 'warmup' ? 'Warm-up Set Note' : 'Working Set Note'} onChange={(e) => set({ note: e.target.value })}
+        className="min-h-11 rounded-xl bg-muted px-3.5 text-[15px] placeholder:text-faint-foreground" />
 
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -156,46 +158,56 @@ function SetForm({
   )
 }
 
-/** A ramp of warm-up sets up to a working weight, added to the set's exercise in one tap. */
+/** A ramp of warm-up sets up to a working weight, added to the set's exercise in one tap. Hidden until asked for. */
 function RampUp({ from, onAdd }: { from: number | null; onAdd: (ramp: { kg: number; reps: number }[]) => void }) {
+  const [open, setOpen] = useState(false)
   const [target, setTarget] = useState(from ? String(from) : '')
   const [count, setCount] = useState(3)
   const weight = parseFloat(target.replace(',', '.'))
   const ramp = weight > 0 ? rampSets(weight, count) : []
   const step = 'h-11 w-11 rounded-[10px] text-[22px] font-semibold disabled:opacity-30'
   return (
-    <div className="flex h-full flex-col gap-2.5 rounded-2xl bg-muted p-3">
-      <div className="grid grid-cols-2 gap-2.5">
-        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-          Working weight
-          <span className="flex h-12 items-center gap-1.5 rounded-xl bg-card px-3">
-            <input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0"
-              className="w-full bg-transparent font-mono text-lg font-semibold text-foreground outline-none" />
-            <span className="text-sm font-normal">kg</span>
-          </span>
-        </label>
-        <div className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-          Warm-up sets
-          <span className="flex h-12 items-center justify-between rounded-xl bg-card px-0.5 text-foreground">
-            <button type="button" aria-label="Fewer sets" disabled={count <= 1} onClick={() => setCount(count - 1)} className={step}>−</button>
-            <span className="font-mono text-lg">{count}</span>
-            <button type="button" aria-label="More sets" disabled={count >= MAX_RAMP} onClick={() => setCount(count + 1)} className={step}>+</button>
-          </span>
-        </div>
-      </div>
-      <div className="-mr-3 flex min-h-9 items-center gap-2 overflow-x-auto pr-3">
-        {ramp.length ? (
-          ramp.map((r, i) => (
-            <span key={i} className="shrink-0 rounded-lg bg-card px-2.5 py-1.5 font-mono text-sm font-semibold">{kg(r.kg)} kg</span>
-          ))
-        ) : (
-          <span className="text-sm text-muted-foreground">Type your working weight to see the ramp</span>
-        )}
-      </div>
-      <button type="button" disabled={!ramp.length} onClick={() => onAdd(ramp)}
-        className="mt-auto h-12 rounded-[14px] bg-primary font-semibold text-primary-foreground disabled:opacity-40">
-        Add
+    <div className="flex flex-col rounded-2xl bg-muted">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        className="flex h-13 items-center gap-2 px-3.5 text-left text-[15px] font-semibold">
+        <span className="flex-1">Build Up to Working Weight</span>
+        <ChevronRight size={18} aria-hidden className={`text-faint-foreground transition-transform ${open ? 'rotate-90' : ''}`} />
       </button>
+      {open && (
+        <div className="flex flex-col gap-2.5 px-3 pb-3">
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+              Working weight
+              <span className="flex h-12 items-center gap-1.5 rounded-xl bg-card px-3">
+                <input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0"
+                  className="w-full bg-transparent font-mono text-lg font-semibold text-foreground outline-none" />
+                <span className="text-sm font-normal">kg</span>
+              </span>
+            </label>
+            <div className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+              Warm-up sets
+              <span className="flex h-12 items-center justify-between rounded-xl bg-card px-0.5 text-foreground">
+                <button type="button" aria-label="Fewer sets" disabled={count <= 1} onClick={() => setCount(count - 1)} className={step}>−</button>
+                <span className="font-mono text-lg">{count}</span>
+                <button type="button" aria-label="More sets" disabled={count >= MAX_RAMP} onClick={() => setCount(count + 1)} className={step}>+</button>
+              </span>
+            </div>
+          </div>
+          <div className="scrollbar-none -mr-3 flex min-h-9 items-center gap-2 overflow-x-auto pr-3">
+            {ramp.length ? (
+              ramp.map((r, i) => (
+                <span key={i} className="shrink-0 rounded-lg bg-card px-2.5 py-1.5 font-mono text-sm font-semibold">{kg(r.kg)} kg</span>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">Type your working weight to see the ramp</span>
+            )}
+          </div>
+          <button type="button" disabled={!ramp.length} onClick={() => onAdd(ramp)}
+            className="h-12 rounded-[14px] bg-primary font-semibold text-primary-foreground disabled:opacity-40">
+            Add
+          </button>
+        </div>
+      )}
     </div>
   )
 }

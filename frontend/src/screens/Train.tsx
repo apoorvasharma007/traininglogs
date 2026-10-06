@@ -1,4 +1,4 @@
-import { ChevronRight, CloudOff } from 'lucide-react'
+import { ChevronRight, CloudOff, NotebookPen, Plus } from 'lucide-react'
 import Parts from '@/components/Parts'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
@@ -12,7 +12,7 @@ import { flush, loadSession, useOutbox } from '@/lib/store'
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 const TIME = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 // The next-workout card lists this many exercises, then "+N more", so the rest stays in view.
-const SHOWN = 5
+const SHOWN = 4
 
 /** Home: what to train next (or a program to start with), an ad-hoc workout, notes, and repeating a past session. */
 export default function Train() {
@@ -33,7 +33,7 @@ export default function Train() {
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1 px-1 pt-12">
         <span className="text-[13px] font-medium text-muted-foreground">{DATE.format(today)}</span>
-        <h1 className="text-[28px] font-bold tracking-tight">TrainingLogs</h1>
+        <h1 className="text-[28px] font-bold tracking-tight">Training Logs</h1>
       </div>
 
       {outbox.pending.length > 0 && (
@@ -134,21 +134,21 @@ export default function Train() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="grid grid-cols-2 gap-2.5">
         <button type="button" onClick={() => startSession('blank').then(() => navigate('/session'))}
-          className="flex min-h-15 w-full items-center gap-3 px-4 py-2.5 text-left">
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.98]">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-muted"><Plus size={22} aria-hidden /></span>
+          <span className="flex flex-col gap-0.5">
             <span className="text-[15px] font-semibold">Ad-hoc Workout</span>
-            <span className="text-[13px] text-muted-foreground">Type in exercises as you go</span>
+            <span className="text-[13px] leading-snug text-muted-foreground">Type in exercises as you go</span>
           </span>
-          <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
         </button>
-        <Link href="/log" className="flex min-h-15 items-center gap-3 border-t border-border px-4 py-2.5">
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <Link href="/log" className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.98]">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-muted"><NotebookPen size={22} aria-hidden /></span>
+          <span className="flex flex-col gap-0.5">
             <span className="text-[15px] font-semibold">Wrote it down instead?</span>
-            <span className="text-[13px] text-muted-foreground">Paste, snap or say it. AI does the rest.</span>
+            <span className="text-[13px] leading-snug text-muted-foreground">Paste, snap or say it. AI does the rest.</span>
           </span>
-          <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
         </Link>
       </div>
 
