@@ -194,7 +194,7 @@ function RampUp({ from, onAdd }: { from: number | null; onAdd: (ramp: { kg: numb
       </div>
       <button type="button" disabled={!ramp.length} onClick={() => onAdd(ramp)}
         className="mt-auto h-12 rounded-[14px] bg-primary font-semibold text-primary-foreground disabled:opacity-40">
-        Add {count} Warm-up {count === 1 ? 'Set' : 'Sets'}
+        Add
       </button>
     </div>
   )
