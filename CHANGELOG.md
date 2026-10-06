@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   boxes capitalise each word. The ⋯ menu uses Title Case. Log from Notes has a bigger box, more
   examples and its full cost line back. A program lists each workout's exercises as a numbered
   list.
+- UX audit, round 2: the resume card shows the start time on a 12-hour clock and no set count. A
+  saved session shows its program under the workout name; `GET /sessions/{id}` returns
+  `program_name`, `workout_position`, `workout_name` and `source_kind`. A lift's sessions are a
+  table of date, set and RPE, the line under the estimate is gone, and the range buttons show only
+  once the history goes back more than 4 weeks. A program shows each workout in its own card. A
+  workout lists its warm-up, exercises and cool-down as numbered lists. Settings shows the app
+  version, which `GET /config` now returns.
 
 - The set sheet: Warm-up and Working is a full-width switch under the exercise; Working has
   larger effort buttons in blue, orange and red, with every RPE number in a row of chips you

@@ -187,6 +187,7 @@ describe('doing a past session again', () => {
   it('copies its exercises and set counts, with its values in grey', () => {
     const past = {
       session_id: 's1', date: '2026-10-02', program: null, focus: null, duration_minutes: 40, notes: null,
+      program_name: null, workout_position: null, workout_name: null, source_kind: 'manual' as const,
       exercises: [{
         number: 1, name: 'Squat', notes: 'better depth',
         warmup_sets: [{ number: 1, weight_kg: 80, rep_count: 3, notes: null }],

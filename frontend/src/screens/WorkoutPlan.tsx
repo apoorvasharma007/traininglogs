@@ -1,5 +1,4 @@
 import { X } from 'lucide-react'
-import Parts from '@/components/Parts'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -67,7 +66,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
   const exerciseText = (e: PlanExercise) => (
     <>
-      <span className="flex min-w-0 flex-col">
+      <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[15px] font-semibold">{e.name}</span>
         {e.alternatives.length > 0 && <span className="text-xs text-muted-foreground">{choicesText(e)}</span>}
       </span>
@@ -124,13 +123,17 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
               )}
             </DragList>
           ) : (
-            <ul className="overflow-hidden rounded-2xl border border-border bg-card">
-              {w.exercises.map((e, i) => (
-                <li key={i} className="flex min-h-14 items-center justify-between gap-3 border-t border-border px-4 py-2 first:border-t-0">
-                  {exerciseText(e)}
-                </li>
-              ))}
-            </ul>
+            <section className="flex flex-col gap-1.5">
+              <h2 className="px-1 text-[13px] font-semibold">Exercises</h2>
+              <ol className="overflow-hidden rounded-2xl border border-border bg-card">
+                {w.exercises.map((e, i) => (
+                  <li key={i} className="flex min-h-14 items-center gap-3 border-t border-border px-4 py-2 first:border-t-0">
+                    <span className="w-4 shrink-0 font-mono text-[13px] text-faint-foreground">{i + 1}</span>
+                    {exerciseText(e)}
+                  </li>
+                ))}
+              </ol>
+            </section>
           )}
 
           {draft && (
@@ -322,14 +325,22 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
   )
 }
 
-/** A workout's warm-up or cool-down while viewing: one quiet line, or nothing when there is none. */
+/** A workout's warm-up or cool-down while viewing: a numbered list, or nothing when there is none. */
 function MovementsLine({ title, list }: { title: string; list: Movement[] }) {
   if (list.length === 0) return null
   return (
-    <div className="flex flex-col px-1 text-[13px] text-muted-foreground">
-      <span className="font-semibold text-foreground">{title}</span>
-      <Parts items={list.map((m) => [m.name, amountText(m)].filter(Boolean).join(' '))} />
-    </div>
+    <section className="flex flex-col gap-1.5">
+      <h2 className="px-1 text-[13px] font-semibold">{title}</h2>
+      <ol className="overflow-hidden rounded-2xl border border-border bg-card">
+        {list.map((m, i) => (
+          <li key={i} className="flex min-h-10 items-center gap-3 border-t border-border px-4 text-sm first:border-t-0">
+            <span className="w-4 shrink-0 font-mono text-[13px] text-faint-foreground">{i + 1}</span>
+            <span className="min-w-0 flex-1">{m.name}</span>
+            <span className="shrink-0 font-mono text-[13px] text-muted-foreground">{amountText(m)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
 

@@ -10,7 +10,7 @@ export function liftValue(l: { measure: LiftSummary['measure'] }, value: number)
 /** "125 kg × 2 @ 9", or "BW × 19" for a bodyweight set. */
 export function setText(set: LiftPoint['best_set']): string {
   const weight = set.weight_kg ? `${kg(set.weight_kg)} kg` : 'BW'
-  return `${weight} × ${set.reps ?? '?'}${set.rpe != null ? ` @ ${set.rpe}` : ''}`
+  return `${weight} × ${set.reps ?? '?'}`
 }
 
 /** Points inside the last `days` days, counted back from the newest point. */

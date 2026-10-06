@@ -3,7 +3,7 @@ import { useState } from 'react'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import PageTitle from '@/components/PageTitle'
 import { api } from '@/lib/api'
-import { signOut, useSignedIn } from '@/lib/auth'
+import { config, signOut, useSignedIn } from '@/lib/auth'
 import { useOutbox } from '@/lib/store'
 import type { AiUsage, LiftsOut } from '@/lib/types'
 
@@ -13,6 +13,7 @@ export default function Settings() {
   const [signingOut, setSigningOut] = useState(false)
   const lifts = useQuery({ queryKey: ['lifts'], queryFn: () => api<LiftsOut>('/progress/lifts') })
   const aiUsage = useQuery({ queryKey: ['ai-usage'], queryFn: () => api<AiUsage>('/me/ai-usage') })
+  const version = useQuery({ queryKey: ['config'], queryFn: config }).data?.version
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,6 +53,8 @@ export default function Settings() {
           ))}
         </ul>
       </section>
+
+      {version && <p className="text-center text-xs text-muted-foreground">Version {version}</p>}
 
       <ConfirmSheet
         open={signingOut}

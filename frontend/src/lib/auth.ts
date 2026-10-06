@@ -6,7 +6,7 @@
 // runs out, so a person stays signed in; a renewal Supabase refuses signs them out.
 import { useSyncExternalStore } from 'react'
 
-type Config = { supabase_url: string; supabase_publishable_key: string }
+type Config = { supabase_url: string; supabase_publishable_key: string; version?: string }
 type Session = { access_token: string; refresh_token: string; expires_at: number; email: string }
 
 const SESSION_KEY = 'tl_session'
@@ -56,7 +56,7 @@ export function useSignedIn(): string | null {
 }
 
 /** Which Supabase project to sign in with, from the server; kept for offline starts. */
-async function config(): Promise<Config> {
+export async function config(): Promise<Config> {
   try {
     const res = await fetch('/config')
     if (res.ok) {

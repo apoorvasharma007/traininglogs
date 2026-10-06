@@ -100,6 +100,10 @@ class SessionDetail(BaseModel):
     user_name: Optional[str]
     source_file: Optional[str]
     notes: Optional[str] = None
+    program_name: Optional[str] = None
+    workout_position: Optional[int] = None
+    workout_name: Optional[str] = None
+    source_kind: Optional[str] = Field(None, description="text (a note), manual (logged in the app) or import.")
     warmup: list[MovementOut] = []
     cooldown: list[MovementOut] = []
     exercises: list[ExerciseOut] = []
