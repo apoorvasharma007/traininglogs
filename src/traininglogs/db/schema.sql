@@ -2,7 +2,8 @@
 -- traininglogs' database. Design and reasons: db-redesign-plan.md (2026-10-06).
 --
 -- Every row's `id` is a time-ordered UUID (version 7) made by the code (db/ids.py); no id is
--- built from data or chosen by the phone. Every owned table has `user_id`, and each child points
+-- built from data or chosen by the phone. The one exception is the shared exercise list below,
+-- which this file seeds with random ids (gen_random_uuid), since SQL here can't make version 7. Every owned table has `user_id`, and each child points
 -- at its parent by (user_id, parent id), so the database itself refuses a child owned by someone
 -- other than its parent's owner, and any link to another person's row. Indexes on owned data lead
 -- with user_id. Shared reference data (`exercises`) has no owner.

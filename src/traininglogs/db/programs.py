@@ -13,13 +13,9 @@ from typing import Any
 
 from psycopg2.extensions import connection as Connection
 
+from traininglogs.db.fetch import _rows
 from traininglogs.db.ids import new_id
 from traininglogs.db.insert import name_key, user_exercise_ids
-
-
-def _rows(cur) -> list[dict[str, Any]]:
-    names = [d.name for d in cur.description]
-    return [dict(zip(names, row)) for row in cur.fetchall()]
 
 
 def utc_today() -> date:

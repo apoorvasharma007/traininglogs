@@ -67,7 +67,7 @@ describe('Session', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
     expect(screen.getByText(/1 of 2 sets/)).toBeInTheDocument()
     // Saved on the phone straight away.
-    await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets[0].done).toBe(true))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
 
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
@@ -77,8 +77,8 @@ describe('Session', () => {
     const sent = calls.find((c) => c.key === 'POST /sessions')?.body as { exercises: { sets: unknown[] }[]; program_workout_id: string }
     expect(sent.program_workout_id).toBe('w1')
     expect(sent.exercises[0].sets).toEqual([{ weight_kg: 125, reps: 2, rpe: null, notes: null }])
-    expect(await get('session-in-progress')).toBeUndefined()
-    expect(await get('sessions-to-send')).toEqual([])
+    expect(await get('session-in-progress:a@example.com')).toBeUndefined()
+    expect(await get('sessions-to-send:a@example.com')).toEqual([])
   })
 
   it("offers to save a session's changes to the program", async () => {
@@ -128,7 +128,7 @@ describe('Session', () => {
     // Two send attempts can overlap (the one at Finish and the one when the app opened), so the
     // status may flick to "Sending…" before it settles; wait for the settled screen.
     await waitFor(() => expect(screen.getByText('Waiting to send')).toBeInTheDocument())
-    const queued = (await get('sessions-to-send')) as { client_id: string }[]
+    const queued = (await get('sessions-to-send:a@example.com')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
   })
 
@@ -142,7 +142,7 @@ describe('Session', () => {
     expect(weight).toHaveAttribute('placeholder', '125')
     await userEvent.type(weight, '127.5')
     expect(screen.getByLabelText('Reps for set 1')).toHaveValue('2')
-    await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets[0].weight).toBe('127.5'))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].weight).toBe('127.5'))
   })
 
   it('switches an exercise to an alternative from the swap icon', async () => {
@@ -192,7 +192,7 @@ describe('Session', () => {
     expect(await screen.findByText('Builds up to your first working set, 125 kg.')).toBeInTheDocument()
     await userEvent.click(await screen.findByRole('button', { name: /Short ramp/ }))
     // Built up to the first working set's 125 kg: 62.5 x 5, 87.5 x 4, 112.5 x 2.
-    await waitFor(async () => expect((await get('session-in-progress'))?.exercises[0].sets.filter((x: { kind: string }) => x.kind === 'warmup')
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets.filter((x: { kind: string }) => x.kind === 'warmup')
       .map((x: { weight: string; reps: string }) => [x.weight, x.reps])).toEqual([['62.5', '5'], ['87.5', '4'], ['112.5', '2']]))
   })
 
@@ -206,7 +206,7 @@ describe('Session', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
     const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
     await userEvent.click(within(menu).getByRole('button', { name: 'Move down' }))
-    await waitFor(async () => expect((await get('session-in-progress'))?.exercises.map((e: { name: string }) => e.name))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises.map((e: { name: string }) => e.name))
       .toEqual(['Bench press', 'Squat']))
   })
 
@@ -219,7 +219,7 @@ describe('Session', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Done' }))
     expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
     await waitFor(async () => {
-      const saved = await get('session-in-progress')
+      const saved = await get('session-in-progress:a@example.com')
       expect(saved.warmup.map((m: { name: string; amount: string; done: boolean }) => [m.name, m.amount, m.done])).toEqual([['Easy cardio', '1 min', true]])
     })
   })
@@ -230,7 +230,7 @@ describe('Session', () => {
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Skip the warm-up' }))
     expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
-    await waitFor(async () => expect((await get('session-in-progress')).warmupNudge).toBe('skipped'))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com')).warmupNudge).toBe('skipped'))
   })
 
   it('will not finish with nothing ticked', async () => {

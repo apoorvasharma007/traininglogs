@@ -229,6 +229,16 @@ class TestConfirm:
         with pytest.raises(AlreadySaved):
             confirm(conn, USER_A, _card(conn), make_extract())
 
+    def test_a_card_confirms_once(self, conn) -> None:
+        """A retry after a lost answer finds the saved session; the first confirm's record of
+        changes stays as it was."""
+        card_id = _card(conn)
+        first = confirm(conn, USER_A, card_id, make_extract(), corrections=[{"source": "manual"}])
+        with pytest.raises(AlreadySaved) as again:
+            confirm(conn, USER_A, card_id, make_extract(date="2026-03-02"), corrections=[])
+        assert again.value.session_id == first
+        assert get_card(conn, USER_A, card_id)["corrections"] == [{"source": "manual"}]
+
     def test_whitespace_only_differences_are_the_same_note(self, conn) -> None:
         confirm(conn, USER_A, _card(conn), make_extract())
         with pytest.raises(AlreadySaved):

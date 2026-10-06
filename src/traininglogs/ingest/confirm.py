@@ -12,7 +12,12 @@ from traininglogs.models.models import TrainingSession
 
 
 class AlreadySaved(Exception):
-    """The person already has a session from this same text on this same day."""
+    """The note is already saved: this card was confirmed before, or the person has a session from
+    the same text on the same day. `session_id` is that session, when there is one."""
+
+    def __init__(self, session_id: str | None = None):
+        super().__init__(session_id)
+        self.session_id = session_id
 
 
 def dedup_key(content: str, date_str: str) -> str:
@@ -55,11 +60,29 @@ def confirm(
         raise ValueError(f"no card with id {card_id!r}")
     note = get_input(conn, user_id, card["input_id"])
     session = build_session_from_extract(final_extract, note["content"])
-    # The session and the card's confirmation commit together, so neither is ever left without the other.
-    session_id = insert_session(
-        conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id, commit=False
-    )
-    if session_id is None:
-        raise AlreadySaved(card_id)
-    confirm_card(conn, user_id, card_id, corrections)
-    return session_id
+    # The card's confirmation and the session commit together, so neither is ever left without the
+    # other. A card confirms once: a second Confirm (a retry after a lost answer, or after changing
+    # the date) finds the session already saved instead of saving another.
+    saved_id = None
+    if confirm_card(conn, user_id, card_id, corrections):
+        saved_id = insert_session(
+            conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id,
+            commit=False,
+        )
+    if saved_id is None:
+        conn.rollback()
+        raise AlreadySaved(_saved_session(conn, user_id, card_id, session.session_id))
+    conn.commit()
+    return saved_id
+
+
+def _saved_session(conn: Connection, user_id: str, card_id: str, dedup: str) -> str | None:
+    """The session this card was saved as, or the one with the same text and day."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT id::text FROM workout_sessions WHERE user_id = %s AND (confirmation_card_id = %s OR dedup_key = %s)"
+            " LIMIT 1",
+            (user_id, card_id, dedup),
+        )
+        row = cur.fetchone()
+    return row[0] if row else None

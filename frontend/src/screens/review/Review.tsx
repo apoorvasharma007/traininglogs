@@ -1,14 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Ellipsis, MessageSquareText, Pencil, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
-import { useLocation } from 'wouter'
+import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import EffortBars from '@/components/EffortBars'
 import NumberBox from '@/components/NumberBox'
 import ScreenHeader from '@/components/ScreenHeader'
 import BottomBar from '@/components/BottomBar'
 import Sheet from '@/components/Sheet'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import { dayLabel, kg } from '@/lib/format'
 import { usePrograms, workoutTitle } from '@/lib/programs'
 import {
@@ -47,6 +47,9 @@ export default function Review({ params }: { params: { id: string } }) {
   const [naming, setNaming] = useState<string | null>(null) // exercise path being renamed
   const [noteFor, setNoteFor] = useState<string | null>(null) // exercise path with its note open
   const [confirmError, setConfirmError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  // A note confirmed before (a retry after a lost answer): the session it was saved as.
+  const [savedAs, setSavedAs] = useState<string | null>(null)
   const doc = review.doc
   // Which planned workout this session counts as: the followed program's next one unless changed.
   const followed = usePrograms().data?.find((p) => p.following)
@@ -115,6 +118,7 @@ export default function Review({ params }: { params: { id: string } }) {
   async function confirm() {
     if (!doc) return
     setConfirmError(null)
+    setSaving(true)
     try {
       // The session takes its workout's name, or none: History then names it by its exercises.
       const name = followed && countsAsWorkout ? workoutTitle(countsAsWorkout) : ''
@@ -137,7 +141,9 @@ export default function Review({ params }: { params: { id: string } }) {
       navigate(`/history/${encodeURIComponent(out.session_id)}`)
     } catch (e) {
       setConfirmError(e instanceof Error ? e.message : String(e))
+      if (e instanceof ApiError && e.status === 409) setSavedAs((e.body as { session_id: string | null }).session_id)
     }
+    setSaving(false)
   }
 
   /** Scrolls to, and focuses, the next value marked amber. */
@@ -354,12 +360,17 @@ export default function Review({ params }: { params: { id: string } }) {
       <BottomBar error={confirmError}>
         <button
           type="button"
-          disabled={review.busy}
+          disabled={review.busy || saving}
           onClick={confirm}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {review.busy ? 'Saving…' : 'Confirm session'}
+          {review.busy || saving ? 'Saving…' : 'Confirm session'}
         </button>
+        {savedAs && (
+          <Link href={`/history/${encodeURIComponent(savedAs)}`} className="self-start px-1 text-[13px] font-semibold text-muted-foreground underline underline-offset-2">
+            Open it
+          </Link>
+        )}
       </BottomBar>
 
       <Sheet open={picking} onClose={() => setPicking(false)} label="Which workout was it?">
