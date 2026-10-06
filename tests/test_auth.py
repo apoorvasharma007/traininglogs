@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from importlib.metadata import version
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -115,4 +116,8 @@ def test_a_failure_to_fetch_supabases_keys_is_503_not_signed_out(client, monkeyp
 def test_the_app_can_read_which_supabase_project_to_use_without_signing_in(client) -> None:
     r = client.get("/config")
     assert r.status_code == 200
-    assert r.json() == {"supabase_url": "https://test-project.supabase.co", "supabase_publishable_key": "sb_publishable_test"}
+    assert r.json() == {
+        "supabase_url": "https://test-project.supabase.co",
+        "supabase_publishable_key": "sb_publishable_test",
+        "version": version("traininglogs"),
+    }

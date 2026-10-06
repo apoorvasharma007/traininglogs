@@ -5,12 +5,12 @@ import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { acknowledgeDeload, showDeloadReminder } from '@/lib/deload'
 import { usePrograms, workoutName } from '@/lib/programs'
-import { counts, type LiveSession } from '@/lib/session'
+import type { LiveSession } from '@/lib/session'
 import { startSession } from '@/lib/startSession'
 import { flush, loadSession, useOutbox } from '@/lib/store'
 
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
-const TIME = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
+const TIME = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' })
 // The next-workout card lists this many exercises, then "+N more", so the rest stays in view.
 const SHOWN = 4
 
@@ -70,7 +70,6 @@ export default function Train() {
             <span className="text-[22px] font-bold tracking-tight">{current.title}</span>
             <Parts className="text-[13px] text-muted-foreground" items={[
               `Started ${TIME.format(new Date(current.startedAt))}`,
-              `${counts(current).done} of ${counts(current).total} sets done`,
               'Saved on this phone',
             ]} />
           </span>

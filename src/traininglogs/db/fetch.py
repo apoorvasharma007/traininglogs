@@ -59,10 +59,16 @@ def get_session(conn: Connection, user_id: str, session_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id::text AS session_id, date, program, program_author, program_length_weeks, phase,
-                   week, is_deload_week, focus, duration_minutes, weight_unit, user_id::text AS user_id,
-                   NULL AS user_name, source AS source_file, notes
-            FROM workout_sessions WHERE user_id = %s AND id = %s
+            SELECT s.id::text AS session_id, s.date, s.program, s.program_author, s.program_length_weeks, s.phase,
+                   s.week, s.is_deload_week, s.focus, s.duration_minutes, s.weight_unit, s.user_id::text AS user_id,
+                   NULL AS user_name, s.source AS source_file, s.notes,
+                   p.name AS program_name, w.position AS workout_position, w.name AS workout_name,
+                   i.kind AS source_kind
+            FROM workout_sessions s
+            JOIN input_text i ON i.user_id = s.user_id AND i.id = s.input_id
+            LEFT JOIN program_workouts w ON w.user_id = s.user_id AND w.id = s.program_workout_id
+            LEFT JOIN programs p ON p.user_id = w.user_id AND p.id = w.program_id
+            WHERE s.user_id = %s AND s.id = %s
             """,
             (user_id, session_id),
         )

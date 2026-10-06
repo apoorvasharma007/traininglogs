@@ -4,7 +4,7 @@ import LineChart from '@/components/LineChart'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import { api } from '@/lib/api'
-import { dayLabel, kg, shortDate } from '@/lib/format'
+import { dayLabel, shortDate } from '@/lib/format'
 import { inRange, liftValue, setText } from '@/lib/lifts'
 import type { LiftDetail, LiftPoint } from '@/lib/types'
 
@@ -31,6 +31,8 @@ export default function Lift({ params }: { params: { name: string } }) {
   )
   const shown = inRange(plotted, range)
   const hasHollow = shown.some((p) => p.value == null)
+  // The range buttons only change anything once the history goes back more than 4 weeks.
+  const longHistory = inRange(plotted, 28).length < plotted.length
 
   return (
     <div>
@@ -45,17 +47,12 @@ export default function Lift({ params }: { params: { name: string } }) {
               {lift.data.measure === 'bodyweight_reps' ? 'Reps at bodyweight' : 'Estimated max'}
             </span>
             {latest ? (
-              <>
-                <span className="flex items-baseline gap-2.5">
-                  <span className="font-mono text-[40px] font-semibold tracking-tight">{liftValue(lift.data, latest.value)}</span>
-                  {latest.records.length > 0 && (
-                    <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-xs font-semibold text-highlight">Record</span>
-                  )}
-                </span>
-                <span className="text-[13px] text-muted-foreground">
-                  From {setText(latest.best_set)} on {dayLabel(latest.date)}
-                </span>
-              </>
+              <span className="flex items-baseline gap-2.5">
+                <span className="font-mono text-[40px] font-semibold tracking-tight">{liftValue(lift.data, latest.value)}</span>
+                {latest.records.length > 0 && (
+                  <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-xs font-semibold text-highlight">Record</span>
+                )}
+              </span>
             ) : (
               <>
                 <span className="font-mono text-[40px] font-semibold tracking-tight">—</span>
@@ -64,21 +61,23 @@ export default function Lift({ params }: { params: { name: string } }) {
             )}
           </div>
 
-          <div role="group" aria-label="Time range" className="grid grid-cols-3 rounded-xl bg-border/60 p-0.5">
-            {RANGES.map((r) => (
-              <button
-                key={r.label}
-                type="button"
-                aria-pressed={range === r.days}
-                onClick={() => setRange(r.days)}
-                className={`h-9 rounded-[10px] text-[13px] font-semibold ${
-                  range === r.days ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+          {longHistory && (
+            <div role="group" aria-label="Time range" className="grid grid-cols-3 rounded-xl bg-border/60 p-0.5">
+              {RANGES.map((r) => (
+                <button
+                  key={r.label}
+                  type="button"
+                  aria-pressed={range === r.days}
+                  onClick={() => setRange(r.days)}
+                  className={`h-9 rounded-[10px] text-[13px] font-semibold ${
+                    range === r.days ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="rounded-2xl border border-border bg-card px-2 pt-3 pb-2">
             <LineChart
@@ -101,24 +100,21 @@ export default function Lift({ params }: { params: { name: string } }) {
 
           <section>
             <h2 className="mb-2 px-1 text-[15px] font-semibold">Sessions</h2>
+            <div className="grid grid-cols-[76px_minmax(0,1fr)_40px_auto] gap-2.5 px-1 pb-1 text-[11px] font-semibold tracking-wide text-faint-foreground">
+              <span>DATE</span>
+              <span>SET</span>
+              <span>RPE</span>
+            </div>
             <ul>
               {[...shown].reverse().map((p) => (
                 <li
                   key={p.session_id}
-                  className="grid min-h-12 grid-cols-[76px_minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border px-1"
+                  className="grid min-h-12 grid-cols-[76px_minmax(0,1fr)_40px_auto] items-center gap-2.5 border-t border-border px-1"
                 >
                   <span className="font-mono text-xs text-muted-foreground">{dayLabel(p.date)}</span>
-                  {p.value != null ? (
-                    <span className="text-sm">
-                      <span className="font-mono font-semibold">{liftValue(lift.data, p.value)}</span>{' '}
-                      <span className="text-muted-foreground">from {setText(p.best_set)}</span>
-                    </span>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      <span className="font-mono">{kg(p.heaviest_kg!)} kg</span> heaviest, no RPE
-                    </span>
-                  )}
-                  {p.records.length > 0 && <span className="text-[11px] font-semibold text-highlight">Record</span>}
+                  <span className="font-mono text-sm">{setText(p.best_set)}</span>
+                  <span className="font-mono text-sm text-muted-foreground">{p.best_set.rpe ?? ''}</span>
+                  <span className="text-[11px] font-semibold text-highlight">{p.records.length > 0 && 'Record'}</span>
                 </li>
               ))}
             </ul>
