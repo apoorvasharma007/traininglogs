@@ -1,5 +1,4 @@
 import { ChevronRight, Repeat } from 'lucide-react'
-import Parts from '@/components/Parts'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -102,9 +101,9 @@ export default function Program({ params }: { params: { id: string } }) {
             ) : (
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 {p.workouts.map((w) => (
-                  <div key={w.id} className="flex items-center border-t border-border pr-3 first:border-t-0">
+                  <div key={w.id} className="flex items-start border-t border-border pr-3 first:border-t-0">
                     <WorkoutRow program={p} workout={w} href={`${base}/workouts/${w.id}`} />
-                    <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
+                    <ChevronRight size={18} aria-hidden className="mt-3 shrink-0 text-faint-foreground" />
                   </div>
                 ))}
               </div>
@@ -215,18 +214,25 @@ export default function Program({ params }: { params: { id: string } }) {
 /** A workout in the list: a link while viewing; while editing, only something to drag. */
 function WorkoutRow({ program, workout: w, href }: { program: ProgramT; workout: Workout; href?: string }) {
   const body = (
-    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
       <span className="flex items-center gap-2 text-[15px] font-semibold">
         {workoutName(w)}
         {program.following && w.id === program.next_workout_id && (
           <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-[11px] font-semibold text-highlight">Next</span>
         )}
       </span>
-      {w.exercises.length
-        ? <Parts className="text-xs text-muted-foreground" items={w.exercises.map((e) => e.name)} />
-        : <span className="text-xs text-muted-foreground">No exercises yet</span>}
       {w.last_done && <span className="text-xs text-faint-foreground">Last done {dayLabel(w.last_done)}</span>}
-    </span>
+      {w.exercises.length ? (
+        <ol className="mt-1.5 flex flex-col">
+          {w.exercises.map((e, i) => (
+            <li key={i} className="grid min-h-8 grid-cols-[1.5rem_minmax(0,1fr)] items-center border-t border-border text-sm">
+              <span className="font-mono text-[13px] text-faint-foreground">{i + 1}</span>
+              <span className="truncate">{e.name}</span>
+            </li>
+          ))}
+        </ol>
+      ) : <span className="text-xs text-muted-foreground">No exercises yet</span>}
+    </div>
   )
   return href ? (
     <Link href={href} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pl-4 active:bg-muted">{body}</Link>

@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import Parts from '@/components/Parts'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
@@ -88,7 +88,6 @@ export default function Session() {
   const s = session
   const { done, total } = counts(s)
   const finished = (e: LiveExercise) => e.sets.length > 0 && e.sets.every((x) => x.done)
-  const current = s.exercises.find((e) => !finished(e))
 
   /** After an exercise's last set is ticked, bring the next unfinished one into view. */
   function scrollToNext(next: LiveSession, fromKey: string) {
@@ -171,13 +170,6 @@ export default function Session() {
             <span className="flex items-baseline gap-3 text-[17px] font-semibold">
               <span className="truncate">{s.title}</span>
               <span className="shrink-0 font-normal text-muted-foreground">{minutesSince(s.startedAt, now)} min</span>
-            </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Check size={13} strokeWidth={2.6} aria-label="Saved on this phone" className="shrink-0 text-highlight" />
-              <Parts className="min-w-0" items={[
-                current ? <>Now: <span className="font-semibold text-foreground">{current.name || 'New exercise'}</span></> : 'All done',
-                `${done} of ${total} sets`,
-              ]} />
             </span>
           </div>
           <button type="button" onClick={() => { setFinishError(null); setFinishing(true) }}
@@ -283,10 +275,10 @@ export default function Session() {
                 { label: 'Add Warm-up Set', run: () => { const r = addWarmupSet(s, menuFor.key); change(r.session); open(menuFor.key, r.setKey, r.session) } },
                 { label: menuFor.note ? 'Edit Note' : 'Add Note', run: () => change(updateExercise(s, menuFor.key, { noteOpen: true })) },
                 { label: 'Rename', run: () => change(updateExercise(s, menuFor.key, { naming: true })) },
-                { label: 'Move up', run: () => change(moveExercise(s, menuFor.key, -1)) },
-                { label: 'Move down', run: () => change(moveExercise(s, menuFor.key, 1)) },
-                { label: 'Warm-up set templates', run: () => setWarmupFor(menuFor) },
-                { label: 'Remove exercise', danger: true, run: () => removeWithUndo(removeExercise(s, menuFor.key), `${menuFor.name || 'Exercise'} removed`) },
+                { label: 'Move Up', run: () => change(moveExercise(s, menuFor.key, -1)) },
+                { label: 'Move Down', run: () => change(moveExercise(s, menuFor.key, 1)) },
+                { label: 'Warm-up Set Templates', run: () => setWarmupFor(menuFor) },
+                { label: 'Remove Exercise', danger: true, run: () => removeWithUndo(removeExercise(s, menuFor.key), `${menuFor.name || 'Exercise'} removed`) },
               ].map((item) => (
                 <button key={item.label} type="button" onClick={() => { setMenuFor(null); item.run() }}
                   className={`h-13 border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0 ${item.danger ? 'text-destructive' : ''}`}>
