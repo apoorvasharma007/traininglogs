@@ -8,7 +8,7 @@ describe('App', () => {
 
   it('opens on Train with all five tabs', () => {
     renderAt('/')
-    expect(screen.getByRole('heading', { name: 'Train' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'TrainingLogs' })).toBeInTheDocument()
     const tabs = screen.getByRole('navigation', { name: 'Main' })
     for (const label of ['Train', 'Programs', 'Progress', 'History', 'Settings']) {
       expect(tabs).toHaveTextContent(label)
@@ -26,6 +26,6 @@ describe('App', () => {
 
   it('shows Train for an unknown address', () => {
     renderAt('/nowhere')
-    expect(screen.getByRole('heading', { name: 'Train' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'TrainingLogs' })).toBeInTheDocument()
   })
 })

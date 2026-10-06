@@ -19,6 +19,11 @@ class SessionSummary(BaseModel):
     is_deload_week: Optional[bool]
     weight_unit: str
     exercises: list[str] = Field(default_factory=list, description="Exercise names, in order.")
+    # The program workout it was done as, when it was: History names it after the workout.
+    program_name: Optional[str] = None
+    workout_position: Optional[int] = None
+    workout_name: Optional[str] = None
+    source_kind: str = Field(description="text (a note), manual (logged in the app) or import.")
 
 
 class MovementOut(BaseModel):

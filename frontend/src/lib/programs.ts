@@ -4,16 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { PlanExercise, Program, ProgramTemplate, Workout } from '@/lib/types'
 
-/** "1 · Push", or "Workout 2" when it has no name, or a name that only repeats the number. */
-export function workoutTitle(w: Pick<Workout, 'position' | 'name'>): string {
+/** A workout's name everywhere it's shown: the name it was given, or "Workout N" without one. */
+export function workoutName(w: Pick<Workout, 'position' | 'name'>): string {
   const plain = `Workout ${w.position}`
   const name = w.name?.trim()
-  return name && name.toLowerCase() !== plain.toLowerCase() ? `${w.position} · ${name}` : plain
-}
-
-/** The workout's name as shown in its name field: its own name, or "Workout N". */
-export function workoutName(w: Pick<Workout, 'position' | 'name'>): string {
-  return w.name?.trim() || `Workout ${w.position}`
+  // A name that only repeats the number reads as the plain one.
+  return name && name.toLowerCase() !== plain.toLowerCase() ? name : plain
 }
 
 /** "or Bench press", "or Deadlift or Barbell Clean"; empty without alternatives. */

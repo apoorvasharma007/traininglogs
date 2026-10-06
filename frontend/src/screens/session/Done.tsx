@@ -4,7 +4,7 @@ import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import BottomBar from '@/components/BottomBar'
 import { applyChanges, isRemoval } from '@/lib/planChanges'
-import { useProgram, useProgramChange, workoutTitle } from '@/lib/programs'
+import { useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import { useOutbox } from '@/lib/store'
 import { clearLastFinished, getLastFinished, loadLastFinished, setLastFinished, type Finished } from '@/screens/session/finished'
 
@@ -103,12 +103,12 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       {workout && finished.changes.length > 0 && state !== 'kept' && (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           {state === 'saved' ? (
-            <p className="text-sm"><span className="font-semibold">Program updated.</span> {workoutTitle(workout)} includes these from now on.</p>
+            <p className="text-sm"><span className="font-semibold">Program updated.</span> {workoutName(workout)} includes these from now on.</p>
           ) : (
             <>
               <span className="flex flex-col">
                 <span className="font-semibold">Update the program?</span>
-                <span className="text-xs text-muted-foreground">Tick what {workoutTitle(workout)} should include from now on.</span>
+                <span className="text-xs text-muted-foreground">Tick what {workoutName(workout)} should include from now on.</span>
               </span>
               <ul className="flex flex-col">
                 {finished.changes.map((c) => (
@@ -141,8 +141,8 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
         </div>
       )}
       {workout && (
-        <ConfirmSheet open={confirming} tone="primary" title={`Update ${workoutTitle(workout)}?`}
-          body={`${chosen.size} ${chosen.size === 1 ? 'change' : 'changes'} will apply to every session of ${workoutTitle(workout)} from now on. Sessions you've already logged stay as they are.`}
+        <ConfirmSheet open={confirming} tone="primary" title={`Update ${workoutName(workout)}?`}
+          body={`${chosen.size} ${chosen.size === 1 ? 'change' : 'changes'} will apply to every session of ${workoutName(workout)} from now on. Sessions you've already logged stay as they are.`}
           confirmLabel="Update program" busy={state === 'saving'}
           onClose={() => setConfirming(false)}
           onConfirm={() => { setConfirming(false); save() }} />
@@ -150,7 +150,7 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       {next && (
         <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4">
           <span className="text-xs font-semibold text-muted-foreground">Next time</span>
-          <span className="font-semibold">{workoutTitle(next)}</span>
+          <span className="font-semibold">{workoutName(next)}</span>
           <span className="text-sm text-muted-foreground">{next.exercises.map((e) => e.name).join(' · ')}</span>
         </div>
       )}

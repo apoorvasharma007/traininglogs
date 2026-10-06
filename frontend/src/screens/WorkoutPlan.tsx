@@ -11,7 +11,7 @@ import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { useEditingFlag } from '@/lib/editing'
-import { choicesText, planText, useProgram, useProgramChange, workoutName, workoutTitle } from '@/lib/programs'
+import { choicesText, planText, useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import { startSession } from '@/lib/startSession'
 import { amountText, COOLDOWN_PRESETS, parseAmount, WARMUP_PRESETS } from '@/lib/movements'
 import type { Movement, PlanExercise, Workout } from '@/lib/types'
@@ -80,7 +80,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
       <ScreenHeader
         back={draft ? undefined : back}
         backLabel={`Back to ${program.data?.name ?? 'program'}`}
-        title={w ? workoutTitle(w) : 'Workout'}
+        title={w ? workoutName(w) : 'Workout'}
         titleSlot={draft && w ? (
           <HeaderName label="Workout name" value={draft.name} placeholder={`Workout ${w.position}`} onChange={(name) => setDraft({ ...draft, name })} />
         ) : undefined}
@@ -147,7 +147,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
           {draft && (
             <button type="button" onClick={() => setRemoving(true)} className="h-11 text-sm font-semibold text-destructive">
-              Remove workout
+              Delete workout
             </button>
           )}
         </div>
@@ -188,9 +188,9 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
         />
       )}
 
-      <ConfirmSheet open={removing} title={`Remove workout ${w?.position ?? ''}?`}
+      <ConfirmSheet open={removing} title={`Delete ${w ? workoutName(w) : 'workout'}?`}
         body="The workouts after it move up one. Sessions you logged from it stay in History."
-        confirmLabel="Remove workout" busy={change.isPending}
+        confirmLabel="Delete workout" busy={change.isPending}
         onClose={() => setRemoving(false)}
         onConfirm={() => change.mutate({ path: `/workouts/${params.wid}`, method: 'DELETE' }, { onSuccess: () => { setDraft(null); navigate(back) } })} />
     </div>
