@@ -40,7 +40,7 @@ describe('Train', () => {
     expect(screen.queryByText(/× 12/)).not.toBeInTheDocument()
     expect(screen.queryByText(/more$/)).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Start workout' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Start Workout' }))
     await waitFor(() => expect(location.history.at(-1)).toBe('/session'))
     const started = await get('session-in-progress:a@example.com')
     expect(started.workoutId).toBe('w2')
@@ -60,9 +60,9 @@ describe('Train', () => {
   it('without a program, nudges toward one', async () => {
     fakeApi({ 'GET /programs': [program({ following: false })] })
     renderApp('/')
-    expect(await screen.findByText('Start with a program')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Browse templates' })).toHaveAttribute('href', '/programs/templates')
-    expect(screen.getByRole('link', { name: 'Create your own' })).toHaveAttribute('href', '/programs')
+    expect(await screen.findByText('Start with a Program')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Browse Templates' })).toHaveAttribute('href', '/programs/templates')
+    expect(screen.getByRole('link', { name: 'Create Your Own' })).toHaveAttribute('href', '/programs')
   })
 
   it('a deload reminder is only a reminder: OK hides it', async () => {
@@ -77,18 +77,18 @@ describe('Train', () => {
   it('offers an ad-hoc workout, notes, and repeating a past session', async () => {
     fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
-    expect(await screen.findByRole('button', { name: /Ad-hoc workout/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Ad-hoc Workout/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Wrote it down instead\?/ })).toHaveAttribute('href', '/log')
-    expect(screen.getByRole('link', { name: 'Repeat a past session' })).toHaveAttribute('href', '/history')
+    expect(screen.getByRole('link', { name: 'Repeat a Past Session' })).toHaveAttribute('href', '/history')
   })
 
   it('offers to resume a session in progress', async () => {
     await store(startBlank(new Date(2026, 9, 4, 10, 5)))
     fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
-    expect(await screen.findByText('Session in progress')).toBeInTheDocument()
+    expect(await screen.findByText('Session in Progress')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Resume/ })).toHaveAttribute('href', '/session')
-    expect(screen.queryByRole('button', { name: 'Start workout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start Workout' })).not.toBeInTheDocument()
   })
 
   it('says when finished sessions are waiting to send', async () => {
@@ -107,8 +107,8 @@ describe('Train', () => {
     await set('session-in-progress:b@example.com', startBlank(new Date(2026, 9, 4, 10, 5)))
     const calls = fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
-    expect(await screen.findByRole('button', { name: 'Start workout' })).toBeInTheDocument()
-    expect(screen.queryByText('Session in progress')).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Start Workout' })).toBeInTheDocument()
+    expect(screen.queryByText('Session in Progress')).not.toBeInTheDocument()
     expect(screen.queryByText(/waiting to send/)).not.toBeInTheDocument()
     expect(calls.filter((c) => c.key === 'POST /sessions')).toEqual([])
   })

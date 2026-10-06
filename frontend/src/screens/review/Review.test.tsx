@@ -87,7 +87,7 @@ describe('Review', () => {
     })
     renderApp('/review/x1')
     await userEvent.click(await screen.findByRole('button', { name: 'Set 1 options' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Remove set' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove Set' }))
 
     await screen.findByText('Set removed')
     expect(calls.at(-1)?.body).toEqual({ op: { op: 'remove', path: 'exercises.0.sets.0' } })
@@ -120,7 +120,7 @@ describe('Review', () => {
     await waitFor(() => expect(screen.getByLabelText('Weight for set 1')).toHaveValue('122.5'))
     // The next workout is suggested; the session takes its name at Confirm.
     expect(await screen.findByRole('button', { name: /Workout 2/ })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Session' }))
 
     await waitFor(() => expect(location.history.at(-1)).toBe('/history/s9'))
     expect(calls.filter((c) => c.key === 'POST /extractions/x1/edit').at(-1)?.body).toEqual({
@@ -144,7 +144,7 @@ describe('Review', () => {
       ),
     })
     const location = renderApp('/review/x1')
-    await userEvent.click(await screen.findByRole('button', { name: 'Confirm session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm Session' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('This note is already saved.')
     expect(calls.filter((c) => c.key === 'POST /extractions/x1/confirm')).toHaveLength(1)
@@ -159,7 +159,7 @@ describe('Review', () => {
     fakeApi({ 'GET /extractions/x1': unsure })
     renderApp('/review/x1')
     expect(await screen.findByRole('button', { name: '2 things to check' })).toBeInTheDocument()
-    expect(screen.getByText(/check this/)).toBeInTheDocument()
+    expect(screen.getByText('Check this')).toBeInTheDocument()
     expect(screen.getByLabelText('Weight for set 1')).toHaveClass('border-warning')
     expect(screen.getByLabelText('Reps for set 1')).not.toHaveClass('border-warning')
   })
@@ -176,9 +176,9 @@ describe('Review', () => {
     })
     renderApp('/review/x1')
     await userEvent.click(await screen.findByRole('button', { name: /Workout 2/ }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Not part of a program' }))
-    expect(await screen.findByRole('button', { name: /^Workout\s*Not part of a program/ })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Not Part of a Program' }))
+    expect(await screen.findByRole('button', { name: /^Workout\s*Not Part of a Program/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Session' }))
     await waitFor(() => expect(calls.some((c) => c.key === 'POST /extractions/x1/confirm')).toBe(true))
     const body = calls.find((c) => c.key === 'POST /extractions/x1/confirm')!.body as { program_workout_id?: string }
     expect(body.program_workout_id).toBeUndefined()
@@ -190,7 +190,7 @@ describe('Review', () => {
     renderApp('/review/x1')
     const box = await screen.findByLabelText('What to change')
     await userEvent.type(box, 'Add two warm-up sets')
-    await userEvent.click(screen.getByRole('button', { name: 'Fix it' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Fix It' }))
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent("Couldn't make that fix, so nothing changed.")
@@ -210,7 +210,7 @@ describe('Review', () => {
     })
     renderApp('/review/x1')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Add warm-up set' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add Warm-up Set' }))
     const sheet = await screen.findByRole('dialog', { name: 'Edit set' })
     expect(sheet).toHaveTextContent('Squat')
     expect(within(sheet).getByRole('button', { name: 'Warm-up' })).toHaveAttribute('aria-pressed', 'true')

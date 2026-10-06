@@ -49,7 +49,7 @@ export type LiveSession = {
   date: string // YYYY-MM-DD, local
   programId: string | null
   workoutId: string | null
-  title: string // "1 · Bench", or "Ad-hoc workout"
+  title: string // the workout's name, or "Ad-hoc Workout"
   isDeload: boolean
   exercises: LiveExercise[]
   warmup?: LiveMovement[]
@@ -195,7 +195,7 @@ export function startBlank(now: Date): LiveSession {
     date: localDate(now),
     programId: null,
     workoutId: null,
-    title: 'Ad-hoc workout',
+    title: 'Ad-hoc Workout',
     isDeload: false,
     exercises: [],
   }
@@ -283,19 +283,22 @@ export function addWarmupSet(s: LiveSession, exKey: string): { session: LiveSess
   return { session: next, setKey: set.key }
 }
 
-// Warm-up ramps: for each number of sets, the share of the target weight and the reps. Weight
-// climbs and reps drop, so the warm-up primes the lift without tiring it.
-const RAMPS: Record<number, [number, number][]> = {
-  1: [[0.7, 3]],
-  2: [[0.5, 5], [0.75, 3]],
-  3: [[0.5, 5], [0.7, 3], [0.85, 2]],
-  4: [[0.4, 5], [0.55, 5], [0.7, 3], [0.85, 2]],
-  5: [[0.4, 5], [0.55, 5], [0.7, 3], [0.85, 2], [0.95, 1]],
-}
+export const MAX_RAMP = 10
 
-/** The warm-up sets ramping up to `target` kg in `count` sets (1 to 5), rounded to 2.5 kg. */
+/** Reps for a warm-up at this share of the working weight: fewer as it gets heavier. */
+const rampReps = (pct: number) => (pct <= 60 ? 5 : pct <= 75 ? 3 : pct <= 85 ? 2 : 1)
+
+/**
+ * `count` warm-up sets (1 to 10) ramping up to `target` kg: spread evenly from 50% to 95% in
+ * steps of 5%, so any count starts light and ends close to the working weight. Weights are
+ * rounded to 2.5 kg.
+ */
 export function rampSets(target: number, count: number): { kg: number; reps: number }[] {
-  return (RAMPS[count] ?? []).map(([share, reps]) => ({ kg: Math.round((target * share) / 2.5) * 2.5, reps }))
+  if (!(count >= 1 && count <= MAX_RAMP)) return []
+  return Array.from({ length: count }, (_, i) => {
+    const pct = count === 1 ? 75 : 50 + Math.round((i * 45) / (count - 1) / 5) * 5
+    return { kg: Math.round((target * pct) / 100 / 2.5) * 2.5, reps: rampReps(pct) }
+  })
 }
 
 /** Adds warm-up sets after the exercise's warm-ups and before its working sets, in grey to type

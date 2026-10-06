@@ -1,4 +1,5 @@
 import { ChevronRight, CloudOff } from 'lucide-react'
+import Parts from '@/components/Parts'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
@@ -38,22 +39,23 @@ export default function Train() {
       {outbox.pending.length > 0 && (
         <div role="status" className="flex min-h-11 items-center gap-2 rounded-2xl border border-border bg-card py-1 pr-1.5 pl-3.5 text-[13px]">
           <CloudOff size={16} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="flex-1">
+          <span className="flex flex-1 flex-col">
             <span className="font-semibold">
               {outbox.pending.length} {outbox.pending.length === 1 ? 'session' : 'sessions'} waiting to send
-            </span>{' '}
-            <span className="text-muted-foreground">· saved on this phone</span>
+            </span>
+            <span className="text-muted-foreground">Saved on this phone</span>
           </span>
           <button type="button" disabled={outbox.sending} onClick={() => flush()} className="h-9 px-2.5 font-semibold">
-            {outbox.sending ? 'Sending…' : 'Send now'}
+            {outbox.sending ? 'Sending…' : 'Send Now'}
           </button>
         </div>
       )}
 
       {followed && showDeloadReminder(followed, today) && (
         <div role="status" className="flex min-h-11 items-center gap-1 rounded-xl border border-warning/40 bg-warning-soft py-0.5 pr-0.5 pl-3.5 text-[13px] text-warning">
-          <span className="flex-1">
-            <span className="font-semibold">Deload due</span> · {Math.round(followed.deload.days_since / 7)} weeks of training
+          <span className="flex flex-1 flex-col">
+            <span className="font-semibold">Deload due</span>
+            <span>{Math.round(followed.deload.days_since / 7)} weeks of training</span>
           </span>
           <button type="button" onClick={() => { acknowledgeDeload(followed, today); redraw((n) => n + 1) }} className="h-10 px-3 font-bold">
             OK
@@ -64,12 +66,13 @@ export default function Train() {
       {current ? (
         <Link href="/session" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           <span className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-highlight">Session in progress</span>
+            <span className="text-xs font-semibold text-highlight">Session in Progress</span>
             <span className="text-[22px] font-bold tracking-tight">{current.title}</span>
-            <span className="text-[13px] text-muted-foreground">
-              Started {TIME.format(new Date(current.startedAt))} · {counts(current).done} of {counts(current).total} sets done ·
-              saved on this phone
-            </span>
+            <Parts className="text-[13px] text-muted-foreground" items={[
+              `Started ${TIME.format(new Date(current.startedAt))}`,
+              `${counts(current).done} of ${counts(current).total} sets done`,
+              'Saved on this phone',
+            ]} />
           </span>
           <span className="flex h-13 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground">Resume</span>
         </Link>
@@ -103,7 +106,7 @@ export default function Train() {
             <button type="button"
               onClick={() => startSession({ program: followed, workout: next }).then(() => navigate('/session'))}
               className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-              Start workout
+              Start Workout
             </button>
           </div>
         </div>
@@ -111,21 +114,21 @@ export default function Train() {
         <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border p-5 text-sm">
           <p className="font-semibold">{followed.name} has no workouts yet</p>
           <Link href={`/programs/${followed.id}`} className="font-semibold underline">
-            Open the program
+            Open the Program
           </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-col gap-1">
-            <span className="text-[15px] font-semibold">Start with a program</span>
+            <span className="text-[15px] font-semibold">Start with a Program</span>
             <span className="text-[13px] text-muted-foreground">Pick a ready-made one, or build your own.</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Link href="/programs/templates" className="flex h-12 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition active:scale-[0.98]">
-              Browse templates
+              Browse Templates
             </Link>
             <Link href="/programs" className="flex h-12 items-center justify-center rounded-2xl border border-border text-sm font-semibold transition active:scale-[0.98]">
-              Create your own
+              Create Your Own
             </Link>
           </div>
         </div>
@@ -135,7 +138,7 @@ export default function Train() {
         <button type="button" onClick={() => startSession('blank').then(() => navigate('/session'))}
           className="flex min-h-15 w-full items-center gap-3 px-4 py-2.5 text-left">
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[15px] font-semibold">Ad-hoc workout</span>
+            <span className="text-[15px] font-semibold">Ad-hoc Workout</span>
             <span className="text-[13px] text-muted-foreground">Type in exercises as you go</span>
           </span>
           <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
@@ -150,7 +153,7 @@ export default function Train() {
       </div>
 
       <Link href="/history" className="self-center py-2 text-[13px] font-semibold text-muted-foreground">
-        Repeat a past session
+        Repeat a Past Session
       </Link>
     </div>
   )

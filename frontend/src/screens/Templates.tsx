@@ -7,7 +7,7 @@ import Sheet from '@/components/Sheet'
 import { planText, useCopyTemplate, useTemplates } from '@/lib/programs'
 import type { ProgramTemplate } from '@/lib/types'
 
-/** Ready-made programs. Tapping one shows its workouts; "Add program" copies it into yours. */
+/** Ready-made programs. Tapping one shows its workouts; "Add Program" copies it into yours. */
 export default function Templates() {
   const templates = useTemplates()
   const copy = useCopyTemplate()
@@ -57,7 +57,7 @@ export default function Templates() {
             <button type="button" disabled={copy.isPending}
               onClick={() => copy.mutate(open.id, { onSuccess: (p) => navigate(`/programs/${p.id}`) })}
               className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">
-              {copy.isPending ? 'Adding…' : 'Add program'}
+              {copy.isPending ? 'Adding…' : 'Add Program'}
             </button>
           </>
         )}

@@ -27,7 +27,7 @@ describe('format', () => {
     const days = ['2026-10-04', '2026-09-28', '2026-09-27', '2026-09-21']
     const groups = groupByWeek(days, (d) => d, new Date(2026, 9, 4))
     expect(groups.map((g) => [g.title, g.items])).toEqual([
-      ['This week', ['2026-10-04', '2026-09-28']],
+      ['This Week', ['2026-10-04', '2026-09-28']],
       ['21 Sept to 27 Sept', ['2026-09-27', '2026-09-21']],
     ])
   })

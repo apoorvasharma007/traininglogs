@@ -16,7 +16,7 @@ export function LoadError({ error, retry }: { error: unknown; retry?: () => void
       <div className="flex gap-3">
         {retry && (
           <button type="button" onClick={retry} className="font-semibold underline">
-            Try again
+            Try Again
           </button>
         )}
       </div>

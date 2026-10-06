@@ -41,7 +41,7 @@ describe('changes to save back to the program', () => {
     const set = addSet(s, added.exKey)
     expect(planChanges(set.session, workout)).toEqual([])
     s = toggleDone(set.session, set.setKey)
-    expect(labels(planChanges(s, workout))).toEqual([['Add Face pulls · 1 set', true]])
+    expect(labels(planChanges(s, workout))).toEqual([['Add Face pulls (1 set)', true]])
   })
 
   it('removing an exercise or deleting planned sets is offered unticked', () => {
@@ -90,7 +90,7 @@ describe('changes to save back to the program', () => {
       { key: 'a', name: 'Leg swings', amount: '10', done: true },
       { key: 'b', name: 'Hip circles', amount: '', done: false },
     ])
-    expect(labels(planChanges(s, workout))).toEqual([['Warm-up: add Leg swings · 10', true]])
+    expect(labels(planChanges(s, workout))).toEqual([['Warm-up: add Leg swings (10)', true]])
   })
 
   it('a skipped planned movement is offered for removal, unticked', () => {

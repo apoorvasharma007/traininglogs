@@ -7,12 +7,14 @@ export const EFFORTS = [
   { level: 3, label: 'All out', rpe: 10, means: 'nothing left' },
 ] as const
 
-/** A chosen effort's fill, darker the harder it was: greys, then the app's solid black. */
+/** A chosen effort's fill, and the outline of an RPE number not chosen: blue, orange, red. */
 export const EFFORT_FILL = {
-  1: 'bg-foreground/15 text-foreground',
-  2: 'bg-foreground/40 text-foreground',
-  3: 'bg-primary text-primary-foreground',
+  1: 'bg-blue-200 text-blue-950',
+  2: 'bg-orange-300 text-orange-950',
+  3: 'bg-red-600 text-white',
 } as const
+
+export const EFFORT_OUTLINE = { 1: 'border-blue-200', 2: 'border-orange-300', 3: 'border-red-600' } as const
 
 /** 1 (Moderate) for RPE up to 7.5, 2 (Hard) for 8 to 9, 3 (All out) from 9.5; 0 without RPE. */
 export function effortLevel(rpe: number | null | undefined): 0 | 1 | 2 | 3 {

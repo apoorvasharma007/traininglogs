@@ -37,6 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The set sheet: Warm-up and Working is a full-width switch under the exercise; Working has
+  larger effort buttons in blue, orange and red, with every RPE number in a row of chips you
+  swipe; Warm-up ramps up to a working weight you type, in 1 to 10 sets spread from 50% to 95%
+  of it, shown as weights; both tabs are the same height.
+- A saved session shows RPE in its own column, and each set's note in full under the set.
+- Buttons, screen titles and section headings are in Title Case ("Start Workout", "Key Lifts").
+- No "·" between pieces of text: extra detail sits on its own line or apart by space.
+
 - The app is called TrainingLogs: on the sign-in screen (with what it's for), the home page's
   title, the browser tab and the name under the home-screen icon.
 - Home page for someone without a program: a "Start with a program" card (Browse templates,
