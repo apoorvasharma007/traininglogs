@@ -1,6 +1,6 @@
 // Starting a session: from a planned workout (with last time's values) or blank.
 import { api } from '@/lib/api'
-import { workoutTitle } from '@/lib/programs'
+import { workoutName } from '@/lib/programs'
 import { startBlank, startFromPast, startFromWorkout, type LastExercise, type LiveSession } from '@/lib/session'
 import { loadSession, saveSession } from '@/lib/store'
 import type { Program, SessionDetail, Workout } from '@/lib/types'
@@ -33,7 +33,7 @@ export async function startSession(
         ? startFromPast(from.past, now)
         : startFromWorkout(
           from.workout,
-          workoutTitle(from.workout),
+          workoutName(from.workout),
           from.program.id,
           await lastTimes(from.workout.exercises.flatMap((e) => [e.name, ...e.alternatives])),
           now,

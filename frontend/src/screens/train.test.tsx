@@ -35,7 +35,7 @@ describe('Train', () => {
     })
     const location = renderApp('/')
     expect(await screen.findByText('Bodybuilding Transformation · Ramp-up')).toBeInTheDocument()
-    expect(screen.getByText('2 · Lower Strength')).toBeInTheDocument()
+    expect(screen.getByText('Lower Strength')).toBeInTheDocument()
     // A summary: exercise names only, no sets.
     expect(screen.queryByText(/× 12/)).not.toBeInTheDocument()
     expect(screen.queryByText(/more$/)).not.toBeInTheDocument()
@@ -57,15 +57,12 @@ describe('Train', () => {
     expect(screen.getByText('+3 more')).toBeInTheDocument()
   })
 
-  it('without a program, offers recent sessions to do again', async () => {
-    fakeApi({
-      'GET /programs': [program({ following: false })],
-      'GET /sessions?limit=3': [{ session_id: 's1', date: '2026-10-02', program: null, focus: null, exercises: ['Squat', 'Bench press'] }],
-    })
+  it('without a program, nudges toward one', async () => {
+    fakeApi({ 'GET /programs': [program({ following: false })] })
     renderApp('/')
-    expect(await screen.findByText('Squat · Bench press')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Do again' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Or follow a program' })).toBeInTheDocument()
+    expect(await screen.findByText('Start with a program')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Browse templates' })).toHaveAttribute('href', '/programs/templates')
+    expect(screen.getByRole('link', { name: 'Create your own' })).toHaveAttribute('href', '/programs')
   })
 
   it('a deload reminder is only a reminder: OK hides it', async () => {
@@ -77,14 +74,12 @@ describe('Train', () => {
     expect(screen.queryByText('Deload due')).not.toBeInTheDocument()
   })
 
-  it('makes Log from notes easy to find, with ad-hoc last', async () => {
+  it('offers an ad-hoc workout, notes, and repeating a past session', async () => {
     fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
-    expect(await screen.findByText('Wrote it down instead?')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Log from notes' })).toHaveAttribute('href', '/log')
-    const links = screen.getAllByRole('link').concat(screen.getAllByRole('button')).map((e) => e.textContent)
-    expect(links).toContain('Repeat a past session')
-    expect(links).toContain('Ad-hoc workout')
+    expect(await screen.findByRole('button', { name: /Ad-hoc workout/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Wrote it down instead\?/ })).toHaveAttribute('href', '/log')
+    expect(screen.getByRole('link', { name: 'Repeat a past session' })).toHaveAttribute('href', '/history')
   })
 
   it('offers to resume a session in progress', async () => {

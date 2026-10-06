@@ -5,13 +5,13 @@ import NameSheet from '@/components/NameSheet'
 import Sheet from '@/components/Sheet'
 import PageTitle from '@/components/PageTitle'
 import { LoadError, Loading } from '@/components/QueryStatus'
-import { useCreateProgram, usePrograms, workoutTitle } from '@/lib/programs'
+import { useCreateProgram, usePrograms, workoutName } from '@/lib/programs'
 import type { Program } from '@/lib/types'
 
 function summary(p: Program): string {
   const count = `${p.workouts.length} ${p.workouts.length === 1 ? 'workout' : 'workouts'}`
   const next = p.workouts.find((w) => w.id === p.next_workout_id)
-  return p.following && next ? `${count} · next: ${workoutTitle(next)}` : count
+  return p.following && next ? `${count}, next: ${workoutName(next)}` : count
 }
 
 export default function Programs() {

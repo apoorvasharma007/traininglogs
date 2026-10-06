@@ -12,7 +12,7 @@ import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { useEditingFlag } from '@/lib/editing'
 import { dayLabel } from '@/lib/format'
-import { usePrograms, useProgram, useProgramChange, workoutTitle } from '@/lib/programs'
+import { usePrograms, useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import type { Program as ProgramT, Workout } from '@/lib/types'
 
 /** A program's workouts. Opens for looking; Edit shows renaming, reordering and settings. */
@@ -93,7 +93,7 @@ export default function Program({ params }: { params: { id: string } }) {
               <DragList
                 items={draft.order.flatMap((id) => p.workouts.filter((w) => w.id === id))}
                 keyOf={(w) => w.id}
-                label={workoutTitle}
+                label={workoutName}
                 onReorder={(ids) => setDraft({ ...draft, order: ids })}
               >
                 {(w) => <WorkoutRow program={p} workout={w} />}
@@ -216,7 +216,7 @@ function WorkoutRow({ program, workout: w, href }: { program: ProgramT; workout:
   const body = (
     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
       <span className="flex items-center gap-2 text-[15px] font-semibold">
-        {workoutTitle(w)}
+        {workoutName(w)}
         {program.following && w.id === program.next_workout_id && (
           <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-[11px] font-semibold text-highlight">Next</span>
         )}

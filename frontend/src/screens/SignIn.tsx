@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import PageTitle from '@/components/PageTitle'
 import { sendCode, verifyCode } from '@/lib/auth'
 
 /** Shown when nobody is signed in: an email, then the 6-digit code emailed to it. */
@@ -33,7 +32,11 @@ export default function SignIn() {
         })
       }}
     >
-      <PageTitle>Sign in</PageTitle>
+      <div className="flex flex-col items-center gap-1 pb-4 text-center">
+        <h1 className="text-[28px] font-bold tracking-tight">TrainingLogs</h1>
+        <p className="text-sm text-muted-foreground">Log workouts however you like.</p>
+        <p className="text-sm text-muted-foreground">We'll track your progress from them.</p>
+      </div>
       {sentTo ? (
         <>
           <p className="px-1 text-sm text-muted-foreground">We sent a code to {sentTo}.</p>

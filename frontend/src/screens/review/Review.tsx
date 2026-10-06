@@ -10,7 +10,7 @@ import BottomBar from '@/components/BottomBar'
 import Sheet from '@/components/Sheet'
 import { api, ApiError } from '@/lib/api'
 import { dayLabel, kg } from '@/lib/format'
-import { usePrograms, workoutTitle } from '@/lib/programs'
+import { usePrograms, workoutName } from '@/lib/programs'
 import {
   NEW_EXERCISE_NAME,
   draftFromSet,
@@ -121,7 +121,7 @@ export default function Review({ params }: { params: { id: string } }) {
     setSaving(true)
     try {
       // The session takes its workout's name, or none: History then names it by its exercises.
-      const name = followed && countsAsWorkout ? workoutTitle(countsAsWorkout) : ''
+      const name = followed && countsAsWorkout ? workoutName(countsAsWorkout) : ''
       const named = (header.focus ?? '') === name
         ? { doc, corrections: review.corrections }
         : await review.run([{ edits: [{ path: header.path, field: 'focus', value: name }] }])
@@ -205,7 +205,8 @@ export default function Review({ params }: { params: { id: string } }) {
               className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
               <span className="w-20 shrink-0 text-muted-foreground">Workout</span>
               <span className="min-w-0 flex-1 truncate font-semibold">
-                {countsAsWorkout ? `${workoutTitle(countsAsWorkout)} · ${followed.name}` : 'Not part of a program'}
+                {countsAsWorkout ? workoutName(countsAsWorkout) : 'Not part of a program'}
+                {countsAsWorkout && <span className="ml-1.5 font-normal text-muted-foreground">{followed.name}</span>}
               </span>
               <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
             </button>
@@ -379,7 +380,7 @@ export default function Review({ params }: { params: { id: string } }) {
           {(followed?.workouts ?? []).map((w) => (
             <button key={w.id} type="button" onClick={() => { setCountsAs(w.id); setPicking(false) }}
               className="flex h-13 items-center justify-between border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0">
-              {workoutTitle(w)}
+              {workoutName(w)}
               {w.id === followed?.next_workout_id && <span className="text-xs text-muted-foreground">next</span>}
             </button>
           ))}

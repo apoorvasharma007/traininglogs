@@ -35,7 +35,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
           {s.exercises.length > 0 && (
             <button type="button" onClick={() => startSession({ past: s }).then(() => navigate('/session'))}
               className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-              Do this again
+              Repeat
             </button>
           )}
           {s.exercises.map((ex) => (

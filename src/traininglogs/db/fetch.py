@@ -33,8 +33,13 @@ def get_sessions(
             SELECT s.id::text AS session_id, s.date, s.program, s.phase, s.week, s.focus,
                    s.duration_minutes, s.is_deload_week, s.weight_unit,
                    ARRAY(SELECT e.name FROM workout_session_exercises e
-                         WHERE e.user_id = s.user_id AND e.session_id = s.id ORDER BY e.position) AS exercises
+                         WHERE e.user_id = s.user_id AND e.session_id = s.id ORDER BY e.position) AS exercises,
+                   p.name AS program_name, w.position AS workout_position, w.name AS workout_name,
+                   i.kind AS source_kind
             FROM workout_sessions s
+            JOIN input_text i ON i.user_id = s.user_id AND i.id = s.input_id
+            LEFT JOIN program_workouts w ON w.user_id = s.user_id AND w.id = s.program_workout_id
+            LEFT JOIN programs p ON p.user_id = w.user_id AND p.id = w.program_id
             WHERE {" AND ".join(filters)}
             ORDER BY s.date DESC, s.created_at DESC
             {"LIMIT %s" if limit is not None else ""}
@@ -124,6 +129,14 @@ def get_exercise_history(conn: Connection, user_id: str, name: str) -> list[dict
             (user_id, name_key(name)),
         )
         return _rows(cur)
+
+
+def get_ai_total_usd(conn: Connection, user_id: str) -> float:
+    """What the person's AI calls have cost so far, in US dollars, summed from their call log.
+    A few rows per note, so summing on each request is cheaper than keeping a running total."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT coalesce(sum(cost_usd), 0) FROM ai_call_logs WHERE user_id = %s", (user_id,))
+        return float(cur.fetchone()[0])
 
 
 def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:

@@ -13,11 +13,13 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-COPY pyproject.toml .
+COPY pyproject.toml requirements.lock ./
 COPY src/ src/
 
+# Exactly the versions in the lock file, so every build runs what was tested.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir -r requirements.lock \
+    && pip install --no-cache-dir --no-deps .
 
 
 FROM python:3.12-slim

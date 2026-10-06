@@ -29,6 +29,7 @@ export type LiveExercise = {
   lastNote: string | null
   sets: LiveSet[]
   planIndex?: number // the workout plan line it started from; none when added during the session
+  effortSkipped?: boolean // Skip was tapped on the "How hard was the last set?" nudge
 }
 
 /** A warm-up or cool-down movement in a session; left out at Finish unless ticked. */
@@ -280,6 +281,45 @@ export function addWarmupSet(s: LiveSession, exKey: string): { session: LiveSess
     return { ...e, sets }
   })
   return { session: next, setKey: set.key }
+}
+
+// Warm-up ramps: for each number of sets, the share of the target weight and the reps. Weight
+// climbs and reps drop, so the warm-up primes the lift without tiring it.
+const RAMPS: Record<number, [number, number][]> = {
+  1: [[0.7, 3]],
+  2: [[0.5, 5], [0.75, 3]],
+  3: [[0.5, 5], [0.7, 3], [0.85, 2]],
+  4: [[0.4, 5], [0.55, 5], [0.7, 3], [0.85, 2]],
+  5: [[0.4, 5], [0.55, 5], [0.7, 3], [0.85, 2], [0.95, 1]],
+}
+
+/** The warm-up sets ramping up to `target` kg in `count` sets (1 to 5), rounded to 2.5 kg. */
+export function rampSets(target: number, count: number): { kg: number; reps: number }[] {
+  return (RAMPS[count] ?? []).map(([share, reps]) => ({ kg: Math.round((target * share) / 2.5) * 2.5, reps }))
+}
+
+/** Adds warm-up sets after the exercise's warm-ups and before its working sets, in grey to type
+ * over. Sets already there stay as they are. */
+export function addRamp(s: LiveSession, exKey: string, ramp: { kg: number; reps: number }[]): LiveSession {
+  return mapExercise(s, exKey, (e) => {
+    const added = ramp.map((r) => ({ ...blankSet('warmup'), weight: String(r.kg), reps: String(r.reps), ghost: true }))
+    const warm = e.sets.filter((x) => x.kind === 'warmup')
+    return { ...e, sets: [...warm, ...added, ...e.sets.filter((x) => x.kind === 'working')] }
+  })
+}
+
+/** All its sets ticked, working sets among them, and none with an effort: worth a nudge. */
+export function needsEffort(e: LiveExercise): boolean {
+  const working = e.sets.filter((x) => x.kind === 'working')
+  return !e.effortSkipped && working.length > 0 && e.sets.every((x) => x.done) && working.every((x) => x.rpe == null)
+}
+
+/** Sets the effort (as RPE) of the exercise's last working set. */
+export function setLastEffort(s: LiveSession, exKey: string, rpe: number): LiveSession {
+  return mapExercise(s, exKey, (e) => {
+    const last = e.sets.findLastIndex((x) => x.kind === 'working')
+    return { ...e, sets: e.sets.map((x, i) => (i === last ? { ...x, rpe } : x)) }
+  })
 }
 
 export function addExercise(s: LiveSession): { session: LiveSession; exKey: string } {

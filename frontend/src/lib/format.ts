@@ -1,5 +1,6 @@
 // Small display helpers shared by the screens.
-import type { WorkingSet } from '@/lib/types'
+import { workoutName } from '@/lib/programs'
+import type { SessionSummary, WorkingSet } from '@/lib/types'
 
 const DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 const SHORT = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
@@ -32,6 +33,29 @@ function weekStart(d: Date): Date {
   return start
 }
 
+const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
+
+/**
+ * Splits items (newest first) into the recent ones, the last 30 days and anything else this
+ * month, and older ones grouped by month, newest month first.
+ */
+export function splitByMonth<T>(items: T[], dateOf: (item: T) => string, today: Date) {
+  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30)
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const recent: T[] = []
+  const months: { title: string; items: T[] }[] = []
+  for (const item of items) {
+    const d = parseDate(dateOf(item))
+    if (d >= cutoff || d >= thisMonth) recent.push(item)
+    else {
+      const title = MONTH.format(d)
+      if (months.at(-1)?.title !== title) months.push({ title, items: [] })
+      months[months.length - 1].items.push(item)
+    }
+  }
+  return { recent, months }
+}
+
 /** Groups items by calendar week (Monday first), newest week first, keeping their order. */
 export function groupByWeek<T>(items: T[], dateOf: (item: T) => string, today: Date) {
   const thisWeek = weekStart(today).getTime()
@@ -52,14 +76,24 @@ export function groupByWeek<T>(items: T[], dateOf: (item: T) => string, today: D
   return groups
 }
 
-/**
- * What History calls a session: its workout's name, or a name it was given; otherwise its first
- * exercises ("Squat · Bench press · Pull ups"). Older sessions keep the name their note gave them.
- */
+/** A session's name: the one it was given, or its first exercises ("Squat, Bench press and 2 more"). */
 export function sessionName(s: { focus: string | null; exercises: (string | { name: string })[] }): string {
   if (s.focus?.trim()) return s.focus.trim()
   const names = s.exercises.map((e) => (typeof e === 'string' ? e : e.name))
-  return names.length ? names.slice(0, 3).join(' · ') + (names.length > 3 ? ' …' : '') : 'Session'
+  if (!names.length) return 'Session'
+  const more = names.length - 2
+  return names.slice(0, 2).join(', ') + (more > 0 ? ` and ${more} more` : '')
+}
+
+/**
+ * History's name for a session: a program workout's own name, whatever was saved; otherwise its
+ * name or first exercises. `kind` is the grey line under it: the program, or where it came from.
+ */
+export function historyName(s: SessionSummary): { name: string; kind: string } {
+  if (s.workout_position != null) {
+    return { name: workoutName({ position: s.workout_position, name: s.workout_name }), kind: s.program_name ?? '' }
+  }
+  return { name: sessionName(s), kind: s.source_kind === 'manual' ? 'Ad-hoc' : 'From notes' }
 }
 
 /** "8", "8+1" with partial reps, "8L / 7R" for one side at a time. */

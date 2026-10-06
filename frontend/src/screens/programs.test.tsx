@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { planText, workoutTitle } from '@/lib/programs'
+import { planText, workoutName } from '@/lib/programs'
 import type { Program } from '@/lib/types'
 import { fakeApi, renderApp } from '@/test-utils'
 
@@ -26,9 +26,9 @@ function program(patch: Partial<Program> = {}): Program {
 
 describe('workout display', () => {
   it('names a workout by number and optional name', () => {
-    expect(workoutTitle({ position: 1, name: 'Push' })).toBe('1 · Push')
-    expect(workoutTitle({ position: 2, name: null })).toBe('Workout 2')
-    expect(workoutTitle({ position: 2, name: 'workout 2 ' })).toBe('Workout 2')
+    expect(workoutName({ position: 1, name: 'Push' })).toBe('Push')
+    expect(workoutName({ position: 2, name: null })).toBe('Workout 2')
+    expect(workoutName({ position: 2, name: 'workout 2 ' })).toBe('Workout 2')
   })
 
   it('summarises a plan', () => {
@@ -84,7 +84,7 @@ describe('Programs', () => {
       'GET /programs': [program({ following: true })],
     })
     renderApp('/programs/p1')
-    expect(await screen.findByText('1 · Bench')).toBeInTheDocument()
+    expect(await screen.findByText('Bench')).toBeInTheDocument()
     expect(screen.getByText('Workout 2')).toBeInTheDocument()
     expect(screen.getByText('Last done Mon 28 Sept')).toBeInTheDocument()
     expect(screen.queryByText('Next')).not.toBeInTheDocument()

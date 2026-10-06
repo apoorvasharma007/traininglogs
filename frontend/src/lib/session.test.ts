@@ -12,6 +12,10 @@ import {
   toggleDone,
   toRequest,
   type LastExercise,
+  addRamp,
+  needsEffort,
+  rampSets,
+  setLastEffort,
 } from './session'
 import type { Workout } from './types'
 
@@ -197,5 +201,38 @@ describe('doing a past session again', () => {
       ['warmup', '80', '3', true, '80 × 3'],
       ['working', '125', '2', true, '125 × 2'],
     ])
+  })
+})
+
+describe('warm-up ramp', () => {
+  it('climbs in weight as reps drop, rounded to 2.5 kg', () => {
+    expect(rampSets(120, 3)).toEqual([{ kg: 60, reps: 5 }, { kg: 85, reps: 3 }, { kg: 102.5, reps: 2 }])
+    expect(rampSets(120, 0)).toEqual([])
+  })
+
+  it('adds grey warm-ups before the working sets and keeps the ones already there', () => {
+    const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
+    const before = s.exercises[0].sets
+    const after = addRamp(s, s.exercises[0].key, rampSets(120, 2)).exercises[0].sets
+    expect(after.length).toBe(before.length + 2)
+    const warm = before.filter((x) => x.kind === 'warmup').length
+    expect(after.slice(0, warm)).toEqual(before.slice(0, warm))
+    expect(after.slice(warm, warm + 2).map((x) => [x.kind, x.weight, x.reps, x.ghost])).toEqual([
+      ['warmup', '60', '5', true], ['warmup', '90', '3', true],
+    ])
+  })
+})
+
+describe('effort nudge', () => {
+  it('asks once an exercise is done with no effort, and stops after an answer or Skip', () => {
+    let s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
+    const ex = s.exercises[0]
+    expect(needsEffort(ex)).toBe(false)
+    for (const set of ex.sets) s = toggleDone(s, set.key)
+    expect(needsEffort(s.exercises[0])).toBe(true)
+    const answered = setLastEffort(s, ex.key, 8.5)
+    expect(answered.exercises[0].sets.filter((x) => x.kind === 'working').at(-1)?.rpe).toBe(8.5)
+    expect(needsEffort(answered.exercises[0])).toBe(false)
+    expect(needsEffort({ ...s.exercises[0], effortSkipped: true })).toBe(false)
   })
 })

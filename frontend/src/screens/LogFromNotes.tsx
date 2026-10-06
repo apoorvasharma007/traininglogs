@@ -38,7 +38,7 @@ export default function LogFromNotes() {
           id="session-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Paste or type it the way you wrote it. Weights, reps, how it felt."
+          placeholder={"Paste from Notes, copy text from a photo of your notebook (Live Text), or type or dictate it.\n\nSquat 3x5 at 100\nBench 80 x 8, 8, 6, last one was a grind"}
           className="h-52 resize-none rounded-2xl border border-border bg-card p-3.5 leading-normal"
         />
       </div>
@@ -49,10 +49,10 @@ export default function LogFromNotes() {
           onClick={extract}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? 'Reading your note…' : 'Read my note'}
+          {busy ? 'Sending…' : 'Send'}
         </button>
         <p className="text-center text-xs text-muted-foreground">
-          Reads your note with AI for about ₹2 to ₹5; longer notes cost more. Each AI fix after that is ₹1 to ₹3 more. You check everything before it's saved.
+          About $0.02. You check everything before it's saved.
         </p>
       </BottomBar>
     </div>

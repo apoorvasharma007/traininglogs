@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A warm-up ramp in the set sheet's Warm-up tab: "Ramp up to [weight] kg in [sets] sets" shows
+  the sets it would add (50% x 5, 70% x 3, 85% x 2 for 3 sets) and Add puts them before the
+  working sets, in grey, leaving the sets already there alone.
+- "How hard was the last set?" under an exercise finished with no effort on any working set:
+  one tap saves it to the last working set, or Skip.
+
 - A sign-in screen: your email, then a 6-digit code emailed to you. You stay signed in; the app
   renews the pass itself. Settings shows your email with Sign out in place of the API key box,
   and warns before signing out if a session hasn't sent yet. The app reads which Supabase project
@@ -24,10 +30,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and linked to a shared list of 32 basic lifts when the name matches.
 - `scripts/migrate_to_accounts.py` converts an existing database in one transaction, dry run by
   default. It keeps the old tables in an `old` schema, to be removed in a later step.
+- Settings shows what your AI use has cost so far ("AI use", in US dollars): every note read and
+  every AI fix, summed from your own call log (`GET /me/ai-usage`).
 - Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
   deploys production.
 
 ### Changed
+
+- The app is called TrainingLogs: on the sign-in screen (with what it's for), the home page's
+  title, the browser tab and the name under the home-screen icon.
+- Home page for someone without a program: a "Start with a program" card (Browse templates,
+  Create your own). For everyone: Ad-hoc workout and "Wrote it down instead?" as two rows with a
+  line saying what each does, and "Repeat a past session" at the bottom, which opens History.
+- History names a program session after its workout ("Workout 1", or the workout's own name),
+  with the program in grey under it; other sessions keep their name or list their first
+  exercises ("Squat, Bench press and 2 more"), marked Ad-hoc or From notes. The last 30 days
+  show by week; older months fold into one row each, opened with a tap.
+- Workouts are called by their own name, or "Workout 1", everywhere, without "1 ·" in front.
+- Effort on a set: each word (Moderate, Hard, All out) has its RPE numbers right under it, in
+  place of the Exact RPE button. A chosen effort is shaded darker the harder it was.
+- Log from notes: the box says the ways to get a note in (paste, Live Text from a photo, type or
+  dictate) with an example; the button says Send; the cost line is in US dollars.
+- "Do this again" is "Repeat"; "Remove workout" is "Delete workout".
 
 - Opening a session or "last time" takes four database queries however many exercises it has;
   it took two per exercise.
@@ -43,9 +67,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   someone else signs in on the same phone, the app no longer shows them or sends them as theirs.
   Signing out also forgets the screens loaded for you when the server ends your sign-in, not
   only when you tap Sign out.
+- Typing a set's note on iPhone no longer slides the sheet out of view.
 - A note confirms once. Confirming it again, after a lost connection or after changing the date,
   saves nothing new and says "This note is already saved." with an "Open it" link to the session.
   Confirm is greyed out while it saves, so a second tap sends nothing.
+- Reading a note failed on every try on staging: its build installed version 1.11 of Anthropic's
+  library, which no longer accepts `temperature`. Package versions are now locked
+  (`requirements.lock`, `requirements-dev.lock`), so the server, CI and a local setup install the
+  same versions, all on Python 3.12. Anthropic's library stays below 1.0 until moving to it is
+  done as its own step.
 
 ### Removed
 
