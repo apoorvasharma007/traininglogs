@@ -3,7 +3,7 @@ import { useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import { api } from '@/lib/api'
-import { dayLabel, kg, repsText, sessionName } from '@/lib/format'
+import { dayLabel, historyName, kg, repsText } from '@/lib/format'
 import { startSession } from '@/lib/startSession'
 import type { SessionDetail } from '@/lib/types'
 
@@ -20,6 +20,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
     queryFn: () => api<SessionDetail>(`/sessions/${encodeURIComponent(id)}`),
   })
   const s = session.data
+  const title = s && historyName(s)
 
   return (
     <div>
@@ -29,7 +30,8 @@ export default function SessionView({ params }: { params: { id: string } }) {
       {s && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 px-1">
-            <span className="text-xl font-bold tracking-tight">{sessionName(s)}</span>
+            <span className="text-xl font-bold tracking-tight">{title?.name}</span>
+            {title?.kind && <span className="text-sm text-muted-foreground">{title.kind}</span>}
             {s.notes && <p className="text-sm text-muted-foreground">{s.notes}</p>}
           </div>
           {s.exercises.length > 0 && (

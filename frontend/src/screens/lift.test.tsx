@@ -24,7 +24,22 @@ describe('Lift', () => {
     renderApp('/progress/Squat')
     expect((await screen.findAllByText('123.3 kg'))[0]).toBeInTheDocument()
     expect(screen.getByText(/Estimated from sets with an RPE\. ○ Heaviest weight, for sessions with no RPE\./)).toBeInTheDocument()
-    expect(screen.getByText(/heaviest, no RPE/)).toHaveTextContent('110 kg heaviest, no RPE')
+    // Each session's set and its RPE; the one without an RPE shows its heaviest set.
+    expect(screen.getByText('100 kg × 5').nextSibling).toHaveTextContent('8')
+    expect(screen.getByText('110 kg × 3').nextSibling).toHaveTextContent('')
+    // Less than 4 weeks of history: the range buttons would change nothing.
+    expect(screen.queryByRole('group', { name: 'Time range' })).not.toBeInTheDocument()
+  })
+
+  it('shows the range buttons once the history goes back more than 4 weeks', async () => {
+    fakeApi({
+      'GET /progress/lifts/Squat': squat([
+        { session_id: 'a', date: '2026-08-01', value: 120, method: 'rpe', heaviest_kg: 100, records: [], best_set: set(100, 5, 8) },
+        { session_id: 'b', date: '2026-10-02', value: 123.3, method: 'rpe', heaviest_kg: 100, records: [], best_set: set(100, 5, 8) },
+      ]),
+    })
+    renderApp('/progress/Squat')
+    expect(await screen.findByRole('group', { name: 'Time range' })).toBeInTheDocument()
   })
 
   it('with no RPE at all, shows no estimate but still the sessions', async () => {
@@ -35,6 +50,6 @@ describe('Lift', () => {
     })
     renderApp('/progress/Squat')
     expect(await screen.findByText('No sets with an RPE yet')).toBeInTheDocument()
-    expect(screen.getByText(/heaviest, no RPE/)).toBeInTheDocument()
+    expect(screen.getByText('110 kg × 3')).toBeInTheDocument()
   })
 })

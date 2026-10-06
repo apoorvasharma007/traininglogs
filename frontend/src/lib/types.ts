@@ -34,7 +34,7 @@ export type SessionExercise = {
   warmup_sets: WarmupSet[]
 }
 
-export type SessionDetail = {
+export type SessionDetail = Pick<SessionSummary, 'program_name' | 'workout_position' | 'workout_name' | 'source_kind'> & {
   session_id: string
   date: string
   program: string | null

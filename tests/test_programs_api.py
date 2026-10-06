@@ -191,11 +191,14 @@ class TestWorkouts:
         p = client.get(f"/programs/{p['id']}", headers=HEADERS).json()
         assert p["next_workout_id"] == w1
 
-    def test_history_lists_a_session_with_its_program_and_workout(self, client, conn) -> None:
+    def test_history_and_the_saved_session_show_its_program_and_workout(self, client, conn) -> None:
         p = _program(client)
         _session_from(conn, "programs-test-003", "3000-02-01", p["workouts"][1]["id"])
         listed = next(s for s in client.get("/sessions", headers=HEADERS).json() if s["date"] == "3000-02-01")
         assert (listed["program_name"], listed["workout_position"], listed["source_kind"]) == (p["name"], 2, "manual")
+        # The saved session shows the same names.
+        detail = client.get(f"/sessions/{listed['session_id']}", headers=HEADERS).json()
+        assert (detail["program_name"], detail["workout_position"], detail["source_kind"]) == (p["name"], 2, "manual")
 
 
 class TestTemplates:

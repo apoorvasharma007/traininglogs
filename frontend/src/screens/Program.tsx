@@ -99,9 +99,9 @@ export default function Program({ params }: { params: { id: string } }) {
                 {(w) => <WorkoutRow program={p} workout={w} />}
               </DragList>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="flex flex-col gap-2.5">
                 {p.workouts.map((w) => (
-                  <div key={w.id} className="flex items-start border-t border-border pr-3 first:border-t-0">
+                  <div key={w.id} className="flex items-start overflow-hidden rounded-2xl border border-border bg-card pr-3">
                     <WorkoutRow program={p} workout={w} href={`${base}/workouts/${w.id}`} />
                     <ChevronRight size={18} aria-hidden className="mt-3 shrink-0 text-faint-foreground" />
                   </div>

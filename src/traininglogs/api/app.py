@@ -2,6 +2,7 @@ import os
 import time
 import sys
 from contextlib import asynccontextmanager
+from importlib.metadata import version
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -152,10 +153,14 @@ app.add_middleware(
 
 @app.get("/config")
 def public_config():
-    """What the app needs before anyone signs in: this environment's Supabase project and its
-    publishable key. Both are public by design (the key can do only what row-level security
-    allows, which is nothing); one build of the app then works in every environment."""
-    return {"supabase_url": os.environ["SUPABASE_URL"], "supabase_publishable_key": os.environ["SUPABASE_PUBLISHABLE_KEY"]}
+    """What the app needs before anyone signs in: this environment's Supabase project, its
+    publishable key and the app version. All public by design (the key can do only what row-level
+    security allows, which is nothing); one build of the app then works in every environment."""
+    return {
+        "supabase_url": os.environ["SUPABASE_URL"],
+        "supabase_publishable_key": os.environ["SUPABASE_PUBLISHABLE_KEY"],
+        "version": version("traininglogs"),
+    }
 
 
 @app.get("/sessions", response_model=list[SessionSummary])

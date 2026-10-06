@@ -40,7 +40,7 @@ describe('lifts', () => {
   })
 
   it('writes the set behind a value', () => {
-    expect(setText({ number: 1, weight_kg: 125, reps: 2, rpe: 9 })).toBe('125 kg × 2 @ 9')
+    expect(setText({ number: 1, weight_kg: 125, reps: 2, rpe: 9 })).toBe('125 kg × 2')
     expect(setText({ number: 1, weight_kg: 0, reps: 19, rpe: null })).toBe('BW × 19')
   })
 

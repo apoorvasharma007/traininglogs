@@ -86,10 +86,12 @@ export function sessionName(s: { focus: string | null; exercises: (string | { na
 }
 
 /**
- * History's name for a session: a program workout's own name, whatever was saved; otherwise its
+ * History's name for a session, also used on the saved session: a program workout's own name, whatever was saved; otherwise its
  * name or first exercises. `kind` is the grey line under it: the program, or where it came from.
  */
-export function historyName(s: SessionSummary): { name: string; kind: string } {
+export function historyName(
+  s: Pick<SessionSummary, 'focus' | 'program_name' | 'workout_position' | 'workout_name' | 'source_kind'> & { exercises: (string | { name: string })[] },
+): { name: string; kind: string } {
   if (s.workout_position != null) {
     return { name: workoutName({ position: s.workout_position, name: s.workout_name }), kind: s.program_name ?? '' }
   }
