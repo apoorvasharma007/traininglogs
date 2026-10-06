@@ -237,7 +237,7 @@ function ExerciseForm(props: {
           <label htmlFor="exercise-name" className="text-[13px] font-semibold">
             Exercise
           </label>
-          <input id="exercise-name" autoFocus={props.isNew} value={e.name} placeholder="Squat"
+          <input id="exercise-name" autoFocus={props.isNew} autoCapitalize="words" value={e.name} placeholder="Squat"
             onChange={(ev) => set({ name: ev.target.value })}
             className="h-12 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
         </div>
@@ -305,7 +305,7 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
         <label htmlFor="alternative" className="sr-only">
           Alternative exercise
         </label>
-        <input id="alternative" value={draft} placeholder="Exercise name" onChange={(ev) => setDraft(ev.target.value)}
+        <input id="alternative" autoCapitalize="words" value={draft} placeholder="Exercise name" onChange={(ev) => setDraft(ev.target.value)}
           onKeyDown={(ev) => {
             if (ev.key === 'Enter') {
               ev.preventDefault()

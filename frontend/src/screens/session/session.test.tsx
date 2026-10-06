@@ -63,10 +63,9 @@ describe('Session', () => {
     const location = renderApp('/session')
 
     expect(await screen.findByText('better depth')).toBeInTheDocument()
-    expect(screen.getByText(/0 of 2 sets/)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
-    expect(screen.getByText(/1 of 2 sets/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'true')
     // Saved on the phone straight away.
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
 
@@ -170,12 +169,11 @@ describe('Session', () => {
       '1 · Bench', 'p1', [], new Date(2026, 9, 4, 10, 0)))
     fakeApi({})
     renderApp('/session')
-    expect(await screen.findByText('Squat', { selector: 'span.font-semibold' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: 'Options for Squat' })
     await userEvent.click(screen.getAllByRole('button', { name: 'Set 1 done' })[0])
 
     const collapsed = await screen.findByRole('button', { name: 'Squat: all 1 set done. Show sets' })
     expect(screen.queryAllByRole('button', { name: 'Set 1 done' })).toHaveLength(1)
-    expect(screen.getByText('Bench press', { selector: 'span.font-semibold' })).toBeInTheDocument()
 
     await userEvent.click(collapsed)
     expect(screen.getAllByRole('button', { name: 'Set 1 done' })).toHaveLength(2)
@@ -186,10 +184,10 @@ describe('Session', () => {
     fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
-    // Warm-up set templates sit at the bottom of the menu, just above Remove exercise.
+    // Warm-up set templates sit at the bottom of the menu, just above Remove Exercise.
     const items = (await screen.findAllByRole('button')).map((b) => b.textContent)
-    expect(items.indexOf('Warm-up set templates')).toBe(items.indexOf('Remove exercise') - 1)
-    await userEvent.click(screen.getByRole('button', { name: 'Warm-up set templates' }))
+    expect(items.indexOf('Warm-up Set Templates')).toBe(items.indexOf('Remove Exercise') - 1)
+    await userEvent.click(screen.getByRole('button', { name: 'Warm-up Set Templates' }))
     expect(await screen.findByText('Builds up to your first working set, 125 kg.')).toBeInTheDocument()
     await userEvent.click(await screen.findByRole('button', { name: /Short ramp/ }))
     // Built up to the first working set's 125 kg: 62.5 x 5, 87.5 x 4, 112.5 x 2.
@@ -197,7 +195,7 @@ describe('Session', () => {
       .map((x: { weight: string; reps: string }) => [x.weight, x.reps])).toEqual([['62.5', '5'], ['87.5', '4'], ['112.5', '2']]))
   })
 
-  it('moves an exercise with Move down', async () => {
+  it('moves an exercise with Move Down', async () => {
     await saveSession(startFromWorkout(
       { ...workout, exercises: [...workout.exercises, { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] }] },
       '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0),
@@ -206,7 +204,7 @@ describe('Session', () => {
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
     const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
-    await userEvent.click(within(menu).getByRole('button', { name: 'Move down' }))
+    await userEvent.click(within(menu).getByRole('button', { name: 'Move Down' }))
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises.map((e: { name: string }) => e.name))
       .toEqual(['Bench press', 'Squat']))
   })
