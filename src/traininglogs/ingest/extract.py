@@ -5,6 +5,8 @@ a person: confirming is a separate step (confirm.py).
 """
 from __future__ import annotations
 
+from datetime import date
+
 from psycopg2.extensions import connection as Connection
 
 from traininglogs.agent.extraction import assemble
@@ -18,6 +20,7 @@ def extract(
     conn: Connection,
     user_id: str,
     input_id: str,
+    today: date,
     provider: ExtractionProvider | None = None,
     model: str | None = None,
 ) -> str:
@@ -48,10 +51,10 @@ def extract(
     print(f"[ingest] input_id={input_id} extract: done, {len(calls)} AI call(s)")
 
     # The AI can only read a date out of the text. When the text has none, it flags "date" as
-    # unsure instead of inventing one; the day the note was saved fills the gap, still flagged,
-    # since "saved today" isn't the same as "trained today".
+    # unsure instead of inventing one; today on the phone fills the gap, still flagged, since
+    # "sent today" isn't the same as "trained today".
     if "date" in (result.uncertain_fields or []):
-        result.date = note["created_at"].strftime("%Y-%m-%d")
+        result.date = today.isoformat()
 
     return insert_card(
         conn,

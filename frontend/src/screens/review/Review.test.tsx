@@ -135,6 +135,24 @@ describe('Review', () => {
     })
   })
 
+  it('confirming a note saved before says so and links to its session', async () => {
+    const calls = fakeApi({
+      'GET /extractions/x1': card(120),
+      'GET /programs': [],
+      'POST /extractions/x1/edit': reply(card(120)),
+      'POST /extractions/x1/confirm': new Response(
+        JSON.stringify({ detail: 'This note is already saved.', session_id: 's9' }), { status: 409 },
+      ),
+    })
+    const location = renderApp('/review/x1')
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm session' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This note is already saved.')
+    expect(calls.filter((c) => c.key === 'POST /extractions/x1/confirm')).toHaveLength(1)
+    await userEvent.click(screen.getByRole('link', { name: 'Open it' }))
+    expect(location.history.at(-1)).toBe('/history/s9')
+  })
+
   it('marks what the AI was unsure of and counts it', async () => {
     const unsure = card(120)
     unsure.session_header.uncertain_fields = ['date']

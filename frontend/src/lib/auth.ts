@@ -41,6 +41,9 @@ function setSession(next: Session | null): void {
   listeners.forEach((l) => l())
 }
 
+/** The signed-in person's email, or null. */
+export const signedInEmail = (): string | null => current()?.email ?? null
+
 /** The signed-in person's email, or null; re-renders when it changes. */
 export function useSignedIn(): string | null {
   return useSyncExternalStore(

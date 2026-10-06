@@ -47,10 +47,15 @@ export default function App() {
   }, [])
 
   // Signing in (again) reloads everything, and sends sessions that waited on the phone meanwhile.
+  // Signing out, by the button or because the server refused the pass, forgets what was loaded, so
+  // the next person to sign in never sees it.
   const email = useSignedIn()
   const queryClient = useQueryClient()
   useEffect(() => {
-    if (!email) return
+    if (!email) {
+      queryClient.clear()
+      return
+    }
     queryClient.invalidateQueries()
     flush()
   }, [email, queryClient])

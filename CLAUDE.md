@@ -50,6 +50,7 @@ docker compose up -d db_test      # Postgres for the tests, on port 5433
 |---|---|---|
 | `DATABASE_URL` | the app | Required. Points at production; see the warning below. |
 | `SUPABASE_URL` | the app | Required: the Supabase project whose sign-ins the server accepts. The app won't start without it. |
+| `SUPABASE_PUBLISHABLE_KEY` | the app | Required: that project's publishable key, which the app signs in with. Public by design. The app won't start without it. |
 | `ANTHROPIC_API_KEY` | extraction and typed corrections | Required |
 | `ANTHROPIC_WORKSPACE_ID` | Anthropic keys not scoped to a workspace (`sk-ant-usr…`) | Required with such a key |
 | `TEST_DATABASE_URL` | the tests | Defaults to the Docker database on port 5433 |

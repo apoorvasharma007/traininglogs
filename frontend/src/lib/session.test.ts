@@ -70,8 +70,10 @@ describe('Finish', () => {
     s = toggleDone(s, squat.sets[1].key)
     expect(counts(s)).toEqual({ done: 2, total: 6 })
 
-    const req = toRequest(s, new Date(2026, 9, 4, 10, 52))
+    const finished = new Date(2026, 9, 4, 10, 52)
+    const req = toRequest(s, finished)
     expect(req.duration_minutes).toBe(52)
+    expect([req.started_at, req.ended_at]).toEqual([now.toISOString(), finished.toISOString()])
     expect(req.program_workout_id).toBe('w1')
     expect(req.exercises).toEqual([
       {

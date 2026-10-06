@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import PageTitle from '@/components/PageTitle'
@@ -8,7 +8,6 @@ import { useOutbox } from '@/lib/store'
 import type { LiftsOut } from '@/lib/types'
 
 export default function Settings() {
-  const queryClient = useQueryClient()
   const email = useSignedIn()
   const unsent = useOutbox().pending.length
   const [signingOut, setSigningOut] = useState(false)
@@ -54,7 +53,6 @@ export default function Settings() {
         onClose={() => setSigningOut(false)}
         onConfirm={() => {
           setSigningOut(false)
-          queryClient.clear()
           signOut()
         }}
       />

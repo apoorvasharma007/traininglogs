@@ -8,26 +8,20 @@ Each function that writes commits its own transaction.
 from __future__ import annotations
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from psycopg2.extensions import connection as Connection
 
+from traininglogs.db.fetch import _rows
 from traininglogs.db.ids import new_id
 from traininglogs.db.insert import name_key, user_exercise_ids
 
 
-def _rows(cur) -> list[dict[str, Any]]:
-    names = [d.name for d in cur.description]
-    return [dict(zip(names, row)) for row in cur.fetchall()]
-
-
-def today_for(conn: Connection, user_id: str) -> date:
-    """Today where the person is: the server runs in UTC, and an evening in India is already the
-    next day there."""
-    with conn.cursor() as cur:
-        cur.execute("SELECT (now() AT TIME ZONE timezone)::date FROM users WHERE id = %s", (user_id,))
-        return cur.fetchone()[0]
+def utc_today() -> date:
+    """Today in UTC, for counts of days (deload, trends), where a day early or late around midnight
+    doesn't matter. Dates that are the person's data, like a session's, come from their phone."""
+    return datetime.now(timezone.utc).date()
 
 
 _PROGRAM = "SELECT id::text AS id, name, deload_after_days, following, following_since FROM programs"
@@ -38,15 +32,14 @@ def list_programs(conn: Connection, user_id: str) -> list[dict[str, Any]]:
     with conn.cursor() as cur:
         cur.execute(f"{_PROGRAM} WHERE user_id = %s AND archived_at IS NULL ORDER BY following DESC, created_at", (user_id,))
         programs = _rows(cur)
-    today = today_for(conn, user_id)
-    return [_attach_workouts(conn, user_id, p, today) for p in programs]
+    return [_attach_workouts(conn, user_id, p, utc_today()) for p in programs]
 
 
 def get_program(conn: Connection, user_id: str, program_id: str) -> dict[str, Any] | None:
     with conn.cursor() as cur:
         cur.execute(f"{_PROGRAM} WHERE user_id = %s AND id = %s AND archived_at IS NULL", (user_id, program_id))
         rows = _rows(cur)
-    return _attach_workouts(conn, user_id, rows[0], today_for(conn, user_id)) if rows else None
+    return _attach_workouts(conn, user_id, rows[0], utc_today()) if rows else None
 
 
 def _attach_workouts(conn: Connection, user_id: str, program: dict[str, Any], today: date) -> dict[str, Any]:
@@ -237,7 +230,7 @@ def follow_program(conn: Connection, user_id: str, program_id: str) -> bool:
             cur.execute("UPDATE programs SET following = false, updated_at = now() WHERE user_id = %s AND following", (user_id,))
             cur.execute(
                 "UPDATE programs SET following = true, following_since = %s, updated_at = now() WHERE user_id = %s AND id = %s",
-                (today_for(conn, user_id), user_id, program_id),
+                (utc_today(), user_id, program_id),
             )
     conn.commit()
     return True

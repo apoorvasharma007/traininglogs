@@ -105,18 +105,20 @@ def insert_ai_calls(conn: Connection, user_id: str, input_id: str, calls: list[d
     conn.commit()
 
 
-def confirm_card(conn: Connection, user_id: str, card_id: str, corrections: list[dict] | None = None) -> None:
-    """Mark a card confirmed, with what changed to get there, in one statement."""
+def confirm_card(conn: Connection, user_id: str, card_id: str, corrections: list[dict] | None = None) -> bool:
+    """Mark a pending card confirmed, with what changed to get there; False if it isn't pending.
+    Leaves the commit to the caller. A second confirm at the same moment waits for the first to
+    finish, then finds the card no longer pending."""
     with conn.cursor() as cur:
         cur.execute(
             """
             UPDATE input_text_confirmation_cards
             SET status = 'confirmed', confirmed_at = now(), corrections = %s
-            WHERE id = %s AND user_id = %s
+            WHERE id = %s AND user_id = %s AND status = 'pending'
             """,
             (json.dumps(corrections or []), card_id, user_id),
         )
-    conn.commit()
+        return cur.rowcount == 1
 
 
 def name_key(name: str) -> str:
@@ -180,7 +182,7 @@ def insert_session(
     """Save a whole session for `user_id` and return its id, or None when the person already has
     a session with the same dedup key (session.session_id: the date and a fingerprint of the
     input's text), so nothing is saved twice. All of it or none; `commit=False` leaves it in the
-    caller's transaction."""
+    caller's transaction, and on None the caller decides what to undo."""
     session_id = new_id()
     with conn.cursor() as cur:
         cur.execute(
@@ -201,7 +203,6 @@ def insert_session(
             ),
         )
         if cur.fetchone() is None:
-            conn.rollback()
             return None
 
         movements = {"workout_session_warmups": session.warmup, "workout_session_cooldowns": session.cooldown}

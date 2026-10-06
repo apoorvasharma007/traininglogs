@@ -108,7 +108,7 @@ def _set(row: dict) -> dict:
     return {k: v for k, v in row.items() if k not in ("exercise_id", "kind")}
 
 
-def get_exercise_history(conn: Connection, name: str, user_id: str) -> list[dict]:
+def get_exercise_history(conn: Connection, user_id: str, name: str) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -193,7 +193,7 @@ def get_working_set_rows(conn: Connection, user_id: str) -> list[dict]:
         return _rows(cur)
 
 
-def get_last_exercises(conn: Connection, names: list[str], user_id: str) -> list[dict]:
+def get_last_exercises(conn: Connection, user_id: str, names: list[str]) -> list[dict]:
     """For each name, the latest session that had that exercise (the person's exercise with that
     name, ignoring case and spaces): its date, the exercise note, and its warm-up and working sets.
     Names never logged are left out. Reps of a set done one side at a time are the weaker side."""
