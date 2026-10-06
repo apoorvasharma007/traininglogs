@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A note confirms once. Confirming it again, after a lost connection or after changing the date,
   saves nothing new and says "This note is already saved." with an "Open it" link to the session.
   Confirm is greyed out while it saves, so a second tap sends nothing.
+- Reading a note failed on every try on staging: its build installed version 1.11 of Anthropic's
+  library, which no longer accepts `temperature`. Package versions are now locked
+  (`requirements.lock`, `requirements-dev.lock`), so the server, CI and a local setup install the
+  same versions, all on Python 3.12. Anthropic's library stays below 1.0 until moving to it is
+  done as its own step.
 
 ### Removed
 

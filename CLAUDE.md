@@ -39,9 +39,11 @@ Secrets:
 
 ## Local development
 
+Python 3.12, the server's version (`.python-version`); on a Mac, `brew install python@3.12`.
+
 ```bash
-python -m venv .venv
-.venv/bin/pip install -e .
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements-dev.lock && .venv/bin/pip install --no-deps -e .
 cp .env.example .env              # then fill it in, see below
 docker compose up -d db_test      # Postgres for the tests, on port 5433
 ```
@@ -86,6 +88,16 @@ Run the tests:
 
 ```bash
 .venv/bin/pytest tests/
+```
+
+Package versions are locked. `requirements.lock` has the exact version of everything the server
+installs, and `requirements-dev.lock` adds the test tools; the server build, CI and your machine
+install from them, so all three run the same thing. To add or upgrade a package, change
+`pyproject.toml`, then remake both files and commit them with the change:
+
+```bash
+.venv/bin/pip-compile --strip-extras --no-emit-index-url -o requirements.lock pyproject.toml
+.venv/bin/pip-compile --strip-extras --no-emit-index-url --extra dev -o requirements-dev.lock pyproject.toml
 ```
 
 ## Branching and releases
