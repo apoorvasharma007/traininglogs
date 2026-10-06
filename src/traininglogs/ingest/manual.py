@@ -18,6 +18,7 @@ from traininglogs.db.fetch import get_input_by_client_id
 from traininglogs.db.insert import insert_input, insert_session
 from traininglogs.ingest.confirm import AlreadySaved, build_session_from_extract
 
+
 def to_extract(session: dict[str, Any]) -> TrainingLogLLMExtract:
     """The request, in the shape every other session is written from."""
     exercises = []
@@ -97,6 +98,6 @@ def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any])
         # The first send saved the session in the meantime.
         saved = _session_for(conn, user_id, input_id)
         if saved is None:
-            raise AlreadySaved(session["client_id"])
+            raise AlreadySaved()
         return saved, False
     return session_id, True

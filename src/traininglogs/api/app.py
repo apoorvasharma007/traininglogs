@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
@@ -202,7 +203,7 @@ def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), user:
     """Last time for each named exercise: the latest session that had it, from any program."""
     from traininglogs.db.fetch import get_last_exercises
 
-    return get_last_exercises(conn, name, user)
+    return get_last_exercises(conn, user, name)
 
 
 @app.get("/sessions/{session_id}", response_model=SessionDetail)
@@ -231,9 +232,9 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     estimated max (or best reps at bodyweight), and the trend over the last 4 weeks."""
     from traininglogs.analytics.progress import lift_summaries
     from traininglogs.db.fetch import get_working_set_rows
-    from traininglogs.db.programs import today_for
+    from traininglogs.db.programs import utc_today
 
-    return lift_summaries(get_working_set_rows(conn, user), today_for(conn, user))
+    return lift_summaries(get_working_set_rows(conn, user), utc_today())
 
 
 @app.get("/progress/lifts/{name}", response_model=LiftDetail)
@@ -241,9 +242,9 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     """One lift's sessions, oldest first: the value, the set behind it, records and goal."""
     from traininglogs.analytics.progress import lift_detail
     from traininglogs.db.fetch import get_working_set_rows
-    from traininglogs.db.programs import today_for
+    from traininglogs.db.programs import utc_today
 
-    detail = lift_detail(get_working_set_rows(conn, user), name, today_for(conn, user))
+    detail = lift_detail(get_working_set_rows(conn, user), name, utc_today())
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
@@ -251,7 +252,7 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
 
 @app.get("/exercises/{name}/history", response_model=list[ExerciseHistoryRow])
 def exercise_history(name: str, conn=Depends(_db), user: str = Depends(_user)):
-    rows = get_exercise_history(conn, name, user)
+    rows = get_exercise_history(conn, user, name)
     if not rows:
         raise HTTPException(status_code=404, detail="No sessions with this exercise yet.")
     return rows
@@ -271,7 +272,7 @@ def create_input(body: CaptureIn, response: Response, conn=Depends(_db), user: s
     input_id = insert_input(conn, user, body.content, kind=body.source_kind, source=body.source_file)
     try:
         provider = AnthropicProvider()
-        card_id = extract(conn, user, input_id, provider=provider, model=provider.model)
+        card_id = extract(conn, user, input_id, body.date, provider=provider, model=provider.model)
     except Exception as exc:
         print(f"Reading note {input_id} failed: {exc}", flush=True)
         response.status_code = 502
@@ -328,8 +329,9 @@ def confirm_extraction_endpoint(
             conn, user, extraction_id, final_extract, corrections=body.corrections,
             program_workout_id=body.program_workout_id,
         )
-    except AlreadySaved:
-        raise HTTPException(status_code=409, detail="This note is already saved as a session. Find it in History.")
+    except AlreadySaved as saved:
+        # The app links to the saved session.
+        return JSONResponse(status_code=409, content={"detail": "This note is already saved.", "session_id": saved.session_id})
     response.status_code = 201
     return ConfirmOut(session_id=session_id)
 

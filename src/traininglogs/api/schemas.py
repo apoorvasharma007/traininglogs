@@ -102,6 +102,7 @@ class SessionDetail(BaseModel):
 
 class CaptureIn(BaseModel):
     content: str = Field(min_length=1, description="The session text, as written.")
+    date: date  # today on the phone: the session's date when the note doesn't give one
     source_kind: Literal["text"] = Field(
         default="text", description="Always text: this endpoint is for notes the model reads."
     )

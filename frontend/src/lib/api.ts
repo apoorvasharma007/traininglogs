@@ -3,10 +3,13 @@ import { accessToken, signedOutByServer } from '@/lib/auth'
 
 export class ApiError extends Error {
   status: number
+  /** The whole answer, for the few that carry more than a message. */
+  body: unknown
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, body: unknown = null) {
     super(message)
     this.status = status
+    this.body = body
   }
 }
 
@@ -44,6 +47,6 @@ export async function api<T>(
   const body: unknown = await res.json().catch(() => null)
   // The pass was refused: the sign-in screen takes over.
   if (res.status === 401) signedOutByServer()
-  if (!res.ok) throw new ApiError(res.status, detailOf(body, res.status))
+  if (!res.ok) throw new ApiError(res.status, detailOf(body, res.status), body)
   return body as T
 }

@@ -216,7 +216,7 @@ class TestCreateInput:
         )
         r = client.post(
             "/inputs",
-            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "text"},
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "date": "2026-03-01", "source_kind": "text"},
             headers=HEADERS,
         )
         assert r.status_code == 201
@@ -247,7 +247,7 @@ class TestCreateInput:
 
         r = client.post(
             "/inputs",
-            json={"content": "some session text"},
+            json={"content": "some session text", "date": "2026-03-01"},
             headers=HEADERS,
         )
         assert r.status_code == 502
@@ -262,8 +262,12 @@ class TestCreateInput:
 
     def test_rejects_empty_content(self, client) -> None:
         r = client.post(
-            "/inputs", json={"content": ""}, headers=HEADERS
+            "/inputs", json={"content": "", "date": "2026-03-01"}, headers=HEADERS
         )
+        assert r.status_code == 422
+
+    def test_requires_the_phones_date(self, client) -> None:
+        r = client.post("/inputs", json={"content": "some text"}, headers=HEADERS)
         assert r.status_code == 422
 
     def test_requires_auth(self, client) -> None:
@@ -444,7 +448,23 @@ class TestConfirmExtraction:
         id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
         r2 = client.post(f"/extractions/{id_b}/confirm", headers=HEADERS)
         assert r2.status_code == 409
-        assert r2.json()["detail"] == "This note is already saved as a session. Find it in History."
+        assert r2.json() == {"detail": "This note is already saved.", "session_id": r1.json()["session_id"]}
+
+    def test_a_card_confirms_once_even_with_a_changed_date(self, client, db_conn) -> None:
+        """Swiping back to a saved card, changing the date and confirming again must not save a
+        second copy; the answer links to the first."""
+        extraction_id = self._insert_extraction(db_conn, "2026-05-10", "confirm once content")
+        r1 = client.post(f"/extractions/{extraction_id}/confirm", headers=HEADERS)
+        assert r1.status_code == 201
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT extract FROM input_text_confirmation_cards WHERE id = %s", (extraction_id,))
+            changed = {**cur.fetchone()[0], "date": "2026-05-09"}
+        r2 = client.post(f"/extractions/{extraction_id}/confirm", json={"extract": changed}, headers=HEADERS)
+        assert r2.status_code == 409
+        assert r2.json()["session_id"] == r1.json()["session_id"]
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM workout_sessions WHERE confirmation_card_id = %s", (extraction_id,))
+            assert cur.fetchone()[0] == 1
 
     def test_not_found(self, client) -> None:
         r = client.post("/extractions/does-not-exist/confirm", headers=HEADERS)

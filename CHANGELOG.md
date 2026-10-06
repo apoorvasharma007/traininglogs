@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to use from the server (`GET /config`), so one build works in staging and production.
 - Accounts: sign-in by a Supabase pass instead of the API key; every row belongs to one person,
   and the database itself refuses a row owned by someone other than its parent's owner or linked
-  to another person's row. One followed program per person; "today" in each person's timezone.
+  to another person's row. One followed program per person.
 - A database designed for many people (`db-redesign-plan.md`): time-ordered UUID ids, an owner on
   every table, `users` and `profiles`, and renamed tables (`input_text`,
   `input_text_confirmation_cards`, `ai_call_logs`, `workout_sessions` and its exercises, sets,
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exercises are each person's own, made the first time a name is used (ignoring case and spaces),
   and linked to a shared list of 32 basic lifts when the name matches.
 - `scripts/migrate_to_accounts.py` converts an existing database in one transaction, dry run by
-  default.
+  default. It keeps the old tables in an `old` schema, to be removed in a later step.
 - Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
   deploys production.
 
@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The deload count's break check counted every person's training days, not only yours.
+- A pasted note with no date gets today's date on your phone. It took the server's UTC date,
+  which in India is the day before until 5:30 am.
+- Sessions waiting to send, and the one in progress, are kept on the phone under your email. If
+  someone else signs in on the same phone, the app no longer shows them or sends them as theirs.
+  Signing out also forgets the screens loaded for you when the server ends your sign-in, not
+  only when you tap Sign out.
+- A note confirms once. Confirming it again, after a lost connection or after changing the date,
+  saves nothing new and says "This note is already saved." with an "Open it" link to the session.
+  Confirm is greyed out while it saves, so a second tap sends nothing.
 
 ### Removed
 

@@ -42,7 +42,7 @@ describe('Train', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Start workout' }))
     await waitFor(() => expect(location.history.at(-1)).toBe('/session'))
-    const started = await get('session-in-progress')
+    const started = await get('session-in-progress:a@example.com')
     expect(started.workoutId).toBe('w2')
     expect(calls.some((c) => c.key.startsWith('GET /exercises/last'))).toBe(true)
   })
@@ -97,7 +97,7 @@ describe('Train', () => {
   })
 
   it('says when finished sessions are waiting to send', async () => {
-    await set('sessions-to-send', [{ client_id: 'a' }])
+    await set('sessions-to-send:a@example.com', [{ client_id: 'a' }])
     fakeApi({ 'GET /programs': [] })
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       if (init?.method === 'POST') throw new TypeError('Failed to fetch')
@@ -105,5 +105,16 @@ describe('Train', () => {
     }) as typeof fetch
     renderApp('/')
     expect(await screen.findByText('1 session waiting to send')).toBeInTheDocument()
+  })
+
+  it("never shows or sends someone else's sessions left on this phone", async () => {
+    await set('sessions-to-send:b@example.com', [{ client_id: 'theirs' }])
+    await set('session-in-progress:b@example.com', startBlank(new Date(2026, 9, 4, 10, 5)))
+    const calls = fakeApi({ 'GET /programs': [program()] })
+    renderApp('/')
+    expect(await screen.findByRole('button', { name: 'Start workout' })).toBeInTheDocument()
+    expect(screen.queryByText('Session in progress')).not.toBeInTheDocument()
+    expect(screen.queryByText(/waiting to send/)).not.toBeInTheDocument()
+    expect(calls.filter((c) => c.key === 'POST /sessions')).toEqual([])
   })
 })

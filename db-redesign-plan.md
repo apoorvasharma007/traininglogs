@@ -26,7 +26,9 @@ before anyone else has data, while production has 130 sessions and the change is
    is obvious. Equipment lives only on the shared list, so people's naming is never boxed in.
 5. **Row-level security** on every table, no policies, as now.
 6. **Times:** every table has `created_at`, every changeable one `updated_at`. Sessions get
-   `started_at` and `ended_at`. "Today" uses the person's timezone, not the server's.
+   `started_at` and `ended_at`. Dates that are the person's data (a session's, a note's when
+   it gives none) come from their phone. Counts of days (deload, trends) use the server's UTC
+   date, where a day either way around midnight doesn't matter.
 7. **Order is `position`** everywhere (sessions used `number`).
 8. **The API's JSON stays the same,** so the app doesn't change for this.
 9. **Production is copied into staging** for testing, with each person's sign-in id remapped by
@@ -46,7 +48,7 @@ and `created_at`; they're left out below. → marks a link by `(user_id, …)`.
 
 **`users`** (private account; owner of everything)
 `id`, `auth_id uuid UNIQUE`, `email`, `status` (`active`, `disabled`), `role` (`member`,
-`admin`), `timezone` (from the phone at first sign-in, e.g. `Asia/Kolkata`), `weight_unit`
+`admin`), `timezone` (default `UTC`; nothing sets or reads it yet), `weight_unit`
 (`kg`, `lb`), `ai_monthly_limit_usd` (default 1.00), `created_at`, `updated_at`, `last_seen_at`,
 `deleted_at` (account deletion requested).
 

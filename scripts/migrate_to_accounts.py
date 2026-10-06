@@ -15,8 +15,10 @@ In one transaction:
    - exercises, working and warm-up sets, warm-ups, cool-downs, programs and their workouts;
    - every distinct exercise name -> one of the owner's user_exercises.
 4. Counts are compared, old against new; any difference rolls everything back.
-5. Without --commit it rolls back anyway: a dry run that changes nothing. With --commit, the old
-   schema is dropped and it all commits.
+5. Without --commit it rolls back anyway: a dry run that changes nothing. With --commit it all
+   commits, and the old tables stay in the `old` schema, where the app never reads them, so they
+   can be checked against or copied back. Removing them is a separate step, once the app has been
+   checked on the new tables.
 
     DATABASE_URL=... .venv/bin/python scripts/migrate_to_accounts.py --auth-id <uuid> --email <email>
     DATABASE_URL=... .venv/bin/python scripts/migrate_to_accounts.py --auth-id <uuid> --email <email> --commit
@@ -262,9 +264,8 @@ def main() -> int:
             conn.rollback()
             print("Dry run: rolled back. Run with --commit to keep it.")
             return 0
-        conn.cursor().execute("DROP SCHEMA old CASCADE")
         conn.commit()
-        print("Committed.")
+        print("Committed. The old tables are kept in the `old` schema.")
         return 0
     except Exception:
         conn.rollback()
