@@ -7,6 +7,6 @@ describe('Settings', () => {
     fakeApi({ 'GET /progress/lifts': { key_lifts: [], other_lifts: [] }, 'GET /me/ai-usage': { total_usd: 0.3428 } })
     renderApp('/settings')
     expect(await screen.findByText('$0.34')).toBeInTheDocument()
-    expect(screen.getByText('Total so far')).toBeInTheDocument()
+    expect(screen.getByText('Total So Far')).toBeInTheDocument()
   })
 })

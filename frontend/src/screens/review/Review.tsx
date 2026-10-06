@@ -183,9 +183,9 @@ export default function Review({ params }: { params: { id: string } }) {
           <label data-check={dateUnsure ? '' : undefined}
             className="relative flex min-h-13 items-center gap-3 px-4 text-[15px]">
             <span className="w-20 shrink-0 text-muted-foreground">Date</span>
-            <span className={`flex-1 font-semibold ${dateUnsure ? 'text-warning' : ''}`}>
+            <span className={`flex flex-1 flex-col font-semibold ${dateUnsure ? 'text-warning' : ''}`}>
               {dayLabel(header.date)}
-              {dateUnsure && <span className="font-normal"> · check this</span>}
+              {dateUnsure && <span className="text-xs font-normal">Check this</span>}
             </span>
             <Pencil size={16} aria-hidden className="text-muted-foreground" />
             {/* The phone's date picker sits invisibly over the row and opens on tap. */}
@@ -205,7 +205,7 @@ export default function Review({ params }: { params: { id: string } }) {
               className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
               <span className="w-20 shrink-0 text-muted-foreground">Workout</span>
               <span className="min-w-0 flex-1 truncate font-semibold">
-                {countsAsWorkout ? workoutName(countsAsWorkout) : 'Not part of a program'}
+                {countsAsWorkout ? workoutName(countsAsWorkout) : 'Not Part of a Program'}
                 {countsAsWorkout && <span className="ml-1.5 font-normal text-muted-foreground">{followed.name}</span>}
               </span>
               <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
@@ -365,7 +365,7 @@ export default function Review({ params }: { params: { id: string } }) {
           onClick={confirm}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {review.busy || saving ? 'Saving…' : 'Confirm session'}
+          {review.busy || saving ? 'Saving…' : 'Confirm Session'}
         </button>
         {savedAs && (
           <Link href={`/history/${encodeURIComponent(savedAs)}`} className="self-start px-1 text-[13px] font-semibold text-muted-foreground underline underline-offset-2">
@@ -386,7 +386,7 @@ export default function Review({ params }: { params: { id: string } }) {
           ))}
           <button type="button" onClick={() => { setCountsAs(''); setPicking(false) }}
             className="flex h-13 items-center border-t border-border px-4 text-left text-[15px] font-medium text-muted-foreground">
-            Not part of a program
+            Not Part of a Program
           </button>
         </div>
       </Sheet>
@@ -414,9 +414,9 @@ export default function Review({ params }: { params: { id: string } }) {
           <>
             <span className="text-[17px] font-semibold">{menuFor.header.name}</span>
             <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
-              <MenuItem label="Add warm-up set" run={() => addLine('add_warmup_set', menuFor.header.path)} />
+              <MenuItem label="Add Warm-up Set" run={() => addLine('add_warmup_set', menuFor.header.path)} />
               <MenuItem
-                label={menuFor.note_preview ? 'Edit note' : 'Add note'}
+                label={menuFor.note_preview ? 'Edit Note' : 'Add Note'}
                 run={() => {
                   setNoteFor(menuFor.header.path)
                   setMenuFor(null)

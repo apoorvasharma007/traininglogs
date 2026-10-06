@@ -1,4 +1,5 @@
 import { Check, Plus } from 'lucide-react'
+import Parts from '@/components/Parts'
 import { useState } from 'react'
 import Sheet from '@/components/Sheet'
 import { newMovement, type LiveMovement } from '@/lib/session'
@@ -34,12 +35,12 @@ export default function MovementCard({
           <button key={p.name} type="button" onClick={() => { onAddPreset(p.movements); setChoosing(false) }}
             className="flex flex-col gap-0.5 border-t border-border px-4 py-3 text-left first:border-t-0 active:bg-muted">
             <span className="text-[15px] font-semibold">{p.name}</span>
-            <span className="text-xs text-muted-foreground">{p.movements.map((m) => m.name).join(' · ')}</span>
+            <Parts className="text-xs text-muted-foreground" items={p.movements.map((m) => m.name)} />
           </button>
         ))}
         <button type="button" onClick={() => { onChange([...movements, newMovement()]); setChoosing(false) }}
           className="h-12 border-t border-border px-4 text-left text-[15px] font-medium text-muted-foreground">
-          Add your own
+          Add Your Own
         </button>
       </div>
     </Sheet>

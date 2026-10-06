@@ -29,7 +29,7 @@ export default function LogFromNotes() {
 
   return (
     <div>
-      <ScreenHeader back="/" backLabel="Back to Train" title="Log from notes" />
+      <ScreenHeader back="/" backLabel="Back to Train" title="Log from Notes" />
       <div className="flex flex-col gap-2.5">
         <label htmlFor="session-text" className="px-1 text-[13px] font-semibold">
           What did you do?

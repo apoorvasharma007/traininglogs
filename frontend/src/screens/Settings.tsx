@@ -23,25 +23,25 @@ export default function Settings() {
         <div className="flex min-h-13 items-center justify-between gap-3 rounded-2xl border border-border bg-card py-1 pr-1 pl-4">
           <span className="min-w-0 truncate text-[15px]">{email}</span>
           <button type="button" onClick={() => setSigningOut(true)} className="h-11 shrink-0 px-3 text-sm font-semibold text-destructive">
-            Sign out
+            Sign Out
           </button>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between px-1">
-          <h2 className="text-sm font-semibold">AI use</h2>
+          <h2 className="text-sm font-semibold">AI Use</h2>
           <span className="text-xs text-muted-foreground">Reading notes and AI fixes</span>
         </div>
         <div className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4">
-          <span>Total so far</span>
+          <span>Total So Far</span>
           <span className="tabular-nums">{aiUsage.data && `$${aiUsage.data.total_usd.toFixed(2)}`}</span>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between px-1">
-          <h2 className="text-sm font-semibold">Key lifts</h2>
+          <h2 className="text-sm font-semibold">Key Lifts</h2>
           <span className="text-xs text-muted-foreground">Shown first in Progress</span>
         </div>
         <ul className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -55,13 +55,13 @@ export default function Settings() {
 
       <ConfirmSheet
         open={signingOut}
-        title="Sign out?"
+        title="Sign Out?"
         body={
           unsent
             ? `${unsent} ${unsent === 1 ? "session hasn't" : "sessions haven't"} sent yet. ${unsent === 1 ? 'It stays' : 'They stay'} on this phone and ${unsent === 1 ? 'sends' : 'send'} after you sign in again.`
             : 'You can sign in again with a code by email.'
         }
-        confirmLabel="Sign out"
+        confirmLabel="Sign Out"
         onClose={() => setSigningOut(false)}
         onConfirm={() => {
           setSigningOut(false)

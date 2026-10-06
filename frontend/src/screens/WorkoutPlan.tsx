@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import Parts from '@/components/Parts'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -104,7 +105,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
               {!draft && (
                 <button type="button" onClick={() => startEditing(w)}
                   className="h-10 rounded-xl bg-primary px-3.5 font-semibold text-primary-foreground transition active:scale-95">
-                  Add exercises
+                  Add Exercises
                 </button>
               )}
             </div>
@@ -147,7 +148,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
           {draft && (
             <button type="button" onClick={() => setRemoving(true)} className="h-11 text-sm font-semibold text-destructive">
-              Delete workout
+              Delete Workout
             </button>
           )}
         </div>
@@ -158,7 +159,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
           <button type="button"
             onClick={() => startSession({ program: program.data!, workout: w }).then(() => navigate('/session'))}
             className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-            Start workout
+            Start Workout
           </button>
         </BottomBar>
       )}
@@ -190,7 +191,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
       <ConfirmSheet open={removing} title={`Delete ${w ? workoutName(w) : 'workout'}?`}
         body="The workouts after it move up one. Sessions you logged from it stay in History."
-        confirmLabel="Delete workout" busy={change.isPending}
+        confirmLabel="Delete Workout" busy={change.isPending}
         onClose={() => setRemoving(false)}
         onConfirm={() => change.mutate({ path: `/workouts/${params.wid}`, method: 'DELETE' }, { onSuccess: () => { setDraft(null); navigate(back) } })} />
     </div>
@@ -209,7 +210,7 @@ function ExerciseSheet(props: {
 }) {
   // Mounted closed and opened in place: a drawer created already open doesn't slide into view.
   return (
-    <Sheet open={props.open} onClose={props.onClose} label={props.isNew ? 'Add exercise' : 'Edit exercise'}>
+    <Sheet open={props.open} onClose={props.onClose} label={props.isNew ? 'Add Exercise' : 'Edit exercise'}>
       {props.open && <ExerciseForm key={props.formKey} {...props} />}
     </Sheet>
   )
@@ -269,7 +270,7 @@ function ExerciseForm(props: {
           )}
           <button type="submit" disabled={props.busy || !e.name.trim()}
             className="h-13 flex-1 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
-            {props.busy ? 'Saving…' : props.isNew ? 'Add exercise' : 'Done'}
+            {props.busy ? 'Saving…' : props.isNew ? 'Add Exercise' : 'Done'}
           </button>
         </div>
       </form>
@@ -288,8 +289,8 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
   }
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-semibold">
-        Alternatives <span className="font-normal text-muted-foreground">· switch during the workout</span>
+      <span className="flex flex-col text-[13px] font-semibold">
+        Alternatives <span className="font-normal text-muted-foreground">Switch during the workout</span>
       </span>
       {list.map((alt) => (
         <div key={alt} className="flex h-11 items-center justify-between rounded-xl border border-border pr-1 pl-3.5 text-[15px]">
@@ -325,10 +326,10 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
 function MovementsLine({ title, list }: { title: string; list: Movement[] }) {
   if (list.length === 0) return null
   return (
-    <p className="px-1 text-[13px] text-muted-foreground">
-      <span className="font-semibold text-foreground">{title}</span> ·{' '}
-      {list.map((m) => [m.name, amountText(m)].filter(Boolean).join(' ')).join(' · ')}
-    </p>
+    <div className="flex flex-col px-1 text-[13px] text-muted-foreground">
+      <span className="font-semibold text-foreground">{title}</span>
+      <Parts items={list.map((m) => [m.name, amountText(m)].filter(Boolean).join(' '))} />
+    </div>
   )
 }
 

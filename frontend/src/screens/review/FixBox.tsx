@@ -64,7 +64,7 @@ export default function FixBox({
         <span className="text-xs text-muted-foreground">Tip: tap the mic on your keyboard to say it instead.</span>
         <button type="submit" disabled={busy || !text.trim()}
           className="h-10 shrink-0 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40">
-          {busy ? 'Fixing…' : 'Fix it'}
+          {busy ? 'Fixing…' : 'Fix It'}
         </button>
       </div>
       {error && (

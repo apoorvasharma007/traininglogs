@@ -19,7 +19,7 @@ export default function Programs() {
   const create = useCreateProgram()
   const [, navigate] = useLocation()
   const [creating, setCreating] = useState(false)
-  const [choosing, setChoosing] = useState(false) // "Create your own" or "From a template"
+  const [choosing, setChoosing] = useState(false) // "Create Your Own" or "From a Template"
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,11 +69,11 @@ export default function Programs() {
         <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
           <button type="button" onClick={() => { setChoosing(false); setCreating(true) }}
             className="flex h-13 items-center px-4 text-left text-[15px] font-semibold active:bg-muted">
-            Create your own
+            Create Your Own
           </button>
           <Link href="/programs/templates" onClick={() => setChoosing(false)}
             className="flex h-13 items-center justify-between border-t border-border px-4 text-[15px] font-semibold active:bg-muted">
-            From a template
+            From a Template
             <ChevronRight size={18} aria-hidden className="text-faint-foreground" />
           </Link>
         </div>
