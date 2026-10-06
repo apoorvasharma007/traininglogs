@@ -15,9 +15,14 @@ dependencies = [
     "httpx>=0.27",
     "pyjwt[crypto]>=2.8",
     "pydantic>=2.0",
-    "anthropic>=0.40",
+    # 1.x no longer takes `temperature`; moving to it is its own step.
+    "anthropic>=0.101,<1",
     "groq>=0.9",
 ]
+
+[project.optional-dependencies]
+# For the tests and for making the lock files.
+dev = ["pytest", "pytest-asyncio", "pip-tools"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
