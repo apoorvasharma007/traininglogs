@@ -60,12 +60,12 @@ export default function SignIn() {
       {error && <p role="alert" className="px-1 text-sm text-destructive">{error}</p>}
       <button type="submit" disabled={busy || (sentTo ? code.trim().length < 6 : !email.includes('@'))}
         className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
-        {busy ? (sentTo ? 'Signing in…' : 'Sending…') : sentTo ? 'Sign in' : 'Email me a code'}
+        {busy ? (sentTo ? 'Signing in…' : 'Sending…') : sentTo ? 'Sign in' : 'Email Me a Code'}
       </button>
       {sentTo && (
         <button type="button" onClick={() => { setSentTo(null); setCode(''); setError(null) }}
           className="h-11 text-sm font-semibold text-muted-foreground">
-          Use a different email
+          Use a Different Email
         </button>
       )}
     </form>

@@ -44,11 +44,11 @@ export default function SessionView({ params }: { params: { id: string } }) {
                 <h2 className="text-base font-semibold">{ex.name}</h2>
                 {ex.notes && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
               </div>
-              <div className="grid grid-cols-[34px_70px_60px_minmax(0,1fr)] px-4 pb-1 text-[11px] font-semibold tracking-wide text-faint-foreground">
+              <div className={`${COLUMNS} px-4 pb-1 text-[11px] font-semibold tracking-wide text-faint-foreground`}>
                 <span>SET</span>
                 <span>KG</span>
                 <span>REPS</span>
-                <span>NOTE</span>
+                <span>RPE</span>
               </div>
               {ex.warmup_sets.map((w) => (
                 <Row key={`w${w.number}`} label="W" warmup weight={weightText(w.weight_kg)} reps={w.rep_count?.toString() ?? '–'} note={w.notes} />
@@ -58,7 +58,8 @@ export default function SessionView({ params }: { params: { id: string } }) {
                   key={w.number}
                   label={String(w.number)}
                   weight={weightText(w.weight_kg)}
-                  reps={repsText(w) + (w.rpe != null ? ` @${w.rpe}` : '')}
+                  reps={repsText(w)}
+                  rpe={w.rpe}
                   note={w.notes}
                 />
               ))}
@@ -70,15 +71,21 @@ export default function SessionView({ params }: { params: { id: string } }) {
   )
 }
 
-function Row(props: { label: string; warmup?: boolean; weight: string; reps: string; note: string | null }) {
+const COLUMNS = 'grid grid-cols-[34px_70px_60px_minmax(0,1fr)]'
+
+/** One set; its note, when it has one, on its own line under it, so nothing is cut off. */
+function Row(props: { label: string; warmup?: boolean; weight: string; reps: string; rpe?: number | null; note: string | null }) {
   return (
-    <div className="grid min-h-11 grid-cols-[34px_70px_60px_minmax(0,1fr)] items-center border-t border-border px-4">
-      <span className={`font-mono text-[13px] font-semibold ${props.warmup ? 'text-warning' : 'text-muted-foreground'}`}>
-        {props.label}
-      </span>
-      <span className="font-mono text-[15px]">{props.weight}</span>
-      <span className="font-mono text-[15px]">{props.reps}</span>
-      <span className="truncate text-xs text-muted-foreground">{props.note}</span>
+    <div className="flex min-h-11 flex-col justify-center border-t border-border px-4 py-1.5">
+      <div className={`${COLUMNS} items-center`}>
+        <span className={`font-mono text-[13px] font-semibold ${props.warmup ? 'text-warning' : 'text-muted-foreground'}`}>
+          {props.label}
+        </span>
+        <span className="font-mono text-[15px]">{props.weight}</span>
+        <span className="font-mono text-[15px]">{props.reps}</span>
+        <span className="font-mono text-[15px] text-muted-foreground">{props.rpe ?? ''}</span>
+      </div>
+      {props.note && <p className="pl-[34px] text-[13px] leading-snug text-muted-foreground">{props.note}</p>}
     </div>
   )
 }

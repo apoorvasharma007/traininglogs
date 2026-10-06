@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
+import Parts from '@/components/Parts'
 import { Check, ChevronDown, X } from 'lucide-react'
 import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -167,15 +168,16 @@ export default function Session() {
             <ChevronDown size={22} aria-hidden />
           </Link>
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[17px] font-semibold">
-              {s.title} <span className="font-normal text-muted-foreground">· {minutesSince(s.startedAt, now)} min</span>
+            <span className="flex items-baseline gap-3 text-[17px] font-semibold">
+              <span className="truncate">{s.title}</span>
+              <span className="shrink-0 font-normal text-muted-foreground">{minutesSince(s.startedAt, now)} min</span>
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Check size={13} strokeWidth={2.6} aria-label="Saved on this phone" className="shrink-0 text-highlight" />
-              <span className="truncate">
-                {current ? <>Now: <span className="font-semibold text-foreground">{current.name || 'New exercise'}</span> · </> : 'All done · '}
-                {done} of {total} sets
-              </span>
+              <Parts className="min-w-0" items={[
+                current ? <>Now: <span className="font-semibold text-foreground">{current.name || 'New exercise'}</span></> : 'All done',
+                `${done} of ${total} sets`,
+              ]} />
             </span>
           </div>
           <button type="button" onClick={() => { setFinishError(null); setFinishing(true) }}
@@ -278,8 +280,8 @@ export default function Session() {
             <span className="text-[17px] font-semibold">{menuFor.name || 'New exercise'}</span>
             <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
               {[
-                { label: 'Add warm-up set', run: () => { const r = addWarmupSet(s, menuFor.key); change(r.session); open(menuFor.key, r.setKey, r.session) } },
-                { label: menuFor.note ? 'Edit note' : 'Add note', run: () => change(updateExercise(s, menuFor.key, { noteOpen: true })) },
+                { label: 'Add Warm-up Set', run: () => { const r = addWarmupSet(s, menuFor.key); change(r.session); open(menuFor.key, r.setKey, r.session) } },
+                { label: menuFor.note ? 'Edit Note' : 'Add Note', run: () => change(updateExercise(s, menuFor.key, { noteOpen: true })) },
                 { label: 'Rename', run: () => change(updateExercise(s, menuFor.key, { naming: true })) },
                 { label: 'Move up', run: () => change(moveExercise(s, menuFor.key, -1)) },
                 { label: 'Move down', run: () => change(moveExercise(s, menuFor.key, 1)) },
@@ -335,18 +337,18 @@ export default function Session() {
         {finishError && <p role="alert" className="text-sm text-destructive">{finishError}</p>}
         <button type="button" onClick={finish}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-          Save session
+          Save Session
         </button>
         <button type="button" onClick={() => setFinishing(false)} className="h-12 rounded-2xl border border-border font-semibold">
-          Keep going
+          Keep Going
         </button>
         <button type="button" onClick={() => { setFinishing(false); setDiscarding(true) }} className="h-10 text-sm font-semibold text-destructive">
-          Discard session
+          Discard Session
         </button>
       </Sheet>
 
       <ConfirmSheet open={discarding} title="Discard this session?" body="Nothing from it is saved."
-        confirmLabel="Discard session" onClose={() => setDiscarding(false)}
+        confirmLabel="Discard Session" onClose={() => setDiscarding(false)}
         onConfirm={() => { update(null); navigate('/') }} />
     </MotionConfig>
   )
@@ -379,7 +381,7 @@ function WarmupPicker({ exercise, onPick }: { exercise: LiveExercise; onPick: (s
               className="flex flex-col gap-1 border-t border-border px-4 py-3 text-left first:border-t-0 active:bg-muted disabled:opacity-40">
               <span className="text-[15px] font-semibold">{w.name}</span>
               {sets.length > 0 && (
-                <span className="font-mono text-[13px] text-muted-foreground">{sets.map((x) => `${x.kg}×${x.reps}`).join(' · ')}</span>
+                <Parts className="font-mono text-[13px] text-muted-foreground" items={sets.map((x) => `${x.kg}×${x.reps}`)} />
               )}
             </button>
           )
@@ -412,8 +414,9 @@ function WarmupNudge({ session, onChange }: { session: LiveSession; onChange: (s
     <div className="flex min-h-12 items-center gap-1 rounded-2xl border border-highlight/40 bg-highlight-soft py-1 pr-1 pl-4 text-sm">
       {left == null ? (
         <>
-          <span className="flex-1">
-            <span className="font-semibold">Warm up first</span> · {CARDIO_MINUTES} min easy cardio
+          <span className="flex flex-1 flex-col">
+            <span className="font-semibold">Warm up first</span>
+            <span>{CARDIO_MINUTES} min easy cardio</span>
           </span>
           <button type="button" onClick={() => onChange({ ...session, cardioStartedAt: new Date().toISOString() })}
             className="h-10 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">

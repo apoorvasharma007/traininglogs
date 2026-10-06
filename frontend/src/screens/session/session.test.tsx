@@ -33,11 +33,12 @@ describe('Session', () => {
       deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
     fakeApi({ 'GET /programs/p1': program })
     const location = renderApp('/session/done')
-    expect(await screen.findByText('1 · Bench · 40 min · 3 sets')).toBeInTheDocument()
+    expect(await screen.findByText('40 min')).toBeInTheDocument()
+    expect(screen.getByText('3 sets')).toBeInTheDocument()
     expect(screen.getByText('Update the program?')).toBeInTheDocument()
 
     // Kept as is: remembered, so a second restart doesn't ask again.
-    await userEvent.click(screen.getByRole('button', { name: 'Keep as is' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Keep as Is' }))
     await waitFor(async () => expect((await get('last-finished'))?.answered).toBe(true))
 
     await userEvent.click(screen.getByRole('link', { name: 'Done' }))
@@ -70,7 +71,7 @@ describe('Session', () => {
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
 
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
     await waitFor(() => expect(location.history.at(-1)).toBe('/session/done'))
     expect(await screen.findByText('Saved to your history.')).toBeInTheDocument()
 
@@ -96,16 +97,16 @@ describe('Session', () => {
     const sets = screen.getAllByRole('button', { name: /^Set \d done$/ })
     await userEvent.click(sets[sets.length - 1])
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
 
     expect(await screen.findByText('Update the program?')).toBeInTheDocument()
     expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
-    await userEvent.click(screen.getByRole('button', { name: 'Update program' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Update Program' }))
     // Nothing is written until the reminder is confirmed.
     const reminder = await screen.findByRole('dialog', { name: 'Update Bench?' })
     expect(reminder).toHaveTextContent('every session of Bench from now on')
     expect(calls.some((c) => c.key === 'PUT /workouts/w1/exercises')).toBe(false)
-    await userEvent.click(within(reminder).getByRole('button', { name: 'Update program' }))
+    await userEvent.click(within(reminder).getByRole('button', { name: 'Update Program' }))
     expect(await screen.findByText('Program updated.')).toBeInTheDocument()
     const saved = calls.find((c) => c.key === 'PUT /workouts/w1/exercises')!.body as { exercises: { working_sets: number }[] }
     expect(saved.exercises[0].working_sets).toBe(3)
@@ -123,7 +124,7 @@ describe('Session', () => {
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
 
     // Two send attempts can overlap (the one at Finish and the one when the app opened), so the
     // status may flick to "Sending…" before it settles; wait for the settled screen.
@@ -238,7 +239,7 @@ describe('Session', () => {
     fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Finish' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save session' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
     expect(await screen.findByText('Tick at least one set first. Unticked sets are not saved.')).toBeInTheDocument()
   })
 

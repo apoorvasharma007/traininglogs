@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import Parts from '@/components/Parts'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -30,10 +31,10 @@ export default function Done() {
         <span className="flex size-11 items-center justify-center rounded-full bg-highlight text-background">
           <Check size={22} strokeWidth={2.6} aria-hidden />
         </span>
-        <h1 className="mt-2 text-[28px] font-bold tracking-tight">Session done</h1>
-        <p className="text-sm text-muted-foreground">
-          {finished.title} · {finished.minutes} min · {finished.sets} {finished.sets === 1 ? 'set' : 'sets'}
-        </p>
+        <h1 className="mt-2 text-[28px] font-bold tracking-tight">Session Done</h1>
+        <Parts className="justify-center text-sm text-muted-foreground" items={[
+          finished.title, `${finished.minutes} min`, `${finished.sets} ${finished.sets === 1 ? 'set' : 'sets'}`,
+        ]} />
       </div>
 
       <div role="status" className="rounded-2xl border border-border bg-card px-4 py-3 text-sm">
@@ -130,10 +131,10 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
               <div className="flex items-center gap-2">
                 <button type="button" disabled={state === 'saving' || chosen.size === 0} onClick={() => setConfirming(true)}
                   className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40">
-                  {state === 'saving' ? 'Saving…' : 'Update program'}
+                  {state === 'saving' ? 'Saving…' : 'Update Program'}
                 </button>
                 <button type="button" onClick={() => answer('kept')} className="h-11 px-3 text-sm font-semibold text-muted-foreground">
-                  Keep as is
+                  Keep as Is
                 </button>
               </div>
             </>
@@ -143,15 +144,15 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       {workout && (
         <ConfirmSheet open={confirming} tone="primary" title={`Update ${workoutName(workout)}?`}
           body={`${chosen.size} ${chosen.size === 1 ? 'change' : 'changes'} will apply to every session of ${workoutName(workout)} from now on. Sessions you've already logged stay as they are.`}
-          confirmLabel="Update program" busy={state === 'saving'}
+          confirmLabel="Update Program" busy={state === 'saving'}
           onClose={() => setConfirming(false)}
           onConfirm={() => { setConfirming(false); save() }} />
       )}
       {next && (
         <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4">
-          <span className="text-xs font-semibold text-muted-foreground">Next time</span>
+          <span className="text-xs font-semibold text-muted-foreground">Next Time</span>
           <span className="font-semibold">{workoutName(next)}</span>
-          <span className="text-sm text-muted-foreground">{next.exercises.map((e) => e.name).join(' · ')}</span>
+          <Parts className="text-sm text-muted-foreground" items={next.exercises.map((e) => e.name)} />
         </div>
       )}
     </>

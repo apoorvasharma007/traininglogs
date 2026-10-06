@@ -21,7 +21,7 @@ export function choicesText(e: PlanExercise): string {
 export function planText(e: PlanExercise): string {
   const reps = e.amrap ? 'max' : e.target_reps
   const sets = reps != null ? `${e.working_sets} × ${reps}` : `${e.working_sets} ${e.working_sets === 1 ? 'set' : 'sets'}`
-  return e.warmup_sets ? `${e.warmup_sets} warm-up · ${sets}` : sets
+  return e.warmup_sets ? `${e.warmup_sets} warm-up + ${sets}` : sets
 }
 
 export function usePrograms() {

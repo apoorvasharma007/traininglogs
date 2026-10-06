@@ -19,10 +19,15 @@ function LiftTile({ lift }: { lift: LiftSummary }) {
     >
       <span className="text-sm font-semibold">{lift.name}</span>
       {lift.latest == null ? (
-        <span className="text-[13px] leading-snug text-muted-foreground">
-          {lift.sessions === 0
-            ? 'Not logged yet'
-            : `${lift.measure === 'bodyweight_reps' ? 'No bodyweight sets yet' : 'No sets with an RPE yet'} · ${lift.sessions} ${lift.sessions === 1 ? 'session' : 'sessions'}`}
+        <span className="flex flex-col text-[13px] leading-snug text-muted-foreground">
+          {lift.sessions === 0 ? (
+            'Not logged yet'
+          ) : (
+            <>
+              <span>{lift.measure === 'bodyweight_reps' ? 'No bodyweight sets yet' : 'No sets with an RPE yet'}</span>
+              <span>{lift.sessions} {lift.sessions === 1 ? 'session' : 'sessions'}</span>
+            </>
+          )}
         </span>
       ) : (
         <>
@@ -30,9 +35,9 @@ function LiftTile({ lift }: { lift: LiftSummary }) {
             {liftValue(lift, lift.latest)}
             {Trend && <Trend size={18} aria-label={`trend ${lift.trend}`} className="text-muted-foreground" />}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {lift.best != null && `best ${liftValue(lift, lift.best)} · `}
-            {lift.sessions} {lift.sessions === 1 ? 'session' : 'sessions'}
+          <span className="flex flex-col text-xs text-muted-foreground">
+            {lift.best != null && <span>best {liftValue(lift, lift.best)}</span>}
+            <span>{lift.sessions} {lift.sessions === 1 ? 'session' : 'sessions'}</span>
           </span>
         </>
       )}
@@ -64,8 +69,8 @@ export default function Progress() {
                 onClick={() => setShowOthers(!showOthers)}
                 className="flex min-h-13 w-full items-center justify-between px-4 font-semibold"
               >
-                <span>
-                  Other lifts <span className="font-normal text-muted-foreground">· {lifts.data.other_lifts.length}</span>
+                <span className="flex flex-1 items-center justify-between pr-2">
+                  Other lifts <span className="font-normal text-muted-foreground">{lifts.data.other_lifts.length}</span>
                 </span>
                 <ChevronRight
                   size={18}

@@ -30,12 +30,12 @@ export default function DraftBar({
           </button>
           <button type="button" disabled={busy || !dirty} onClick={onSave}
             className="h-13 flex-1 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-40">
-            {busy ? 'Saving…' : dirty ? 'Save changes' : 'No changes'}
+            {busy ? 'Saving…' : dirty ? 'Save Changes' : 'No changes'}
           </button>
         </div>
       </BottomBar>
       <ConfirmSheet open={asking} title="Discard your changes?" body="Nothing you changed here will be saved."
-        confirmLabel="Discard changes" onClose={() => setAsking(false)}
+        confirmLabel="Discard Changes" onClose={() => setAsking(false)}
         onConfirm={() => { setAsking(false); onCancel() }} />
     </>
   )

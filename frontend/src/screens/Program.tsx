@@ -1,4 +1,5 @@
 import { ChevronRight, Repeat } from 'lucide-react'
+import Parts from '@/components/Parts'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
@@ -77,7 +78,7 @@ export default function Program({ params }: { params: { id: string } }) {
       {p && (
         <div className="flex flex-col gap-4">
           <p className="-mt-2 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
-            {p.following && <span className="font-semibold text-highlight">Following ·</span>}
+            {p.following && <span className="mr-1.5 font-semibold text-highlight">Following</span>}
             <Repeat size={13} aria-label="on repeat" />
             {p.workouts.length} {p.workouts.length === 1 ? 'workout' : 'workouts'}
           </p>
@@ -125,26 +126,26 @@ export default function Program({ params }: { params: { id: string } }) {
               <button type="button" disabled={change.isPending}
                 onClick={() => (otherFollowed ? setConfirm('follow') : change.mutate({ path: `${base}/follow`, method: 'POST' }))}
                 className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-                Follow this program
+                Follow This Program
               </button>
             </BottomBar>
           )}
 
           <div className="mt-6 flex flex-col items-center gap-1">
             <button type="button" onClick={() => { setWeeksChoice(savedWeeks); setPickingWeeks(true) }} className="h-10 px-2 text-[13px] text-muted-foreground">
-              Deload reminder · every <span className="font-semibold text-foreground">{Math.round(p.deload_after_days / 7)} weeks</span>
+              Deload reminder every <span className="font-semibold text-foreground">{Math.round(p.deload_after_days / 7)} weeks</span>
             </button>
             {p.following && (
               <button type="button" disabled={change.isPending} onClick={() => setConfirm('unfollow')}
                 className="h-10 px-2 text-[13px] font-semibold text-muted-foreground">
-                Stop following
+                Stop Following
               </button>
             )}
           </div>
 
           {editing && (
             <button type="button" onClick={() => setArchiving(true)} className="h-11 text-sm font-semibold text-destructive">
-              Delete program
+              Delete Program
             </button>
           )}
         </div>
@@ -192,19 +193,19 @@ export default function Program({ params }: { params: { id: string } }) {
 
       <ConfirmSheet open={confirm === 'unfollow'} title={`Stop following ${p?.name ?? 'this program'}?`}
         body="Train won't show its next workout any more. The program and its history stay; you can follow it again any time."
-        confirmLabel="Stop following" busy={change.isPending}
+        confirmLabel="Stop Following" busy={change.isPending}
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/unfollow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={confirm === 'follow'} tone="primary" title={`Follow ${p?.name ?? 'this program'}?`}
         body={`You'll stop following ${otherFollowed?.name ?? 'your current program'}. Its history stays, and you can switch back any time.`}
-        confirmLabel="Follow this program" busy={change.isPending}
+        confirmLabel="Follow This Program" busy={change.isPending}
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/follow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={archiving} title={`Delete ${p?.name ?? 'program'}?`}
         body="It disappears from the app. Sessions you logged from it stay in History."
-        confirmLabel="Delete program" busy={change.isPending}
+        confirmLabel="Delete Program" busy={change.isPending}
         onClose={() => setArchiving(false)}
         onConfirm={() => change.mutate({ path: base, method: 'DELETE' }, { onSuccess: () => navigate('/programs') })} />
     </div>
@@ -221,9 +222,9 @@ function WorkoutRow({ program, workout: w, href }: { program: ProgramT; workout:
           <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-[11px] font-semibold text-highlight">Next</span>
         )}
       </span>
-      <span className="truncate text-xs text-muted-foreground">
-        {w.exercises.length ? w.exercises.map((e) => e.name).join(' · ') : 'No exercises yet'}
-      </span>
+      {w.exercises.length
+        ? <Parts className="text-xs text-muted-foreground" items={w.exercises.map((e) => e.name)} />
+        : <span className="text-xs text-muted-foreground">No exercises yet</span>}
       {w.last_done && <span className="text-xs text-faint-foreground">Last done {dayLabel(w.last_done)}</span>}
     </span>
   )

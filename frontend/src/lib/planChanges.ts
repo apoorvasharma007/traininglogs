@@ -46,7 +46,7 @@ export function planChanges(s: LiveSession, w: Workout): PlanChange[] {
       if (working + warmup === 0) continue
       changes.push({
         id: `add-${ex.key}`, type: 'add', on: true,
-        label: `Add ${name} · ${plural(working, 'set', 'sets')}`,
+        label: `Add ${name} (${plural(working, 'set', 'sets')})`,
         exercise: { name, warmup_sets: warmup, working_sets: working, target_reps: null, amrap: true, alternatives: [] },
       })
       continue
@@ -118,7 +118,7 @@ function movementChanges(kind: MovementKind, done: LiveMovement[], planned: Move
     const amount = amountText(movement)
     changes.push({
       id: `${kind}-${m.key}`, type: 'movement', kind, movement, on: true,
-      label: `${label}: add ${movement.name}${amount ? ` · ${amount}` : ''}`,
+      label: `${label}: add ${movement.name}${amount ? ` (${amount})` : ''}`,
     })
   }
   return changes

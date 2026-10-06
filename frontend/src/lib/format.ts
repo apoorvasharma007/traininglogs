@@ -68,7 +68,7 @@ export function groupByWeek<T>(items: T[], dateOf: (item: T) => string, today: D
       const end = new Date(start)
       end.setDate(end.getDate() + 6)
       const title =
-        current === thisWeek ? 'This week' : `${SHORT.format(start)} to ${SHORT.format(end)}`
+        current === thisWeek ? 'This Week' : `${SHORT.format(start)} to ${SHORT.format(end)}`
       groups.push({ title, items: [] })
     }
     groups[groups.length - 1].items.push(item)

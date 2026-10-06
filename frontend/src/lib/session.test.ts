@@ -206,7 +206,10 @@ describe('doing a past session again', () => {
 
 describe('warm-up ramp', () => {
   it('climbs in weight as reps drop, rounded to 2.5 kg', () => {
-    expect(rampSets(120, 3)).toEqual([{ kg: 60, reps: 5 }, { kg: 85, reps: 3 }, { kg: 102.5, reps: 2 }])
+    // 50%, 75% and 95%: spread evenly over 50 to 95, in steps of 5.
+    expect(rampSets(120, 3)).toEqual([{ kg: 60, reps: 5 }, { kg: 90, reps: 3 }, { kg: 115, reps: 1 }])
+    expect(rampSets(100, 10).map((r) => r.kg)).toEqual([50, 55, 60, 65, 70, 75, 80, 85, 90, 95])
+    expect(rampSets(120, 11)).toEqual([])
     expect(rampSets(120, 0)).toEqual([])
   })
 
@@ -218,7 +221,7 @@ describe('warm-up ramp', () => {
     const warm = before.filter((x) => x.kind === 'warmup').length
     expect(after.slice(0, warm)).toEqual(before.slice(0, warm))
     expect(after.slice(warm, warm + 2).map((x) => [x.kind, x.weight, x.reps, x.ghost])).toEqual([
-      ['warmup', '60', '5', true], ['warmup', '90', '3', true],
+      ['warmup', '60', '5', true], ['warmup', '115', '1', true],
     ])
   })
 })
