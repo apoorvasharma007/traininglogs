@@ -36,6 +36,15 @@ def client(conn):
         yield c
 
 
+def _today_in_india() -> str:
+    """Today where the test users are: a user's timezone defaults to Asia/Kolkata, and the server
+    dates things in it, not in the machine's (CI runs in UTC)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    return datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
+
+
 def _program(client, name="Strength", workouts=("Bench", None, "Bench & pull-ups")) -> dict:
     p = client.post("/programs", json={"name": name}, headers=HEADERS).json()
     for w in workouts:
@@ -82,7 +91,7 @@ class TestPrograms:
         a = _program(client, "A", ())
         b = _program(client, "B", ())
         a = client.post(f"/programs/{a['id']}/follow", headers=HEADERS).json()
-        assert a["following"] is True and a["following_since"] == date.today().isoformat()
+        assert a["following"] is True and a["following_since"] == _today_in_india()
         client.post(f"/programs/{b['id']}/follow", headers=HEADERS)
         listed = client.get("/programs", headers=HEADERS).json()
         assert [(p["name"], p["following"]) for p in listed] == [("B", True), ("A", False)]
