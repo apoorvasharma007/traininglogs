@@ -54,6 +54,8 @@ export type LiftSummary = {
 
 export type LiftsOut = { key_lifts: LiftSummary[]; other_lifts: LiftSummary[] }
 
+export type AiUsage = { total_usd: number }
+
 export type LiftPoint = {
   session_id: string
   date: string

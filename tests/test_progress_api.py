@@ -67,3 +67,17 @@ def test_unknown_lift_is_404(client) -> None:
 
 def test_requires_auth(client) -> None:
     assert client.get("/progress/lifts").status_code == 401
+
+
+def test_ai_usage_is_the_persons_own_total(client) -> None:
+    from signed_in import USER_B
+    from traininglogs.db.insert import insert_ai_calls, insert_input
+
+    call = {"step": "extract_exercise", "model": "m", "attempts": 1, "ms": 10}
+    conn = get_connection(TEST_DB_URL)
+    assert client.get("/me/ai-usage", headers=auth()).json() == {"total_usd": 0.0}
+    insert_ai_calls(conn, USER_A, insert_input(conn, USER_A, "note 1"), [{**call, "cost_usd": 0.0185}, {**call, "cost_usd": 0.002}])
+    insert_ai_calls(conn, USER_B, insert_input(conn, USER_B, "note 2"), [{**call, "cost_usd": 0.5}])
+    conn.close()
+    assert client.get("/me/ai-usage", headers=auth()).json() == {"total_usd": 0.0205}
+    assert client.get("/me/ai-usage", headers=auth(USER_B_AUTH)).json() == {"total_usd": 0.5}

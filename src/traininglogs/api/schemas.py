@@ -198,6 +198,10 @@ class EditIn(BaseModel):
         return self
 
 
+class AiUsage(BaseModel):
+    total_usd: float  # every AI call so far: reading notes and AI fixes
+
+
 class ExerciseHistoryRow(BaseModel):
     date: date
     phase: Optional[int]

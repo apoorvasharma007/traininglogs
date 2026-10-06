@@ -15,6 +15,7 @@ from psycopg2.pool import SimpleConnectionPool
 from traininglogs.api.auth import bearer, user_for, verify
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
 from traininglogs.api.schemas import (
+    AiUsage,
     CaptureIn,
     CaptureOut,
     ConfirmIn,
@@ -248,6 +249,14 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
+
+
+@app.get("/me/ai-usage", response_model=AiUsage)
+def ai_usage(conn=Depends(_db), user: str = Depends(_user)):
+    """What the person's AI calls have cost so far, for Settings."""
+    from traininglogs.db.fetch import get_ai_total_usd
+
+    return AiUsage(total_usd=get_ai_total_usd(conn, user))
 
 
 @app.get("/exercises/{name}/history", response_model=list[ExerciseHistoryRow])

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and linked to a shared list of 32 basic lifts when the name matches.
 - `scripts/migrate_to_accounts.py` converts an existing database in one transaction, dry run by
   default. It keeps the old tables in an `old` schema, to be removed in a later step.
+- Settings shows what your AI use has cost so far ("AI use", in US dollars): every note read and
+  every AI fix, summed from your own call log (`GET /me/ai-usage`).
 - Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
   deploys production.
 

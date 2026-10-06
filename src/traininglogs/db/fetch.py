@@ -126,6 +126,14 @@ def get_exercise_history(conn: Connection, user_id: str, name: str) -> list[dict
         return _rows(cur)
 
 
+def get_ai_total_usd(conn: Connection, user_id: str) -> float:
+    """What the person's AI calls have cost so far, in US dollars, summed from their call log.
+    A few rows per note, so summing on each request is cheaper than keeping a running total."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT coalesce(sum(cost_usd), 0) FROM ai_call_logs WHERE user_id = %s", (user_id,))
+        return float(cur.fetchone()[0])
+
+
 def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
