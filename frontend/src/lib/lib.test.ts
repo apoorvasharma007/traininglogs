@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { niceScale } from './chart'
-import { dayLabel, groupByWeek, kg, repsText } from './format'
+import { dayLabel, groupByWeek, historyName, kg, repsText, splitByMonth } from './format'
 import { inRange, liftValue, setText } from './lifts'
 import { editsFor, exercisePathOf, type SetDraft } from './review'
 
@@ -134,7 +134,29 @@ import { sessionName } from './format'
 describe('session names', () => {
   it('uses the given name, else the first exercises', () => {
     expect(sessionName({ focus: 'Workout 3', exercises: ['Squat'] })).toBe('Workout 3')
-    expect(sessionName({ focus: null, exercises: ['Squat', 'Bench press', 'Pull ups', 'Calf raise'] })).toBe('Squat · Bench press · Pull ups …')
+    expect(sessionName({ focus: null, exercises: ['Squat', 'Bench press', 'Pull ups', 'Calf raise'] })).toBe('Squat, Bench press and 2 more')
     expect(sessionName({ focus: '', exercises: [] })).toBe('Session')
+  })
+})
+
+describe('History', () => {
+  const base = { session_id: 's', date: '2026-10-05', program: null, focus: 'Strength', exercises: ['Squat', 'Bench press', 'Row'],
+    program_name: null, workout_position: null, workout_name: null, source_kind: 'manual' as const }
+
+  it("names a program session after its workout, whatever was saved, with the program under it", () => {
+    expect(historyName({ ...base, program_name: 'Starting Strength', workout_position: 1 })).toEqual({ name: 'Workout 1', kind: 'Starting Strength' })
+    expect(historyName({ ...base, program_name: 'PPL', workout_position: 2, workout_name: 'Pull' })).toEqual({ name: 'Pull', kind: 'PPL' })
+  })
+
+  it('names an ad-hoc session by its exercises, and a note by its own name', () => {
+    expect(historyName({ ...base, focus: null })).toEqual({ name: 'Squat, Bench press and 1 more', kind: 'Ad-hoc' })
+    expect(historyName({ ...base, source_kind: 'text' })).toEqual({ name: 'Strength', kind: 'From notes' })
+  })
+
+  it('keeps the last 30 days and this month open, and folds older ones by month', () => {
+    const dates = ['2026-10-05', '2026-09-10', '2026-09-02', '2026-08-20']
+    const { recent, months } = splitByMonth(dates, (d) => d, new Date(2026, 9, 6))
+    expect(recent).toEqual(['2026-10-05', '2026-09-10'])
+    expect(months).toEqual([{ title: 'September 2026', items: ['2026-09-02'] }, { title: 'August 2026', items: ['2026-08-20'] }])
   })
 })

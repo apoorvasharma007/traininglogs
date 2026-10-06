@@ -65,7 +65,7 @@ describe('Review', () => {
     await waitFor(() => expect(calls.at(-1)?.body).toEqual({ edits: [{ path: 'exercises.0.sets.0', field: 'rpe', value: 8.5 }] }))
   })
 
-  it('still takes an exact RPE', async () => {
+  it('takes an exact RPE from under its effort word', async () => {
     const calls = fakeApi({
       'GET /extractions/x1': card(120),
       'POST /extractions/x1/edit': reply(card(120)),
@@ -73,7 +73,6 @@ describe('Review', () => {
     renderApp('/review/x1')
     await userEvent.click(await screen.findByRole('button', { name: 'Set 1 options' }))
     const sheet = await screen.findByRole('dialog', { name: 'Edit set' })
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Exact RPE' }))
     await userEvent.click(within(sheet).getByRole('button', { name: 'RPE 9' }))
     // 9 is a Hard effort: the word lights up too.
     expect(within(sheet).getByRole('button', { name: /^Hard/ })).toHaveAttribute('aria-pressed', 'true')
@@ -120,7 +119,7 @@ describe('Review', () => {
     await userEvent.tab()
     await waitFor(() => expect(screen.getByLabelText('Weight for set 1')).toHaveValue('122.5'))
     // The next workout is suggested; the session takes its name at Confirm.
-    expect(await screen.findByRole('button', { name: /Workout 2 · Strength/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Workout 2/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))
 
     await waitFor(() => expect(location.history.at(-1)).toBe('/history/s9'))
@@ -176,7 +175,7 @@ describe('Review', () => {
       'GET /sessions/s9': { session_id: 's9', date: '2026-10-04', program: null, focus: null, duration_minutes: null, notes: null, exercises: [] },
     })
     renderApp('/review/x1')
-    await userEvent.click(await screen.findByRole('button', { name: /Workout 2 · Strength/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Workout 2/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Not part of a program' }))
     expect(await screen.findByRole('button', { name: /^Workout\s*Not part of a program/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Confirm session' }))

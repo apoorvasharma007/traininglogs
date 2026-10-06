@@ -6,6 +6,7 @@ import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import { Loading } from '@/components/QueryStatus'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
+import { EFFORTS } from '@/lib/effort'
 import Sheet from '@/components/Sheet'
 import { api } from '@/lib/api'
 import { planChanges } from '@/lib/planChanges'
@@ -14,6 +15,9 @@ import { WARMUPS, warmupSets } from '@/lib/warmup'
 import {
   addExercise,
   addSet,
+  addRamp,
+  needsEffort,
+  setLastEffort,
   addWarmupSet,
   counts,
   draftOf,
@@ -51,7 +55,7 @@ export default function Session() {
   const { session, update } = useLiveSession()
   const [, navigate] = useLocation()
   const queryClient = useQueryClient()
-  const [openSet, setOpenSet] = useState<SetTarget | null>(null)
+  const [openSet, setOpenSet] = useState<(SetTarget & { exKey: string }) | null>(null)
   const [menuFor, setMenuFor] = useState<LiveExercise | null>(null)
   const [switchFor, setSwitchFor] = useState<LiveExercise | null>(null)
   const [warmupFor, setWarmupFor] = useState<LiveExercise | null>(null)
@@ -111,7 +115,11 @@ export default function Session() {
     if (!ex || index < 0) return
     const set = ex.sets[index]
     // Just the exercise: the Warm-up | Working switch already says which kind of set it is.
-    setOpenSet({ key: setKey, title: ex.name || 'Exercise', draft: draftOf(set), last: set.last })
+    const firstWorking = parseFloat(ex.sets.find((x) => x.kind === 'working')?.weight ?? '')
+    setOpenSet({
+      key: setKey, title: ex.name || 'Exercise', draft: draftOf(set), last: set.last, exKey,
+      rampFrom: firstWorking > 0 ? firstWorking : null,
+    })
   }
 
   async function finish() {
@@ -210,7 +218,29 @@ export default function Session() {
               onSwitch={() => setSwitchFor(ex)}
               onNote={(note) => change(updateExercise(s, ex.key, { note }))}
             />
-          ))}
+          )).flatMap((card, i) => {
+            const ex = s.exercises[i]
+            if (!needsEffort(ex)) return [card]
+            // Effort feeds the estimated max, so ask once when an exercise is done without it.
+            return [card, (
+              <div key={`${ex.key}-effort`} className="-mt-1 flex flex-col gap-2 rounded-2xl border border-border bg-card p-3">
+                <span className="text-sm font-semibold">How hard was the last set?</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {EFFORTS.map((e) => (
+                    <button key={e.level} type="button" onClick={() => change(setLastEffort(s, ex.key, e.rpe))}
+                      className="flex h-12 flex-col items-center justify-center rounded-xl bg-muted">
+                      <span className="text-sm font-semibold">{e.label}</span>
+                      <span className="text-[11px] text-muted-foreground">{e.means}</span>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => change(updateExercise(s, ex.key, { effortSkipped: true }))}
+                  className="self-start px-1 text-[13px] font-semibold text-muted-foreground">
+                  Skip
+                </button>
+              </div>
+            )]
+          })}
           <button type="button" onClick={() => change(addExercise(s).session)}
             className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
             + Exercise
@@ -238,7 +268,9 @@ export default function Session() {
       <SetSheet target={openSet} busy={false} error={null}
         onClose={() => setOpenSet(null)}
         onDone={(draft) => { if (openSet) change(saveSet(s, openSet.key, draft)); setOpenSet(null) }}
-        onDelete={() => { if (openSet) removeWithUndo(removeSet(s, openSet.key), 'Set removed'); setOpenSet(null) }} />
+        onDelete={() => { if (openSet) removeWithUndo(removeSet(s, openSet.key), 'Set removed'); setOpenSet(null) }}
+        // Adds the sets without saving any change to the set the sheet was opened on.
+        onRamp={(ramp) => { if (openSet) change(addRamp(s, openSet.exKey, ramp)); setOpenSet(null) }} />
 
       <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise options">
         {menuFor && (

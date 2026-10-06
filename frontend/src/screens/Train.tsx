@@ -1,23 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, CloudOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
-import { api } from '@/lib/api'
 import { acknowledgeDeload, showDeloadReminder } from '@/lib/deload'
-import { dayLabel, sessionName } from '@/lib/format'
-import { usePrograms, workoutTitle } from '@/lib/programs'
+import { usePrograms, workoutName } from '@/lib/programs'
 import { counts, type LiveSession } from '@/lib/session'
 import { startSession } from '@/lib/startSession'
 import { flush, loadSession, useOutbox } from '@/lib/store'
-import type { SessionDetail, SessionSummary } from '@/lib/types'
 
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 const TIME = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 // The next-workout card lists this many exercises, then "+N more", so the rest stays in view.
 const SHOWN = 5
 
-/** Home: what to train next, how to log a session written down, and the less common ways in. */
+/** Home: what to train next (or a program to start with), an ad-hoc workout, notes, and repeating a past session. */
 export default function Train() {
   const [, navigate] = useLocation()
   const [today] = useState(() => new Date())
@@ -31,23 +27,12 @@ export default function Train() {
 
   const followed = programs.data?.find((p) => p.following)
   const next = followed?.workouts.find((w) => w.id === followed.next_workout_id)
-  const recent = useQuery({
-    queryKey: ['sessions', 'recent'],
-    queryFn: () => api<SessionSummary[]>('/sessions?limit=3'),
-    enabled: programs.isSuccess && !followed,
-  })
-
-  async function again(id: string) {
-    const past = await api<SessionDetail>(`/sessions/${encodeURIComponent(id)}`)
-    await startSession({ past })
-    navigate('/session')
-  }
 
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1 px-1 pt-12">
         <span className="text-[13px] font-medium text-muted-foreground">{DATE.format(today)}</span>
-        <h1 className="text-[28px] font-bold tracking-tight">Train</h1>
+        <h1 className="text-[28px] font-bold tracking-tight">TrainingLogs</h1>
       </div>
 
       {outbox.pending.length > 0 && (
@@ -100,7 +85,7 @@ export default function Train() {
           </Link>
           <div className="flex flex-col gap-3 px-4 pt-3.5 pb-4">
             {/* A summary: names only. Sets, reps and alternatives show once the workout starts. */}
-            <span className="text-[22px] font-bold tracking-tight">{workoutTitle(next)}</span>
+            <span className="text-[22px] font-bold tracking-tight">{workoutName(next)}</span>
             {next.exercises.length > 0 && (
               <ul className="flex flex-col">
                 {next.exercises.slice(0, SHOWN).map((e) => (
@@ -130,53 +115,43 @@ export default function Train() {
           </Link>
         </div>
       ) : (
-        <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold">Do a recent session again</h2>
-          {recent.data && recent.data.length > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              {recent.data.map((s) => (
-                <div key={s.session_id} className="flex min-h-14 items-center gap-3 border-t border-border py-2 pr-2 pl-4 first:border-t-0">
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-[15px] font-semibold">{sessionName(s)}</span>
-                    <span className="text-xs text-muted-foreground">{dayLabel(s.date)}</span>
-                  </span>
-                  <button type="button" onClick={() => again(s.session_id)}
-                    className="h-10 shrink-0 rounded-xl border border-border px-3 text-[13px] font-semibold">
-                    Do again
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="px-1 text-sm text-muted-foreground">Your sessions will show here.</p>
-          )}
-          <Link href="/programs" className="self-start px-1 text-[13px] font-semibold text-muted-foreground underline underline-offset-2">
-            Or follow a program
-          </Link>
-        </section>
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-[15px] font-semibold">Start with a program</span>
+            <span className="text-[13px] text-muted-foreground">Pick a ready-made one, or build your own.</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/programs/templates" className="flex h-12 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition active:scale-[0.98]">
+              Browse templates
+            </Link>
+            <Link href="/programs" className="flex h-12 items-center justify-center rounded-2xl border border-border text-sm font-semibold transition active:scale-[0.98]">
+              Create your own
+            </Link>
+          </div>
+        </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-[15px] font-semibold">Wrote it down instead?</span>
-          <span className="text-[13px] leading-snug text-muted-foreground">
-            Paste the notes from your phone or a notebook. The app sorts them into exercises and sets, and you check them before
-            saving.
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <button type="button" onClick={() => startSession('blank').then(() => navigate('/session'))}
+          className="flex min-h-15 w-full items-center gap-3 px-4 py-2.5 text-left">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">Ad-hoc workout</span>
+            <span className="text-[13px] text-muted-foreground">Type in exercises as you go</span>
           </span>
-        </div>
-        <Link href="/log" className="flex h-12 items-center justify-center rounded-2xl border border-border font-semibold transition active:scale-[0.98]">
-          Log from notes
+          <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
+        </button>
+        <Link href="/log" className="flex min-h-15 items-center gap-3 border-t border-border px-4 py-2.5">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">Wrote it down instead?</span>
+            <span className="text-[13px] text-muted-foreground">Paste, snap or say it. AI does the rest.</span>
+          </span>
+          <ChevronRight size={18} aria-hidden className="shrink-0 text-faint-foreground" />
         </Link>
       </div>
 
-      <p className="flex flex-wrap justify-center gap-x-4 px-1 text-[13px] font-semibold text-muted-foreground">
-        <Link href="/history" className="py-2">
-          Repeat a past session
-        </Link>
-        <button type="button" onClick={() => startSession('blank').then(() => navigate('/session'))} className="py-2">
-          Ad-hoc workout
-        </button>
-      </p>
+      <Link href="/history" className="self-center py-2 text-[13px] font-semibold text-muted-foreground">
+        Repeat a past session
+      </Link>
     </div>
   )
 }

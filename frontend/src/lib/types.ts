@@ -7,6 +7,10 @@ export type SessionSummary = {
   program: string | null
   focus: string | null
   exercises: string[]
+  program_name: string | null
+  workout_position: number | null
+  workout_name: string | null
+  source_kind: 'text' | 'manual' | 'import'
 }
 
 type WarmupSet = { number: number; weight_kg: number | null; rep_count: number | null; notes: string | null }

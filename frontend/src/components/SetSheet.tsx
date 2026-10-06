@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import Sheet from '@/components/Sheet'
-import { EFFORTS, effortLevel } from '@/lib/effort'
+import { EFFORT_FILL, EFFORTS, effortLevel } from '@/lib/effort'
+import { kg } from '@/lib/format'
 import { RPES, type SetDraft, type SetKind } from '@/lib/review'
+import { rampSets } from '@/lib/session'
 
-
-export type SetTarget = { key: string; title: string; draft: SetDraft; last?: string | null }
+// rampFrom: the first working set's weight, to suggest as a warm-up ramp's target (live sessions only).
+export type SetTarget = { key: string; title: string; draft: SetDraft; last?: string | null; rampFrom?: number | null }
 
 /**
  * Edits one set: weight, reps, RPE, warmup or working, note. Nothing is saved until Done.
@@ -18,6 +20,7 @@ export default function SetSheet({
   onDone,
   onDelete,
   onClose,
+  onRamp,
 }: {
   target: SetTarget | null
   busy: boolean
@@ -25,6 +28,8 @@ export default function SetSheet({
   onDone: (draft: SetDraft) => void
   onDelete: () => void
   onClose: () => void
+  /** Adds warm-up sets to the set's exercise; without it the Warm-up tab offers no ramp. */
+  onRamp?: (ramp: { kg: number; reps: number }[]) => void
 }) {
   // Keeps showing the last set while the drawer slides away.
   const [shown, setShown] = useState(target)
@@ -33,7 +38,7 @@ export default function SetSheet({
     <Sheet open={target != null} onClose={onClose} label="Edit set">
       {shown && (
         <SetForm key={shown.key} title={shown.title} last={shown.last ?? null} initial={shown.draft} busy={busy} error={error}
-          onDone={onDone} onDelete={onDelete} />
+          onDone={onDone} onDelete={onDelete} rampFrom={shown.rampFrom ?? null} onRamp={onRamp} />
       )}
     </Sheet>
   )
@@ -47,6 +52,8 @@ function SetForm({
   error,
   onDone,
   onDelete,
+  rampFrom,
+  onRamp,
 }: {
   title: string
   last: string | null
@@ -55,10 +62,9 @@ function SetForm({
   error: string | null
   onDone: (draft: SetDraft) => void
   onDelete: () => void
+  rampFrom: number | null
+  onRamp?: (ramp: { kg: number; reps: number }[]) => void
 }) {
-  const level = effortLevel(initial.rpe)
-  // An RPE that isn't one of the three words' own numbers opens the exact row straight away.
-  const [exact, setExact] = useState(initial.rpe != null && !EFFORTS.some((e) => e.rpe === initial.rpe) && level > 0)
   // Weight and reps are typed on the set's row; the drawer holds what the row can't show.
   const [draft, setDraft] = useState(initial)
   const set = (patch: Partial<SetDraft>) => setDraft((d) => ({ ...d, ...patch }))
@@ -82,47 +88,42 @@ function SetForm({
         </div>
       </div>
 
-      {draft.kind === 'warmup' && (
-        // Keeps the drawer the same height as a working set's, so the switch doesn't jump under your finger.
-        <div className="flex h-[5.75rem] items-center justify-center rounded-xl bg-muted/50 text-sm text-muted-foreground">
-          Warm-up sets don't track effort
-        </div>
-      )}
+      {draft.kind === 'warmup' &&
+        (onRamp ? (
+          <RampUp from={rampFrom} onAdd={onRamp} />
+        ) : (
+          // Keeps the drawer the same height as a working set's, so the switch doesn't jump under your finger.
+          <div className="flex h-[5.75rem] items-center justify-center rounded-xl bg-muted/50 text-sm text-muted-foreground">
+            Warm-up sets don't track effort
+          </div>
+        ))}
       {draft.kind === 'working' && (
-        <div className="flex min-h-[5.75rem] flex-col gap-2">
-          <div role="group" aria-label="Effort" className="grid grid-cols-3 gap-1.5">
-            {EFFORTS.map((e) => {
-              const on = effortLevel(draft.rpe) === e.level
-              return (
-                <button key={e.level} type="button" aria-pressed={on}
-                  // Tapping the chosen word again clears the effort.
-                  onClick={() => set({ rpe: on ? null : e.rpe })}
-                  className={`flex h-14 flex-col items-center justify-center rounded-xl transition-colors ${
-                    on ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-                  }`}>
+        // Each word, with the RPE numbers it covers under it: tap the word for its usual number, or
+        // a number to be exact. Tapping the chosen one again clears it.
+        <div role="group" aria-label="Effort" className="grid min-h-[5.75rem] grid-cols-3 gap-1.5">
+          {EFFORTS.map((e) => {
+            const on = effortLevel(draft.rpe) === e.level
+            return (
+              <div key={e.level} className="flex flex-col gap-1">
+                <button type="button" aria-pressed={on} onClick={() => set({ rpe: on ? null : e.rpe })}
+                  className={`flex h-14 flex-col items-center justify-center rounded-xl transition-colors ${on ? EFFORT_FILL[e.level] : 'bg-muted text-foreground'}`}>
                   <span className="text-[15px] font-semibold">{e.label}</span>
                   <span className={`text-[11px] ${on ? 'opacity-80' : 'text-muted-foreground'}`}>{e.means}</span>
                 </button>
-              )
-            })}
-          </div>
-          {exact ? (
-            <div role="group" aria-label="RPE" className="-mr-5 flex gap-1 overflow-x-auto pr-5 pb-0.5">
-              {RPES.map((r) => (
-                <button key={r} type="button" aria-pressed={draft.rpe === r} aria-label={`RPE ${r}`}
-                  onClick={() => set({ rpe: draft.rpe === r ? null : r })}
-                  className={`h-9 min-w-10 shrink-0 rounded-lg px-2 font-mono text-[13px] font-semibold ${
-                    draft.rpe === r ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-                  }`}>
-                  {r}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <button type="button" onClick={() => setExact(true)} className="self-start px-1 text-[13px] font-semibold text-muted-foreground">
-              Exact RPE
-            </button>
-          )}
+                <div className="flex gap-0.5">
+                  {RPES.filter((r) => effortLevel(r) === e.level).map((r) => (
+                    <button key={r} type="button" aria-pressed={draft.rpe === r} aria-label={`RPE ${r}`}
+                      onClick={() => set({ rpe: draft.rpe === r ? null : r })}
+                      className={`h-8 min-w-0 flex-1 rounded-md font-mono text-[12px] font-semibold ${
+                        draft.rpe === r ? EFFORT_FILL[e.level] : 'text-muted-foreground'
+                      }`}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -149,5 +150,36 @@ function SetForm({
         </button>
       </div>
     </>
+  )
+}
+
+/** A ramp of warm-up sets up to a target weight, added to the set's exercise in one tap. */
+function RampUp({ from, onAdd }: { from: number | null; onAdd: (ramp: { kg: number; reps: number }[]) => void }) {
+  const [target, setTarget] = useState(from ? String(from) : '')
+  const [count, setCount] = useState('3')
+  const weight = parseFloat(target.replace(',', '.'))
+  const ramp = weight > 0 ? rampSets(weight, parseInt(count, 10)) : []
+  const box = 'h-10 rounded-xl bg-muted text-center font-mono text-[15px]'
+  return (
+    <div className="flex min-h-[5.75rem] flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2 text-[15px]">
+        <span>Ramp up to</span>
+        <input aria-label="Target weight" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)}
+          className={`${box} w-20`} />
+        <span>kg in</span>
+        <input aria-label="Warm-up sets" inputMode="numeric" value={count} maxLength={1}
+          onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))} className={`${box} w-11`} />
+        <span>sets</span>
+      </div>
+      <button type="button" disabled={!ramp.length} onClick={() => onAdd(ramp)}
+        className="flex min-h-12 items-center gap-3 rounded-xl bg-muted py-1.5 pr-1.5 pl-3.5 text-left disabled:opacity-60">
+        <span className="flex min-w-0 flex-1 flex-wrap gap-x-4 font-mono text-[13px]">
+          {ramp.length
+            ? ramp.map((r, i) => <span key={i}>{kg(r.kg)} × {r.reps}</span>)
+            : <span className="font-sans text-muted-foreground">{weight > 0 ? 'Pick 1 to 5 sets' : 'Type a weight to see the ramp'}</span>}
+        </span>
+        <span className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground">Add</span>
+      </button>
+    </div>
   )
 }

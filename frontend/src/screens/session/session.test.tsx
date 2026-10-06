@@ -102,8 +102,8 @@ describe('Session', () => {
     expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
     await userEvent.click(screen.getByRole('button', { name: 'Update program' }))
     // Nothing is written until the reminder is confirmed.
-    const reminder = await screen.findByRole('dialog', { name: 'Update 1 · Bench?' })
-    expect(reminder).toHaveTextContent('every session of 1 · Bench from now on')
+    const reminder = await screen.findByRole('dialog', { name: 'Update Bench?' })
+    expect(reminder).toHaveTextContent('every session of Bench from now on')
     expect(calls.some((c) => c.key === 'PUT /workouts/w1/exercises')).toBe(false)
     await userEvent.click(within(reminder).getByRole('button', { name: 'Update program' }))
     expect(await screen.findByText('Program updated.')).toBeInTheDocument()
