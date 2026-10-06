@@ -216,7 +216,7 @@ class TestCreateInput:
         )
         r = client.post(
             "/inputs",
-            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "text"},
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "date": "2026-03-01", "source_kind": "text"},
             headers=HEADERS,
         )
         assert r.status_code == 201
@@ -247,7 +247,7 @@ class TestCreateInput:
 
         r = client.post(
             "/inputs",
-            json={"content": "some session text"},
+            json={"content": "some session text", "date": "2026-03-01"},
             headers=HEADERS,
         )
         assert r.status_code == 502
@@ -262,8 +262,12 @@ class TestCreateInput:
 
     def test_rejects_empty_content(self, client) -> None:
         r = client.post(
-            "/inputs", json={"content": ""}, headers=HEADERS
+            "/inputs", json={"content": "", "date": "2026-03-01"}, headers=HEADERS
         )
+        assert r.status_code == 422
+
+    def test_requires_the_phones_date(self, client) -> None:
+        r = client.post("/inputs", json={"content": "some text"}, headers=HEADERS)
         assert r.status_code == 422
 
     def test_requires_auth(self, client) -> None:

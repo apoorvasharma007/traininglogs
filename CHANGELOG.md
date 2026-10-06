@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to use from the server (`GET /config`), so one build works in staging and production.
 - Accounts: sign-in by a Supabase pass instead of the API key; every row belongs to one person,
   and the database itself refuses a row owned by someone other than its parent's owner or linked
-  to another person's row. One followed program per person; "today" in each person's timezone.
+  to another person's row. One followed program per person.
 - A database designed for many people (`db-redesign-plan.md`): time-ordered UUID ids, an owner on
   every table, `users` and `profiles`, and renamed tables (`input_text`,
   `input_text_confirmation_cards`, `ai_call_logs`, `workout_sessions` and its exercises, sets,
@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The deload count's break check counted every person's training days, not only yours.
+- A pasted note with no date gets today's date on your phone. It took the server's UTC date,
+  which in India is the day before until 5:30 am.
 
 ### Removed
 

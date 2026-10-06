@@ -66,6 +66,8 @@ export type LastExercise = { name: string; date: string; notes: string | null; w
 export type SessionRequest = {
   client_id: string
   date: string
+  started_at: string
+  ended_at: string
   focus: string | null
   duration_minutes: number
   program_workout_id: string | null
@@ -85,7 +87,7 @@ function newKey(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-function localDate(d: Date): string {
+export function localDate(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
@@ -423,6 +425,8 @@ export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
   return {
     client_id: s.clientId,
     date: s.date,
+    started_at: s.startedAt,
+    ended_at: finishedAt.toISOString(),
     // A workout's session is named after it; History names any other by its exercises.
     focus: s.workoutId ? s.title : null,
     duration_minutes: minutes,

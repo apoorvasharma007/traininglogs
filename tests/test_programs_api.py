@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from traininglogs.db.db import apply_schema, get_connection
+from traininglogs.db.programs import utc_today
 
 from signed_in import clean_test_data, USER_A, USER_B_AUTH, auth
 
@@ -34,15 +35,6 @@ def client(conn):
 
     with TestClient(app) as c:
         yield c
-
-
-def _today_in_india() -> str:
-    """Today where the test users are: a user's timezone defaults to Asia/Kolkata, and the server
-    dates things in it, not in the machine's (CI runs in UTC)."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    return datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
 
 
 def _program(client, name="Strength", workouts=("Bench", None, "Bench & pull-ups")) -> dict:
@@ -91,7 +83,7 @@ class TestPrograms:
         a = _program(client, "A", ())
         b = _program(client, "B", ())
         a = client.post(f"/programs/{a['id']}/follow", headers=HEADERS).json()
-        assert a["following"] is True and a["following_since"] == _today_in_india()
+        assert a["following"] is True and a["following_since"] == utc_today().isoformat()
         client.post(f"/programs/{b['id']}/follow", headers=HEADERS)
         listed = client.get("/programs", headers=HEADERS).json()
         assert [(p["name"], p["following"]) for p in listed] == [("B", True), ("A", False)]

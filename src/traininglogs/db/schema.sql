@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     email                TEXT,
     status               TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
     role                 TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
-    timezone             TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+    timezone             TEXT NOT NULL DEFAULT 'UTC',
     weight_unit          TEXT NOT NULL DEFAULT 'kg' CHECK (weight_unit IN ('kg', 'lb')),
     ai_monthly_limit_usd NUMERIC NOT NULL DEFAULT 1.00 CHECK (ai_monthly_limit_usd >= 0),
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
