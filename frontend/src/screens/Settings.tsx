@@ -5,13 +5,14 @@ import PageTitle from '@/components/PageTitle'
 import { api } from '@/lib/api'
 import { signOut, useSignedIn } from '@/lib/auth'
 import { useOutbox } from '@/lib/store'
-import type { LiftsOut } from '@/lib/types'
+import type { AiUsage, LiftsOut } from '@/lib/types'
 
 export default function Settings() {
   const email = useSignedIn()
   const unsent = useOutbox().pending.length
   const [signingOut, setSigningOut] = useState(false)
   const lifts = useQuery({ queryKey: ['lifts'], queryFn: () => api<LiftsOut>('/progress/lifts') })
+  const aiUsage = useQuery({ queryKey: ['ai-usage'], queryFn: () => api<AiUsage>('/me/ai-usage') })
 
   return (
     <div className="flex flex-col gap-5">
@@ -24,6 +25,17 @@ export default function Settings() {
           <button type="button" onClick={() => setSigningOut(true)} className="h-11 shrink-0 px-3 text-sm font-semibold text-destructive">
             Sign out
           </button>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between px-1">
+          <h2 className="text-sm font-semibold">AI use</h2>
+          <span className="text-xs text-muted-foreground">Reading notes and AI fixes</span>
+        </div>
+        <div className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4">
+          <span>Total so far</span>
+          <span className="tabular-nums">{aiUsage.data && `$${aiUsage.data.total_usd.toFixed(2)}`}</span>
         </div>
       </section>
 

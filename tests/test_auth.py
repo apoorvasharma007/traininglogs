@@ -49,7 +49,7 @@ def test_every_api_route_needs_a_pass(client) -> None:
     for route in app.routes:
         methods = getattr(route, "methods", set()) - {"HEAD"}
         if not methods or not route.path.startswith(("/sessions", "/exercises", "/progress", "/inputs",
-                                                     "/extractions", "/programs", "/templates", "/workouts")):
+                                                     "/extractions", "/programs", "/templates", "/workouts", "/me")):
             continue
         path = route.path.replace("{", "").replace("}", "")
         for method in methods:
