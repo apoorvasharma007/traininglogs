@@ -31,15 +31,15 @@ export default function LogFromNotes() {
     <div>
       <ScreenHeader back="/" backLabel="Back to Train" title="Log from Notes" />
       <div className="flex flex-col gap-2.5">
-        <label htmlFor="session-text" className="px-1 text-[13px] font-semibold">
+        <label htmlFor="session-text" className="sr-only">
           What did you do?
         </label>
         <textarea
           id="session-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={"Paste from Notes, copy text from a photo of your notebook (Live Text), or type or dictate it.\n\nSquat 3x5 at 100\nBench 80 x 8, 8, 6, last one was a grind"}
-          className="h-52 resize-none rounded-2xl border border-border bg-card p-3.5 leading-normal"
+          placeholder={"Paste from Notes, copy text from a photo of your notebook (Live Text), or type or dictate it.\n\nSquat 3x5 at 100\nBench 80 x 8, 8, 6, last one was a grind\nPull-ups 10, 8, 7 with bodyweight\nRDL 60kg 3 sets of 10, lower back felt tight\n5 min row to warm up"}
+          className="h-[calc(100dvh-23rem)] min-h-52 resize-none rounded-2xl border border-border bg-card p-3.5 leading-normal"
         />
       </div>
       <BottomBar aboveTabs error={error}>
@@ -52,7 +52,7 @@ export default function LogFromNotes() {
           {busy ? 'Sending…' : 'Send'}
         </button>
         <p className="text-center text-xs text-muted-foreground">
-          About $0.02. You check everything before it's saved.
+          Reads your note with AI for about $0.02 to $0.06; longer notes cost more. Each AI fix after that is $0.01 to $0.04 more. You check everything before it's saved.
         </p>
       </BottomBar>
     </div>

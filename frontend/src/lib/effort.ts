@@ -2,9 +2,9 @@
 // estimated-max maths (reps left = 10 - RPE) keeps working; an exact RPE is still possible.
 
 export const EFFORTS = [
-  { level: 1, label: 'Moderate', rpe: 7, means: '3 or more reps left' },
+  { level: 1, label: 'Moderate', rpe: 7, means: '' },
   { level: 2, label: 'Hard', rpe: 8.5, means: '1 or 2 reps left' },
-  { level: 3, label: 'All out', rpe: 10, means: 'nothing left' },
+  { level: 3, label: 'All Out', rpe: 10, means: 'nothing left' },
 ] as const
 
 /** A chosen effort's fill, and the outline of an RPE number not chosen: blue, orange, red. */

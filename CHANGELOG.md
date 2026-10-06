@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- UX audit fixes: the app is named Training Logs and has a home-screen icon on iPhone. The home
+  page shows 4 exercises of the next workout and two side-by-side tiles for an ad-hoc workout and
+  Log from Notes. The workout header no longer shows the current exercise or the set count. The
+  set sheet has even spacing, no line under Moderate, "All Out", notes named for the set type and
+  a "Build Up to Working Weight" row that opens the ramp. Notes wrap as you type. Exercise name
+  boxes capitalise each word. The ⋯ menu uses Title Case. Log from Notes has a bigger box, more
+  examples and its full cost line back. A program lists each workout's exercises as a numbered
+  list.
+
 - The set sheet: Warm-up and Working is a full-width switch under the exercise; Working has
   larger effort buttons in blue, orange and red, with every RPE number in a row of chips you
   swipe; Warm-up ramps up to a working weight you type, in 1 to 10 sets spread from 50% to 95%

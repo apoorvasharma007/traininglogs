@@ -33,7 +33,7 @@ export default function SignIn() {
       }}
     >
       <div className="flex flex-col items-center gap-1 pb-4 text-center">
-        <h1 className="text-[28px] font-bold tracking-tight">TrainingLogs</h1>
+        <h1 className="text-[28px] font-bold tracking-tight">Training Logs</h1>
         <p className="text-sm text-muted-foreground">Log workouts however you like.</p>
         <p className="text-sm text-muted-foreground">We'll track your progress from them.</p>
       </div>

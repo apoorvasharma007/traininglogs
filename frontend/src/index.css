@@ -92,3 +92,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+
+/* Rows you swipe sideways don't need a scroll bar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

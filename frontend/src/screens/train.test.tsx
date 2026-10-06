@@ -47,14 +47,14 @@ describe('Train', () => {
     expect(calls.some((c) => c.key.startsWith('GET /exercises/last'))).toBe(true)
   })
 
-  it('lists the first 5 exercises and counts the rest', async () => {
+  it('lists the first 4 exercises and counts the rest', async () => {
     const many = program()
     many.workouts[1].exercises = Array.from({ length: 8 }, (_, i) => ({ name: `Exercise ${i + 1}`, warmup_sets: 0, working_sets: 3, target_reps: 10, amrap: false, alternatives: [] }))
     fakeApi({ 'GET /programs': [many] })
     renderApp('/')
-    expect(await screen.findByText('Exercise 5')).toBeInTheDocument()
-    expect(screen.queryByText('Exercise 6')).not.toBeInTheDocument()
-    expect(screen.getByText('+3 more')).toBeInTheDocument()
+    expect(await screen.findByText('Exercise 4')).toBeInTheDocument()
+    expect(screen.queryByText('Exercise 5')).not.toBeInTheDocument()
+    expect(screen.getByText('+4 more')).toBeInTheDocument()
   })
 
   it('without a program, nudges toward one', async () => {

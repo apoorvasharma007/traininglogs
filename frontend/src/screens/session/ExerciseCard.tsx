@@ -2,6 +2,7 @@ import { ArrowLeftRight, Check, ChevronDown, Clock, Ellipsis, MessageSquareText 
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import EffortBars from '@/components/EffortBars'
+import NoteBox from '@/components/NoteBox'
 import NumberBox from '@/components/NumberBox'
 import type { LiveExercise, LiveSet } from '@/lib/session'
 
@@ -90,9 +91,9 @@ export default function ExerciseCard({
           <label htmlFor={`note-${e.key}`} className="sr-only">
             Note for today
           </label>
-          <input id={`note-${e.key}`} autoFocus={e.noteOpen && !e.note} value={e.note} placeholder="Note for today"
+          <NoteBox id={`note-${e.key}`} autoFocus={e.noteOpen && !e.note} value={e.note} placeholder="Note for today"
             onChange={(ev) => onNote(ev.target.value)}
-            className="h-11 min-w-0 flex-1 rounded-xl border border-muted-foreground/60 bg-card px-3 text-sm" />
+            className="min-h-11 min-w-0 flex-1 rounded-xl border border-muted-foreground/60 bg-card px-3 text-sm" />
         </div>
       )}
 
@@ -166,7 +167,7 @@ function NameField({ initial, choices, onCommit }: { initial: string; choices: s
       <label htmlFor="new-exercise-name" className="sr-only">
         Exercise name
       </label>
-      <input id="new-exercise-name" list="exercise-choices" autoFocus value={name} placeholder="Exercise name"
+      <input id="new-exercise-name" list="exercise-choices" autoFocus autoCapitalize="words" value={name} placeholder="Exercise name"
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && onCommit(name.trim())}
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
