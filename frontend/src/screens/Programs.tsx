@@ -38,7 +38,7 @@ export default function Programs() {
           <p className="font-semibold">No programs yet</p>
           <button type="button" onClick={() => setChoosing(true)}
             className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3.5 font-semibold text-primary-foreground transition active:scale-95">
-            <Plus size={16} aria-hidden /> New program
+            <Plus size={16} aria-hidden /> New Program
           </button>
         </div>
       )}
@@ -64,8 +64,8 @@ export default function Programs() {
         </div>
       )}
 
-      <Sheet open={choosing} onClose={() => setChoosing(false)} label="New program">
-        <span className="text-[17px] font-semibold">New program</span>
+      <Sheet open={choosing} onClose={() => setChoosing(false)} label="New Program">
+        <span className="text-[17px] font-semibold">New Program</span>
         <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
           <button type="button" onClick={() => { setChoosing(false); setCreating(true) }}
             className="flex h-13 items-center px-4 text-left text-[15px] font-semibold active:bg-muted">
@@ -81,7 +81,7 @@ export default function Programs() {
 
       <NameSheet
         open={creating}
-        title="New program"
+        title="New Program"
         label="Name"
         placeholder="Strength, Hypertrophy…"
         saveLabel="Create"
