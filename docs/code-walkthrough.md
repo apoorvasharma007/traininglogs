@@ -1,34 +1,45 @@
 # Code Walkthrough: traininglogs
 
-A React + FastAPI + PostgreSQL app for strength training tracking with AI-powered note extraction.
+React + Python (FastAPI) app for strength training tracking with AI-powered note extraction.
 
 ## Architecture Overview
 
-### Deployment Architecture
+### Deployment
+
+**Production**: One container runs on Google Cloud Run (512 MiB, scales 0-2 instances).
+- The container has both the React frontend and the Python backend (FastAPI)
+- Database: Supabase PostgreSQL in Singapore
+- Auth: Supabase JWT tokens
+
+**Local Development**: Run both parts locally for testing:
+```
+Your machine:
+  - Frontend: React dev server (port 5173) OR built files (port 8000)
+  - Backend: Python FastAPI dev server (Uvicorn, port 8000)
+  - Database: Docker Postgres (port 5433)
+```
+
+### Data Flow
 
 ```
-                  PRODUCTION (Google Cloud)                   LOCAL DEVELOPMENT
-                  
-User Browser  →  Cloud Run (FastAPI container)  OR  →  localhost:8000 (dev server)
-                        ↓
-              Cloud SQL (PostgreSQL)          OR  →  Docker Postgres (port 5433)
-                        ↓
-Supabase Auth (JWT verification)
-                        ↓
-AI Providers (Anthropic, Groq API)
+User's Browser
+    ↓
+Cloud Run container (production) OR localhost:8000 (development)
+    ├─ /              Frontend (React app, index.html)
+    └─ /api/*         Backend (Python FastAPI)
+    ↓
+PostgreSQL Database
+    ↓
+AI APIs (Anthropic, Groq) for note extraction
 ```
 
-### Components
+### Technology Stack
 
-- **Frontend**: React (TypeScript) built to `frontend/dist/`, served by FastAPI
-- **Backend**: FastAPI Python web framework
-  - Production: Containerized on Google Cloud Run
-  - Development: Local Uvicorn server (port 8000)
-- **Database**: PostgreSQL
-  - Production: Google Cloud SQL (managed)
-  - Development: Docker container (port 5433)
-- **Authentication**: Supabase JWT tokens verified on every request
-- **AI Integration**: Anthropic and Groq API calls
+- **Frontend**: React 18 (TypeScript), TanStack Query, Wouter routing
+- **Backend**: Python 3.12, FastAPI web framework, psycopg2 for Postgres
+- **Deployment**: Google Cloud Run (container image in Artifact Registry)
+- **Infrastructure**: Terraform (manages Cloud Run, secrets, service accounts)
+- **Database**: PostgreSQL (production on Google Cloud SQL, local in Docker)
 
 ---
 
@@ -36,7 +47,7 @@ AI Providers (Anthropic, Groq API)
 
 ### Entry Point: `src/traininglogs/api/app.py`
 
-The FastAPI application defines all HTTP endpoints:
+The Python backend (using FastAPI framework) defines all HTTP endpoints:
 - Session logging: `POST /sessions`, `GET /sessions`
 - AI-powered extraction: `POST /inputs`, `POST /extractions/{id}/confirm`
 - Programs and workouts: `GET/POST/PATCH/DELETE /programs`, `/workouts`
@@ -330,44 +341,54 @@ cd frontend && npm test
 
 ## Deployment
 
-### Technology Stack
-- **Framework**: FastAPI (Python web framework)
-- **Container runtime**: Google Cloud Run (serverless, managed by Terraform)
-- **Database**: Google Cloud SQL (PostgreSQL) + Supabase auth layer
-- **Infrastructure as Code**: Terraform (`infra/`)
-- **CI/CD**: GitHub Actions
+### Production (Google Cloud)
+
+**One container runs on Cloud Run** (512 MiB, scales 0–2 instances, in us-east1):
+- Built from `Dockerfile` (Python + FastAPI backend + React frontend)
+- Pushed to Artifact Registry
+- Managed by Terraform in `infra/`
+
+**Database**: Supabase PostgreSQL (Singapore)
+
+**Secrets**: Google Cloud Secret Manager
+- `database-url`
+- `api-key`
+- `anthropic-api-key`
+
+**Branches**:
+- `dev` → Staging (Cloud Run in separate project)
+- `main` → Production (requires manual approval after merge)
 
 ### Local Development
+
 ```bash
-# Build frontend
+# 1. Build the frontend
 cd frontend && npm ci && npm run build && cd ..
 
-# Start FastAPI server locally (for development only)
+# 2. Start the backend server (Uvicorn, Python development server)
 DATABASE_URL="..." .venv/bin/uvicorn traininglogs.api.app:app --reload
 ```
 
-- App: `http://localhost:8000/` (local only)
-- API: `http://localhost:8000/` (same origin)
-- This is a development server; production uses Cloud Run
+Access at `http://localhost:8000/` (both app and API, same origin)
 
-### Production Deployment
-- **Environment**: Google Cloud Run (serverless container)
-- **Branch flow**: 
-  - `main` → Production (GCP region us-west1)
-  - `dev` → Staging (separate Cloud Run instance)
-- **Infrastructure**: Managed by Terraform in `infra/`
-  - Cloud Run service configuration
-  - Cloud SQL PostgreSQL instance
-  - Supabase auth project
-  - Environment secrets in Google Cloud Secret Manager
+**Or**, for live reload while editing the frontend:
+
+```bash
+cd frontend && npm run dev  # Serves at port 5173, sends API calls to port 8000
+```
 
 ### CI/CD Pipeline
-- GitHub Actions in `.github/workflows/`
-- Tests run on every push
-- Merge to `dev` deploys to staging automatically
-- Merge to `main` requires manual approval in GitHub (prod environment)
-- Terraform applies infrastructure changes on deploy
-- CI then deploys the container to Cloud Run
+
+**GitHub Actions** (`.github/workflows/`):
+1. Tests run on every push
+2. Format validation and Terraform plan posted as PR comment
+3. On merge to `dev`: Deploy staging (automatic)
+4. On merge to `main`: Deploy production (requires GitHub approval in `prod` environment)
+
+**Deploy workflow**:
+1. Build and push container image to Artifact Registry
+2. Run Terraform (`infra/environments/*/app`) to update Cloud Run service
+3. Cloud Run pulls the new image and starts it
 
 ---
 
