@@ -25,7 +25,7 @@ export function amountText(m: Pick<Movement, 'reps' | 'duration_seconds'>): stri
 const mv = (name: string, amount: string): Movement => ({ name, ...parseAmount(amount) })
 
 export const WARMUP_PRESETS: { name: string; movements: Movement[] }[] = [
-  { name: 'Easy cardio', movements: [mv('Easy cardio', '5 min')] },
+  { name: 'Easy Cardio', movements: [mv('Easy Cardio', '5 min')] },
   {
     name: 'Dynamic stretching',
     movements: [mv('Arm circles', ''), mv('Leg swings', ''), mv('Hip circles', ''), mv('Walking lunges', ''), mv('Torso twists', '')],
@@ -33,7 +33,7 @@ export const WARMUP_PRESETS: { name: string; movements: Movement[] }[] = [
 ]
 
 export const COOLDOWN_PRESETS: { name: string; movements: Movement[] }[] = [
-  { name: 'Easy cardio', movements: [mv('Easy cardio', '5 min')] },
+  { name: 'Easy Cardio', movements: [mv('Easy Cardio', '5 min')] },
   {
     name: 'Static stretching',
     movements: [mv('Hamstring stretch', ''), mv('Quad stretch', ''), mv('Chest stretch', ''), mv('Hip flexor stretch', '')],
