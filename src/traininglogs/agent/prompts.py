@@ -1,3 +1,4 @@
+"""System prompts for AI note extraction."""
 from __future__ import annotations
 
 import hashlib

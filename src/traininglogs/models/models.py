@@ -1,3 +1,4 @@
+"""Pydantic models for training sessions, exercises, and sets."""
 from __future__ import annotations
 
 import re

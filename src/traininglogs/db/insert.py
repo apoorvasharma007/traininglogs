@@ -160,10 +160,12 @@ def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
 
 
 def _rest_minutes(rest: Rest | None) -> float | None:
+    """Extract minutes from a Rest object for database storage."""
     return rest.minutes if rest is not None else None
 
 
 def _rest_seconds(rest: Rest | None) -> int | None:
+    """Extract seconds from a Rest object for database storage."""
     return rest.seconds if rest is not None else None
 
 

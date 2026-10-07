@@ -16,6 +16,7 @@ _counter = 0
 
 
 def new_id() -> str:
+    """Generate a unique UUID v7 ID with timestamp and counter for sequential inserts."""
     global _last_ms, _counter
     with _lock:
         ms = max(time.time_ns() // 1_000_000, _last_ms)

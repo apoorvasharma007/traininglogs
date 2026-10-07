@@ -29,6 +29,7 @@ def _keys() -> jwt.PyJWKClient:
 
 
 def _signing_key(token: str):
+    """Extract the public key used to sign this token from Supabase's JWKS."""
     return _keys().get_signing_key_from_jwt(token).key
 
 
@@ -79,6 +80,7 @@ def user_for(conn, claims: dict) -> str:
 
 
 def bearer(authorization: Annotated[str, Header()] = "") -> str:
+    """Extract the Bearer token from the Authorization header, or 401 if missing."""
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer" or not token:
         raise HTTPException(status_code=401, detail=SIGNED_OUT)

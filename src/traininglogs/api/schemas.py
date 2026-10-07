@@ -1,3 +1,4 @@
+"""Pydantic models for API requests and responses: sessions, exercises, programs, and extractions."""
 from __future__ import annotations
 
 from datetime import date, datetime

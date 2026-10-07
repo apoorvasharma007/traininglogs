@@ -36,6 +36,7 @@ def list_programs(conn: Connection, user_id: str) -> list[dict[str, Any]]:
 
 
 def get_program(conn: Connection, user_id: str, program_id: str) -> dict[str, Any] | None:
+    """Get a single program with its workouts, or None if not found."""
     with conn.cursor() as cur:
         cur.execute(f"{_PROGRAM} WHERE user_id = %s AND id = %s AND archived_at IS NULL", (user_id, program_id))
         rows = _rows(cur)
@@ -157,6 +158,7 @@ def _next_workout_id(conn: Connection, user_id: str, program_id: str, workouts: 
 
 
 def _insert_exercises(cur, user_id: str, workout_id: str, exercises: list[dict[str, Any]]) -> None:
+    """Add exercises to a workout."""
     ids = user_exercise_ids(cur, user_id, [e["name"] for e in exercises])
     for position, e in enumerate(exercises, start=1):
         cur.execute(
@@ -195,6 +197,7 @@ def create_program(conn: Connection, user_id: str, name: str, workouts: list[dic
 
 
 def _update(conn: Connection, sql: str, params: tuple) -> bool:
+    """Execute an update query and return whether it affected one row."""
     with conn.cursor() as cur:
         cur.execute(sql, params)
         found = cur.rowcount == 1
@@ -205,6 +208,7 @@ def _update(conn: Connection, sql: str, params: tuple) -> bool:
 def update_program(
     conn: Connection, user_id: str, program_id: str, name: str | None = None, deload_after_days: int | None = None
 ) -> bool:
+    """Update a program's name and/or deload_after_days setting."""
     return _update(
         conn,
         """
@@ -237,6 +241,7 @@ def follow_program(conn: Connection, user_id: str, program_id: str) -> bool:
 
 
 def unfollow_program(conn: Connection, user_id: str, program_id: str) -> bool:
+    """Stop following a program."""
     return _update(
         conn,
         "UPDATE programs SET following = false, updated_at = now() WHERE user_id = %s AND id = %s AND archived_at IS NULL",
@@ -245,6 +250,7 @@ def unfollow_program(conn: Connection, user_id: str, program_id: str) -> bool:
 
 
 def archive_program(conn: Connection, user_id: str, program_id: str) -> bool:
+    """Archive a program, removing it from the app."""
     return _update(
         conn,
         "UPDATE programs SET archived_at = now(), following = false, updated_at = now()"
@@ -295,6 +301,7 @@ def set_workout_movements(conn: Connection, user_id: str, workout_id: str, warmu
 
 
 def rename_workout(conn: Connection, user_id: str, workout_id: str, name: str | None) -> bool:
+    """Rename a workout, or clear its name (shows as its position number)."""
     return _update(
         conn,
         "UPDATE program_workouts SET name = %s, updated_at = now() WHERE user_id = %s AND id = %s AND archived_at IS NULL",

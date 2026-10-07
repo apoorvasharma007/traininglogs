@@ -1,3 +1,4 @@
+"""Pydantic schemas for AI-powered extraction and validation of training notes."""
 from __future__ import annotations
 
 import datetime

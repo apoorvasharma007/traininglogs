@@ -1,3 +1,4 @@
+"""Validate and correct AI extractions via user fixes."""
 from __future__ import annotations
 
 from typing import Any
