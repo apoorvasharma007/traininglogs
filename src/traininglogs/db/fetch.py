@@ -8,6 +8,7 @@ from traininglogs.db.insert import name_key
 
 
 def _rows(cur) -> list[dict]:
+    """Convert cursor results to list of dicts using column names."""
     cols = [d[0] for d in cur.description]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
@@ -21,6 +22,7 @@ def get_sessions(
     to_date: str | None = None,
     limit: int | None = None,
 ) -> list[dict]:
+    """List sessions with optional filtering by phase, week, date range."""
     filters, params = ["s.user_id = %s"], [user_id]
     for clause, value in (("s.phase = %s", phase), ("s.week = %s", week),
                           ("s.date >= %s", from_date), ("s.date <= %s", to_date)):
@@ -116,10 +118,12 @@ def get_session(conn: Connection, user_id: str, session_id: str) -> dict | None:
 
 
 def _set(row: dict) -> dict:
+    """Format a set row for API response, excluding internal fields."""
     return {k: v for k, v in row.items() if k not in ("exercise_id", "kind")}
 
 
 def get_exercise_history(conn: Connection, user_id: str, name: str) -> list[dict]:
+    """All working sets of an exercise (case-insensitive name match) in chronological order."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -146,6 +150,7 @@ def get_ai_total_usd(conn: Connection, user_id: str) -> float:
 
 
 def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
+    """Get a note by ID, or None if not found."""
     with conn.cursor() as cur:
         cur.execute(
             "SELECT id::text AS id, content, kind, client_id, source, created_at FROM input_text"
@@ -157,6 +162,7 @@ def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
 
 
 def get_input_by_client_id(conn: Connection, user_id: str, client_id: str) -> dict | None:
+    """Get a note by its client-generated ID (for idempotent retries)."""
     with conn.cursor() as cur:
         cur.execute(
             "SELECT id::text AS id, content, kind, client_id, source, created_at FROM input_text"
@@ -172,6 +178,7 @@ _CARD_COLUMNS = """id::text AS id, input_id::text AS input_id, model, prompt_ver
 
 
 def get_card(conn: Connection, user_id: str, card_id: str) -> dict | None:
+    """Get an extraction (confirmation card) by ID, or None if not found."""
     with conn.cursor() as cur:
         cur.execute(
             f"SELECT {_CARD_COLUMNS} FROM input_text_confirmation_cards WHERE user_id = %s AND id = %s",

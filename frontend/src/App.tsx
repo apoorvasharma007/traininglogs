@@ -1,3 +1,6 @@
+/**
+ * Main application component: routing, authentication, and layout.
+ */
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import { useQueryClient } from '@tanstack/react-query'

@@ -1,3 +1,4 @@
+"""Provider implementations for AI model calls (Anthropic, Groq)."""
 from __future__ import annotations
 
 import os

@@ -1,3 +1,4 @@
+"""Build interactive validation UI from extracted training data."""
 from __future__ import annotations
 
 from traininglogs.agent.extraction import PLACEHOLDER_NOTE_PREFIX

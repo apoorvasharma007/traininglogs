@@ -1,3 +1,4 @@
+"""AI-powered extraction of structured training data from raw notes."""
 from __future__ import annotations
 
 import re

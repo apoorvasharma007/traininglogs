@@ -1,3 +1,4 @@
+"""FastAPI application with endpoints for sessions, programs, and AI-powered note extraction."""
 import os
 import time
 import sys
@@ -50,6 +51,7 @@ _pool: SimpleConnectionPool | None = None
 
 
 def _get_pool() -> SimpleConnectionPool:
+    """Get or create the database connection pool."""
     global _pool
     if _pool is None:
         db_url = os.environ["DATABASE_URL"]
@@ -89,6 +91,7 @@ def _live_connection(pool: SimpleConnectionPool):
 
 
 def _db():
+    """Dependency that provides a live database connection from the pool."""
     pool = _get_pool()
     conn = _live_connection(pool)
     try:
@@ -173,6 +176,7 @@ def list_sessions(
     conn=Depends(_db),
     user: str = Depends(_user),
 ):
+    """List sessions with optional filtering by phase, week, or date range."""
     return get_sessions(conn, user, phase=phase, week=week, from_date=from_date, to_date=to_date, limit=limit)
 
 

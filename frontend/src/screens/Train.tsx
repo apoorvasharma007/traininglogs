@@ -1,3 +1,6 @@
+/**
+ * Main training session logging screen: add exercises, sets, and save sessions.
+ */
 import { ChevronRight, CloudOff, NotebookPen, Plus } from 'lucide-react'
 import Parts from '@/components/Parts'
 import { useEffect, useState } from 'react'

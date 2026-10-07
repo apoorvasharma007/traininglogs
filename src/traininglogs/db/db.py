@@ -1,3 +1,4 @@
+"""Database connection and schema management."""
 import os
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from psycopg2.extensions import connection as Connection
 
 
 def get_connection(database_url: str | None = None) -> Connection:
+    """Open a new database connection, using DATABASE_URL env var if not provided."""
     url = database_url or os.environ["DATABASE_URL"]
     return psycopg2.connect(url)
 
