@@ -13,6 +13,7 @@ import pytest
 
 from traininglogs.agent.llm_extract_validator import (
     CORRECTION_TOOL_NAME,
+    CorrectionRejected,
     LLMExtractValidator,
 )
 from traininglogs.agent.prompts import CORRECTION_SYSTEM_PROMPT
@@ -184,3 +185,29 @@ class TestBadPatchesAreRefusedNotAbsorbed:
     def test_provider_failure_propagates(self) -> None:
         with pytest.raises(LLMParserError):
             LLMExtractValidator(FailingProvider()).apply_correction(make_extract(), "x")
+
+
+class TestRefusalsSayWhyInPlainWords:
+    """What the person reads under the fix box when the AI's fix can't be used."""
+
+    def _plain(self, edits: list[dict[str, Any]]) -> str:
+        with pytest.raises(CorrectionRejected) as caught:
+            LLMExtractValidator(StubProvider({"edits": edits})).apply_correction(make_extract(), "x")
+        return caught.value.plain
+
+    def test_names_the_exercise_and_groups_the_sets(self) -> None:
+        """The case seen on 2026-10-04: two warm-up sets added without a weight."""
+        warmups = [{"number": n, "weight_kg": None, "rep_count": None} for n in (1, 2)]
+        plain = self._plain([{"path": "exercises.1.warmup_sets", "value": warmups}])
+        assert plain == "Overhead Press, warm-up sets 1 and 2: needs a weight."
+
+    def test_a_bad_value_is_quoted(self) -> None:
+        plain = self._plain([{"path": "exercises.0.sets.1.weight_kg", "value": "heavy"}])
+        assert plain == "Bench Press, set 2: weight must be a number, not heavy."
+
+    def test_a_path_not_on_the_card(self) -> None:
+        plain = self._plain([{"path": "exercises.0.rpe", "value": 9.0}])
+        assert plain == (
+            "Couldn't tell which part of the card to change. "
+            'Name the exercise and the set, for example "Squat, set 2".'
+        )

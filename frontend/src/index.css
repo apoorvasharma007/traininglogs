@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+/* Every colour in the app. Screens use the Tailwind names below (bg-card, text-muted-foreground,
+   ...), never hex values, so changing a colour here changes it everywhere. Values: react-plan.md.
+   `highlight` is the green from the plan (ticked sets, Next, records, the active tab). `accent`,
+   `muted`, `popover`, `input` and `ring` are the names shadcn components expect; here they are
+   quiet greys, not the green. */
+:root {
+  --background: #fafafa;
+  --card: #ffffff;
+  --border: #e4e4e7;
+  --foreground: #18181b;
+  --muted-foreground: #71717a;
+  --faint-foreground: #a1a1aa;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --highlight: #15803d;
+  --highlight-soft: #f0fdf4;
+  --muted: #f4f4f5;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --warning: #92400e;
+  --warning-soft: #fffbeb;
+  --destructive: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #0b0b0c;
+    --card: #161618;
+    --border: #26262a;
+    --foreground: #f4f4f5;
+    --muted-foreground: #8e8e96;
+    --faint-foreground: #5c5c63;
+    --primary: #f4f4f5;
+    --primary-foreground: #0b0b0c;
+    --highlight: #4cc38a;
+    --highlight-soft: #13261c;
+    --muted: #1f1f22;
+    --accent: #1f1f22;
+    --accent-foreground: #f4f4f5;
+    --popover: #161618;
+    --popover-foreground: #f4f4f5;
+    --input: #26262a;
+    --ring: #5c5c63;
+    --warning: #d4a24c;
+    --warning-soft: #1f1a10;
+    --destructive: #e5484d;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-soft: var(--highlight-soft);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive: var(--destructive);
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+}
+
+/* No double-tap zoom: taps act at once, like an app. Pinch zoom still works. */
+html {
+  touch-action: manipulation;
+}
+
+body {
+  @apply bg-background font-sans text-foreground antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* Rows you swipe sideways don't need a scroll bar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

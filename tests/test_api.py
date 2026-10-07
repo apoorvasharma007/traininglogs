@@ -1,4 +1,6 @@
 import os
+import uuid
+
 import pytest
 
 
@@ -6,8 +8,10 @@ from fastapi.testclient import TestClient
 
 from traininglogs.api.app import app
 from traininglogs.db.db import get_connection, apply_schema
-from traininglogs.db.insert import insert_session
-from traininglogs.models.models import TrainingSession
+
+from signed_in import USER_A, USER_B_AUTH, auth, clean_test_data, save_session
+
+HEADERS = auth()
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -15,12 +19,10 @@ TEST_DB_URL = os.environ.get(
 )
 
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["API_KEY"] = "testkey"
 
 SESSION_A = {
     "data_model_version": "0.0.1",
     "data_model_type": "TrainingSession",
-    "session_id": "api-test-session-001",
     "user_id": "7",
     "user_name": "Apoorva Sharma",
     "date": "2026-02-01",
@@ -67,7 +69,6 @@ SESSION_A = {
 
 SESSION_B = {
     **SESSION_A,
-    "session_id": "api-test-session-002",
     "date": "2026-03-01",
     "phase": 2,
     "week": 1,
@@ -83,59 +84,65 @@ def db_conn():
     conn.close()
 
 
+IDS: dict[str, str] = {}
+
+
 @pytest.fixture(scope="module")
 def client(db_conn):
-    insert_session(db_conn, TrainingSession.model_validate(SESSION_A))
-    insert_session(db_conn, TrainingSession.model_validate(SESSION_B))
+    clean_test_data(db_conn)
+    IDS["a"] = save_session(db_conn, SESSION_A)
+    IDS["b"] = save_session(db_conn, SESSION_B)
     with TestClient(app) as c:
         yield c
-    with db_conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions WHERE session_id LIKE 'api-test-%'")
-    db_conn.commit()
+    clean_test_data(db_conn)
 
 
 def test_list_sessions_returns_all(client):
-    r = client.get("/sessions", headers={"x-api-key": "testkey"})
+    r = client.get("/sessions", headers=HEADERS)
     assert r.status_code == 200
-    ids = [s["session_id"] for s in r.json()]
-    assert "api-test-session-001" in ids
-    assert "api-test-session-002" in ids
+    assert [s["session_id"] for s in r.json()] == [IDS["b"], IDS["a"]], "newest first"
 
 
 def test_list_sessions_filter_by_phase(client):
-    r = client.get("/sessions?phase=1", headers={"x-api-key": "testkey"})
+    r = client.get("/sessions?phase=1", headers=HEADERS)
     assert r.status_code == 200
     results = r.json()
     assert all(s["phase"] == 1 for s in results)
     ids = [s["session_id"] for s in results]
-    assert "api-test-session-001" in ids
-    assert "api-test-session-002" not in ids
+    assert IDS["a"] in ids
+    assert IDS["b"] not in ids
 
 
 def test_list_sessions_filter_by_phase_and_week(client):
-    r = client.get("/sessions?phase=2&week=1", headers={"x-api-key": "testkey"})
+    r = client.get("/sessions?phase=2&week=1", headers=HEADERS)
     assert r.status_code == 200
-    results = [s for s in r.json() if s["session_id"].startswith("api-test-")]
+    results = r.json()
     assert len(results) == 1
-    assert results[0]["session_id"] == "api-test-session-002"
+    assert results[0]["session_id"] == IDS["b"]
 
 
 def test_list_sessions_filter_by_date_range(client):
     r = client.get(
         "/sessions?from_date=2026-02-01&to_date=2026-02-28",
-        headers={"x-api-key": "testkey"},
+        headers=HEADERS,
     )
     assert r.status_code == 200
-    test_results = [s for s in r.json() if s["session_id"].startswith("api-test-")]
+    test_results = r.json()
     assert len(test_results) == 1
-    assert test_results[0]["session_id"] == "api-test-session-001"
+    assert test_results[0]["session_id"] == IDS["a"]
+
+
+def test_session_list_has_exercise_names_and_a_limit(client):
+    first = client.get("/sessions", headers=HEADERS).json()[0]
+    assert first["exercises"] == ["Bench Press"]
+    assert len(client.get("/sessions", params={"limit": 1}, headers=HEADERS).json()) == 1
 
 
 def test_session_detail_returns_full_structure(client):
-    r = client.get("/sessions/api-test-session-001", headers={"x-api-key": "testkey"})
+    r = client.get(f"/sessions/{IDS['a']}", headers=HEADERS)
     assert r.status_code == 200
     body = r.json()
-    assert body["session_id"] == "api-test-session-001"
+    assert body["session_id"] == IDS["a"]
     assert body["focus"] == "Push Hypertrophy"
     assert len(body["exercises"]) == 1
     exercise = body["exercises"][0]
@@ -145,28 +152,28 @@ def test_session_detail_returns_full_structure(client):
 
 
 def test_session_detail_not_found(client):
-    r = client.get("/sessions/does-not-exist", headers={"x-api-key": "testkey"})
+    r = client.get("/sessions/does-not-exist", headers=HEADERS)
     assert r.status_code == 404
 
 
 def test_exercise_history_returns_sets_in_order(client):
-    r = client.get("/exercises/Bench Press/history", headers={"x-api-key": "testkey"})
+    r = client.get("/exercises/Bench Press/history", headers=HEADERS)
     assert r.status_code == 200
-    rows = [row for row in r.json() if row["session_id"].startswith("api-test-")]
+    rows = r.json()
     assert len(rows) == 2
     dates = [row["date"] for row in rows]
     assert dates == sorted(dates)
 
 
 def test_exercise_history_case_insensitive(client):
-    r = client.get("/exercises/bench press/history", headers={"x-api-key": "testkey"})
+    r = client.get("/exercises/bench press/history", headers=HEADERS)
     assert r.status_code == 200
-    rows = [row for row in r.json() if row["session_id"].startswith("api-test-")]
+    rows = r.json()
     assert len(rows) == 2
 
 
 def test_exercise_history_not_found(client):
-    r = client.get("/exercises/Squat/history", headers={"x-api-key": "testkey"})
+    r = client.get("/exercises/Squat/history", headers=HEADERS)
     assert r.status_code == 404
 
 
@@ -185,7 +192,7 @@ class TestCreateInput:
     monkeypatched, same seam test_ingest.py and test_cli_log_ai_path.py use -- no real API
     calls."""
 
-    def _fake_extract(self):
+    def _fake_extract(self):  # noqa: D401
         from traininglogs.agent.schemas import TrainingLogLLMExtract
         from traininglogs.models.models import Exercise, RepCount, WorkingSet
 
@@ -209,8 +216,8 @@ class TestCreateInput:
         )
         r = client.post(
             "/inputs",
-            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "source_kind": "markdown"},
-            headers={"x-api-key": "testkey"},
+            json={"content": "# Leg day\n1. 280 x 12 RPE 9.5", "date": "2026-03-01", "source_kind": "text"},
+            headers=HEADERS,
         )
         assert r.status_code == 201
         body = r.json()
@@ -219,10 +226,10 @@ class TestCreateInput:
         assert body["error"] is None
 
         with db_conn.cursor() as cur:
-            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            cur.execute("SELECT content FROM input_text WHERE id = %s", (body["raw_input_id"],))
             assert cur.fetchone()[0] == "# Leg day\n1. 280 x 12 RPE 9.5"
             cur.execute(
-                "SELECT status FROM extractions WHERE id = %s", (body["extraction_id"],)
+                "SELECT status FROM input_text_confirmation_cards WHERE id = %s", (body["extraction_id"],)
             )
             assert cur.fetchone()[0] == "pending"
 
@@ -240,23 +247,27 @@ class TestCreateInput:
 
         r = client.post(
             "/inputs",
-            json={"content": "some session text"},
-            headers={"x-api-key": "testkey"},
+            json={"content": "some session text", "date": "2026-03-01"},
+            headers=HEADERS,
         )
         assert r.status_code == 502
         body = r.json()
         assert body["raw_input_id"]
         assert body["extraction_id"] is None
-        assert "LLM unavailable" in body["error"]
+        assert body["error"].startswith("Couldn't read your note.")
 
         with db_conn.cursor() as cur:
-            cur.execute("SELECT content FROM raw_inputs WHERE id = %s", (body["raw_input_id"],))
+            cur.execute("SELECT content FROM input_text WHERE id = %s", (body["raw_input_id"],))
             assert cur.fetchone()[0] == "some session text"
 
     def test_rejects_empty_content(self, client) -> None:
         r = client.post(
-            "/inputs", json={"content": ""}, headers={"x-api-key": "testkey"}
+            "/inputs", json={"content": "", "date": "2026-03-01"}, headers=HEADERS
         )
+        assert r.status_code == 422
+
+    def test_requires_the_phones_date(self, client) -> None:
+        r = client.post("/inputs", json={"content": "some text"}, headers=HEADERS)
         assert r.status_code == 422
 
     def test_requires_auth(self, client) -> None:
@@ -270,9 +281,9 @@ class TestGetExtractionCard:
     in place of TerminalRenderer."""
 
     def _insert_extraction(self, db_conn) -> str:
-        from traininglogs.db.insert import insert_extraction, insert_raw_input
+        from traininglogs.db.insert import insert_card, insert_input
 
-        raw_input_id = insert_raw_input(db_conn, "# card test\n1. 280 x 12 RPE 9.5")
+        raw_input_id = insert_input(db_conn, USER_A, "# card test\n1. 280 x 12 RPE 9.5")
         extract = {
             "date": "2026-03-01",
             "focus": "Legs Hypertrophy",
@@ -288,13 +299,11 @@ class TestGetExtractionCard:
             ],
             "uncertain_fields": [],
         }
-        return insert_extraction(
-            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
-        )
+        return insert_card(db_conn, USER_A, raw_input_id, "m", "v1", extract)
 
     def test_returns_the_card(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn)
-        r = client.get(f"/extractions/{extraction_id}", headers={"x-api-key": "testkey"})
+        r = client.get(f"/extractions/{extraction_id}", headers=HEADERS)
         assert r.status_code == 200
         body = r.json()
         assert body["session_header"]["focus"] == "Legs Hypertrophy"
@@ -303,7 +312,7 @@ class TestGetExtractionCard:
         assert body["exercises"][0]["working_set_rows"][0]["weight_kg"] == 280.0
 
     def test_not_found(self, client) -> None:
-        r = client.get("/extractions/does-not-exist", headers={"x-api-key": "testkey"})
+        r = client.get("/extractions/does-not-exist", headers=HEADERS)
         assert r.status_code == 404
 
     def test_requires_auth(self, client, db_conn) -> None:
@@ -325,13 +334,13 @@ class TestConfirmExtraction:
     def _cleanup(self, db_conn):
         yield
         with db_conn.cursor() as cur:
-            cur.execute("DELETE FROM sessions WHERE session_id LIKE '2026-05-0%'")
+            cur.execute("DELETE FROM workout_sessions WHERE date::text LIKE '2026-05-0%'")
         db_conn.commit()
 
     def _insert_extraction(self, db_conn, date: str, content: str, extraction_id=None) -> str:
-        from traininglogs.db.insert import insert_extraction, insert_raw_input
+        from traininglogs.db.insert import insert_card, insert_input
 
-        raw_input_id = insert_raw_input(db_conn, content)
+        raw_input_id = insert_input(db_conn, USER_A, content)
         extract = {
             "date": date,
             "focus": "Legs Hypertrophy",
@@ -347,21 +356,18 @@ class TestConfirmExtraction:
             ],
             "uncertain_fields": [],
         }
-        return insert_extraction(
-            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
-            extraction_id=extraction_id,
-        )
+        return insert_card(db_conn, USER_A, raw_input_id, "m", "v1", extract)
 
     def test_confirms_the_extraction_as_is(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn, "2026-05-01", "confirm test content 1")
-        r = client.post(f"/extractions/{extraction_id}/confirm", headers={"x-api-key": "testkey"})
+        r = client.post(f"/extractions/{extraction_id}/confirm", headers=HEADERS)
         assert r.status_code == 201
         session_id = r.json()["session_id"]
-        assert session_id.startswith("2026-05-01-")
+        uuid.UUID(session_id)
 
         with db_conn.cursor() as cur:
             cur.execute(
-                "SELECT extraction_id FROM sessions WHERE session_id = %s", (session_id,)
+                "SELECT confirmation_card_id::text FROM workout_sessions WHERE id = %s", (session_id,)
             )
             assert cur.fetchone()[0] == extraction_id
 
@@ -384,29 +390,84 @@ class TestConfirmExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/confirm",
             json={"extract": override, "corrections": corrections},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 201
         session_id = r.json()["session_id"]
 
         with db_conn.cursor() as cur:
-            cur.execute("SELECT focus FROM sessions WHERE session_id = %s", (session_id,))
+            cur.execute("SELECT focus FROM workout_sessions WHERE id = %s", (session_id,))
             assert cur.fetchone()[0] == "Corrected Focus"
 
-        from traininglogs.db.fetch import get_extraction
-        assert get_extraction(db_conn, extraction_id)["corrections"] == corrections
+        from traininglogs.db.fetch import get_card
+        assert get_card(db_conn, USER_A, extraction_id)["corrections"] == corrections
+
+    def test_confirm_counts_as_a_planned_workout(self, client, db_conn) -> None:
+        from traininglogs.db.programs import add_workout, create_program
+
+        program_id = create_program(db_conn, USER_A, "Confirm test program")
+        workout_id = add_workout(db_conn, USER_A, program_id, "Bench")
+        extraction_id = self._insert_extraction(db_conn, "2026-05-08", "confirm test content 8")
+        try:
+            r = client.post(
+                f"/extractions/{extraction_id}/confirm",
+                json={"program_workout_id": workout_id},
+                headers=HEADERS,
+            )
+            assert r.status_code == 201
+            with db_conn.cursor() as cur:
+                cur.execute(
+                    "SELECT program_workout_id::text FROM workout_sessions WHERE id = %s",
+                    (r.json()["session_id"],),
+                )
+                assert cur.fetchone()[0] == workout_id
+        finally:
+            with db_conn.cursor() as cur:
+                cur.execute("DELETE FROM workout_sessions WHERE program_workout_id = %s", (workout_id,))
+                cur.execute("DELETE FROM program_workouts WHERE program_id = %s", (program_id,))
+                cur.execute("DELETE FROM programs WHERE id = %s", (program_id,))
+            db_conn.commit()
+
+    def test_confirm_with_an_unknown_workout_saves_nothing(self, client, db_conn) -> None:
+        extraction_id = self._insert_extraction(db_conn, "2026-05-09", "confirm test content 9")
+        r = client.post(
+            f"/extractions/{extraction_id}/confirm",
+            json={"program_workout_id": "nope"},
+            headers=HEADERS,
+        )
+        assert r.status_code == 422
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM workout_sessions WHERE date = '2026-05-09'")
+            assert cur.fetchone()[0] == 0
 
     def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
         id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
-        r1 = client.post(f"/extractions/{id_a}/confirm", headers={"x-api-key": "testkey"})
+        r1 = client.post(f"/extractions/{id_a}/confirm", headers=HEADERS)
         assert r1.status_code == 201
 
         id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
-        r2 = client.post(f"/extractions/{id_b}/confirm", headers={"x-api-key": "testkey"})
+        r2 = client.post(f"/extractions/{id_b}/confirm", headers=HEADERS)
         assert r2.status_code == 409
+        assert r2.json() == {"detail": "This note is already saved.", "session_id": r1.json()["session_id"]}
+
+    def test_a_card_confirms_once_even_with_a_changed_date(self, client, db_conn) -> None:
+        """Swiping back to a saved card, changing the date and confirming again must not save a
+        second copy; the answer links to the first."""
+        extraction_id = self._insert_extraction(db_conn, "2026-05-10", "confirm once content")
+        r1 = client.post(f"/extractions/{extraction_id}/confirm", headers=HEADERS)
+        assert r1.status_code == 201
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT extract FROM input_text_confirmation_cards WHERE id = %s", (extraction_id,))
+            changed = {**cur.fetchone()[0], "date": "2026-05-09"}
+        r2 = client.post(f"/extractions/{extraction_id}/confirm", json={"extract": changed}, headers=HEADERS)
+        assert r2.status_code == 409
+        assert r2.json()["session_id"] == r1.json()["session_id"]
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM workout_sessions WHERE confirmation_card_id = %s", (extraction_id,))
+            assert cur.fetchone()[0] == 1
 
     def test_not_found(self, client) -> None:
-        r = client.post("/extractions/does-not-exist/confirm", headers={"x-api-key": "testkey"})
+        r = client.post("/extractions/does-not-exist/confirm", headers=HEADERS)
         assert r.status_code == 404
 
     def test_requires_auth(self, client, db_conn) -> None:
@@ -421,9 +482,9 @@ class TestCorrectExtraction:
     is constructed inside the endpoint itself, not injectable -- no real API calls."""
 
     def _insert_extraction(self, db_conn, date: str, content: str) -> str:
-        from traininglogs.db.insert import insert_extraction, insert_raw_input
+        from traininglogs.db.insert import insert_card, insert_input
 
-        raw_input_id = insert_raw_input(db_conn, content)
+        raw_input_id = insert_input(db_conn, USER_A, content)
         extract = {
             "date": date,
             "focus": "Legs Hypertrophy",
@@ -439,9 +500,7 @@ class TestCorrectExtraction:
             ],
             "uncertain_fields": [],
         }
-        return insert_extraction(
-            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
-        )
+        return insert_card(db_conn, USER_A, raw_input_id, "m", "v1", extract)
 
     def _stub_correction(self, monkeypatch, new_focus: str) -> None:
         from traininglogs.agent.patch import FieldEdit
@@ -464,7 +523,7 @@ class TestCorrectExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": "it was actually a different focus"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 200
         body = r.json()
@@ -485,7 +544,7 @@ class TestCorrectExtraction:
         r1 = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": "fix 1"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         first_extract = r1.json()["extract"]
 
@@ -493,13 +552,13 @@ class TestCorrectExtraction:
         r2 = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"extract": first_extract, "instruction": "fix 2"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r2.json()["extract"]["focus"] == "Second Correction"
 
         # The extraction's own stored reading was never touched by either call.
-        from traininglogs.db.fetch import get_extraction
-        assert get_extraction(db_conn, extraction_id)["extract"]["focus"] == "Legs Hypertrophy"
+        from traininglogs.db.fetch import get_card
+        assert get_card(db_conn, USER_A, extraction_id)["extract"]["focus"] == "Legs Hypertrophy"
 
     def test_an_unresolvable_path_returns_400_not_a_crash(self, client, db_conn, monkeypatch) -> None:
         def fake_apply_correction(self_, extract, instruction):
@@ -515,15 +574,15 @@ class TestCorrectExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": "change the nonexistent field"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 400
 
     def _llm_calls_for(self, db_conn, extraction_id: str) -> list[tuple]:
         with db_conn.cursor() as cur:
             cur.execute(
-                "SELECT l.step, l.cost_usd, l.failed FROM llm_calls l "
-                "JOIN extractions x ON x.raw_input_id = l.raw_input_id WHERE x.id = %s",
+                "SELECT l.step, l.cost_usd, l.failed FROM ai_call_logs l "
+                "JOIN input_text_confirmation_cards c ON c.input_id = l.input_id WHERE c.id = %s",
                 (extraction_id,),
             )
             return cur.fetchall()
@@ -555,7 +614,7 @@ class TestCorrectExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": "fix it"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 200
         calls = self._llm_calls_for(db_conn, extraction_id)
@@ -569,7 +628,7 @@ class TestCorrectExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": "fix it"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 502
         assert [c[2] for c in self._llm_calls_for(db_conn, extraction_id)] == ["bad reply"]
@@ -578,7 +637,7 @@ class TestCorrectExtraction:
         r = client.post(
             "/extractions/does-not-exist/correct",
             json={"instruction": "fix it"},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 404
 
@@ -587,7 +646,7 @@ class TestCorrectExtraction:
         r = client.post(
             f"/extractions/{extraction_id}/correct",
             json={"instruction": ""},
-            headers={"x-api-key": "testkey"},
+            headers=HEADERS,
         )
         assert r.status_code == 422
 
@@ -604,9 +663,9 @@ class TestEditExtraction:
     Same statelessness and reply shape as /correct."""
 
     def _insert_extraction(self, db_conn, content: str) -> str:
-        from traininglogs.db.insert import insert_extraction, insert_raw_input
+        from traininglogs.db.insert import insert_card, insert_input
 
-        raw_input_id = insert_raw_input(db_conn, content)
+        raw_input_id = insert_input(db_conn, USER_A, content)
         extract = {
             "date": "2026-07-01",
             "focus": "Push",
@@ -622,12 +681,10 @@ class TestEditExtraction:
             ],
             "uncertain_fields": ["exercises.0.sets.0.rpe"],
         }
-        return insert_extraction(
-            db_conn, raw_input_id=raw_input_id, model="m", prompt_version="v1", extract=extract,
-        )
+        return insert_card(db_conn, USER_A, raw_input_id, "m", "v1", extract)
 
     def _post(self, client, extraction_id: str, body: dict, auth: bool = True):
-        headers = {"x-api-key": "testkey"} if auth else {}
+        headers = HEADERS if auth else {}
         return client.post(f"/extractions/{extraction_id}/edit", json=body, headers=headers)
 
     def test_applies_edit_and_returns_extract_card_and_correction(self, client, db_conn) -> None:
@@ -659,8 +716,8 @@ class TestEditExtraction:
             "Upper", "Incline Bench",
         )
 
-        from traininglogs.db.fetch import get_extraction
-        assert get_extraction(db_conn, extraction_id)["extract"]["focus"] == "Push"
+        from traininglogs.db.fetch import get_card
+        assert get_card(db_conn, USER_A, extraction_id)["extract"]["focus"] == "Push"
 
     def test_invalid_value_returns_400_naming_the_field(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn, "edit test content 3")
@@ -729,22 +786,43 @@ class TestEditExtraction:
 
 
 class TestWebUi:
-    """web/ is served by the API itself (same origin, one deploy), never cached, and mounted
-    after every API route so it can't shadow one."""
+    """The app (frontend/dist, built by `npm run build`) is served by the API itself (same origin,
+    one deploy), never cached, and mounted after every API route so it can't shadow one."""
 
     def test_index_served_without_auth_and_not_cached(self, client) -> None:
         r = client.get("/")
         assert r.status_code == 200
         assert "text/html" in r.headers["content-type"]
-        assert 'id="extractBtn"' in r.text
+        assert 'id="root"' in r.text
         assert r.headers["cache-control"] == "no-cache"
 
-    def test_app_js_served(self, client) -> None:
-        r = client.get("/app.js")
-        assert r.status_code == 200
-        assert "FIELD_SPECS" in r.text
-        assert r.headers["cache-control"] == "no-cache"
+    def test_old_app_address_redirects(self, client) -> None:
+        r = client.get("/app/", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (301, "/")
 
     def test_api_routes_still_take_precedence(self, client) -> None:
         assert client.get("/sessions").status_code == 401
-        assert client.get("/sessions", headers={"x-api-key": "testkey"}).status_code == 200
+        assert client.get("/sessions", headers=HEADERS).status_code == 200
+
+
+class TestDeadConnections:
+    """Supabase closes idle connections. The pool must replace them instead of failing every
+    request until a restart."""
+
+    def test_requests_work_after_the_server_closes_the_pool_connections(self, client, monkeypatch) -> None:
+        import traininglogs.api.app as api_app
+
+        # Treat every pooled connection as idle, as after a quiet spell.
+        monkeypatch.setattr(api_app, "IDLE_CHECK_SECONDS", -1.0)
+        headers = HEADERS
+        assert client.get("/sessions?limit=1", headers=headers).status_code == 200
+        killer = get_connection(TEST_DB_URL)
+        with killer.cursor() as cur:
+            cur.execute(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE application_name = 'traininglogs-api' AND pid <> pg_backend_pid()"
+            )
+            assert cur.rowcount >= 1
+        killer.close()
+        for _ in range(3):
+            assert client.get("/sessions?limit=1", headers=headers).status_code == 200

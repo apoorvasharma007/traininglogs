@@ -1,81 +1,68 @@
-"""extract: raw_input_id -> extraction_id.
+"""extract: a note -> a confirmation card.
 
-Runs the LLM calls against a captured input and saves one attempt at reading it, with
-status 'pending'. Never blocks on a human -- confirming an extraction is a separate step
-(see confirm.py), which is what lets this function run behind an HTTP endpoint as easily as
-in a terminal loop.
+Runs the AI on a stored note and saves its reading as a card with status 'pending'. Never waits on
+a person: confirming is a separate step (confirm.py).
 """
 from __future__ import annotations
+
+from datetime import date
 
 from psycopg2.extensions import connection as Connection
 
 from traininglogs.agent.extraction import assemble
 from traininglogs.agent.prompts import PROMPT_VERSION
 from traininglogs.agent.providers import AnthropicProvider, ExtractionProvider
-from traininglogs.db.fetch import get_extractions_for_raw_input, get_raw_input
-from traininglogs.db.insert import insert_extraction, insert_llm_calls
+from traininglogs.db.fetch import get_cards_for_input, get_input
+from traininglogs.db.insert import insert_ai_calls, insert_card
 
 
 def extract(
     conn: Connection,
-    raw_input_id: str,
+    user_id: str,
+    input_id: str,
+    today: date,
     provider: ExtractionProvider | None = None,
     model: str | None = None,
 ) -> str:
-    """Read a captured raw input and store one attempt at interpreting it.
+    """Read a stored note and save the reading as a card; returns the card's id.
 
-    Idempotent: if `raw_input_id` already has a pending or confirmed extraction, that id is
-    returned and no model is called. Re-running extract on an input that already has one must
-    not spend money producing a second copy (roadmap D3) -- a rejected extraction does not
-    count, since rejecting one is exactly how a person asks for another attempt.
+    Idempotent: a note that already has a pending or confirmed card returns that card with no AI
+    call, so running this twice never pays twice. A rejected card doesn't count: rejecting one is
+    how a person asks for another reading.
     """
-    existing = [
-        row for row in get_extractions_for_raw_input(conn, raw_input_id)
-        if row["status"] in ("pending", "confirmed")
-    ]
+    existing = [c for c in get_cards_for_input(conn, user_id, input_id) if c["status"] in ("pending", "confirmed")]
     if existing:
         return existing[0]["id"]
 
-    raw = get_raw_input(conn, raw_input_id)
-    if raw is None:
-        raise ValueError(f"no raw_input with id {raw_input_id!r}")
+    note = get_input(conn, user_id, input_id)
+    if note is None:
+        raise ValueError(f"no input with id {input_id!r}")
 
     provider = provider or AnthropicProvider()
     model = model or provider.model
 
-    # Every log line here carries raw_input_id -- one id shows a session's whole life, from a
-    # single grep or a `WHERE raw_input_id = ...` (roadmap D5). The individual segment/shell/
-    # worker calls underneath are tagged by step instead (see providers.py's "[llm]" lines);
-    # raw_input_id is what ties them back to this one.
-    print(f"[ingest] raw_input_id={raw_input_id} extract: starting")
+    print(f"[ingest] input_id={input_id} extract: starting")
     try:
-        result = assemble(raw["content"], provider=provider)
+        result = assemble(note["content"], provider=provider)
     finally:
-        # Persisted whether assemble() succeeded or raised -- a run that fails partway through
-        # still spent money on the calls it made, and that cost must not vanish with the
-        # exception. D4's whole point is that cost is a SQL query, not something read out of
-        # console output after the fact.
+        # Kept whether the reading worked or not: a run that fails partway still paid for its calls.
         calls = getattr(provider, "calls", [])
-        insert_llm_calls(conn, raw_input_id, calls)
+        insert_ai_calls(conn, user_id, input_id, calls)
+    print(f"[ingest] input_id={input_id} extract: done, {len(calls)} AI call(s)")
 
-    print(f"[ingest] raw_input_id={raw_input_id} extract: done, {len(calls)} LLM call(s)")
-
-    # The model has no way to know the real date -- it can only read one out of the text. When
-    # the text doesn't state one, the prompt has it flag "date" in uncertain_fields rather than
-    # invent something plausible-looking. Python fills the gap deterministically with when this
-    # was captured, since that's a real fact instead of another guess -- and leaves it flagged,
-    # since "captured today" is not the same claim as "the workout happened today" (someone
-    # logging yesterday's session needs to be able to correct it).
+    # The AI can only read a date out of the text. When the text has none, it flags "date" as
+    # unsure instead of inventing one; today on the phone fills the gap, still flagged, since
+    # "sent today" isn't the same as "trained today".
     if "date" in (result.uncertain_fields or []):
-        result.date = raw["captured_at"].strftime("%Y-%m-%d")
+        result.date = today.isoformat()
 
-    return insert_extraction(
+    return insert_card(
         conn,
-        raw_input_id=raw_input_id,
+        user_id,
+        input_id,
         model=model,
         prompt_version=PROMPT_VERSION,
         extract=result.model_dump(mode="json"),
         uncertain_fields=list(result.uncertain_fields or []),
         warnings=list(result.warnings or []),
-        status="pending",
     )

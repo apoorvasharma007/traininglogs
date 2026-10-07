@@ -34,7 +34,7 @@ resource "google_storage_bucket_iam_member" "terraform_state" {
   member = "serviceAccount:${google_service_account.terraform.email}"
 }
 
-# Any branch: pull requests need it to show a plan. Applying only happens on main, by workflow.
+# Any branch: pull requests need it to show a plan. Applying only happens on the deploy branch, by workflow.
 resource "google_service_account_iam_member" "terraform_workload_identity" {
   service_account_id = google_service_account.terraform.name
   role               = "roles/iam.workloadIdentityUser"
@@ -47,7 +47,7 @@ resource "google_service_account" "app_deploy" {
   project      = var.project_id
   account_id   = "app-deploy"
   display_name = "App deploy"
-  description  = "Pushes app images and deploys them to Cloud Run from GitHub Actions, main only."
+  description  = "Pushes app images and deploys them to Cloud Run from GitHub Actions, ${var.deploy_branch} only."
 }
 
 locals {
@@ -66,9 +66,9 @@ resource "google_project_iam_member" "app_deploy" {
   member  = "serviceAccount:${google_service_account.app_deploy.email}"
 }
 
-# main only: no other branch can deploy.
+# The deploy branch only: no other branch can deploy.
 resource "google_service_account_iam_member" "app_deploy_workload_identity" {
   service_account_id = google_service_account.app_deploy.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = local.github_main_principal
+  member             = local.github_deploy_principal
 }

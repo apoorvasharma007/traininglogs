@@ -39,9 +39,11 @@ Secrets:
 
 ## Local development
 
+Python 3.12, the server's version (`.python-version`); on a Mac, `brew install python@3.12`.
+
 ```bash
-python -m venv .venv
-.venv/bin/pip install -e .
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements-dev.lock && .venv/bin/pip install --no-deps -e .
 cp .env.example .env              # then fill it in, see below
 docker compose up -d db_test      # Postgres for the tests, on port 5433
 ```
@@ -49,29 +51,53 @@ docker compose up -d db_test      # Postgres for the tests, on port 5433
 | `.env` variable | Needed for | |
 |---|---|---|
 | `DATABASE_URL` | the app | Required. Points at production; see the warning below. |
-| `API_KEY` | the app | Required. The app won't start without it. |
+| `SUPABASE_URL` | the app | Required: the Supabase project whose sign-ins the server accepts. The app won't start without it. |
+| `SUPABASE_PUBLISHABLE_KEY` | the app | Required: that project's publishable key, which the app signs in with. Public by design. The app won't start without it. |
 | `ANTHROPIC_API_KEY` | extraction and typed corrections | Required |
 | `ANTHROPIC_WORKSPACE_ID` | Anthropic keys not scoped to a workspace (`sk-ant-usr…`) | Required with such a key |
 | `TEST_DATABASE_URL` | the tests | Defaults to the Docker database on port 5433 |
 | `GROQ_API_KEY` | `eval_ab.py` comparing models | Optional |
 | `ALLOWED_ORIGINS` | calling the API from a page on another origin | Optional; the app's own page doesn't need it |
 
-`LOCAL_DATABASE_URL` and `REGEN_DATABASE_URL` in `.env.example` belong to the retired markdown
-flow; nothing in the app reads them.
+Build the app once, then run it. One process serves the API and the app at `http://localhost:8000/`:
 
-Run the app. It serves the API and the web UI from one process at `http://localhost:8000/`:
+```bash
+cd frontend && npm ci && npm run build && cd ..
+```
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/uvicorn traininglogs.api.app:app --reload
 ```
 
+While changing the app, `cd frontend && npm run dev` serves it at `http://localhost:5173/` and
+reloads on every save; it sends API calls to the server on port 8000.
+
 Point `DATABASE_URL` at the test database like this when trying things out. Without it, the app
 reads and writes production. Each Extract is a paid model call either way.
+
+To try things on real data without touching production, copy it into a local dev database (this
+only reads production) and run the app on port 8010 against the copy:
+
+```bash
+.venv/bin/python scripts/copy_prod_to_dev.py
+DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_dev \
+    .venv/bin/uvicorn traininglogs.api.app:app --port 8010
+```
 
 Run the tests:
 
 ```bash
 .venv/bin/pytest tests/
+```
+
+Package versions are locked. `requirements.lock` has the exact version of everything the server
+installs, and `requirements-dev.lock` adds the test tools; the server build, CI and your machine
+install from them, so all three run the same thing. To add or upgrade a package, change
+`pyproject.toml`, then remake both files and commit them with the change:
+
+```bash
+.venv/bin/pip-compile --strip-extras --no-emit-index-url -o requirements.lock pyproject.toml
+.venv/bin/pip-compile --strip-extras --no-emit-index-url --extra dev -o requirements-dev.lock pyproject.toml
 ```
 
 ## Branching and releases
@@ -88,8 +114,9 @@ main   what's deployed; only dev merges into it
 - Squash each finished step into its base. Merge the base into `dev`, and `dev` into `main`,
   with merge commits. Never squash into `dev` or `main`; that splits their history.
 - A step merges only with the full suite green: 0 failed, 0 skipped.
-- A release is merging `dev` into `main`. CI runs, then CD waits for Apoorva's approval in the
-  `prod` GitHub environment, applies the app's Terraform and deploys. To publish a version, bump
+- A push to `dev` deploys staging once CI's checks pass, with no approval. A release is merging
+  `dev` into `main`: CI runs, then its deploy waits for Apoorva's approval in the `prod` GitHub
+  environment, applies the app's Terraform and deploys. To publish a version, bump
   `pyproject.toml`'s `version` and move the changelog's `[Unreleased]` entries under the new
   version first; CI then tags it and creates the GitHub release.
 - Commit messages: `<type>: <what changed>`, with types `feat`, `fix`, `test`, `refactor`,
@@ -102,7 +129,7 @@ main   what's deployed; only dev merges into it
   delete a test to get green.
 - New models get tests for valid construction, each validator's accept and reject cases, and a
   `model_dump(mode="json")` round trip.
-- A web UI change gets checked in a browser against the local app before it merges.
+- An app change gets checked in a browser against the local app before it merges.
 - After a deploy, open the live app and check that the page loads and a request without the API
   key gets `401`.
 
@@ -116,10 +143,22 @@ main   what's deployed; only dev merges into it
 - Write every document in plain language. No em dashes, no filler, active voice, sentence-case
   headings. Say what something does or give the number, not how it feels. Check facts against the
   code before writing them down.
-- `docs/index.html` is the old static dashboard, rebuilt only by the retired command-line flow.
+- `docs/index.html` is the old static dashboard, frozen since the command-line flow that rebuilt it
+  was deleted (2026-10-05).
   Don't edit it by hand.
 
 ## Working conventions
+
+- The app's look is locked (since 2026-10-04): the fonts, the colours in `frontend/src/index.css`,
+  type sizes, spacing, icons, and the layout of existing screens. New screens reuse those pieces.
+  Propose any visual change and wait for Apoorva's yes before making it.
+- Anything that changes saved data (programs, following, deleting) asks first or offers Undo.
+- Every person's data is theirs alone. A function that reads or writes it takes the owner and
+  filters by it; the database refuses a row whose owner differs from its parent's. A new endpoint
+  that names a thing by id goes into `tests/test_isolation.py`, whose guard fails otherwise.
+- A screen's main action goes in `BottomBar` (fixed at the bottom; `aboveTabs` on screens with
+  tabs). Secondary and destructive actions stay as small text at the end of the content. Sheets
+  use `Sheet`, which grows with its content up to the visible screen.
 
 - Python 3.10 or newer, PEP 8, type hints on every function.
 - Solve the problem in front of you. No abstractions for futures that haven't arrived, and no ORM.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
-from typing import Any, Optional
+from datetime import date, datetime
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -19,6 +19,11 @@ class SessionSummary(BaseModel):
     is_deload_week: Optional[bool]
     weight_unit: str
     exercises: list[str] = Field(default_factory=list, description="Exercise names, in order.")
+    # The program workout it was done as, when it was: History names it after the workout.
+    program_name: Optional[str] = None
+    workout_position: Optional[int] = None
+    workout_name: Optional[str] = None
+    source_kind: str = Field(description="text (a note), manual (logged in the app) or import.")
 
 
 class MovementOut(BaseModel):
@@ -95,6 +100,10 @@ class SessionDetail(BaseModel):
     user_name: Optional[str]
     source_file: Optional[str]
     notes: Optional[str] = None
+    program_name: Optional[str] = None
+    workout_position: Optional[int] = None
+    workout_name: Optional[str] = None
+    source_kind: Optional[str] = Field(None, description="text (a note), manual (logged in the app) or import.")
     warmup: list[MovementOut] = []
     cooldown: list[MovementOut] = []
     exercises: list[ExerciseOut] = []
@@ -102,7 +111,10 @@ class SessionDetail(BaseModel):
 
 class CaptureIn(BaseModel):
     content: str = Field(min_length=1, description="The session text, as written.")
-    source_kind: str = "markdown"
+    date: date  # today on the phone: the session's date when the note doesn't give one
+    source_kind: Literal["text"] = Field(
+        default="text", description="Always text: this endpoint is for notes the model reads."
+    )
     source_file: Optional[str] = None
 
 
@@ -125,6 +137,11 @@ class ConfirmIn(BaseModel):
         default=None,
         description="The corrections that produced `extract`, recorded alongside the "
         "extraction. Omit if none were applied.",
+    )
+    program_workout_id: Optional[str] = Field(
+        default=None,
+        description="The planned workout this session counts as, so the program moves on to "
+        "the next one. Omit when it isn't part of a program.",
     )
 
 
@@ -190,6 +207,10 @@ class EditIn(BaseModel):
         return self
 
 
+class AiUsage(BaseModel):
+    total_usd: float  # every AI call so far: reading notes and AI fixes
+
+
 class ExerciseHistoryRow(BaseModel):
     date: date
     phase: Optional[int]
@@ -202,3 +223,245 @@ class ExerciseHistoryRow(BaseModel):
     rpe: Optional[float]
     rep_quality: Optional[str]
     failure_technique: Optional[Any]
+
+
+class LiftSummary(BaseModel):
+    name: str
+    measure: Literal["estimated_max", "bodyweight_reps"]
+    sessions: int
+    latest: Optional[float]
+    best: Optional[float]
+    last_date: Optional[date]
+    trend: Optional[Literal["up", "flat", "down"]]
+
+
+class LiftsOut(BaseModel):
+    key_lifts: list[LiftSummary]
+    other_lifts: list[LiftSummary]
+
+
+class LiftSet(BaseModel):
+    number: int
+    weight_kg: Optional[float]
+    reps_full: Optional[int]
+    left_reps_full: Optional[int]
+    right_reps_full: Optional[int]
+    rpe: Optional[float]
+
+
+class LiftBestSet(BaseModel):
+    number: int
+    weight_kg: Optional[float]
+    reps: Optional[int]
+    rpe: Optional[float]
+
+
+class LiftPoint(BaseModel):
+    session_id: str
+    date: date
+    value: Optional[float] = Field(
+        description="Best estimated max (kg), or best reps at bodyweight; null for a bodyweight "
+        "lift's session with only weighted sets"
+    )
+    method: Optional[Literal["rpe"]]
+    heaviest_kg: Optional[float]
+    goal_weight_kg: Optional[float]
+    records: list[str]
+    best_set: LiftBestSet
+    sets: list[LiftSet]
+
+
+class LiftDetail(LiftSummary):
+    points: list[LiftPoint]
+
+
+class PlanExercise(BaseModel):
+    """One exercise in a workout's plan: how many sets and the target reps. No weights."""
+
+    name: str = Field(min_length=1)
+    warmup_sets: int = Field(default=0, ge=0, le=20)
+    working_sets: int = Field(default=1, ge=0, le=20)
+    target_reps: Optional[int] = Field(default=None, gt=0, le=100)
+    amrap: bool = Field(default=False, description="As many reps as you can.")
+    alternatives: list[str] = Field(
+        default_factory=list,
+        description="Other exercises that can take this one's place. A workout starts with the "
+        "first; the session can switch to an alternative.",
+    )
+
+    @model_validator(mode="after")
+    def strip_name(self) -> PlanExercise:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("name can't be blank")
+        # Blank, repeated, or the same as the name (ignoring case): dropped.
+        seen = {self.name.lower()}
+        kept = []
+        for alt in (a.strip() for a in self.alternatives):
+            if alt and alt.lower() not in seen:
+                seen.add(alt.lower())
+                kept.append(alt)
+        self.alternatives = kept
+        return self
+
+
+class Movement(BaseModel):
+    """A warm-up or cool-down movement: reps, a duration, or neither ("easy walk")."""
+
+    name: str = Field(min_length=1)
+    reps: Optional[int] = Field(default=None, ge=0, le=1000)
+    duration_seconds: Optional[int] = Field(default=None, ge=0, le=86400)
+
+    @model_validator(mode="after")
+    def strip_name(self) -> Movement:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("name can't be blank")
+        return self
+
+
+class WorkoutOut(BaseModel):
+    id: str
+    position: int
+    name: Optional[str]
+    last_done: Optional[date]
+    exercises: list[PlanExercise]
+    warmup: list[Movement] = []
+    cooldown: list[Movement] = []
+
+
+class TemplateWorkout(BaseModel):
+    name: str
+    exercises: list[PlanExercise]
+
+
+class ProgramTemplate(BaseModel):
+    """A ready-made program to copy into your own programs."""
+
+    id: str
+    name: str
+    days: str = Field(description='How often it is run, e.g. "3 days a week".')
+    workouts: list[TemplateWorkout]
+
+
+class WorkoutMovementsIn(BaseModel):
+    warmup: list[Movement] = []
+    cooldown: list[Movement] = []
+
+
+class DeloadStatus(BaseModel):
+    days_since: int = Field(description="Days of training counted toward the next deload.")
+    due: bool = Field(description="days_since has reached the program's deload_after_days.")
+    in_progress: int = Field(description="How many of the latest sessions in a row were deloads.")
+
+
+class ProgramOut(BaseModel):
+    id: str
+    name: str
+    deload_after_days: int
+    following: bool
+    following_since: Optional[date]
+    workouts: list[WorkoutOut]
+    next_workout_id: Optional[str] = Field(
+        description="The workout after the one in the program's latest session; workout 1 when "
+        "there is none or after the last. Null when the program has no workouts."
+    )
+    deload: DeloadStatus
+
+
+class ProgramIn(BaseModel):
+    name: str = Field(min_length=1)
+
+
+class ProgramPatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    deload_after_days: Optional[int] = Field(default=None, gt=0, le=365)
+
+
+class WorkoutIn(BaseModel):
+    name: Optional[str] = None
+
+
+class WorkoutOrderIn(BaseModel):
+    workout_ids: list[str] = Field(description="Every workout of the program, once each, in the new order.")
+
+
+class WorkoutExercisesIn(BaseModel):
+    exercises: list[PlanExercise]
+
+
+class ManualWarmupSet(BaseModel):
+    weight_kg: float = Field(ge=0)
+    reps: Optional[int] = Field(default=None, ge=0)
+    notes: Optional[str] = None
+
+
+class ManualSet(BaseModel):
+    weight_kg: Optional[float] = Field(default=None, ge=0)
+    reps: Optional[int] = Field(default=None, ge=0)
+    rpe: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class ManualExercise(BaseModel):
+    name: str = Field(min_length=1)
+    notes: Optional[str] = None
+    warmup_sets: list[ManualWarmupSet] = []
+    sets: list[ManualSet] = []
+
+    @model_validator(mode="after")
+    def has_a_set(self) -> ManualExercise:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("an exercise needs a name")
+        if not self.warmup_sets and not self.sets:
+            raise ValueError(f"{self.name} has no sets")
+        return self
+
+
+class ManualMovement(Movement):
+    notes: Optional[str] = None
+
+
+class ManualSessionIn(BaseModel):
+    """A session entered set by set in the app. Only the sets the person ticked are sent."""
+
+    client_id: str = Field(
+        pattern=r"^[0-9a-f]{32}$",
+        description="Made by the phone when the session starts. Sending the same session again "
+        "returns the one already saved.",
+    )
+    date: date
+    focus: Optional[str] = Field(default=None, description="What History shows as its title, e.g. \"1 · Bench\".")
+    duration_minutes: Optional[int] = Field(default=None, ge=0, le=1440)
+    program_workout_id: Optional[str] = None
+    is_deload: bool = False
+    notes: Optional[str] = None
+    started_at: Optional[datetime] = Field(default=None, description="When the session started, from the phone.")
+    ended_at: Optional[datetime] = Field(default=None, description="When Finish was tapped.")
+    warmup: list[ManualMovement] = []
+    cooldown: list[ManualMovement] = []
+    exercises: list[ManualExercise] = Field(min_length=1)
+
+
+class SessionSaved(BaseModel):
+    session_id: str
+    created: bool = Field(description="False when this session had already been saved.")
+
+
+class LastSet(BaseModel):
+    weight_kg: Optional[float]
+    reps: Optional[int]
+    rpe: Optional[float] = None
+    notes: Optional[str]
+
+
+class LastExercise(BaseModel):
+    """The most recent session that had this exercise, whatever program it was in."""
+
+    name: str
+    date: date
+    session_id: str
+    notes: Optional[str]
+    warmup_sets: list[LastSet]
+    sets: list[LastSet]

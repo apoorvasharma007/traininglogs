@@ -7,6 +7,344 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A warm-up ramp in the set sheet's Warm-up tab: "Ramp up to [weight] kg in [sets] sets" shows
+  the sets it would add (50% x 5, 70% x 3, 85% x 2 for 3 sets) and Add puts them before the
+  working sets, in grey, leaving the sets already there alone.
+- "How hard was the last set?" under an exercise finished with no effort on any working set:
+  one tap saves it to the last working set, or Skip.
+
+- A sign-in screen: your email, then a 6-digit code emailed to you. You stay signed in; the app
+  renews the pass itself. Settings shows your email with Sign out in place of the API key box,
+  and warns before signing out if a session hasn't sent yet. The app reads which Supabase project
+  to use from the server (`GET /config`), so one build works in staging and production.
+- Accounts: sign-in by a Supabase pass instead of the API key; every row belongs to one person,
+  and the database itself refuses a row owned by someone other than its parent's owner or linked
+  to another person's row. One followed program per person.
+- A database designed for many people (`db-redesign-plan.md`): time-ordered UUID ids, an owner on
+  every table, `users` and `profiles`, and renamed tables (`input_text`,
+  `input_text_confirmation_cards`, `ai_call_logs`, `workout_sessions` and its exercises, sets,
+  warm-ups and cool-downs). Sessions keep when they started and ended.
+- Exercises are each person's own, made the first time a name is used (ignoring case and spaces),
+  and linked to a shared list of 32 basic lifts when the name matches.
+- `scripts/migrate_to_accounts.py` converts an existing database in one transaction, dry run by
+  default. It keeps the old tables in an `old` schema, to be removed in a later step.
+- Settings shows what your AI use has cost so far ("AI use", in US dollars): every note read and
+  every AI fix, summed from your own call log (`GET /me/ai-usage`).
+- Staging: a practice copy of the app and database. A push to `dev` deploys it; `main` still
+  deploys production.
+
+### Changed
+
+- UX audit fixes: the app is named Training Logs and has a home-screen icon on iPhone. The home
+  page shows 4 exercises of the next workout and two side-by-side tiles for an ad-hoc workout and
+  Log from Notes. The workout header no longer shows the current exercise or the set count. The
+  set sheet has even spacing, no line under Moderate, "All Out", notes named for the set type and
+  a "Build Up to Working Weight" row that opens the ramp. Notes wrap as you type. Exercise name
+  boxes capitalise each word. The ⋯ menu uses Title Case. Log from Notes has a bigger box, more
+  examples and its full cost line back. A program lists each workout's exercises as a numbered
+  list.
+- UX audit, round 2: the resume card shows the start time on a 12-hour clock and no set count. A
+  saved session shows its program under the workout name; `GET /sessions/{id}` returns
+  `program_name`, `workout_position`, `workout_name` and `source_kind`. A lift's sessions are a
+  table of date, set and RPE, the line under the estimate is gone, and the range buttons show only
+  once the history goes back more than 4 weeks. A program shows each workout in its own card. A
+  workout lists its warm-up, exercises and cool-down as numbered lists. Settings shows the app
+  version, which `GET /config` now returns.
+
+- The set sheet: Warm-up and Working is a full-width switch under the exercise; Working has
+  larger effort buttons in blue, orange and red, with every RPE number in a row of chips you
+  swipe; Warm-up ramps up to a working weight you type, in 1 to 10 sets spread from 50% to 95%
+  of it, shown as weights; both tabs are the same height.
+- A saved session shows RPE in its own column, and each set's note in full under the set.
+- Buttons, screen titles and section headings are in Title Case ("Start Workout", "Key Lifts").
+- No "·" between pieces of text: extra detail sits on its own line or apart by space.
+
+- The app is called TrainingLogs: on the sign-in screen (with what it's for), the home page's
+  title, the browser tab and the name under the home-screen icon.
+- Home page for someone without a program: a "Start with a program" card (Browse templates,
+  Create your own). For everyone: Ad-hoc workout and "Wrote it down instead?" as two rows with a
+  line saying what each does, and "Repeat a past session" at the bottom, which opens History.
+- History names a program session after its workout ("Workout 1", or the workout's own name),
+  with the program in grey under it; other sessions keep their name or list their first
+  exercises ("Squat, Bench press and 2 more"), marked Ad-hoc or From notes. The last 30 days
+  show by week; older months fold into one row each, opened with a tap.
+- Workouts are called by their own name, or "Workout 1", everywhere, without "1 ·" in front.
+- Effort on a set: each word (Moderate, Hard, All out) has its RPE numbers right under it, in
+  place of the Exact RPE button. A chosen effort is shaded darker the harder it was.
+- Log from notes: the box says the ways to get a note in (paste, Live Text from a photo, type or
+  dictate) with an example; the button says Send; the cost line is in US dollars.
+- "Do this again" is "Repeat"; "Remove workout" is "Delete workout".
+
+- Opening a session or "last time" takes four database queries however many exercises it has;
+  it took two per exercise.
+- Row-level security is on for every table, with no rules, so Supabase's automatic web API can't
+  read or change any row. The server is unaffected.
+
+### Fixed
+
+- The deload count's break check counted every person's training days, not only yours.
+- A pasted note with no date gets today's date on your phone. It took the server's UTC date,
+  which in India is the day before until 5:30 am.
+- Sessions waiting to send, and the one in progress, are kept on the phone under your email. If
+  someone else signs in on the same phone, the app no longer shows them or sends them as theirs.
+  Signing out also forgets the screens loaded for you when the server ends your sign-in, not
+  only when you tap Sign out.
+- Typing a set's note on iPhone no longer slides the sheet out of view.
+- A note confirms once. Confirming it again, after a lost connection or after changing the date,
+  saves nothing new and says "This note is already saved." with an "Open it" link to the session.
+  Confirm is greyed out while it saves, so a second tap sends nothing.
+- Reading a note failed on every try on staging: its build installed version 1.11 of Anthropic's
+  library, which no longer accepts `temperature`. Package versions are now locked
+  (`requirements.lock`, `requirements-dev.lock`), so the server, CI and a local setup install the
+  same versions, all on Python 3.12. Anthropic's library stays below 1.0 until moving to it is
+  done as its own step.
+
+### Removed
+
+- The unused repeat call (`POST /sessions/{id}/repeat`): "Do this again" builds the session on
+  the phone. Sessions logged in the app no longer pass through a card.
+- The one-off script that built programs from history, and other code nothing called.
+- The retired command-line flow (`traininglogs log`, `dashboard`, `validate`), its markdown parser,
+  the terminal confirm loop and their tests, and the `rich` and `pyyaml` dependencies. The app is
+  the only way in now; the old static dashboard (`docs/index.html`) stays as it is.
+- Pinned exercise notes, with `/pins` and the `exercise_pins` table. Each exercise already shows
+  last time's note.
+
+## [4.1.0] - 2026-10-05
+
+### Added
+
+- Program templates: New program offers "Create your own" or "From a template". Four starter
+  templates (5×5 strength, Push / pull / legs, Upper / lower, Upper / lower / PPL) show their
+  workouts, and "Add program" copies one into your programs. The server lists them at
+  `GET /templates` and copies one with `POST /templates/{id}/copy`.
+- An empty workout has an Add exercises button that starts editing, instead of "Tap Edit to add
+  some".
+- Move up and Move down in a session's exercise menu. If the order changed, "Update the
+  program?" offers "Change the order", unticked; exercises you skipped keep their place.
+- The empty Programs screen has a New program button instead of an explanation.
+
+### Fixed
+
+- An exercise's menu no longer has "Add set"; the card's + Set does the same, in the session and
+  the confirmation card.
+- Every screen's main action sits in a bar fixed at the bottom: Start workout, Follow this
+  program, Read my note, Confirm session, Save changes, Done. Before, some sat right after the
+  content, near the top on a short screen.
+- Sheets open as tall as their content, up to the visible screen, so a long menu no longer needs
+  scrolling on a normal iPhone. Before, they stopped at 80% of Safari's full height.
+- Settings no longer says "Choosing your own key lifts comes later."
+- Progress tiles say "Not logged yet" for a lift never logged, and "No sets with an RPE yet · 3
+  sessions" for one logged without RPE, instead of "No countable sets yet" for both.
+- The Done screen survives the app restarting on it: the summary and the "Update the program?"
+  offer come back. Before, it said "Nothing just finished" and the offer was lost.
+- Estimated max now counts only sets with an RPE. Before, a set without one was treated as all
+  out, which understated the max whenever reps were left. A session with no RPE shows on the
+  lift's chart as a hollow dot at its heaviest weight, and in its session list as "heaviest, no
+  RPE"; it doesn't count toward the latest, best or trend.
+- Safari on iPhone zoomed the page in when you tapped a small box or double-tapped. The app now
+  stays at its normal size.
+- The confirmation card's top shows three rows, Date, Workout and Duration, each one tappable to
+  change it. "Not part of a program" sits in the workout list, replacing the "Was this ...? No"
+  sentence.
+- Error messages say what went wrong and what to do. A server error shows its code ("Server
+  error (500). Try again in a minute."), a lost connection says "No connection", and a note that
+  couldn't be read says it's still saved. Before, some showed raw technical text.
+- Confirming a note that's already saved says so ("This note is already saved as a session. Find
+  it in History.") instead of a database error that told you to change the date.
+- After a session, "Update the program?" matches each exercise and movement to the one in the
+  workout it started from instead of by name. A renamed exercise shows as one line ("Squat → Squats"),
+  unticked, so a typo can't reach the program by accident. Switching to an alternative offers to
+  make it the main exercise. Extra sets count only once ticked, and an exercise added but never
+  done isn't offered. A skipped warm-up or cool-down movement from the workout is offered for removal, and
+  a different amount ("Easy cardio: 10 min (was 5 min)") as a change.
+- The exercise editor's alternatives are headed "Alternatives · switch during the workout"
+  instead of "Or".
+- The exercise editor's reps hint says "Leave empty for AMRAP (as many reps as possible)".
+- The deload reminder sheet says "Remind me to take a lighter week after this many weeks of
+  training" instead of "Suggest a lighter pass through the program".
+- The home screen's next-workout card is a summary: program name, workout name and exercise
+  names. The "Current program" and "Next workout" labels, sets and alternatives are gone; they
+  show once the workout starts.
+- Log from notes gives the real cost in rupees: about ₹2 to ₹5 to read a note, and ₹1 to ₹3 for
+  each AI fix after that. It said "about 3 cents".
+- Log from notes' button says "Read my note" instead of "Extract".
+- The waiting-to-send bar's button says "Send now" instead of "Retry".
+- After a session, the offer to change the workout is called "Update program" at every step.
+  Before, it was "Save to program" on the button and "Update program" in the confirm.
+- "Remove" is used for taking a set, exercise or workout out, and "Delete" only for a whole
+  program. The confirmation card's Undo bar says what was removed ("Squat removed").
+- "Warm-up" is spelled the same everywhere; some places said "Warmup".
+- Warm-up set templates say they build up to your first working set, and show greyed out with
+  how to use them when that set has no weight yet. Before, they were hidden.
+- When an AI fix can't be used, the fix box now says why in plain words, naming the exercise and
+  sets ("Face pull, warm-up sets 1 and 2: needs a weight."), and keeps your message. Before, a
+  red bar showed the server's raw error.
+- The AI fix box asks for every change in one message, says each fix is a paid AI call, and
+  cycles through longer examples.
+- Values the AI marked unsure for every set of an exercise ("exercises.0.sets.*.reps") weren't
+  passed to the card.
+- A session shorter than a minute failed to save (a duration of 0) and waited to send forever.
+
+### Changed
+
+- Alternatives no longer take turns: a workout starts with the first exercise, and a swap icon
+  beside its name switches the session to an alternative, refilled from that one's last time.
+- Target reps is one field; empty means as many as you can.
+- A workout's name field starts as "Workout N"; adding a workout asks for its name.
+- Deleting an exercise from a program's workout asks first.
+- A set with a note shows a note marker on its row. Train no longer has "Do a different workout".
+- Program and workout screens open for viewing; Edit shows renaming, reordering, adding and
+  settings. The workout's title is its name, edited in place.
+- Effort in words: Moderate, Hard or All out, stored as RPE 7, 8.5 or 10; an exact RPE stays one
+  tap away. Set rows show effort as a small three-bar meter.
+- Warm-up ramps from an exercise's menu: Full ramp, Short ramp, 5/3/1 style or one feeler set,
+  worked out from the first working set's weight.
+- The session's LAST column is gone; last time shows in the boxes and in the set's drawer.
+- Warm-up and cool-down for the whole session: a program's workout can carry them, a session copies
+  them at Start, and only ticked ones are saved. Presets: General, Upper body, Lower body; Walk and
+  stretch, Stretch only. `PUT /workouts/{id}/movements`; `POST /sessions` takes `warmup` and
+  `cooldown`; `program_workouts.warmup` and `.cooldown`.
+- The 40/50/60% warm-up ramp is called Wendler's 5/3/1. Bodyweight sets get no ramp.
+- Warm-up and cool-down drawers are headed "templates"; the exercise ramp menu item is "Warm-up
+  set templates" and warns only before replacing warm-up sets you entered. Templates: Easy cardio
+  and Dynamic stretching to warm up, Easy cardio and Static stretching to cool down.
+- After a session from a program, "Save changes to the program?" lists how it differed: more sets,
+  new exercises and new warm-up or cool-down movements start ticked; removed exercises and fewer
+  sets start unticked. Skipped sets and alternatives are not changes. Replaces the all-or-nothing
+  "Update workout?".
+- The set drawer keeps its height when switching to Warmup, so the switch stays under your finger.
+- Review shows what the AI wasn't sure of as amber boxes, with "N things to check" to jump to
+  them; an exercise it couldn't read says so plainly. The header is the date, "Was this Workout 3
+  of Starting Strength?" and the duration. The fix box asks for changes in plain words, with
+  examples that change every few seconds.
+- A session is named after its workout, or after its first exercises; History uses that name.
+- "Do this again" on a past session starts it as a live session. Home: the next workout, a "Wrote
+  it down instead?" card for Log from notes, then Repeat a past session and Ad-hoc workout
+  (formerly Blank workout). Without a program, home offers recent sessions to do again.
+- The deload reminder only reminds: OK hides it for another stretch of the program's weeks.
+- Editing a program or a workout is a draft: renaming, reordering, exercises and warm-up or
+  cool-down change nothing until Save changes; Cancel discards (asking first if anything changed).
+  The tabs and back arrow hide while editing. The deload reminder's weeks are chosen, then saved.
+- Review matches the session screen: no NOTE column (effort and notes show beside the set number),
+  and the date is a quiet line that opens the date picker.
+- Saving changes to a program, stopping following, and following a program while another is
+  followed each ask first.
+- A session starts with "Warm up first · 5 min easy cardio": Start runs a countdown and records it
+  when it ends (or on Done); ✕ skips it. The deload reminder is one line in weeks (3 to 8) at
+  the foot of a program's page, beside Stop following.
+- A set's drawer holds only what its row can't: warmup or working, RPE, note, delete. Weight and
+  reps are typed on the row. The deload reminder and Stop following show on the program's page.
+- In a session, an exercise collapses to one line when its last set is ticked, the next one
+  scrolls into view, and the header shows the exercise you're on.
+
+
+## [4.0.0] - 2026-10-04
+
+### Removed
+
+- The old one-page web UI (`web/`). The React app replaces it at `/`; `/app/` redirects there.
+- The "Repeat a past session" screen. `POST /sessions/{id}/repeat` stays.
+
+
+### Added — Phase 8 step 6b, choices in a workout's plan
+
+- A plan line can list other exercises that can take its place ("Shoulder Press or Bench
+  press"). Starting the workout picks the one done longest ago, so they take turns; the session
+  shows just that one and can still change anything. Renaming suggests the line's choices.
+- `program_workout_exercises.alternatives`.
+- `scripts/add_starting_strength.py` adds Starting Strength Phase 4 as three workouts with
+  choices, links the sessions logged under it, and follows it.
+
+### Added — Phase 8 step 6, the Train home screen
+
+- Train shows the program you follow and its next workout with Start, or the session in
+  progress with Resume, plus Blank workout and Log from notes, and how many finished sessions
+  are waiting to send.
+- A one-line deload reminder when a program reaches its deload days (28 by default). Start makes
+  the next pass through the program a deload; ✕ hides the reminder for 7 days.
+- `GET /programs` reports each program's deload count.
+
+### Fixed
+
+- The API replaces database connections the server has closed; before, every request failed
+  until a restart after Supabase dropped idle connections.
+
+### Added — Phase 8 step 5, logging a session in the app
+
+- Start a workout from a program, or a blank one. Last time's weights and reps fill in grey;
+  tick each set as you do it; add sets, warmup sets and exercises; pin a note to an exercise.
+- The session is saved on the phone (IndexedDB) on every change and sent once at Finish. Offline,
+  it waits on the phone and sends itself when the connection returns.
+- `POST /sessions` saves a session with no model call; `GET /exercises/last` gives last time.
+- Finish offers to update the workout's plan when the session differed from it.
+- Weight and reps are boxes on each set row, on the session screen and on Review; the set number
+  opens a drawer for warmup or working, RPE, note and delete.
+- `scripts/copy_prod_to_dev.py` copies production into a local `traininglogs_dev` database (prod
+  is only read), to try the app on real data; `scripts/add_bts_programs.py` adds Bodybuilding
+  Transformation as two programs, Foundation and Ramp-up, from the sessions already logged.
+
+### Fixed
+
+- A drawer opened from a set didn't slide into view until something else on screen changed.
+
+### Changed
+
+- Raw input kinds are `text` (a note the model reads) and `manual` (entered in the app, no model
+  call), replacing `markdown` and `repeat`; `photo` and `speech` were never used and are gone.
+
+### Added — Phase 8 step 4, the Programs tab
+
+- Programs list, a program's workouts (drag to reorder, follow, deload reminder, rename, delete)
+  and a workout's plan (name, exercises with warmup sets, working sets and target reps or as many
+  as you can, drag to reorder).
+- Review asks which workout a pasted session counts as; `POST /extractions/{id}/confirm` takes
+  `program_workout_id`.
+- Sheets are now the shadcn Drawer (drag to close); the lift chart uses Recharts; Motion drives
+  reordering. Only the Train screen is in the first download (81 KB); other screens load when
+  opened, and the tabs are fetched in the background.
+
+### Added — Phase 8 step 3, programs in the database
+
+- Tables `programs`, `program_workouts`, `program_workout_exercises` and `exercise_pins`, and
+  `sessions.program_workout_id`. Only additions; no existing column or row changes.
+- Endpoints to create, rename, follow, archive and reorder programs and workouts, set a
+  workout's plan, and pin notes to exercises. A program reports its next workout: the one after
+  its latest session, back to 1 after the last.
+
+### Added — Phase 8 step 2, the current screens in React
+
+- Progress (key lifts, other lifts, a lift's chart and sessions), History grouped by week with a
+  read-only session view, Settings, Log from notes and Review.
+- Review edits a set in a bottom sheet (±2.5 kg, ±1 rep, RPE, warmup or working, note), adds
+  sets, warmup sets and exercises from a ⋯ menu, and undoes a removal. It uses the existing
+  `/edit`, `/correct` and `/confirm` endpoints.
+- Charts are drawn as SVG instead of with a chart library; first-load JavaScript is 89 KB.
+
+### Added — Phase 8 step 1, the React app skeleton
+
+- `frontend/`: React, TypeScript and Vite, with Tailwind, TanStack Query, wouter, Lucide and the
+  Geist fonts. Five tabs (Train, Programs, Progress, History, Settings) with empty screens, and
+  the light and dark colours from `react-plan.md`.
+- The API serves the built app at `/app/`; the old UI stays at `/` until step 8. The Docker image
+  builds the app in a Node stage.
+- CI type-checks, lints, tests and builds the app. The build fails if first-load JavaScript passes
+  120 KB gzipped (78 KB now).
+
+### Added — Phase 7, a Progress tab with estimated max per lift
+
+- The web app gets Log and Progress tabs. Progress lists six key lifts (Squat, Bench Press,
+  Shoulder Press, Deadlift, Barbell Clean, Pull-up) and, under "Other lifts", every exercise
+  trained in 3 or more sessions. Each lift opens a chart of its best estimated max per session,
+  with record sessions marked, the goal weight as a line, and the sets behind each point.
+- Estimated max = weight × (1 + (reps + RIR) / 30), RIR = 10 − RPE; plain Epley without RPE.
+  Counted: working sets, weight above 0, 1 to 12 full reps; unilateral sets use the weaker side.
+  Pull-up shows best reps at bodyweight and added weight separately.
+- `analytics/strength.py`, `analytics/key_lifts.py`, `analytics/progress.py`;
+  `GET /progress/lifts` and `GET /progress/lifts/{name}`. Charts use Chart.js 4.5.1 from cdnjs.
+
 ### Added — Phase 6, deployed to Google Cloud Run with Terraform and CI/CD
 
 - The app runs on Cloud Run (`us-east1`, 512 MiB, 0–2 instances, inside the always-free tier):
@@ -1004,7 +1342,9 @@ Initial tagged release. Seed entry — describes the system as it stands at v1.0
 - `rest_minutes` and `actual_rest_minutes` must be between 0 and 15.
 - Required string fields reject empty or whitespace-only values.
 
-[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v4.0.0...v4.1.0
+[4.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v1.0.0...v2.0.0

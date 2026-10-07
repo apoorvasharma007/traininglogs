@@ -9,8 +9,16 @@ modules/
 environments/
   prod/
     project/        prod's project layer, applied by hand
-    app/            prod's app layer, applied by the pipeline
+    app/            prod's app layer, applied by the pipeline on main
+  staging/
+    project/        staging's project layer, applied by hand
+    app/            staging's app layer, applied by the pipeline on dev
 ```
+
+Staging is a practice copy in its own project (`project-ff63b6ae-c18e-4350-961`), with its own
+Supabase database. A push to `dev` deploys it with no approval; a merge to `main` deploys prod
+after approval. Each environment's variables live in its GitHub environment (`staging`), or for
+prod on the repository itself.
 
 Each environment is its own Google Cloud project. The modules hold the resources, written once.
 Each folder under `environments/` is where Terraform runs: it names a module, gives it that
@@ -21,7 +29,7 @@ environment's values, and says where the state lives.
 | Layer | Applied by | Why |
 |---|---|---|
 | `environments/<env>/project` | You, from your laptop | It creates the account the pipeline runs as, so the pipeline can't create it |
-| `environments/<env>/app` | CD, after you approve the run | Everyday changes |
+| `environments/<env>/app` | The deploy at the end of CI: staging on a push to `dev`, prod on `main` after you approve | Everyday changes |
 
 Both go through `terraform plan` before every `apply`. Local runs sign in with your own Google
 account, once per machine:
@@ -76,13 +84,13 @@ This is the order prod was built in. Each step needs the one before it.
    terraform apply tfplan
    ```
 
-   The service starts on Google's sample image. The next CD run replaces it with the app.
+   The service starts on Google's sample image. The next deploy replaces it with the app.
 
 ## Everyday changes
 
 Edit `infra/` on a branch and open a pull request. CI checks the format, validates both layers and
 posts the plan for `prod/app` as a comment on the pull request. Read it. Once it's merged to
-`main`, CD waits for your approval, then applies that layer and deploys the app.
+`main`, the deploy waits for your approval, then applies that layer and deploys the app.
 
 The project layer never runs in the pipeline. Change it from your laptop with plan, then apply.
 
@@ -100,7 +108,7 @@ printf '%s' "$VALUE" | gcloud secrets versions add api-key --data-file=-
 
 Or use the Secret Manager page in the console. Every instance that starts after the new version
 exists uses it. To switch over at once instead of waiting for instances to recycle, re-run the
-latest CD run: its deploy starts a new revision.
+latest CI run's deploy: it starts a new revision.
 
 Once the new value works, disable the old version, or it keeps working too.
 

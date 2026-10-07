@@ -4,7 +4,7 @@ import os
 import pytest
 
 from traininglogs.db.db import apply_schema, get_connection
-from traininglogs.db.insert import insert_session
+from traininglogs.db.insert import insert_input, insert_session
 from traininglogs.models.models import (
     Exercise,
     Goal,
@@ -25,10 +25,18 @@ from traininglogs.models.models import (
     WorkingSet,
 )
 
+from signed_in import USER_A, clean_test_data
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_test",
 )
+
+def _save(conn, session: TrainingSession) -> str | None:
+    """Saves the session for user A, as the app does: its input, then the session. Its
+    session_id is the dedup key."""
+    return insert_session(conn, USER_A, session, insert_input(conn, USER_A, session.session_id, kind="manual"))
+
 
 
 def make_session(session_id: str = "test-session-v3-001") -> TrainingSession:
@@ -253,40 +261,41 @@ def clean_db(conn):
     yield
     conn.rollback()
     with conn.cursor() as cur:
-        cur.execute("DELETE FROM sessions")
+        pass
+    clean_test_data(conn)
     conn.commit()
 
 
 def test_insert_session_row_counts(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM sessions WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'")
         assert cur.fetchone()[0] == 1
 
-        cur.execute("SELECT COUNT(*) FROM exercises WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001')")
         assert cur.fetchone()[0] == 3
 
         cur.execute(
-            "SELECT COUNT(*) FROM working_sets WHERE exercise_id IN "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001')"
+            "SELECT COUNT(*) FROM workout_session_sets WHERE kind = 'working' AND exercise_id IN "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'))"
         )
         assert cur.fetchone()[0] == 5
 
         cur.execute(
-            "SELECT COUNT(*) FROM warmup_sets WHERE exercise_id IN "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001')"
+            "SELECT COUNT(*) FROM workout_session_sets WHERE kind = 'warmup' AND exercise_id IN "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'))"
         )
         assert cur.fetchone()[0] == 1
 
 
 def test_insert_session_fields(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT date, phase, week, focus, duration_minutes, weight_unit, user_id, user_name "
-            "FROM sessions WHERE session_id = 'test-session-v3-001'"
+            "SELECT date, phase, week, focus, duration_minutes, weight_unit, user_id, input_id "
+            "FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'"
         )
         row = cur.fetchone()
 
@@ -296,45 +305,46 @@ def test_insert_session_fields(conn):
     assert row[3] == "Pull Hypertrophy"
     assert row[4] == 90
     assert row[5] == "kg"
-    assert row[6] == "7"
-    assert row[7] == "Apoorva Sharma"
+    # The owner comes from the caller, never from the session's own (retired) user fields.
+    assert str(row[6]) == USER_A
+    assert row[7] is not None, "every session links to the input it came from"
 
 
 def test_insert_session_weight_unit_lbs(conn):
-    insert_session(conn, make_session_lbs())
+    _save(conn, make_session_lbs())
 
     with conn.cursor() as cur:
-        cur.execute("SELECT weight_unit FROM sessions WHERE session_id = 'test-session-lbs-001'")
+        cur.execute("SELECT weight_unit FROM workout_sessions WHERE dedup_key = 'test-session-lbs-001'")
         assert cur.fetchone()[0] == "lbs"
 
 
 def test_insert_session_notes(conn):
     session = make_session()
     session.notes = "Legs are sore, warmup ran long."
-    insert_session(conn, session)
+    _save(conn, session)
 
     with conn.cursor() as cur:
-        cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT notes FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'")
         assert cur.fetchone()[0] == "Legs are sore, warmup ran long."
 
 
 def test_insert_session_notes_null_by_default(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
-        cur.execute("SELECT notes FROM sessions WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT notes FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'")
         assert cur.fetchone()[0] is None
 
 
 def test_insert_exercise_with_goal(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, "
             "goal_rest_min, goal_rest_seconds, tags, modality, movement_pattern, "
             "form_cues "
-            "FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 1"
+            "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 1"
         )
         row = cur.fetchone()
 
@@ -351,12 +361,12 @@ def test_insert_exercise_with_goal(conn):
 
 
 def test_insert_exercise_without_goal(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT goal_weight_kg, goal_sets, goal_rep_min, tags, modality "
-            "FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 3"
+            "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 3"
         )
         row = cur.fetchone()
 
@@ -368,12 +378,12 @@ def test_insert_exercise_without_goal(conn):
 
 
 def test_insert_exercise_activity_goal(conn):
-    insert_session(conn, make_session_with_activity())
+    _save(conn, make_session_with_activity())
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT modality, goal_distance_meters, goal_target_duration_sec "
-            "FROM exercises WHERE session_id = 'test-session-activity-001' AND number = 1"
+            "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-activity-001') AND position = 1"
         )
         row = cur.fetchone()
 
@@ -383,13 +393,13 @@ def test_insert_exercise_activity_goal(conn):
 
 
 def test_insert_working_set_partial_reps(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT reps_full, reps_partial FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 1) "
-            "AND number = 2"
+            "SELECT reps_full, reps_partial FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 1) "
+            "AND position = 2"
         )
         row = cur.fetchone()
 
@@ -398,13 +408,13 @@ def test_insert_working_set_partial_reps(conn):
 
 
 def test_insert_working_set_activity_fields(conn):
-    insert_session(conn, make_session_with_activity())
+    _save(conn, make_session_with_activity())
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT duration_seconds, distance_meters, heart_rate_bpm, rest_seconds "
-            "FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-activity-001' AND number = 1)"
+            "FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-activity-001') AND position = 1)"
         )
         row = cur.fetchone()
 
@@ -415,13 +425,13 @@ def test_insert_working_set_activity_fields(conn):
 
 
 def test_insert_working_set_unilateral_reps(conn):
-    insert_session(conn, make_session_with_unilateral())
+    _save(conn, make_session_with_unilateral())
 
     with conn.cursor() as cur:
         cur.execute(
             "SELECT left_reps_full, left_reps_partial, right_reps_full, right_reps_partial "
-            "FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-uni-001' AND number = 1)"
+            "FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-uni-001') AND position = 1)"
         )
         row = cur.fetchone()
 
@@ -432,13 +442,13 @@ def test_insert_working_set_unilateral_reps(conn):
 
 
 def test_insert_working_set_myo_reps_failure_technique(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT failure_technique FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 1) "
-            "AND number = 2"
+            "SELECT failure_technique FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 1) "
+            "AND position = 2"
         )
         ft = cur.fetchone()[0]
 
@@ -447,13 +457,13 @@ def test_insert_working_set_myo_reps_failure_technique(conn):
 
 
 def test_insert_working_set_llp_failure_technique(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT failure_technique FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 2) "
-            "AND number = 2"
+            "SELECT failure_technique FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 2) "
+            "AND position = 2"
         )
         ft = cur.fetchone()[0]
 
@@ -462,12 +472,12 @@ def test_insert_working_set_llp_failure_technique(conn):
 
 
 def test_insert_working_set_null_rpe_and_rep_quality(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT rpe, rep_quality FROM working_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 3)"
+            "SELECT rpe, rep_quality FROM workout_session_sets WHERE kind = 'working' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 3)"
         )
         row = cur.fetchone()
 
@@ -476,29 +486,29 @@ def test_insert_working_set_null_rpe_and_rep_quality(conn):
 
 
 def test_insert_exercise_with_no_warmup_sets(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*) FROM warmup_sets WHERE exercise_id = "
-            "(SELECT id FROM exercises WHERE session_id = 'test-session-v3-001' AND number = 2)"
+            "SELECT COUNT(*) FROM workout_session_sets WHERE kind = 'warmup' AND exercise_id = "
+            "(SELECT id FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 2)"
         )
         assert cur.fetchone()[0] == 0
 
 
 def test_insert_warmups_and_cooldowns(conn):
-    insert_session(conn, make_session_with_warmup_cooldown())
+    _save(conn, make_session_with_warmup_cooldown())
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT number, name, reps, duration_seconds, notes "
-            "FROM warmups WHERE session_id = 'test-session-wc-001' ORDER BY number"
+            "SELECT position, name, reps, duration_seconds, notes "
+            "FROM workout_session_warmups WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-wc-001') ORDER BY position"
         )
         warmup_rows = cur.fetchall()
 
         cur.execute(
-            "SELECT number, name, reps, duration_seconds, notes "
-            "FROM cooldowns WHERE session_id = 'test-session-wc-001' ORDER BY number"
+            "SELECT position, name, reps, duration_seconds, notes "
+            "FROM workout_session_cooldowns WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-wc-001') ORDER BY position"
         )
         cooldown_rows = cur.fetchall()
 
@@ -515,22 +525,22 @@ def test_insert_warmups_and_cooldowns(conn):
 
 
 def test_insert_session_with_no_warmup_cooldown(conn):
-    insert_session(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM warmups WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_session_warmups WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001')")
         assert cur.fetchone()[0] == 0
-        cur.execute("SELECT COUNT(*) FROM cooldowns WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_session_cooldowns WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001')")
         assert cur.fetchone()[0] == 0
 
 
 def test_insert_session_is_idempotent(conn):
-    insert_session(conn, make_session())
-    insert_session(conn, make_session())
+    _save(conn, make_session())
+    _save(conn, make_session())
 
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM sessions WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_sessions WHERE dedup_key = 'test-session-v3-001'")
         assert cur.fetchone()[0] == 1
 
-        cur.execute("SELECT COUNT(*) FROM exercises WHERE session_id = 'test-session-v3-001'")
+        cur.execute("SELECT COUNT(*) FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001')")
         assert cur.fetchone()[0] == 3

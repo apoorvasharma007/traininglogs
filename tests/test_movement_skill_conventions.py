@@ -12,11 +12,10 @@ run `traininglogs validate <fixture> --parser groq`.
 """
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from traininglogs.agent.schemas import TrainingLogLLMExtract
-from traininglogs.processor.processor import build_session_from_extract
+from traininglogs.ingest.confirm import build_session_from_extract
 
 
 class StubProvider:
@@ -116,11 +115,9 @@ class TestAdhocMovementSkillsSchemaFit:
         assert kb_set.weight_kg == 20.0
         assert kb_set.rep_count.full == 15
 
-    def test_build_session_from_extract_leaves_program_unset(self, tmp_path: Path) -> None:
+    def test_build_session_from_extract_leaves_program_unset(self) -> None:
         extract = TrainingLogLLMExtract.model_validate(ADHOC_MOVEMENT_SKILLS_RAW)
-        md_path = tmp_path / "adhoc_session.md"
-        md_path.write_text("stub")
-        session = build_session_from_extract(extract, "stub", md_path, inputs_root=tmp_path)
+        session = build_session_from_extract(extract, "stub")
         assert session.program is None
         assert session.phase is None
         assert session.week is None
@@ -146,7 +143,6 @@ class TestAdhocMovementSkillsSchemaFit:
         skill_set = extract.exercises[0].sets[0]
         assert skill_set.rep_count.full == 2
         assert skill_set.rep_count.partial == 3
-        assert skill_set.rep_count.total_reps == 5
 
     def test_ordinary_reps_with_varying_quality_stay_whole_not_partial(self) -> None:
         """Regression guard: 'depth dropped on the last two' is commentary on an

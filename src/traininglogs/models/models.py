@@ -34,10 +34,6 @@ class RepCount(BaseModel):
             raise ValueError("Partial reps cannot be negative")
         return v
 
-    @property
-    def total_reps(self) -> int:
-        return self.full + self.partial
-
 
 class RepRange(BaseModel):
     min: int
@@ -507,10 +503,3 @@ class TrainingSession(BaseModel):
                     f"Cooldown number must be sequential, expected {i + 1}, got {movement.number}"
                 )
         return self
-
-    def get_exercise_by_name(self, name: str) -> Optional[Exercise]:
-        target = (name or "").strip().lower()
-        for exercise in self.exercises:
-            if (exercise.name or "").strip().lower() == target:
-                return exercise
-        return None

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "traininglogs"
-version = "3.1.0"
+version = "4.1.0"
 description = "Parse and process training session logs into structured JSON."
 requires-python = ">=3.10"
 dependencies = [
@@ -13,18 +13,21 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "httpx>=0.27",
+    "pyjwt[crypto]>=2.8",
     "pydantic>=2.0",
-    "pyyaml>=6.0",
-    "rich>=13.0",
-    "anthropic>=0.40",
+    # 1.x no longer takes `temperature`; moving to it is its own step.
+    "anthropic>=0.101,<1",
     "groq>=0.9",
 ]
 
-[project.scripts]
-traininglogs = "traininglogs.cli:main"
+[project.optional-dependencies]
+# For the tests and for making the lock files.
+dev = ["pytest", "pytest-asyncio", "pip-tools"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# So test files can import the shared helpers in tests/conftest.py (signed-in test users).
+pythonpath = ["tests"]

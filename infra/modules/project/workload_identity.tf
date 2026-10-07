@@ -36,7 +36,7 @@ locals {
   # Any workflow run in the repository, on any branch or pull request.
   # Used by: google_service_account_iam_member.terraform_workload_identity
   github_repository_principal = "principalSet://iam.googleapis.com/${local.pool}/attribute.repository/${var.github_repository}"
-  # Only workflow runs on main.
+  # Only workflow runs on the deploy branch: main for prod, dev for staging.
   # Used by: google_service_account_iam_member.app_deploy_workload_identity
-  github_main_principal = "principalSet://iam.googleapis.com/${local.pool}/attribute.repository_ref/${var.github_repository}@refs/heads/main"
+  github_deploy_principal = "principalSet://iam.googleapis.com/${local.pool}/attribute.repository_ref/${var.github_repository}@refs/heads/${var.deploy_branch}"
 }

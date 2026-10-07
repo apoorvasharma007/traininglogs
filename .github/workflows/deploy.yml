@@ -1,0 +1,74 @@
+name: Deploy
+
+# Ships one environment: first the infrastructure (terraform apply on its app layer), then the app
+# (a new image onto Cloud Run). Called by CI once its checks pass on a push: main to prod, dev to
+# staging. The job runs in that GitHub environment, which holds its variables; prod's waits for
+# Apoorva's approval.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: prod or staging
+        required: true
+        type: string
+
+# One release per environment at a time; a second push waits for the first instead of racing it.
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/images/traininglogs:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.4"
+          terraform_wrapper: false
+
+      - name: Sign in to Google Cloud as terraform
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SERVICE_ACCOUNT }}
+
+      # Plan, then apply exactly that plan. With no infra/ changes this is a no-op that also
+      # catches anything changed by hand in the console.
+      - name: Plan and apply app layer
+        working-directory: infra/environments/${{ inputs.environment }}/app
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -no-color -lock-timeout=120s -out=tfplan
+          terraform apply -input=false -no-color -lock-timeout=120s tfplan
+
+      # app-deploy can only be used from the environment's branch (the workload identity grant
+      # checks it): main for prod, dev for staging.
+      - name: Sign in to Google Cloud as app-deploy
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_APP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      # Changes only the image; every other setting stays as Terraform defines it.
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy traininglogs --image "$IMAGE" \
+            --region "${{ vars.GCP_REGION }}" --project "${{ vars.GCP_PROJECT_ID }}" --quiet

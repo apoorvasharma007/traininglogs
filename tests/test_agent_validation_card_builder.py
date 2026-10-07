@@ -179,6 +179,13 @@ class TestWarmupRows:
         assert "weight_kg" not in card.exercises[0].warmup_rows[1].uncertain_fields
 
 
+    def test_wildcard_uncertain_field_reaches_every_set(self) -> None:
+        extract = _make_extract({"uncertain_fields": ["exercises.0.sets.*.reps"]})
+        card = builder.build(extract)
+        assert all("reps" in r.uncertain_fields for r in card.exercises[0].working_set_rows)
+        assert not any(r.uncertain_fields for r in card.exercises[0].warmup_rows)
+
+
 class TestWorkingSetRows:
     def test_working_set_count(self) -> None:
         card = builder.build(_make_extract())
