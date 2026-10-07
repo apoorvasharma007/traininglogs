@@ -116,7 +116,7 @@ export default function Program({ params }: { params: { id: string } }) {
               // Adding opens the new workout, so unsaved changes here are saved first.
               onClick={async () => { if (!dirty || (await save())) setAdding(true) }}
               className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
-              + Add workout
+              + Add Workout
             </button>
           )}
 
@@ -132,7 +132,7 @@ export default function Program({ params }: { params: { id: string } }) {
 
           <div className="mt-6 flex flex-col items-center gap-1">
             <button type="button" onClick={() => { setWeeksChoice(savedWeeks); setPickingWeeks(true) }} className="h-10 px-2 text-[13px] text-muted-foreground">
-              Deload reminder every <span className="font-semibold text-foreground">{Math.round(p.deload_after_days / 7)} weeks</span>
+              Deload Reminder every <span className="font-semibold text-foreground">{Math.round(p.deload_after_days / 7)} weeks</span>
             </button>
             {p.following && (
               <button type="button" disabled={change.isPending} onClick={() => setConfirm('unfollow')}
@@ -156,7 +156,7 @@ export default function Program({ params }: { params: { id: string } }) {
       )}
 
       <NameSheet open={adding} title="New workout" label="Name" initial={`Workout ${(p?.workouts.length ?? 0) + 1}`}
-        saveLabel="Add workout" allowBlank busy={change.isPending} error={change.error?.message}
+        saveLabel="Add Workout" allowBlank busy={change.isPending} error={change.error?.message}
         onClose={() => setAdding(false)}
         onSave={(name) => {
           const n = (p?.workouts.length ?? 0) + 1
@@ -166,9 +166,9 @@ export default function Program({ params }: { params: { id: string } }) {
           )
         }} />
 
-      <Sheet open={pickingWeeks} onClose={() => setPickingWeeks(false)} label="Deload reminder">
+      <Sheet open={pickingWeeks} onClose={() => setPickingWeeks(false)} label="Deload Reminder">
         <div className="flex flex-col gap-1">
-          <span className="text-[17px] font-semibold">Deload reminder</span>
+          <span className="text-[17px] font-semibold">Deload Reminder</span>
           <span className="text-sm text-muted-foreground">Remind me to take a lighter week after this many weeks of training.</span>
         </div>
         <div role="group" aria-label="Weeks" className="grid grid-cols-5 gap-1.5">

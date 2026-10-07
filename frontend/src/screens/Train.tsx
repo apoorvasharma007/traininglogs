@@ -54,7 +54,7 @@ export default function Train() {
       {followed && showDeloadReminder(followed, today) && (
         <div role="status" className="flex min-h-11 items-center gap-1 rounded-xl border border-warning/40 bg-warning-soft py-0.5 pr-0.5 pl-3.5 text-[13px] text-warning">
           <span className="flex flex-1 flex-col">
-            <span className="font-semibold">Deload due</span>
+            <span className="font-semibold">Deload Due</span>
             <span>{Math.round(followed.deload.days_since / 7)} weeks of training</span>
           </span>
           <button type="button" onClick={() => { acknowledgeDeload(followed, today); redraw((n) => n + 1) }} className="h-10 px-3 font-bold">

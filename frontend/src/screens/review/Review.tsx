@@ -430,7 +430,7 @@ export default function Review({ params }: { params: { id: string } }) {
                 }}
               />
               <MenuItem
-                label="Remove exercise"
+                label="Remove Exercise"
                 danger
                 run={async () => {
                   const path = menuFor.header.path
