@@ -39,7 +39,7 @@ describe('workout display', () => {
 })
 
 describe('Programs', () => {
-  it('with no programs, New program offers to create your own', async () => {
+  it('with no programs, New Program offers to create your own', async () => {
     const calls = fakeApi({
       'GET /programs': [],
       'POST /programs': program({ workouts: [], next_workout_id: null }),
@@ -47,8 +47,8 @@ describe('Programs', () => {
     })
     const location = renderApp('/programs')
     expect(await screen.findByText('No programs yet')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'New program' }))
-    const choice = await screen.findByRole('dialog', { name: 'New program' })
+    await userEvent.click(screen.getByRole('button', { name: 'New Program' }))
+    const choice = await screen.findByRole('dialog', { name: 'New Program' })
     expect(within(choice).getByRole('link', { name: 'From a Template' })).toHaveAttribute('href', expect.stringContaining('/programs/templates'))
     await userEvent.click(within(choice).getByRole('button', { name: 'Create Your Own' }))
     const sheet = (await screen.findByLabelText('Name')).closest('[role="dialog"]') as HTMLElement
@@ -165,14 +165,14 @@ describe('Programs', () => {
     const calls = fakeApi({ 'GET /programs/p1': program(), 'PUT /workouts/w2/movements': program(), 'GET /programs': [program()] })
     renderApp('/programs/p1/workouts/w2')
     await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
-    // The warm-up editor comes first; the cool-down one also offers Easy cardio.
-    await userEvent.click(screen.getAllByRole('button', { name: '+ Easy cardio' })[0])
+    // The warm-up editor comes first; the cool-down one also offers Easy Cardio.
+    await userEvent.click(screen.getAllByRole('button', { name: '+ Easy Cardio' })[0])
     await userEvent.click(screen.getByRole('button', { name: '+ Dynamic stretching' }))
     expect(calls.some((c) => c.key === 'PUT /workouts/w2/movements')).toBe(false)
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
     const last = () => calls.filter((c) => c.key === 'PUT /workouts/w2/movements').at(-1)?.body as { warmup: { name: string }[] } | undefined
     await waitFor(() => expect(last()?.warmup.map((m) => m.name)).toEqual(
-      ['Easy cardio', 'Arm circles', 'Leg swings', 'Hip circles', 'Walking lunges', 'Torso twists'],
+      ['Easy Cardio', 'Arm circles', 'Leg swings', 'Hip circles', 'Walking lunges', 'Torso twists'],
     ))
   })
 

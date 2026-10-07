@@ -68,10 +68,10 @@ describe('Train', () => {
   it('a deload reminder is only a reminder: OK hides it', async () => {
     fakeApi({ 'GET /programs': [program({ deload: { days_since: 29, due: true, in_progress: 0 } })] })
     renderApp('/')
-    expect(await screen.findByText('Deload due')).toBeInTheDocument()
+    expect(await screen.findByText('Deload Due')).toBeInTheDocument()
     expect(screen.getByText(/4 weeks of training/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'OK' }))
-    expect(screen.queryByText('Deload due')).not.toBeInTheDocument()
+    expect(screen.queryByText('Deload Due')).not.toBeInTheDocument()
   })
 
   it('offers an ad-hoc workout, notes, and repeating a past session', async () => {
