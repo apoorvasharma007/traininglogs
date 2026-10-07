@@ -4,23 +4,31 @@ A React + FastAPI + PostgreSQL app for strength training tracking with AI-powere
 
 ## Architecture Overview
 
-### User Flow
+### Deployment Architecture
 
 ```
-User → React App (browser)
-    ↓
-FastAPI Server (localhost:8000)
-    ↓
-PostgreSQL Database (Supabase)
-    ↓
-AI Providers (Anthropic, Groq)
+                  PRODUCTION (Google Cloud)                   LOCAL DEVELOPMENT
+                  
+User Browser  →  Cloud Run (FastAPI container)  OR  →  localhost:8000 (dev server)
+                        ↓
+              Cloud SQL (PostgreSQL)          OR  →  Docker Postgres (port 5433)
+                        ↓
+Supabase Auth (JWT verification)
+                        ↓
+AI Providers (Anthropic, Groq API)
 ```
 
-The app runs as:
-- **Frontend**: React (TypeScript) served from `frontend/dist/`
-- **Backend**: FastAPI Python server at `/` (same origin, no CORS)
-- **Database**: PostgreSQL with row-level security per user
+### Components
+
+- **Frontend**: React (TypeScript) built to `frontend/dist/`, served by FastAPI
+- **Backend**: FastAPI Python web framework
+  - Production: Containerized on Google Cloud Run
+  - Development: Local Uvicorn server (port 8000)
+- **Database**: PostgreSQL
+  - Production: Google Cloud SQL (managed)
+  - Development: Docker container (port 5433)
 - **Authentication**: Supabase JWT tokens verified on every request
+- **AI Integration**: Anthropic and Groq API calls
 
 ---
 
@@ -322,26 +330,44 @@ cd frontend && npm test
 
 ## Deployment
 
+### Technology Stack
+- **Framework**: FastAPI (Python web framework)
+- **Container runtime**: Google Cloud Run (serverless, managed by Terraform)
+- **Database**: Google Cloud SQL (PostgreSQL) + Supabase auth layer
+- **Infrastructure as Code**: Terraform (`infra/`)
+- **CI/CD**: GitHub Actions
+
 ### Local Development
 ```bash
 # Build frontend
 cd frontend && npm ci && npm run build && cd ..
 
-# Start server (serves app + API)
+# Start FastAPI server locally (for development only)
 DATABASE_URL="..." .venv/bin/uvicorn traininglogs.api.app:app --reload
 ```
 
-- App: `http://localhost:8000/`
+- App: `http://localhost:8000/` (local only)
 - API: `http://localhost:8000/` (same origin)
+- This is a development server; production uses Cloud Run
 
-### Production
-- `main` branch is deployed to production
-- `dev` branch is deployed to staging
-- Terraform in `infra/` manages Google Cloud Run, Cloud SQL, Supabase
+### Production Deployment
+- **Environment**: Google Cloud Run (serverless container)
+- **Branch flow**: 
+  - `main` → Production (GCP region us-west1)
+  - `dev` → Staging (separate Cloud Run instance)
+- **Infrastructure**: Managed by Terraform in `infra/`
+  - Cloud Run service configuration
+  - Cloud SQL PostgreSQL instance
+  - Supabase auth project
+  - Environment secrets in Google Cloud Secret Manager
 
-### CI/CD
+### CI/CD Pipeline
 - GitHub Actions in `.github/workflows/`
-- Tests run on every push; deploy on merge to `dev` or `main`
+- Tests run on every push
+- Merge to `dev` deploys to staging automatically
+- Merge to `main` requires manual approval in GitHub (prod environment)
+- Terraform applies infrastructure changes on deploy
+- CI then deploys the container to Cloud Run
 
 ---
 
