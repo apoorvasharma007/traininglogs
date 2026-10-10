@@ -66,7 +66,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
   Added 2026-10-11: a set ticks itself once weight and reps are typed and the keyboard leaves
   the set's row, which then asks for effort.
 - [x] 5. **Completed exercises open and close every time**, with the sets sliding in and out.
-- [ ] 6. **Audit fixes** (`ui-audit.md`):
+- [x] 6. **Audit fixes** (`ui-audit.md`):
   - A1. iOS-style transitions: a deeper screen slides in from the right, Back slides it out to the
     right, switching tabs fades. Motion, in `App.tsx`.
   - A2. Loading shows grey outlines shaped like the content, then fades the content in. Replaces

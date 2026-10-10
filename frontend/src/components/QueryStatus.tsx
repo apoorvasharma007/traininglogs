@@ -1,11 +1,13 @@
 import { errorText } from '@/lib/errors'
 
 
-/** What a screen shows while its data loads or when the request fails. */
+/** What a screen shows while its data loads: grey cards where the content will be, pulsing. */
 export function Loading() {
   return (
-    <div role="status" className="py-10 text-center text-sm text-muted-foreground">
-      Loading…
+    <div role="status" aria-label="Loading" className="flex flex-col gap-2.5">
+      {[64, 112, 64].map((h, i) => (
+        <div key={i} style={{ height: h }} className="animate-pulse rounded-2xl bg-muted" />
+      ))}
     </div>
   )
 }

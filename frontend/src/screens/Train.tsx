@@ -70,7 +70,7 @@ export default function Train() {
       )}
 
       {current ? (
-        <Link href="/session" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+        <Link href="/session" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition active:scale-[0.98]">
           <span className="flex flex-col gap-1">
             <span className="text-xs font-semibold text-highlight">Session in Progress</span>
             <span className="text-[22px] font-bold tracking-tight">{liveTitle(current)}</span>
@@ -132,7 +132,7 @@ export default function Train() {
             <Link href="/programs/templates" className="flex h-12 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition active:scale-[0.98]">
               Browse Templates
             </Link>
-            <Link href="/programs" className="flex h-12 items-center justify-center rounded-2xl border border-border text-sm font-semibold transition active:scale-[0.98]">
+            <Link href="/programs?new" className="flex h-12 items-center justify-center rounded-2xl border border-border text-sm font-semibold transition active:scale-[0.98]">
               Create Your Own
             </Link>
           </div>
@@ -157,7 +157,7 @@ export default function Train() {
         </Link>
       </div>
 
-      <Link href="/history" className="self-center py-2 text-[13px] font-semibold text-muted-foreground">
+      <Link href="/history" className="self-center py-2 text-[13px] font-semibold text-muted-foreground active:opacity-60">
         Repeat a Past Session
       </Link>
     </div>

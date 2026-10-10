@@ -22,14 +22,14 @@ export default function EffortSheet({
   const [shown, setShown] = useState(target)
   if (target && target !== shown) setShown(target)
   return (
-    <Sheet open={target != null} onClose={onClose} label="How hard was it?">
+    <Sheet open={target != null} onClose={onClose} label="How Hard Was It?">
       {shown && (
         <>
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-semibold text-muted-foreground">
               {shown.exercise}, set {shown.set}{shown.did && `: ${shown.did}`}
             </span>
-            <span className="text-[22px] font-bold tracking-tight">How hard was it?</span>
+            <span className="text-[22px] font-bold tracking-tight">How Hard Was It?</span>
           </div>
           <div className="flex flex-col gap-2.5">
             {EFFORTS.map((e, i) => (

@@ -15,9 +15,9 @@ const lasts = [{ name: 'Squat', date: '2026-10-02', notes: 'better depth', warmu
 
 /** Ticking a working set asks how hard it was; this skips it, as swiping the sheet down does. */
 async function skipEffort() {
-  await screen.findByRole('dialog', { name: 'How hard was it?' })
+  await screen.findByRole('dialog', { name: 'How Hard Was It?' })
   await userEvent.keyboard('{Escape}')
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How hard was it?' })).not.toBeInTheDocument())
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument())
 }
 
 async function seed() {
@@ -73,9 +73,9 @@ describe('Session', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
     // Ticking a working set asks how hard it was; one tap answers and closes.
-    const ask = await screen.findByRole('dialog', { name: 'How hard was it?' })
+    const ask = await screen.findByRole('dialog', { name: 'How Hard Was It?' })
     await userEvent.click(within(ask).getByRole('button', { name: /^Hard/ }))
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How hard was it?' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'true')
     // Saved on the phone straight away, with its effort.
     await waitFor(async () => {
@@ -183,7 +183,7 @@ describe('Session', () => {
     expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'false')
     // Leaving the set (the keyboard closes) ticks it and asks how hard it was.
     await userEvent.click(document.body)
-    expect(await screen.findByRole('dialog', { name: 'How hard was it?' })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
   })
 
@@ -287,7 +287,7 @@ describe('Session', () => {
     })
   })
 
-  it('moves an exercise with Move Down', async () => {
+  it('reorders exercises from a drag list in the exercise menu', async () => {
     await saveSession(startFromWorkout(
       { ...workout, exercises: [...workout.exercises, { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] }] },
       '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0),
@@ -296,9 +296,10 @@ describe('Session', () => {
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
     const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
-    await userEvent.click(within(menu).getByRole('button', { name: 'Move Down' }))
-    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises.map((e: { name: string }) => e.name))
-      .toEqual(['Bench press', 'Squat']))
+    await userEvent.click(within(menu).getByRole('button', { name: 'Reorder Exercises' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Reorder Exercises' })
+    expect(within(sheet).getAllByRole('button', { name: /^Drag to reorder/ }).map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Drag to reorder Squat', 'Drag to reorder Bench press'])
   })
 
   it('nudges a warm-up first; Done records 5 minutes of easy cardio', async () => {

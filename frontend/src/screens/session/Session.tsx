@@ -5,6 +5,7 @@ import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
+import DragList from '@/components/DragList'
 import { Loading } from '@/components/QueryStatus'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import EffortSheet, { type EffortTarget } from '@/components/EffortSheet'
@@ -22,7 +23,7 @@ import {
   addWarmupSet,
   counts,
   draftOf,
-  moveExercise,
+  reorderExercises,
   removeExercise,
   removeSet,
   saveSet,
@@ -61,6 +62,7 @@ export default function Session() {
   const [menuFor, setMenuFor] = useState<LiveExercise | null>(null)
   const [switchFor, setSwitchFor] = useState<LiveExercise | null>(null)
   const [warmupFor, setWarmupFor] = useState<LiveExercise | null>(null)
+  const [reordering, setReordering] = useState(false)
   // Finished exercises collapse; these were opened again by hand.
   const [reopened, setReopened] = useState<Set<string>>(() => new Set())
   // The working set just ticked, asked how hard it was.
@@ -274,8 +276,7 @@ export default function Session() {
                 { label: 'Add Warm-up Set', run: () => { const r = addWarmupSet(s, menuFor.key); change(r.session); open(menuFor.key, r.setKey, r.session) } },
                 { label: menuFor.note ? 'Edit Note' : 'Add Note', run: () => change(updateExercise(s, menuFor.key, { noteOpen: true })) },
                 { label: 'Rename', run: () => change(updateExercise(s, menuFor.key, { naming: true })) },
-                { label: 'Move Up', run: () => change(moveExercise(s, menuFor.key, -1)) },
-                { label: 'Move Down', run: () => change(moveExercise(s, menuFor.key, 1)) },
+                ...(s.exercises.length > 1 ? [{ label: 'Reorder Exercises', run: () => setReordering(true) }] : []),
                 { label: 'Warm-up Set Templates', run: () => setWarmupFor(menuFor) },
                 { label: 'Remove Exercise', danger: true, run: () => removeWithUndo(removeExercise(s, menuFor.key), `${menuFor.name || 'Exercise'} removed`) },
               ].map((item) => (
@@ -287,6 +288,18 @@ export default function Session() {
             </div>
           </>
         )}
+      </Sheet>
+
+      <Sheet open={reordering} onClose={() => setReordering(false)} label="Reorder Exercises">
+        <span className="text-[17px] font-semibold">Reorder Exercises</span>
+        <DragList items={s.exercises} keyOf={(e) => e.key} label={(e) => e.name || 'Exercise'}
+          onReorder={(keys) => change(reorderExercises(s, keys))}>
+          {(e) => <span className="flex h-14 items-center truncate px-4 text-[15px] font-medium">{e.name || 'Exercise'}</span>}
+        </DragList>
+        <button type="button" onClick={() => setReordering(false)}
+          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+          Done
+        </button>
       </Sheet>
 
       <Sheet open={warmupFor != null} onClose={() => setWarmupFor(null)} label="Warm-up set templates">
@@ -315,9 +328,9 @@ export default function Session() {
         )}
       </Sheet>
 
-      <Sheet open={finishing} onClose={() => setFinishing(false)} label="Finish session">
+      <Sheet open={finishing} onClose={() => setFinishing(false)} label="Finish Session">
         <div className="flex flex-col gap-1.5">
-          <span className="text-xl font-bold">Finish session?</span>
+          <span className="text-xl font-bold">Finish Session?</span>
           <p className="text-sm leading-relaxed text-muted-foreground">
             {done === total
               ? `All ${total} sets are ticked.`
@@ -338,7 +351,7 @@ export default function Session() {
         </button>
       </Sheet>
 
-      <ConfirmSheet open={discarding} title="Discard this session?" body="Nothing from it is saved."
+      <ConfirmSheet open={discarding} title="Discard This Session?" body="Nothing from it is saved."
         confirmLabel="Discard Session" onClose={() => setDiscarding(false)}
         onConfirm={() => { update(null); navigate('/') }} />
     </MotionConfig>

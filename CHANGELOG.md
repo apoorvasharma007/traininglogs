@@ -7,8 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Key Lifts in Settings are your own: drag to reorder, × to remove, + Add Lift to pick from the
+  lifts you log. Progress shows them first. Saved per person (`PUT /me/key-lifts`, a new
+  `users.key_lifts` column); without a choice the built-in six stay.
+- Send a New Code on the sign-in screen.
+- Reorder Exercises in a session's exercise menu: a drag list, in place of Move Up and Move Down.
+
 ### Changed
 
+- Screens slide in from the right when you go deeper and from the left when you go back; tabs
+  fade. Loading shows grey placeholder cards instead of a "Loading…" line.
+- Every open and close (History months, Progress's other lifts, exercises) uses one arrow that
+  turns and content that slides. Rows and buttons that weren't reacting to a press now do.
+- Buttons, sheet titles and screen titles are in Title Case throughout.
+- The Done screen's program changes tick with the same circle as a set.
+- A failed change on a program shows in the sheet it came from.
+- Train's Create Your Own opens the new program's name straight away. Program shows + Add
+  Workout without Edit. A session row on a lift's page opens that session. Settings' AI Use
+  shows a placeholder while loading and says when it couldn't load. Log from Notes' cost note
+  is one line.
 - An ad-hoc session is named after its exercises while it runs ("Squat, Bench Press and 1
   more"), in its header, on Train and on the Done screen, as History already names it.
 - Confirm Session on Review asks first when there are things still to check: Check Them goes

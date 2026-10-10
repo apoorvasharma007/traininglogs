@@ -9,6 +9,7 @@ export default function SignIn() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resent, setResent] = useState(false)
 
   async function run(step: () => Promise<void>) {
     setBusy(true)
@@ -61,10 +62,17 @@ export default function SignIn() {
       {error && <p role="alert" className="px-1 text-sm text-destructive">{error}</p>}
       <button type="submit" disabled={busy || (sentTo ? code.trim().length < 6 : !email.includes('@'))}
         className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
-        {busy ? (sentTo ? 'Signing in…' : 'Sending…') : sentTo ? 'Sign in' : 'Email Me a Code'}
+        {busy ? (sentTo ? 'Signing In…' : 'Sending…') : sentTo ? 'Sign In' : 'Email Me a Code'}
       </button>
       {sentTo && (
-        <button type="button" onClick={() => { setSentTo(null); setCode(''); setError(null) }}
+        <button type="button" disabled={busy}
+          onClick={() => run(async () => { setResent(false); await sendCode(sentTo); setResent(true) })}
+          className="h-11 text-sm font-semibold text-muted-foreground disabled:opacity-50">
+          {resent ? 'New Code Sent' : 'Send a New Code'}
+        </button>
+      )}
+      {sentTo && (
+        <button type="button" onClick={() => { setSentTo(null); setCode(''); setError(null); setResent(false) }}
           className="h-11 text-sm font-semibold text-muted-foreground">
           Use a Different Email
         </button>

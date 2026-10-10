@@ -385,8 +385,8 @@ export default function Review({ params }: { params: { id: string } }) {
         confirmLabel="Save Anyway" cancelLabel="Check Them"
         onConfirm={() => { setAsking(false); confirm() }}
         onClose={() => { setAsking(false); jumpToCheck() }} />
-      <Sheet open={picking} onClose={() => setPicking(false)} label="Which workout was it?">
-        <span className="text-[17px] font-semibold">Which workout was it?</span>
+      <Sheet open={picking} onClose={() => setPicking(false)} label="Which Workout Was It?">
+        <span className="text-[17px] font-semibold">Which Workout Was It?</span>
         <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
           {(followed?.workouts ?? []).map((w) => (
             <button key={w.id} type="button" onClick={() => { setCountsAs(w.id); setPicking(false) }}

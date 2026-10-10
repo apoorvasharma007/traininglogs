@@ -386,13 +386,10 @@ export function setWarmups(s: LiveSession, exKey: string, sets: { kg: number; re
 }
 
 /** Moves an exercise one place up (-1) or down (1); at either end it stays put. */
-export function moveExercise(s: LiveSession, exKey: string, by: -1 | 1): LiveSession {
-  const i = s.exercises.findIndex((e) => e.key === exKey)
-  const j = i + by
-  if (i < 0 || j < 0 || j >= s.exercises.length) return s
-  const exercises = [...s.exercises]
-  ;[exercises[i], exercises[j]] = [exercises[j], exercises[i]]
-  return { ...s, exercises }
+/** Puts the exercises in the order of `keys`, as dragged in the Reorder sheet. */
+export function reorderExercises(s: LiveSession, keys: string[]): LiveSession {
+  const byKey = new Map(s.exercises.map((e) => [e.key, e]))
+  return { ...s, exercises: keys.flatMap((k) => byKey.get(k) ?? []) }
 }
 
 export function removeExercise(s: LiveSession, exKey: string): LiveSession {

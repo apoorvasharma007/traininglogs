@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { Chevron, Collapse } from '@/components/Collapse'
 import { useState } from 'react'
 import { Link } from 'wouter'
 import PageTitle from '@/components/PageTitle'
@@ -15,7 +16,7 @@ function LiftTile({ lift }: { lift: LiftSummary }) {
   return (
     <Link
       href={`/progress/${encodeURIComponent(lift.name)}`}
-      className="flex min-h-32 flex-col gap-1.5 rounded-2xl border border-border bg-card p-3.5"
+      className="flex min-h-32 flex-col gap-1.5 rounded-2xl border border-border bg-card p-3.5 transition active:scale-[0.98]"
     >
       <span className="text-sm font-semibold">{lift.name}</span>
       {lift.latest == null ? (
@@ -67,23 +68,19 @@ export default function Progress() {
                 type="button"
                 aria-expanded={showOthers}
                 onClick={() => setShowOthers(!showOthers)}
-                className="flex min-h-13 w-full items-center justify-between px-4 font-semibold"
+                className="flex min-h-13 w-full items-center justify-between px-4 font-semibold active:bg-muted"
               >
                 <span className="flex flex-1 items-center justify-between pr-2">
                   Other lifts <span className="font-normal text-muted-foreground">{lifts.data.other_lifts.length}</span>
                 </span>
-                <ChevronRight
-                  size={18}
-                  aria-hidden
-                  className={`text-muted-foreground transition-transform ${showOthers ? 'rotate-90' : ''}`}
-                />
+                <Chevron open={showOthers} size={18} className="text-muted-foreground" />
               </button>
-              {showOthers &&
-                lifts.data.other_lifts.map((l) => (
+              <Collapse open={showOthers}>
+                {lifts.data.other_lifts.map((l) => (
                   <Link
                     key={l.name}
                     href={`/progress/${encodeURIComponent(l.name)}`}
-                    className="flex min-h-12 items-center justify-between border-t border-border px-4 text-[15px]"
+                    className="flex min-h-12 items-center justify-between border-t border-border px-4 text-[15px] active:bg-muted"
                   >
                     <span>{l.name}</span>
                     <span className="font-mono text-[13px] text-muted-foreground">
@@ -91,6 +88,7 @@ export default function Progress() {
                     </span>
                   </Link>
                 ))}
+              </Collapse>
             </section>
           )}
         </>

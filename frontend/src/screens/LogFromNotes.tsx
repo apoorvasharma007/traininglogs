@@ -53,7 +53,7 @@ export default function LogFromNotes() {
           {busy ? 'Reading your note…' : 'Send'}
         </button>
         <p className="text-center text-xs text-muted-foreground">
-          Reads your note with AI for about $0.02 to $0.06; longer notes cost more. Each AI fix after that is $0.01 to $0.04 more. You check everything before it's saved.
+          About $0.02 to $0.06 per note. You check everything before it's saved.
         </p>
       </BottomBar>
     </div>

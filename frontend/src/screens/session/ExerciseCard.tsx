@@ -1,4 +1,5 @@
-import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Clock, Ellipsis, MessageSquareText } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, Clock, Ellipsis, MessageSquareText } from 'lucide-react'
+import { Chevron } from '@/components/Collapse'
 import { AnimatePresence, motion } from 'motion/react'
 import { type FocusEvent, useState } from 'react'
 import EffortBars from '@/components/EffortBars'
@@ -56,7 +57,7 @@ export default function ExerciseCard({
           </span>
           <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{e.name}</span>
           <span className="shrink-0 text-xs text-muted-foreground">{e.sets.length} of {e.sets.length} sets</span>
-          <ChevronDown size={16} aria-hidden className="shrink-0 text-faint-foreground" />
+          <Chevron open={false} className="text-faint-foreground" />
         </button>
       ) : (
         <div className="flex items-start justify-between pt-2.5 pr-1 pb-1 pl-4">
@@ -85,7 +86,7 @@ export default function ExerciseCard({
             {canCollapse && (
               <button type="button" onClick={onToggleCollapsed} aria-expanded aria-label={`Hide sets of ${e.name}`}
                 className="flex size-11 items-center justify-center text-muted-foreground">
-                <ChevronUp size={20} aria-hidden />
+                <Chevron open size={20} />
               </button>
             )}
             <button type="button" aria-label={`Options for ${e.name || 'new exercise'}`} onClick={onMenu}

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from traininglogs.agent.card_edits import CardEdit, CardOp
 
@@ -205,6 +205,22 @@ class EditIn(BaseModel):
         if bool(self.edits) == (self.op is not None):
             raise ValueError("send either `edits` or `op`, exactly one")
         return self
+
+
+class KeyLiftsIn(BaseModel):
+    """The lifts to show first in Progress, in order: up to 12 names, each said once."""
+
+    names: list[str] = Field(max_length=12)
+
+    @field_validator("names")
+    @classmethod
+    def _clean(cls, names: list[str]) -> list[str]:
+        cleaned = [n.strip() for n in names]
+        if any(not n or len(n) > 80 for n in cleaned):
+            raise ValueError("each lift needs a name of up to 80 characters")
+        if len({n.casefold() for n in cleaned}) != len(cleaned):
+            raise ValueError("a lift is listed twice")
+        return cleaned
 
 
 class AiUsage(BaseModel):

@@ -1,6 +1,6 @@
 import { ChevronRight, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation, useSearch } from 'wouter'
 import NameSheet from '@/components/NameSheet'
 import Sheet from '@/components/Sheet'
 import PageTitle from '@/components/PageTitle'
@@ -19,7 +19,9 @@ export default function Programs() {
   const programs = usePrograms()
   const create = useCreateProgram()
   const [, navigate] = useLocation()
-  const [creating, setCreating] = useState(false)
+  // Train's Create Your Own lands here with ?new: straight to naming it.
+  const search = useSearch()
+  const [creating, setCreating] = useState(() => new URLSearchParams(search).has('new'))
   const [choosing, setChoosing] = useState(false) // "Create Your Own" or "From a Template"
 
   return (

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'wouter'
 import LineChart from '@/components/LineChart'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
@@ -107,14 +108,14 @@ export default function Lift({ params }: { params: { name: string } }) {
             </div>
             <ul>
               {[...shown].reverse().map((p) => (
-                <li
-                  key={p.session_id}
-                  className="grid min-h-12 grid-cols-[76px_minmax(0,1fr)_40px_auto] items-center gap-2.5 border-t border-border px-1"
-                >
+                <li key={p.session_id} className="border-t border-border">
+                  <Link href={`/history/${encodeURIComponent(p.session_id)}`}
+                    className="grid min-h-12 grid-cols-[76px_minmax(0,1fr)_40px_auto] items-center gap-2.5 px-1 active:bg-muted">
                   <span className="font-mono text-xs text-muted-foreground">{dayLabel(p.date)}</span>
                   <span className="font-mono text-sm">{setText(p.best_set)}</span>
                   <span className="font-mono text-sm text-muted-foreground">{p.best_set.rpe ?? ''}</span>
                   <span className="text-[11px] font-semibold text-highlight">{p.records.length > 0 && 'Record'}</span>
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { type CSSProperties, lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import { useQueryClient } from '@tanstack/react-query'
 import { Loading } from '@/components/QueryStatus'
@@ -35,6 +35,7 @@ const Done = lazy(() => import('@/screens/session/Done'))
 export default function App() {
   const [location] = useLocation()
   const editing = useIsEditing()
+  const enter = useEntrance(location)
   // Review, a session in progress and edit mode have their own bottom bars, so the tabs step aside.
   const showTabs = !location.startsWith('/review') && !location.startsWith('/session') && !editing
 
@@ -72,6 +73,7 @@ export default function App() {
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
       <main className="flex-1 px-4 pt-[env(safe-area-inset-top)] pb-28">
         <Suspense fallback={<Loading />}>
+          <div key={location} className="screen-in" style={{ '--screen-from': `${enter}px` } as CSSProperties}>
           <Switch>
             <Route path="/programs" component={Programs} />
             <Route path="/programs/templates" component={Templates} />
@@ -88,9 +90,25 @@ export default function App() {
             <Route path="/session/done" component={Done} />
             <Route component={Train} />
           </Switch>
+          </div>
         </Suspense>
       </main>
       {showTabs && <TabBar />}
     </div>
   )
+}
+
+/**
+ * Where a screen comes in from, iOS style: a deeper screen (a program, a session, a lift) slides in
+ * from the right (48), going back slides in from the left (-48), and switching tabs just fades (0).
+ * The animation itself is `.screen-in` in index.css.
+ */
+function useEntrance(location: string): number {
+  const [seen, setSeen] = useState({ at: location, from: 0 })
+  if (seen.at === location) return seen.from
+  const depth = (path: string) => path.split('/').filter(Boolean).length
+  const step = depth(location) - depth(seen.at)
+  const from = step > 0 ? 48 : step < 0 ? -48 : 0
+  setSeen({ at: location, from })
+  return from
 }

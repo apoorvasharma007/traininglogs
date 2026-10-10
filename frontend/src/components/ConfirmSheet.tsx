@@ -13,6 +13,7 @@ export default function ConfirmSheet({
   busyLabel = 'Saving…',
   tone = 'danger',
   cancelLabel = 'Cancel',
+  error,
   onConfirm,
   onClose,
 }: {
@@ -25,6 +26,8 @@ export default function ConfirmSheet({
   busyLabel?: string
   tone?: 'danger' | 'primary'
   cancelLabel?: string
+  /** The confirm failed: said here, where it was tapped. */
+  error?: string
   onConfirm: () => void
   onClose: () => void
 }) {
@@ -34,6 +37,7 @@ export default function ConfirmSheet({
         <span className="text-[17px] font-semibold">{title}</span>
         <p className="text-sm text-muted-foreground">{body}</p>
       </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <button type="button" disabled={busy} onClick={onConfirm}
         className={`h-13 rounded-2xl font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
           tone === 'danger' ? 'bg-destructive text-white' : 'bg-primary text-primary-foreground'

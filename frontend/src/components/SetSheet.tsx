@@ -101,7 +101,7 @@ function SetForm({
         {draft.kind === 'working' && (
           // Tap a word for its usual RPE, or a number under it to be exact; tap the chosen one again to clear.
           <div role="group" aria-label="Effort" className="flex flex-col gap-2.5">
-            <span className="text-[13px] font-semibold text-muted-foreground">How hard was it?</span>
+            <span className="text-[13px] font-semibold text-muted-foreground">How Hard Was It?</span>
             <div className="grid grid-cols-3 gap-2">
               {EFFORTS.map((e) => {
                 const on = effortLevel(draft.rpe) === e.level

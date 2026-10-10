@@ -26,7 +26,7 @@ describe('Signing in', () => {
     expect(calls.find((c) => c.key === `POST ${SUPABASE}/otp`)?.body).toEqual({ email: 'me@example.com', create_user: true })
 
     await userEvent.type(screen.getByLabelText('Code'), '123456')
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sign In' }))
     await waitFor(() => expect(screen.queryByLabelText('Code')).not.toBeInTheDocument())
     expect(calls.find((c) => c.key === `POST ${SUPABASE}/verify`)?.body).toEqual({ type: 'email', email: 'me@example.com', token: '123456' })
     expect(await accessToken()).toBe('pass')
@@ -48,7 +48,7 @@ describe('Signing in', () => {
     await userEvent.type(await screen.findByLabelText('Email'), 'me@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Email Me a Code' }))
     await userEvent.type(await screen.findByLabelText('Code'), '000000')
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sign In' }))
     expect(await screen.findByRole('alert')).toHaveTextContent("That code didn't work. Check it, or send a new one.")
     expect(screen.getByText('We sent a code to me@example.com.')).toBeInTheDocument()
   })

@@ -35,6 +35,7 @@ export default function Program({ params }: { params: { id: string } }) {
   const programs = usePrograms()
   const otherFollowed = programs.data?.find((x) => x.following && x.id !== params.id)
   const p = program.data
+  const changeError = change.error ? errorText(change.error) : undefined
   const base = `/programs/${params.id}`
   const savedOrder = p?.workouts.map((w) => w.id) ?? []
   const savedWeeks = Math.round((p?.deload_after_days ?? 28) / 7)
@@ -85,7 +86,7 @@ export default function Program({ params }: { params: { id: string } }) {
 
           {p.workouts.length === 0 && (
             <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-              No workouts yet. {editing ? 'Add the first one.' : 'Tap Edit to add the first one.'}
+              No workouts yet. Add the first one.
             </p>
           )}
 
@@ -110,16 +111,17 @@ export default function Program({ params }: { params: { id: string } }) {
               </div>
             ))}
 
-          {change.isError && <p role="alert" className="px-1 text-sm text-destructive">{errorText(change.error)}</p>}
-
-          {editing && (
-            <button type="button" disabled={change.isPending || saving}
-              // Adding opens the new workout, so unsaved changes here are saved first.
-              onClick={async () => { if (!dirty || (await save())) setAdding(true) }}
-              className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
-              + Add Workout
-            </button>
+          {/* A failure from a sheet shows in that sheet. */}
+          {changeError && !pickingWeeks && !confirm && !archiving && !adding && (
+            <p role="alert" className="px-1 text-sm text-destructive">{changeError}</p>
           )}
+
+          <button type="button" disabled={change.isPending || saving}
+            // Adding opens the new workout, so unsaved changes here are saved first.
+            onClick={async () => { if (!dirty || (await save())) setAdding(true) }}
+            className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
+            + Add Workout
+          </button>
 
           {!p.following && !editing && (
             <BottomBar aboveTabs>
@@ -156,8 +158,8 @@ export default function Program({ params }: { params: { id: string } }) {
           onCancel={() => { setDraft(null); setSaveError(null) }} />
       )}
 
-      <NameSheet open={adding} title="New workout" label="Name" initial={`Workout ${(p?.workouts.length ?? 0) + 1}`}
-        saveLabel="Add Workout" allowBlank busy={change.isPending} error={change.error ? errorText(change.error) : undefined}
+      <NameSheet open={adding} title="New Workout" label="Name" initial={`Workout ${(p?.workouts.length ?? 0) + 1}`}
+        saveLabel="Add Workout" allowBlank busy={change.isPending} error={changeError}
         onClose={() => setAdding(false)}
         onSave={(name) => {
           const n = (p?.workouts.length ?? 0) + 1
@@ -189,23 +191,24 @@ export default function Program({ params }: { params: { id: string } }) {
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-40">
           {change.isPending ? 'Saving…' : 'Save'}
         </button>
+        {changeError && <p role="alert" className="text-sm text-destructive">{changeError}</p>}
       </Sheet>
 
-      <ConfirmSheet open={confirm === 'unfollow'} title={`Stop following ${p?.name ?? 'this program'}?`}
+      <ConfirmSheet open={confirm === 'unfollow'} title={`Stop Following ${p?.name ?? 'this program'}?`}
         body="Train won't show its next workout any more. The program and its history stay; you can follow it again any time."
-        confirmLabel="Stop Following" busy={change.isPending} busyLabel="Stopping…"
+        confirmLabel="Stop Following" busy={change.isPending} busyLabel="Stopping…" error={changeError}
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/unfollow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={confirm === 'follow'} tone="primary" title={`Follow ${p?.name ?? 'this program'}?`}
         body={`You'll stop following ${otherFollowed?.name ?? 'your current program'}. Its history stays, and you can switch back any time.`}
-        confirmLabel="Follow This Program" busy={change.isPending} busyLabel="Following…"
+        confirmLabel="Follow This Program" busy={change.isPending} busyLabel="Following…" error={changeError}
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/follow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={archiving} title={`Delete ${p?.name ?? 'program'}?`}
         body="It disappears from the app. Sessions you logged from it stay in History."
-        confirmLabel="Delete Program" busy={change.isPending} busyLabel="Deleting…"
+        confirmLabel="Delete Program" busy={change.isPending} busyLabel="Deleting…" error={changeError}
         onClose={() => setArchiving(false)}
         onConfirm={() => change.mutate({ path: base, method: 'DELETE' }, { onSuccess: () => navigate('/programs') })} />
     </div>

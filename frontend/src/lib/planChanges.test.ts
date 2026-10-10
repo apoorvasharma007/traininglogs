@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyChanges, planChanges } from './planChanges'
 import {
-  addExercise, addSet, addWarmupSet, changeMovement, moveExercise, recordCardio, removeExercise, removeSet, setMovements, setWarmups,
+  addExercise, addSet, addWarmupSet, changeMovement, recordCardio, removeExercise, removeSet, setMovements, setWarmups, reorderExercises,
   startFromWorkout, switchExercise, toggleDone, updateExercise, type LiveSession,
 } from './session'
 import type { Workout } from './types'
@@ -124,7 +124,8 @@ describe('changes to save back to the program', () => {
 
   it('a new order is offered unticked and applied in place', () => {
     const s = start()
-    const moved = moveExercise(s, s.exercises[2].key, -1) // Squat, Calf raise, Shoulder Press
+    const [squat, press, calf] = s.exercises.map((e) => e.key)
+    const moved = reorderExercises(s, [squat, calf, press]) // Squat, Calf raise, Shoulder Press
     expect(labels(planChanges(moved, workout))).toEqual([['Change the order: Squat, Calf raise, Shoulder Press', false]])
     const plan = applyChanges(workout, planChanges(moved, workout), new Set(['order']))
     expect(plan.exercises.map((e) => e.name)).toEqual(['Squat', 'Calf raise', 'Shoulder Press'])
@@ -134,7 +135,7 @@ describe('changes to save back to the program', () => {
   it('an exercise skipped in the session keeps its place when the order changes', () => {
     let s = start()
     s = removeExercise(s, s.exercises[1].key) // Squat, Calf raise
-    s = moveExercise(s, s.exercises[1].key, -1) // Calf raise, Squat
+    s = reorderExercises(s, [s.exercises[1].key, s.exercises[0].key]) // Calf raise, Squat
     const changes = planChanges(s, workout)
     expect(labels(changes)).toEqual([['Change the order: Calf raise, Squat', false], ['Remove Shoulder Press', false]])
     expect(applyChanges(workout, changes, new Set(['order'])).exercises.map((e) => e.name))
@@ -146,15 +147,14 @@ describe('changes to save back to the program', () => {
   it('an exercise added in the session does not count as a new order', () => {
     const added = addExercise(start())
     let s = updateExercise(added.session, added.exKey, { name: 'Face pulls', naming: false })
-    s = moveExercise(s, added.exKey, -1)
-    s = moveExercise(s, added.exKey, -1) // Squat, Face pulls, Shoulder Press, Calf raise
+    const [squat, press, calf] = s.exercises.map((e) => e.key)
+    s = reorderExercises(s, [squat, added.exKey, press, calf]) // Squat, Face pulls, Shoulder Press, Calf raise
     expect(planChanges(s, workout).some((c) => c.type === 'order')).toBe(false)
   })
 
-  it('moving past either end changes nothing', () => {
+  it('the same order changes nothing', () => {
     const s = start()
-    expect(moveExercise(s, s.exercises[0].key, -1)).toBe(s)
-    expect(moveExercise(s, s.exercises[2].key, 1)).toBe(s)
+    expect(reorderExercises(s, s.exercises.map((e) => e.key)).exercises).toEqual(s.exercises)
   })
 
   it('applies only the chosen changes', () => {

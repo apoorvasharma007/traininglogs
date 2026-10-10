@@ -215,7 +215,7 @@ describe('Programs', () => {
     const calls = fakeApi({ 'GET /programs/p1': program({ following: true }), 'GET /programs': [program({ following: true })], 'POST /programs/p1/unfollow': program() })
     renderApp('/programs/p1')
     await userEvent.click(await screen.findByRole('button', { name: 'Stop Following' }))
-    const sheet = await screen.findByRole('dialog', { name: 'Stop following Strength?' })
+    const sheet = await screen.findByRole('dialog', { name: 'Stop Following Strength?' })
     expect(calls.some((c) => c.key === 'POST /programs/p1/unfollow')).toBe(false)
     await userEvent.click(within(sheet).getByRole('button', { name: 'Stop Following' }))
     await waitFor(() => expect(calls.some((c) => c.key === 'POST /programs/p1/unfollow')).toBe(true))

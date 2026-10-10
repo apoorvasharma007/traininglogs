@@ -31,8 +31,11 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at         TIMESTAMPTZ,
     -- "Delete my account" asked for: the data is removed after a grace period.
-    deleted_at           TIMESTAMPTZ
+    deleted_at           TIMESTAMPTZ,
+    -- The lifts Progress shows first, chosen in Settings; NULL means the built-in list.
+    key_lifts            TEXT[]
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS key_lifts TEXT[];
 
 -- The public-facing part, kept apart so a shared screen can never show account details.
 CREATE TABLE IF NOT EXISTS profiles (

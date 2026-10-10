@@ -274,3 +274,10 @@ def insert_session(
     if commit:
         conn.commit()
     return session_id
+
+
+def set_key_lifts(conn: Connection, user_id: str, names: list[str]) -> None:
+    """Saves the lifts the person wants first in Progress, in their order."""
+    with conn.cursor() as cur:
+        cur.execute("UPDATE users SET key_lifts = %s, updated_at = now() WHERE id = %s", (names, user_id))
+    conn.commit()

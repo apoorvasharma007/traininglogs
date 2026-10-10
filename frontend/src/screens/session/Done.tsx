@@ -57,7 +57,7 @@ export default function Done() {
 
       <BottomBar>
         <Link href="/" onClick={() => clearLastFinished()}
-          className="flex h-13 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground">
+          className="flex h-13 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
           Done
         </Link>
       </BottomBar>
@@ -115,16 +115,22 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
               <ul className="flex flex-col">
                 {finished.changes.map((c) => (
                   <li key={c.id}>
-                    <label className="flex min-h-11 items-center gap-3 text-sm">
-                      <input type="checkbox" checked={chosen.has(c.id)} className="size-5 accent-[var(--primary)]"
-                        onChange={() => setChosen((set) => {
-                          const n = new Set(set)
-                          if (n.has(c.id)) n.delete(c.id)
-                          else n.add(c.id)
-                          return n
-                        })} />
+                    {/* Ticked like a set: the same circle, the whole row is the button. */}
+                    <button type="button" role="checkbox" aria-checked={chosen.has(c.id)} aria-label={c.label}
+                      onClick={() => setChosen((set) => {
+                        const n = new Set(set)
+                        if (n.has(c.id)) n.delete(c.id)
+                        else n.add(c.id)
+                        return n
+                      })}
+                      className="flex min-h-11 w-full items-center gap-3 text-left text-sm active:opacity-70">
+                      <span className={`flex size-6 shrink-0 items-center justify-center rounded-lg border-[1.5px] transition-colors ${
+                        chosen.has(c.id) ? 'border-highlight bg-highlight text-background' : 'border-border text-transparent'
+                      }`}>
+                        <Check size={14} strokeWidth={3} aria-hidden />
+                      </span>
                       <span className={isRemoval(c) ? 'text-destructive' : ''}>{c.label}</span>
-                    </label>
+                    </button>
                   </li>
                 ))}
               </ul>

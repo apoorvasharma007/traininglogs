@@ -28,6 +28,7 @@ from traininglogs.api.schemas import (
     ExerciseHistoryRow,
     LastExercise,
     LiftDetail,
+    KeyLiftsIn,
     LiftsOut,
     ManualSessionIn,
     ProgramIn,
@@ -244,7 +245,21 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.fetch import get_working_set_rows
     from traininglogs.db.programs import utc_today
 
-    return lift_summaries(get_working_set_rows(conn, user), utc_today())
+    from traininglogs.db.fetch import get_key_lifts
+
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
+
+
+@app.put("/me/key-lifts", response_model=LiftsOut)
+def put_key_lifts(body: KeyLiftsIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves which lifts Progress shows first, in this order, and returns Progress's lifts."""
+    from traininglogs.analytics.progress import lift_summaries
+    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.insert import set_key_lifts
+    from traininglogs.db.programs import utc_today
+
+    set_key_lifts(conn, user, body.names)
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), body.names)
 
 
 @app.get("/progress/lifts/{name}", response_model=LiftDetail)

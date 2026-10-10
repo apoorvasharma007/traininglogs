@@ -82,7 +82,10 @@ describe('Train', () => {
     renderApp('/')
     expect(await screen.findByText('Start with a Program')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Browse Templates' })).toHaveAttribute('href', '/programs/templates')
-    expect(screen.getByRole('link', { name: 'Create Your Own' })).toHaveAttribute('href', '/programs')
+    // Create Your Own goes straight to naming the new program.
+    fakeApi({ 'GET /programs': [program({ following: false })] })
+    await userEvent.click(screen.getByRole('link', { name: 'Create Your Own' }))
+    expect(await screen.findByRole('dialog', { name: 'New Program' })).toBeInTheDocument()
   })
 
   it('a deload reminder is only a reminder: OK hides it', async () => {

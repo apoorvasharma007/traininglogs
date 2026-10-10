@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { Chevron, Collapse } from '@/components/Collapse'
 import { useState } from 'react'
 import { Link } from 'wouter'
 import PageTitle from '@/components/PageTitle'
@@ -44,14 +45,16 @@ export default function History() {
           {months.map((m) => (
             <section key={m.title} className="flex flex-col gap-2">
               <button type="button" aria-expanded={open.has(m.title)} onClick={() => toggle(m.title)}
-                className="flex min-h-13 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 text-left">
+                className="flex min-h-13 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 text-left transition active:scale-[0.98]">
                 <span className="text-[15px] font-semibold">{m.title}</span>
                 <span className="flex items-center gap-2 text-sm text-muted-foreground">
                   {m.items.length} {m.items.length === 1 ? 'session' : 'sessions'}
-                  {open.has(m.title) ? <ChevronDown size={16} aria-hidden /> : <ChevronRight size={16} aria-hidden />}
+                  <Chevron open={open.has(m.title)} />
                 </span>
               </button>
-              {open.has(m.title) && <Rows sessions={m.items} />}
+              <Collapse open={open.has(m.title)}>
+                <Rows sessions={m.items} />
+              </Collapse>
             </section>
           ))}
         </div>
@@ -69,7 +72,7 @@ function Rows({ sessions }: { sessions: SessionSummary[] }) {
           <Link
             key={s.session_id}
             href={`/history/${encodeURIComponent(s.session_id)}`}
-            className="grid min-h-15 grid-cols-[66px_minmax(0,1fr)_18px] items-center gap-2.5 border-t border-border px-3.5 py-2 first:border-t-0"
+            className="grid min-h-15 grid-cols-[66px_minmax(0,1fr)_18px] items-center gap-2.5 border-t border-border px-3.5 py-2 first:border-t-0 active:bg-muted"
           >
             <span className="font-mono text-xs text-muted-foreground">{dayLabel(s.date)}</span>
             <span className="flex min-w-0 flex-col gap-0.5">
