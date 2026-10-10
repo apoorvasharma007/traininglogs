@@ -1,6 +1,6 @@
 import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Clock, Ellipsis, MessageSquareText } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { type FocusEvent, useState } from 'react'
 import EffortBars from '@/components/EffortBars'
 import NoteBox from '@/components/NoteBox'
 import NumberBox from '@/components/NumberBox'
@@ -12,6 +12,7 @@ export default function ExerciseCard({
   onOpenSet,
   onValue,
   onTick,
+  onEntered,
   onAddSet,
   onMenu,
   onRename,
@@ -25,6 +26,8 @@ export default function ExerciseCard({
   onOpenSet: (set: LiveSet) => void
   onValue: (set: LiveSet, field: 'weight' | 'reps', value: string) => void
   onTick: (set: LiveSet) => void
+  /** Weight or reps typed and the keyboard left the set's row. */
+  onEntered: (set: LiveSet) => void
   onAddSet: () => void
   onMenu: () => void
   onRename: (name: string) => void
@@ -119,9 +122,14 @@ export default function ExerciseCard({
               {e.sets.map((set, i) => {
                 const warm = set.kind === 'warmup'
                 const label = labels[i]
+                // Moving between this set's two boxes isn't leaving it.
+                const leave = (ev: FocusEvent<HTMLInputElement>) => {
+                  if (!ev.currentTarget.closest('[data-set]')?.contains(ev.relatedTarget as Node | null)) onEntered(set)
+                }
                 return (
                   <motion.div key={set.key} layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }}
+                    data-set=""
                     className={`grid min-h-13 grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-1.5 border-t border-border pl-3 transition-colors ${
                       set.done ? 'bg-highlight-soft' : ''
                     }`}>
@@ -136,10 +144,10 @@ export default function ExerciseCard({
                     </button>
                     <NumberBox label={`Weight for set ${label}`} done={set.done}
                       value={set.ghost ? '' : set.weight} placeholder={set.ghost && set.weight ? set.weight : 'kg'} fillable={set.ghost && !!set.weight}
-                      onChange={(v) => onValue(set, 'weight', v)} />
+                      onChange={(v) => onValue(set, 'weight', v)} onBlur={leave} />
                     <NumberBox label={`Reps for set ${label}`} inputMode="numeric" done={set.done}
                       value={set.ghost ? '' : set.reps} placeholder={set.ghost && set.reps ? set.reps : 'reps'} fillable={set.ghost && !!set.reps}
-                      onChange={(v) => onValue(set, 'reps', v)} />
+                      onChange={(v) => onValue(set, 'reps', v)} onBlur={leave} />
                     <button type="button" onClick={() => onTick(set)} aria-label={`Set ${label} done`} aria-pressed={set.done}
                       className="flex size-12 items-center justify-center">
                       <motion.span key={String(set.done)} initial={{ scale: set.done ? 0.6 : 1 }} animate={{ scale: 1 }}

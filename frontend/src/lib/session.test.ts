@@ -13,9 +13,8 @@ import {
   toRequest,
   type LastExercise,
   addRamp,
-  needsEffort,
   rampSets,
-  setLastEffort,
+  setEffort,
   setValue,
   addSet,
   startBlank,
@@ -231,17 +230,12 @@ describe('warm-up ramp', () => {
   })
 })
 
-describe('effort nudge', () => {
-  it('asks once an exercise is done with no effort, and stops after an answer or Skip', () => {
-    let s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
-    const ex = s.exercises[0]
-    expect(needsEffort(ex)).toBe(false)
-    for (const set of ex.sets) s = toggleDone(s, set.key)
-    expect(needsEffort(s.exercises[0])).toBe(true)
-    const answered = setLastEffort(s, ex.key, 8.5)
-    expect(answered.exercises[0].sets.filter((x) => x.kind === 'working').at(-1)?.rpe).toBe(8.5)
-    expect(needsEffort(answered.exercises[0])).toBe(false)
-    expect(needsEffort({ ...s.exercises[0], effortSkipped: true })).toBe(false)
+describe('effort', () => {
+  it('is set on the one set it was asked about', () => {
+    const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
+    const second = s.exercises[0].sets[2]
+    const after = setEffort(s, second.key, 8.5).exercises[0].sets
+    expect(after.map((x) => x.rpe)).toEqual([null, null, 8.5, null])
   })
 })
 

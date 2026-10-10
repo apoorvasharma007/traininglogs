@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Effort is asked after every working set, not once per exercise: ticking a working set opens a
+  sheet with three big coloured answers (Moderate, Hard, All Out). One tap saves it; swiping
+  down skips. It replaces the "How hard was the last set?" card, which an exercise folding
+  away could hide.
+- A set ticks itself once its weight and reps are typed and the keyboard leaves it (moving
+  between its two boxes doesn't count), and then asks how hard it was. Bodyweight sets with no
+  weight are still ticked by hand.
 - A grey number (last time's, or a suggestion) fills in with one tap, without the keypad; a
   second tap opens the keypad with it selected, so typing replaces it. Ticking a set still takes
   all its grey numbers at once.

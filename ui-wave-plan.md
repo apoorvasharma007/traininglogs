@@ -59,10 +59,12 @@ is done; Apoorva tests it on staging; then one release to `main`.
     (`40×5 → 60×3 → 80×2`), rounded to 2.5 kg, and the sets are added with those numbers.
   - One button, "Add 3 Sets" (the count changes with the stepper).
   - The exercise menu's Add Warm-up Set and Warm-up Set Templates stay as they are.
-- [ ] 4. **Effort after every working set.** Ticking a working set (not a warm-up) opens a bottom
+- [x] 4. **Effort after every working set.** Ticking a working set (not a warm-up) opens a bottom
   sheet asking how hard it was. Picking an answer saves it and closes the sheet; swiping down
   skips. It never hides behind a folding exercise. Colourful and engaging enough that people
-  answer it. **Mock-up first, for Apoorva's yes.**
+  answer it. Apoorva reviews it on his phone against the local server (in place of a mock-up).
+  Added 2026-10-11: a set ticks itself once weight and reps are typed and the keyboard leaves
+  the set's row, which then asks for effort.
 - [x] 5. **Completed exercises open and close every time**, with the sets sliding in and out.
 - [ ] 6. **Audit fixes** (`ui-audit.md`):
   - A1. iOS-style transitions: a deeper screen slides in from the right, Back slides it out to the

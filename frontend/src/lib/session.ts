@@ -29,7 +29,6 @@ export type LiveExercise = {
   lastNote: string | null
   sets: LiveSet[]
   planIndex?: number // the workout plan line it started from; none when added during the session
-  effortSkipped?: boolean // Skip was tapped on the "How hard was the last set?" nudge
 }
 
 /** A warm-up or cool-down movement in a session; left out at Finish unless ticked. */
@@ -324,18 +323,12 @@ export function addRamp(s: LiveSession, exKey: string, ramp: ({ kg: number; reps
   })
 }
 
-/** All its sets ticked, working sets among them, and none with an effort: worth a nudge. */
-export function needsEffort(e: LiveExercise): boolean {
-  const working = e.sets.filter((x) => x.kind === 'working')
-  return !e.effortSkipped && working.length > 0 && e.sets.every((x) => x.done) && working.every((x) => x.rpe == null)
-}
-
-/** Sets the effort (as RPE) of the exercise's last working set. */
-export function setLastEffort(s: LiveSession, exKey: string, rpe: number): LiveSession {
-  return mapExercise(s, exKey, (e) => {
-    const last = e.sets.findLastIndex((x) => x.kind === 'working')
-    return { ...e, sets: e.sets.map((x, i) => (i === last ? { ...x, rpe } : x)) }
-  })
+/** Sets one set's effort, as RPE: asked right after a working set is ticked. */
+export function setEffort(s: LiveSession, setKey: string, rpe: number): LiveSession {
+  return {
+    ...s,
+    exercises: s.exercises.map((e) => ({ ...e, sets: e.sets.map((x) => (x.key === setKey ? { ...x, rpe } : x)) })),
+  }
 }
 
 export function addExercise(s: LiveSession): { session: LiveSession; exKey: string } {

@@ -1,3 +1,4 @@
+import { type FocusEvent, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
@@ -28,9 +29,11 @@ export default function NumberBox({
   fillable?: boolean
   className?: string
   onChange: (value: string) => void
-  onBlur?: () => void
+  /** Typing is over: the box lost focus (not counting a tap-to-fill). */
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void
 }) {
   const fill = Boolean(fillable && value === '' && placeholder)
+  const filling = useRef(false)
   return (
     <input
       aria-label={label}
@@ -40,10 +43,15 @@ export default function NumberBox({
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value.replace(',', '.'))}
-      onBlur={onBlur}
+      onBlur={(e) => { if (!filling.current) onBlur?.(e) }}
       // Read-only until filled, so the first tap doesn't bring up the keypad.
       readOnly={fill}
-      onClick={fill ? (e) => { onChange(placeholder); e.currentTarget.blur() } : undefined}
+      onClick={fill ? (e) => {
+        filling.current = true
+        onChange(placeholder)
+        e.currentTarget.blur()
+        filling.current = false
+      } : undefined}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       data-check={flagged ? '' : undefined}

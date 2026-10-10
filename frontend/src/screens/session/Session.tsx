@@ -7,7 +7,7 @@ import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import { Loading } from '@/components/QueryStatus'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
-import { EFFORTS } from '@/lib/effort'
+import EffortSheet, { type EffortTarget } from '@/components/EffortSheet'
 import Sheet from '@/components/Sheet'
 import { api } from '@/lib/api'
 import { planChanges } from '@/lib/planChanges'
@@ -17,8 +17,7 @@ import {
   addExercise,
   addSet,
   addRamp,
-  needsEffort,
-  setLastEffort,
+  setEffort,
   addWarmupSet,
   counts,
   draftOf,
@@ -39,6 +38,7 @@ import {
   toggleDone,
   updateExercise,
   type LiveExercise,
+  type LiveSet,
   type LiveSession,
 } from '@/lib/session'
 import { enqueue, flush, useLiveSession } from '@/lib/store'
@@ -62,6 +62,8 @@ export default function Session() {
   const [warmupFor, setWarmupFor] = useState<LiveExercise | null>(null)
   // Finished exercises collapse; these were opened again by hand.
   const [reopened, setReopened] = useState<Set<string>>(() => new Set())
+  // The working set just ticked, asked how hard it was.
+  const [effortFor, setEffortFor] = useState<EffortTarget | null>(null)
   const [undo, setUndo] = useState<{ text: string; before: LiveSession } | null>(null)
   const [finishing, setFinishing] = useState(false)
   const [discarding, setDiscarding] = useState(false)
@@ -107,6 +109,25 @@ export default function Session() {
   const removeWithUndo = (next: LiveSession, text: string) => {
     update(next)
     setUndo({ text, before: s })
+  }
+
+  function tick(ex: LiveExercise, set: LiveSet) {
+    if (!set.done) navigator.vibrate?.(10)
+    const next = toggleDone(s, set.key)
+    change(next)
+    if (!set.done) {
+      setReopened((r) => { const n = new Set(r); n.delete(ex.key); return n })
+      scrollToNext(next, ex.key)
+      if (set.kind === 'working') askEffort(ex, set)
+    }
+  }
+
+  function askEffort(ex: LiveExercise, set: LiveSet) {
+    const number = ex.sets.filter((x) => x.kind === 'working').findIndex((x) => x.key === set.key) + 1
+    setEffortFor({
+      setKey: set.key, exercise: ex.name || 'Exercise', set: String(number),
+      did: set.weight && set.reps ? `${set.weight} kg × ${set.reps}` : '',
+    })
   }
 
   function open(exKey: string, setKey: string, session: LiveSession = s) {
@@ -190,14 +211,10 @@ export default function Session() {
               exercise={ex}
               onOpenSet={(set) => open(ex.key, set.key)}
               onValue={(set, field, value) => change(setValue(s, set.key, field, value))}
-              onTick={(set) => {
-                if (!set.done) navigator.vibrate?.(10)
-                const next = toggleDone(s, set.key)
-                change(next)
-                if (!set.done) {
-                  setReopened((r) => { const n = new Set(r); n.delete(ex.key); return n })
-                  scrollToNext(next, ex.key)
-                }
+              onTick={(set) => tick(ex, set)}
+              onEntered={(set) => {
+                // Both numbers typed and the keyboard gone: the set is done, no tick needed.
+                if (!set.done && !set.ghost && set.weight && set.reps) tick(ex, set)
               }}
               collapsed={finished(ex) && !reopened.has(ex.key)}
               canCollapse={finished(ex)}
@@ -213,29 +230,7 @@ export default function Session() {
               onSwitch={() => setSwitchFor(ex)}
               onNote={(note) => change(updateExercise(s, ex.key, { note }))}
             />
-          )).flatMap((card, i) => {
-            const ex = s.exercises[i]
-            if (!needsEffort(ex)) return [card]
-            // Effort feeds the estimated max, so ask once when an exercise is done without it.
-            return [card, (
-              <div key={`${ex.key}-effort`} className="-mt-1 flex flex-col gap-2 rounded-2xl border border-border bg-card p-3">
-                <span className="text-sm font-semibold">How hard was the last set?</span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {EFFORTS.map((e) => (
-                    <button key={e.level} type="button" onClick={() => change(setLastEffort(s, ex.key, e.rpe))}
-                      className="flex h-12 flex-col items-center justify-center rounded-xl bg-muted">
-                      <span className="text-sm font-semibold">{e.label}</span>
-                      <span className="text-[11px] text-muted-foreground">{e.means}</span>
-                    </button>
-                  ))}
-                </div>
-                <button type="button" onClick={() => change(updateExercise(s, ex.key, { effortSkipped: true }))}
-                  className="self-start px-1 text-[13px] font-semibold text-muted-foreground">
-                  Skip
-                </button>
-              </div>
-            )]
-          })}
+          ))}
           <button type="button" onClick={() => change(addExercise(s).session)}
             className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
             + Exercise
@@ -266,6 +261,8 @@ export default function Session() {
         onDelete={() => { if (openSet) removeWithUndo(removeSet(s, openSet.key), 'Set removed'); setOpenSet(null) }}
         // Adds the sets without saving any change to the set the sheet was opened on.
         onRamp={(ramp) => { if (openSet) change(addRamp(s, openSet.exKey, ramp)); setOpenSet(null) }} />
+      <EffortSheet target={effortFor} onClose={() => setEffortFor(null)}
+        onPick={(setKey, rpe) => { change(setEffort(s, setKey, rpe)); setEffortFor(null) }} />
 
       <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise options">
         {menuFor && (

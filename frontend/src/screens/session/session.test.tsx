@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { clear, get, set } from 'idb-keyval'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { saveSession } from '@/lib/store'
-import { startFromWorkout } from '@/lib/session'
+import { startBlank, startFromWorkout } from '@/lib/session'
 import { clearLastFinished, type Finished } from '@/screens/session/finished'
 import { fakeApi, renderApp } from '@/test-utils'
 
@@ -12,6 +12,13 @@ const workout = {
   exercises: [{ name: 'Squat', warmup_sets: 0, working_sets: 2, target_reps: 2, amrap: false, alternatives: [] }],
 }
 const lasts = [{ name: 'Squat', date: '2026-10-02', notes: 'better depth', warmup_sets: [], sets: [{ weight_kg: 125, reps: 2, notes: null }] }]
+
+/** Ticking a working set asks how hard it was; this skips it, as swiping the sheet down does. */
+async function skipEffort() {
+  await screen.findByRole('dialog', { name: 'How hard was it?' })
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How hard was it?' })).not.toBeInTheDocument())
+}
 
 async function seed() {
   await saveSession(startFromWorkout(workout, '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0)))
@@ -65,9 +72,16 @@ describe('Session', () => {
     expect(await screen.findByText('better depth')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Set 1 done' }))
+    // Ticking a working set asks how hard it was; one tap answers and closes.
+    const ask = await screen.findByRole('dialog', { name: 'How hard was it?' })
+    await userEvent.click(within(ask).getByRole('button', { name: /^Hard/ }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'How hard was it?' })).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'true')
-    // Saved on the phone straight away.
-    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+    // Saved on the phone straight away, with its effort.
+    await waitFor(async () => {
+      const set = (await get('session-in-progress:a@example.com'))?.exercises[0].sets.find((x: { kind: string }) => x.kind === 'working')
+      expect([set.done, set.rpe]).toEqual([true, 8.5])
+    })
 
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
@@ -76,7 +90,7 @@ describe('Session', () => {
 
     const sent = calls.find((c) => c.key === 'POST /sessions')?.body as { exercises: { sets: unknown[] }[]; program_workout_id: string }
     expect(sent.program_workout_id).toBe('w1')
-    expect(sent.exercises[0].sets).toEqual([{ weight_kg: 125, reps: 2, rpe: null, notes: null }])
+    expect(sent.exercises[0].sets).toEqual([{ weight_kg: 125, reps: 2, rpe: 8.5, notes: null }])
     expect(await get('session-in-progress:a@example.com')).toBeUndefined()
     expect(await get('sessions-to-send:a@example.com')).toEqual([])
   })
@@ -91,10 +105,12 @@ describe('Session', () => {
     })
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await skipEffort()
     await userEvent.click(screen.getByRole('button', { name: '+ Set' }))
     // An extra set counts toward the plan only once it's done.
     const sets = screen.getAllByRole('button', { name: /^Set \d done$/ })
     await userEvent.click(sets[sets.length - 1])
+    await skipEffort()
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
 
@@ -122,6 +138,7 @@ describe('Session', () => {
 
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await skipEffort()
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
 
@@ -151,6 +168,25 @@ describe('Session', () => {
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].weight).toBe('127.5'))
   })
 
+  it('ticks a set by itself once its weight and reps are typed and the keyboard leaves it', async () => {
+    await saveSession(startBlank(new Date(2026, 9, 4, 10, 0)))
+    fakeApi({})
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
+    await userEvent.type(screen.getByRole('combobox', { name: 'Exercise name' }), 'Squat{Enter}')
+    const weight = await screen.findByLabelText('Weight for set 1')
+    await userEvent.click(weight)
+    await userEvent.keyboard('100')
+    // Moving on to the reps box isn't leaving the set.
+    await userEvent.click(screen.getByLabelText('Reps for set 1'))
+    await userEvent.keyboard('5')
+    expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'false')
+    // Leaving the set (the keyboard closes) ticks it and asks how hard it was.
+    await userEvent.click(document.body)
+    expect(await screen.findByRole('dialog', { name: 'How hard was it?' })).toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+  })
+
   it('switches an exercise to an alternative from the swap icon', async () => {
     await saveSession(startFromWorkout(
       { ...workout, exercises: [{ name: 'Shoulder Press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: ['Bench press'] }] },
@@ -177,6 +213,7 @@ describe('Session', () => {
     renderApp('/session')
     await screen.findByRole('button', { name: 'Options for Squat' })
     await userEvent.click(screen.getAllByRole('button', { name: 'Set 1 done' })[0])
+    await skipEffort()
 
     const collapsed = await screen.findByRole('button', { name: 'Squat: all 1 set done. Show sets' })
     // The sets slide closed, then leave.
