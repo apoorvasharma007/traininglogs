@@ -48,4 +48,25 @@ describe('Settings', () => {
     expect(await within(sheet).findByText('Sent. Thank You.')).toBeInTheDocument()
     expect(calls.at(-1)).toEqual({ key: 'POST /feedback', body: { kind: 'bug', message: 'The timer froze' } })
   })
+
+  it('Export as CSV downloads the file the server names', async () => {
+    fakeApi({ 'GET /progress/lifts': { key_lifts: [], other_lifts: [] }, 'GET /me/ai-usage': { total_usd: 0 } })
+    const fake = globalThis.fetch
+    let asked = ''
+    globalThis.fetch = ((url: string, init?: RequestInit) => {
+      if (!String(url).startsWith('/me/export')) return fake(url, init)
+      asked = String(url)
+      return Promise.resolve(new Response('date,session\n', {
+        status: 200, headers: { 'Content-Disposition': 'attachment; filename="traininglogs-2026-10-11.csv"' },
+      }))
+    }) as typeof fetch
+    URL.createObjectURL = () => 'blob:export'
+    URL.revokeObjectURL = () => {}
+    const saved: string[] = []
+    HTMLAnchorElement.prototype.click = function () { saved.push(this.download) }
+    renderApp('/settings')
+    await userEvent.click(await screen.findByRole('button', { name: 'Export as CSV' }))
+    await waitFor(() => expect(saved).toEqual(['traininglogs-2026-10-11.csv']))
+    expect(asked).toBe('/me/export?format=csv')
+  })
 })

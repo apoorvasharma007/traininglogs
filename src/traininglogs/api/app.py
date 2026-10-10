@@ -4,9 +4,10 @@ import sys
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -277,11 +278,37 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
 
 
 @app.post("/feedback", status_code=201)
-def post_feedback(body: FeedbackIn, conn=Depends(_db), user: str = Depends(_user)):
-    """Saves a feature request, a bug report or any other message, with the release it came from."""
+def post_feedback(body: FeedbackIn, background: BackgroundTasks, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves a feature request, a bug report or any other message, with the release it came from,
+    then posts it to Apoorva's Discord once the reply has gone back."""
+    from traininglogs.alerts import feedback_alert
+    from traininglogs.db.fetch import get_email
     from traininglogs.db.insert import insert_feedback
 
-    return {"id": insert_feedback(conn, user, body.kind, body.message, version("traininglogs"))}
+    app_version = version("traininglogs")
+    feedback_id = insert_feedback(conn, user, body.kind, body.message, app_version)
+    background.add_task(feedback_alert, body.kind, body.message, get_email(conn, user), app_version)
+    return {"id": feedback_id}
+
+
+@app.get("/me/export")
+def export_data(format: Literal["csv", "json"] = "csv", conn=Depends(_db), user: str = Depends(_user)):
+    """Everything the person has logged: a CSV with one line per set, or JSON with sessions,
+    exercises, sets and programs. Sent as a file to save."""
+    from datetime import datetime, timezone
+
+    from traininglogs.db.fetch import get_export_rows
+    from traininglogs.db.programs import list_programs
+    from traininglogs.export.export import to_csv, to_json
+
+    rows = get_export_rows(conn, user)
+    stamp = datetime.now(timezone.utc)
+    name = f"traininglogs-{stamp:%Y-%m-%d}"
+    if format == "csv":
+        return Response(to_csv(rows), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
+    body = to_json(rows, list_programs(conn, user), version("traininglogs"), stamp.isoformat(timespec="seconds"))
+    return JSONResponse(body, headers={"Content-Disposition": f'attachment; filename="{name}.json"'})
 
 
 @app.get("/me/ai-usage", response_model=AiUsage)
