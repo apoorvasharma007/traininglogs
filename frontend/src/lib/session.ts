@@ -187,6 +187,15 @@ export function startFromPast(past: SessionDetail, now: Date): LiveSession {
   }
 }
 
+const BLANK_TITLE = 'Ad-hoc Workout'
+
+/** What a session is called on screen: an ad-hoc one takes its exercises' names once it has
+ * some ("Squat, Bench Press and 1 more"), as History names it. */
+export function liveTitle(s: LiveSession): string {
+  const named = s.exercises.filter((e) => e.name.trim())
+  return s.workoutId == null && s.title === BLANK_TITLE && named.length ? sessionName({ focus: null, exercises: named }) : s.title
+}
+
 export function startBlank(now: Date): LiveSession {
   return {
     clientId: newKey(),
@@ -194,7 +203,7 @@ export function startBlank(now: Date): LiveSession {
     date: localDate(now),
     programId: null,
     workoutId: null,
-    title: 'Ad-hoc Workout',
+    title: BLANK_TITLE,
     isDeload: false,
     exercises: [],
   }

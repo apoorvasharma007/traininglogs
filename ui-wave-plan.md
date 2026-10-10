@@ -93,7 +93,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
 - [x] 8. **Confirm checks first (C1).** On Review, when "N things to check" is showing, Confirm
   Session asks "N things still to check. Save anyway?" with Check Them (jumps to the first) and
   Save Anyway. Nothing flagged: it saves straight away, as now.
-- [ ] 9. **Ad-hoc sessions named after what you did (D6).** An ad-hoc session's title becomes its
+- [x] 9. **Ad-hoc sessions named after what you did (D6).** An ad-hoc session's title becomes its
   first exercises ("Squat, Bench Press, Rows"), shown in the session header and History.
 
 ## ▶ Resume here

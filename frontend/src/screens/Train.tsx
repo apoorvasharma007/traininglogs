@@ -5,7 +5,7 @@ import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { acknowledgeDeload, showDeloadReminder } from '@/lib/deload'
 import { usePrograms, workoutName } from '@/lib/programs'
-import type { LiveSession } from '@/lib/session'
+import { liveTitle, type LiveSession } from '@/lib/session'
 import { startSession } from '@/lib/startSession'
 import { flush, loadSession, useOutbox } from '@/lib/store'
 
@@ -73,7 +73,7 @@ export default function Train() {
         <Link href="/session" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           <span className="flex flex-col gap-1">
             <span className="text-xs font-semibold text-highlight">Session in Progress</span>
-            <span className="text-[22px] font-bold tracking-tight">{current.title}</span>
+            <span className="text-[22px] font-bold tracking-tight">{liveTitle(current)}</span>
             <Parts className="text-[13px] text-muted-foreground" items={[
               `Started ${TIME.format(new Date(current.startedAt))}`,
               'Saved on this phone',

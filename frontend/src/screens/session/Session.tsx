@@ -18,6 +18,7 @@ import {
   addSet,
   addRamp,
   setEffort,
+  liveTitle,
   addWarmupSet,
   counts,
   draftOf,
@@ -160,7 +161,7 @@ export default function Session() {
     const workout = program?.workouts.find((w) => w.id === s.workoutId) ?? null
     setLastFinished({
       clientId: s.clientId,
-      title: s.title,
+      title: liveTitle(s),
       minutes: request.duration_minutes,
       sets: request.exercises.reduce((n, e) => n + e.sets.length + e.warmup_sets.length, 0),
       programId: s.programId,
@@ -189,7 +190,7 @@ export default function Session() {
           </Link>
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="flex items-baseline gap-3 text-[17px] font-semibold">
-              <span className="truncate">{s.title}</span>
+              <span className="truncate">{liveTitle(s)}</span>
               <span className="shrink-0 font-normal text-muted-foreground">{minutesSince(s.startedAt, now)} min</span>
             </span>
           </div>

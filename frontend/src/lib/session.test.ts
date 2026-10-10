@@ -19,6 +19,8 @@ import {
   addSet,
   startBlank,
   addExercise,
+  liveTitle,
+  updateExercise,
 } from './session'
 import type { Workout } from './types'
 
@@ -265,5 +267,23 @@ describe('cascade fill', () => {
     expect(s.exercises[0].sets.map((x) => [x.weight, x.reps, x.done])).toEqual([['60', '', false], ['', '8', false], ['', '8', true]])
     s = setValue(s, a.key, 'weight', '')
     expect(s.exercises[0].sets.map((x) => x.weight)).toEqual(['', '', ''])
+  })
+})
+
+describe("an ad-hoc session's name", () => {
+  it("is Ad-hoc Workout until an exercise has a name, then its exercises", () => {
+    let s = startBlank(now)
+    expect(liveTitle(s)).toBe('Ad-hoc Workout')
+    s = addExercise(s).session
+    expect(liveTitle(s)).toBe('Ad-hoc Workout')
+    for (const name of ['Squat', 'Bench Press', 'Rows']) {
+      s = updateExercise(s, s.exercises.at(-1)!.key, { name, naming: false })
+      s = addExercise(s).session
+    }
+    expect(liveTitle(s)).toBe('Squat, Bench Press and 1 more')
+  })
+
+  it("leaves a program workout's name alone", () => {
+    expect(liveTitle(startFromWorkout(workout, '1 · Bench', 'p1', lasts, now))).toBe('1 · Bench')
   })
 })

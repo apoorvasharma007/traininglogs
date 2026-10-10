@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- An ad-hoc session is named after its exercises while it runs ("Squat, Bench Press and 1
+  more"), in its header, on Train and on the Done screen, as History already names it.
 - Confirm Session on Review asks first when there are things still to check: Check Them goes
   to the first one, Save Anyway saves as it is. A card with nothing flagged saves in one tap.
 - Effort is asked after every working set, not once per exercise: ticking a working set opens a
