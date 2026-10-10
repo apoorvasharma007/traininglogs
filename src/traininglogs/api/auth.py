@@ -18,7 +18,7 @@ from fastapi import Header, HTTPException
 from traininglogs.db.ids import new_id
 
 SIGNED_OUT = "You're signed out. Sign in again."
-CANT_CHECK = "Couldn't check your sign-in (503). Try again in a minute."
+CANT_CHECK = "Couldn't check your sign-in. Try again in a minute."
 
 
 @lru_cache(maxsize=1)

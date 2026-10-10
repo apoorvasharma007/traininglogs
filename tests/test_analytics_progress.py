@@ -67,3 +67,17 @@ def test_detail_for_an_other_lift_by_any_casing() -> None:
 
 def test_detail_unknown_lift() -> None:
     assert lift_detail(ROWS, "Nordic curl", TODAY) is None
+
+
+def test_chosen_key_lifts_replace_the_built_in_list_in_their_order() -> None:
+    out = lift_summaries(ROWS, TODAY, ["Leg Extension", "squat"])
+    assert [k["name"] for k in out["key_lifts"]] == ["Leg Extension", "Squat"]
+    # A built-in lift chosen by any spelling keeps all its name variants.
+    assert out["key_lifts"][1]["sessions"] == 2
+    assert out["key_lifts"][0]["sessions"] == 3
+
+
+def test_a_built_in_lift_not_chosen_moves_to_other_lifts_with_its_variants() -> None:
+    rows = ROWS + [r("c", date(2026, 9, 15), "squats", Decimal("110"), 5, Decimal("8"))]
+    other = lift_summaries(rows, TODAY, ["Leg extension"])["other_lifts"]
+    assert [(o["name"], o["sessions"]) for o in other] == [("Squat", 3)]

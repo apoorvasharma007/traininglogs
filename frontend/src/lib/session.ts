@@ -15,6 +15,8 @@ export type LiveSet = {
   done: boolean
   // Values carried over from last time, shown grey until the set is edited or ticked.
   ghost: boolean
+  // While the set is still grey: the one box already filled in or typed into, shown as the person's own.
+  own?: 'weight' | 'reps'
   last: string | null // "120 × 2", what this set was last time
   planned?: boolean // one of the sets the workout's plan asked for, not one added today
 }
@@ -29,7 +31,6 @@ export type LiveExercise = {
   lastNote: string | null
   sets: LiveSet[]
   planIndex?: number // the workout plan line it started from; none when added during the session
-  effortSkipped?: boolean // Skip was tapped on the "How hard was the last set?" nudge
 }
 
 /** A warm-up or cool-down movement in a session; left out at Finish unless ticked. */
@@ -188,6 +189,15 @@ export function startFromPast(past: SessionDetail, now: Date): LiveSession {
   }
 }
 
+const BLANK_TITLE = 'Ad-hoc Workout'
+
+/** What a session is called on screen: an ad-hoc one takes its exercises' names once it has
+ * some ("Squat, Bench Press and 1 more"), as History names it. */
+export function liveTitle(s: LiveSession): string {
+  const named = s.exercises.filter((e) => e.name.trim())
+  return s.workoutId == null && s.title === BLANK_TITLE && named.length ? sessionName({ focus: null, exercises: named }) : s.title
+}
+
 export function startBlank(now: Date): LiveSession {
   return {
     clientId: newKey(),
@@ -195,7 +205,7 @@ export function startBlank(now: Date): LiveSession {
     date: localDate(now),
     programId: null,
     workoutId: null,
-    title: 'Ad-hoc Workout',
+    title: BLANK_TITLE,
     isDeload: false,
     exercises: [],
   }
@@ -216,7 +226,7 @@ export function toggleDone(s: LiveSession, setKey: string): LiveSession {
     ...s,
     exercises: s.exercises.map((e) => ({
       ...e,
-      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false } : x)),
+      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false, own: undefined } : x)),
     })),
   }
 }
@@ -226,10 +236,28 @@ export function toggleDone(s: LiveSession, setKey: string): LiveSession {
 export function setValue(s: LiveSession, setKey: string, field: 'weight' | 'reps', value: string): LiveSession {
   return {
     ...s,
-    exercises: s.exercises.map((e) => ({
-      ...e,
-      sets: e.sets.map((x) => (x.key === setKey ? { ...x, [field]: value, ghost: false } : x)),
-    })),
+    exercises: s.exercises.map((e) => {
+      const at = e.sets.findIndex((x) => x.key === setKey)
+      if (at < 0) return e
+      const kind = e.sets[at].kind
+      return {
+        ...e,
+        sets: e.sets.map((x, i) => {
+          if (i === at) {
+            // A grey set takes this box as the person's own; the other box stays grey until it's
+            // filled in too, or the set is ticked.
+            const other = field === 'weight' ? 'reps' : 'weight'
+            const stillGrey = x.ghost && x.own !== other && x[other] !== ''
+            return { ...x, [field]: value, ghost: stillGrey, own: stillGrey ? field : undefined }
+          }
+          // Cascade: the value shows in grey in the later sets of the same kind that nobody has
+          // typed into or ticked yet, so typing a weight once covers every set.
+          const untouched = (x.ghost && !x.own) || (x.weight === '' && x.reps === '')
+          if (i > at && value && x.kind === kind && !x.done && untouched) return { ...x, [field]: value, ghost: true }
+          return x
+        }),
+      }
+    }),
   }
 }
 
@@ -301,28 +329,23 @@ export function rampSets(target: number, count: number): { kg: number; reps: num
   })
 }
 
-/** Adds warm-up sets after the exercise's warm-ups and before its working sets, in grey to type
- * over. Sets already there stay as they are. */
-export function addRamp(s: LiveSession, exKey: string, ramp: { kg: number; reps: number }[]): LiveSession {
+/** Adds warm-up sets after the exercise's warm-ups and before its working sets: a ramp's numbers in
+ * grey to type over, or blank sets (null) to fill in. Sets already there stay as they are. */
+export function addRamp(s: LiveSession, exKey: string, ramp: ({ kg: number; reps: number } | null)[]): LiveSession {
   return mapExercise(s, exKey, (e) => {
-    const added = ramp.map((r) => ({ ...blankSet('warmup'), weight: String(r.kg), reps: String(r.reps), ghost: true }))
+    const added = ramp.map((r) =>
+      r ? { ...blankSet('warmup'), weight: String(r.kg), reps: String(r.reps), ghost: true } : blankSet('warmup'))
     const warm = e.sets.filter((x) => x.kind === 'warmup')
     return { ...e, sets: [...warm, ...added, ...e.sets.filter((x) => x.kind === 'working')] }
   })
 }
 
-/** All its sets ticked, working sets among them, and none with an effort: worth a nudge. */
-export function needsEffort(e: LiveExercise): boolean {
-  const working = e.sets.filter((x) => x.kind === 'working')
-  return !e.effortSkipped && working.length > 0 && e.sets.every((x) => x.done) && working.every((x) => x.rpe == null)
-}
-
-/** Sets the effort (as RPE) of the exercise's last working set. */
-export function setLastEffort(s: LiveSession, exKey: string, rpe: number): LiveSession {
-  return mapExercise(s, exKey, (e) => {
-    const last = e.sets.findLastIndex((x) => x.kind === 'working')
-    return { ...e, sets: e.sets.map((x, i) => (i === last ? { ...x, rpe } : x)) }
-  })
+/** Sets one set's effort, as RPE: asked right after a working set is ticked. */
+export function setEffort(s: LiveSession, setKey: string, rpe: number): LiveSession {
+  return {
+    ...s,
+    exercises: s.exercises.map((e) => ({ ...e, sets: e.sets.map((x) => (x.key === setKey ? { ...x, rpe } : x)) })),
+  }
 }
 
 export function addExercise(s: LiveSession): { session: LiveSession; exKey: string } {
@@ -345,7 +368,7 @@ export function switchExercise(s: LiveSession, exKey: string, name: string): Liv
       const from = (x.kind === 'warmup' ? last?.warmup_sets : last?.sets) ?? []
       const source = from[i] ?? from[from.length - 1]
       const lastLabel = from[i] ? lastText(from[i]) : null
-      if (x.done || !x.ghost) return { ...x, last: lastLabel }
+      if (x.done || !x.ghost || x.own) return { ...x, last: lastLabel }
       return {
         ...x,
         weight: source?.weight_kg != null ? String(source.weight_kg) : '',
@@ -371,13 +394,10 @@ export function setWarmups(s: LiveSession, exKey: string, sets: { kg: number; re
 }
 
 /** Moves an exercise one place up (-1) or down (1); at either end it stays put. */
-export function moveExercise(s: LiveSession, exKey: string, by: -1 | 1): LiveSession {
-  const i = s.exercises.findIndex((e) => e.key === exKey)
-  const j = i + by
-  if (i < 0 || j < 0 || j >= s.exercises.length) return s
-  const exercises = [...s.exercises]
-  ;[exercises[i], exercises[j]] = [exercises[j], exercises[i]]
-  return { ...s, exercises }
+/** Puts the exercises in the order of `keys`, as dragged in the Reorder sheet. */
+export function reorderExercises(s: LiveSession, keys: string[]): LiveSession {
+  const byKey = new Map(s.exercises.map((e) => [e.key, e]))
+  return { ...s, exercises: keys.flatMap((k) => byKey.get(k) ?? []) }
 }
 
 export function removeExercise(s: LiveSession, exKey: string): LiveSession {

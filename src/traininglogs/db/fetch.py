@@ -145,6 +145,14 @@ def get_ai_total_usd(conn: Connection, user_id: str) -> float:
         return float(cur.fetchone()[0])
 
 
+def get_key_lifts(conn: Connection, user_id: str) -> list[str] | None:
+    """The lifts the person chose to see first in Progress, or None for the built-in list."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT key_lifts FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+    return row[0] if row else None
+
+
 def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(

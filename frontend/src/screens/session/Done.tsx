@@ -8,6 +8,9 @@ import { applyChanges, isRemoval } from '@/lib/planChanges'
 import { useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import { useOutbox } from '@/lib/store'
 import { clearLastFinished, getLastFinished, loadLastFinished, setLastFinished, type Finished } from '@/screens/session/finished'
+import { errorText } from '@/lib/errors'
+import { BTN } from '@/lib/ui'
+import { cn } from '@/lib/utils'
 
 /** After Finish: whether the session reached the server, an offer to update the workout, next time. */
 export default function Done() {
@@ -32,19 +35,19 @@ export default function Done() {
           <Check size={22} strokeWidth={2.6} aria-hidden />
         </span>
         <h1 className="mt-2 text-[28px] font-bold tracking-tight">Session Done</h1>
-        <Parts className="justify-center text-sm text-muted-foreground" items={[
+        <Parts className="justify-center text-[15px] text-muted-foreground" items={[
           finished.title, `${finished.minutes} min`, `${finished.sets} ${finished.sets === 1 ? 'set' : 'sets'}`,
         ]} />
       </div>
 
-      <div role="status" className="rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+      <div role="status" className="rounded-2xl border border-border bg-card px-4 py-3 text-[15px]">
         {waiting ? (
           outbox.sending ? (
             'Sending…'
           ) : (
             <>
-              <p className="font-semibold">Waiting to send</p>
-              <p className="text-muted-foreground">It's saved on this phone and sends by itself when you're back online.</p>
+              <p className="font-semibold">Waiting to Send</p>
+              <p className="text-muted-foreground">No connection. It's saved on this phone and sends once you're online. Deleting the app before then loses it.</p>
             </>
           )
         ) : (
@@ -56,7 +59,7 @@ export default function Done() {
 
       <BottomBar>
         <Link href="/" onClick={() => clearLastFinished()}
-          className="flex h-13 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground">
+          className={cn(BTN.primary, 'flex items-center justify-center')}>
           Done
         </Link>
       </BottomBar>
@@ -94,7 +97,7 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       }
       answer('saved')
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setState('asking')
     }
   }
@@ -104,36 +107,42 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       {workout && finished.changes.length > 0 && state !== 'kept' && (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           {state === 'saved' ? (
-            <p className="text-sm"><span className="font-semibold">Program updated.</span> {workoutName(workout)} includes these from now on.</p>
+            <p className="text-[15px]"><span className="font-semibold">Program updated.</span> {workoutName(workout)} includes these from now on.</p>
           ) : (
             <>
               <span className="flex flex-col">
-                <span className="font-semibold">Update the program?</span>
-                <span className="text-xs text-muted-foreground">Tick what {workoutName(workout)} should include from now on.</span>
+                <span className="font-semibold">Update the Program?</span>
+                <span className="text-[13px] text-muted-foreground">Check what {workoutName(workout)} should include from now on.</span>
               </span>
               <ul className="flex flex-col">
                 {finished.changes.map((c) => (
                   <li key={c.id}>
-                    <label className="flex min-h-11 items-center gap-3 text-sm">
-                      <input type="checkbox" checked={chosen.has(c.id)} className="size-5 accent-[var(--primary)]"
-                        onChange={() => setChosen((set) => {
-                          const n = new Set(set)
-                          if (n.has(c.id)) n.delete(c.id)
-                          else n.add(c.id)
-                          return n
-                        })} />
+                    {/* Ticked like a set: the same circle, the whole row is the button. */}
+                    <button type="button" role="checkbox" aria-checked={chosen.has(c.id)} aria-label={c.label}
+                      onClick={() => setChosen((set) => {
+                        const n = new Set(set)
+                        if (n.has(c.id)) n.delete(c.id)
+                        else n.add(c.id)
+                        return n
+                      })}
+                      className="flex min-h-11 w-full items-center gap-3 text-left text-[15px] active:opacity-70">
+                      <span className={`flex size-6 shrink-0 items-center justify-center rounded-lg border-[1.5px] transition-colors ${
+                        chosen.has(c.id) ? 'border-highlight bg-highlight text-background' : 'border-border text-transparent'
+                      }`}>
+                        <Check size={14} strokeWidth={3} aria-hidden />
+                      </span>
                       <span className={isRemoval(c) ? 'text-destructive' : ''}>{c.label}</span>
-                    </label>
+                    </button>
                   </li>
                 ))}
               </ul>
-              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+              {error && <p role="alert" className="text-[15px] text-destructive">{error}</p>}
               <div className="flex items-center gap-2">
                 <button type="button" disabled={state === 'saving' || chosen.size === 0} onClick={() => setConfirming(true)}
-                  className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40">
+                  className={cn(BTN.smallPrimary, 'h-11')}>
                   {state === 'saving' ? 'Saving…' : 'Update Program'}
                 </button>
-                <button type="button" onClick={() => answer('kept')} className="h-11 px-3 text-sm font-semibold text-muted-foreground">
+                <button type="button" onClick={() => answer('kept')} className="h-11 px-3 text-[15px] font-semibold text-muted-foreground">
                   Keep as Is
                 </button>
               </div>
@@ -150,9 +159,9 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       )}
       {next && (
         <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4">
-          <span className="text-xs font-semibold text-muted-foreground">Next Time</span>
+          <span className="text-[13px] font-semibold text-muted-foreground">Next Time</span>
           <span className="font-semibold">{workoutName(next)}</span>
-          <Parts className="text-sm text-muted-foreground" items={next.exercises.map((e) => e.name)} />
+          <Parts className="text-[15px] text-muted-foreground" items={next.exercises.map((e) => e.name)} />
         </div>
       )}
     </>

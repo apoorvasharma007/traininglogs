@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { BTN } from '@/lib/ui'
+import { cn } from '@/lib/utils'
 
 // Shown in turn inside the empty box: what a good, detailed correction looks like.
 const EXAMPLES = [
@@ -41,7 +43,7 @@ export default function FixBox({
       }}
     >
       <div className="flex flex-col gap-0.5">
-        <span className="text-[15px] font-semibold">Got something wrong?</span>
+        <span className="text-[15px] font-semibold">Got Something Wrong?</span>
         <span className="text-[13px] leading-snug text-muted-foreground">
           Describe everything you want changed in one message. Each fix is a paid AI call, so the more detail you give, the
           more likely it gets everything right first time.
@@ -49,7 +51,7 @@ export default function FixBox({
       </div>
       <div className="relative">
         <label htmlFor="fix" className="sr-only">
-          What to change
+          What to Change
         </label>
         <textarea id="fix" rows={4} value={text} onChange={(e) => { setText(e.target.value); onEdit() }}
           className="w-full resize-none rounded-xl bg-muted px-3.5 py-2.5 text-[15px] leading-snug" />
@@ -61,14 +63,14 @@ export default function FixBox({
         )}
       </div>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground">Tip: tap the mic on your keyboard to say it instead.</span>
+        <span className="text-[13px] text-muted-foreground">Tip: tap the mic on your keyboard to say it instead.</span>
         <button type="submit" disabled={busy || !text.trim()}
-          className="h-10 shrink-0 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40">
+          className={cn(BTN.smallPrimary, 'shrink-0')}>
           {busy ? 'Fixing…' : 'Fix It'}
         </button>
       </div>
       {error && (
-        <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+        <div role="alert" className="flex flex-col gap-1 text-[15px] text-destructive">
           <span className="font-semibold">Couldn't make that fix, so nothing changed.</span>
           {error.split('\n').map((line) => (
             <span key={line}>{line}</span>

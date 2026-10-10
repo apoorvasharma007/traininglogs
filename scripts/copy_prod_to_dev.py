@@ -60,7 +60,9 @@ def main() -> int:
     with prod.cursor() as p, target.cursor() as t:
         t.execute(f"TRUNCATE {', '.join(TABLES)} CASCADE")
         for table in TABLES:
-            cols = ", ".join(f'"{c}"' for c in _columns(t, table))
+            # Columns both sides have: a column added to schema.sql but not yet to production
+            # (a release in progress) stays empty in the copy.
+            cols = ", ".join(f'"{c}"' for c in _columns(t, table) if c in _columns(p, table))
             buf = io.StringIO()
             p.copy_expert(f"COPY (SELECT {cols} FROM {table}) TO STDOUT", buf)
             buf.seek(0)

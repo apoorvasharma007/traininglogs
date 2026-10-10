@@ -148,7 +148,7 @@ describe('Review', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('This note is already saved.')
     expect(calls.filter((c) => c.key === 'POST /extractions/x1/confirm')).toHaveLength(1)
-    await userEvent.click(screen.getByRole('link', { name: 'Open it' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Open It' }))
     expect(location.history.at(-1)).toBe('/history/s9')
   })
 
@@ -159,9 +159,28 @@ describe('Review', () => {
     fakeApi({ 'GET /extractions/x1': unsure })
     renderApp('/review/x1')
     expect(await screen.findByRole('button', { name: '2 things to check' })).toBeInTheDocument()
-    expect(screen.getByText('Check this')).toBeInTheDocument()
+    expect(screen.getByText('Check This')).toBeInTheDocument()
     expect(screen.getByLabelText('Weight for set 1')).toHaveClass('border-warning')
     expect(screen.getByLabelText('Reps for set 1')).not.toHaveClass('border-warning')
+  })
+
+  it('asks before saving with things still to check: Check Them saves nothing, Save Anyway saves', async () => {
+    const unsure = card(120)
+    unsure.exercises[0].working_set_rows[0].uncertain_fields = ['weight_kg']
+    const calls = fakeApi({
+      'GET /extractions/x1': unsure,
+      'POST /extractions/x1/edit': reply(unsure),
+      'POST /extractions/x1/confirm': { session_id: 's9' },
+    })
+    renderApp('/review/x1')
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm Session' }))
+    const ask = await screen.findByRole('dialog', { name: '1 Thing Still to Check' })
+    await userEvent.click(within(ask).getByRole('button', { name: 'Check Them' }))
+    expect(calls.some((c) => c.key === 'POST /extractions/x1/confirm')).toBe(false)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Session' }))
+    await userEvent.click(within(await screen.findByRole('dialog', { name: '1 Thing Still to Check' })).getByRole('button', { name: 'Save Anyway' }))
+    await waitFor(() => expect(calls.some((c) => c.key === 'POST /extractions/x1/confirm')).toBe(true))
   })
 
   it('choosing Not part of a program leaves the session out of it', async () => {
@@ -188,7 +207,7 @@ describe('Review', () => {
     // No fake for /correct, so it fails; the server's plain reason is shown in the box.
     fakeApi({ 'GET /extractions/x1': card(120) })
     renderApp('/review/x1')
-    const box = await screen.findByLabelText('What to change')
+    const box = await screen.findByLabelText('What to Change')
     await userEvent.type(box, 'Add two warm-up sets')
     await userEvent.click(screen.getByRole('button', { name: 'Fix It' }))
 

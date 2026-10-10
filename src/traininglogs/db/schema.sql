@@ -31,8 +31,11 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at         TIMESTAMPTZ,
     -- "Delete my account" asked for: the data is removed after a grace period.
-    deleted_at           TIMESTAMPTZ
+    deleted_at           TIMESTAMPTZ,
+    -- The lifts Progress shows first, chosen in Settings; NULL means the built-in list.
+    key_lifts            TEXT[]
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS key_lifts TEXT[];
 
 -- The public-facing part, kept apart so a shared screen can never show account details.
 CREATE TABLE IF NOT EXISTS profiles (
@@ -152,6 +155,18 @@ CREATE TABLE IF NOT EXISTS input_text_confirmation_cards (
     confirmed_at     TIMESTAMPTZ,
     UNIQUE (user_id, id),
     FOREIGN KEY (user_id, input_id) REFERENCES input_text(user_id, id) ON DELETE CASCADE
+);
+
+-- A message sent from Settings: a feature request, something broken, or anything else. The sender's
+-- email is their users row; app_version is the release they were on.
+CREATE TABLE IF NOT EXISTS feedback (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind        TEXT NOT NULL CHECK (kind IN ('feature', 'bug', 'other')),
+    message     TEXT NOT NULL CHECK (length(btrim(message)) BETWEEN 1 AND 2000),
+    app_version TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id)
 );
 
 -- One paid AI call, kept whether it worked or not: a failed call still cost money.
@@ -364,6 +379,7 @@ CREATE INDEX IF NOT EXISTS idx_workout_session_cooldowns      ON workout_session
 CREATE INDEX IF NOT EXISTS idx_workout_session_exercises      ON workout_session_exercises (user_id, session_id);
 CREATE INDEX IF NOT EXISTS idx_workout_session_exercises_name ON workout_session_exercises (user_id, user_exercise_id);
 CREATE INDEX IF NOT EXISTS idx_workout_session_sets           ON workout_session_sets (user_id, exercise_id);
+CREATE INDEX IF NOT EXISTS idx_feedback                       ON feedback (user_id, created_at);
 
 -- Row-level security on, no policies (see the top of this file) ---------------
 ALTER TABLE users                         ENABLE ROW LEVEL SECURITY;
@@ -381,3 +397,4 @@ ALTER TABLE workout_session_warmups       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_cooldowns     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_exercises     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_sets          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedback                      ENABLE ROW LEVEL SECURITY;

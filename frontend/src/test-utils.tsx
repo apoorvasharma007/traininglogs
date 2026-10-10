@@ -10,7 +10,7 @@ export function renderApp(path: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <Router hook={location.hook}>
+      <Router hook={location.hook} searchHook={location.searchHook}>
         <App />
       </Router>
     </QueryClientProvider>,

@@ -72,6 +72,6 @@ def clean_test_data(conn) -> None:
         cur.execute(
             "TRUNCATE input_text, input_text_confirmation_cards, ai_call_logs, workout_sessions,"
             " workout_session_warmups, workout_session_cooldowns, workout_session_exercises,"
-            " workout_session_sets, programs, program_workouts, program_workout_exercises, user_exercises"
+            " workout_session_sets, programs, program_workouts, program_workout_exercises, user_exercises, feedback"
         )
     conn.commit()

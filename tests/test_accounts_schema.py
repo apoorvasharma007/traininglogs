@@ -138,7 +138,7 @@ def test_every_table_but_the_shared_ones_has_a_required_owner(cur) -> None:
         """
     )
     assert {t: nullable for t, nullable in cur.fetchall()} == {t: "NO" for t in (
-        "profiles", "user_exercises", "input_text", "input_text_confirmation_cards", "ai_call_logs",
+        "profiles", "user_exercises", "input_text", "input_text_confirmation_cards", "ai_call_logs", "feedback",
         "programs", "program_workouts", "program_workout_exercises", "workout_sessions",
         "workout_session_warmups", "workout_session_cooldowns", "workout_session_exercises",
         "workout_session_sets",

@@ -82,7 +82,12 @@ class CardOp(BaseModel):
 
 
 class CardEditError(Exception):
-    """An edit that can't be applied. The message names the field, for showing to the person."""
+    """An edit that can't be applied. The message names the field's path, for the server log;
+    `plain` says what's wrong in words, for the person."""
+
+    def __init__(self, message: str, plain: str = "That change couldn't be made. Reload the card and try again.") -> None:
+        super().__init__(message)
+        self.plain = plain
 
 
 def element_kind(path: str) -> str:
@@ -145,6 +150,14 @@ def _validation_message(exc: ValidationError) -> str:
     )
 
 
+def _invalid(exc: ValidationError) -> CardEditError:
+    """The edit left a value the model refuses: the first problem, as "Rpe: input should be…"."""
+    err = exc.errors()[0]
+    field = next((p for p in reversed(err["loc"]) if isinstance(p, str)), "value")
+    msg = err["msg"].removeprefix("Value error, ")
+    return CardEditError(_validation_message(exc), f"{field.replace('_', ' ').capitalize()}: {msg[:1].lower()}{msg[1:]}")
+
+
 def apply_card_edits(
     extract: TrainingLogLLMExtract, edits: list[CardEdit]
 ) -> tuple[TrainingLogLLMExtract, list[FieldEdit]]:
@@ -171,7 +184,7 @@ def apply_card_edits(
     try:
         return TrainingLogLLMExtract.model_validate(patched), field_edits
     except ValidationError as exc:
-        raise CardEditError(_validation_message(exc)) from exc
+        raise _invalid(exc) from exc
 
 
 # ---- adding and removing lines ----
@@ -314,4 +327,4 @@ def apply_card_op(
     try:
         return TrainingLogLLMExtract.model_validate(patched), field_edits, created_path
     except ValidationError as exc:
-        raise CardEditError(_validation_message(exc)) from exc
+        raise _invalid(exc) from exc

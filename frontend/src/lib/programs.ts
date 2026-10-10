@@ -18,18 +18,25 @@ export function choicesText(e: PlanExercise): string {
 }
 
 /** "2 warm-up · 3 × 2", "3 sets", "1 × max". */
-export function planText(e: PlanExercise): string {
+/** A planned exercise's working sets: "3 × 5", "1 × max", "3 sets". */
+export function workingText(e: PlanExercise): string {
   const reps = e.amrap ? 'max' : e.target_reps
-  const sets = reps != null ? `${e.working_sets} × ${reps}` : `${e.working_sets} ${e.working_sets === 1 ? 'set' : 'sets'}`
-  return e.warmup_sets ? `${e.warmup_sets} warm-up + ${sets}` : sets
+  return reps != null ? `${e.working_sets} × ${reps}` : `${e.working_sets} ${e.working_sets === 1 ? 'set' : 'sets'}`
 }
+
 
 export function usePrograms() {
   return useQuery({ queryKey: ['programs'], queryFn: () => api<Program[]>('/programs') })
 }
 
 export function useProgram(id: string) {
-  return useQuery({ queryKey: ['program', id], queryFn: () => api<Program>(`/programs/${id}`) })
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: ['program', id],
+    queryFn: () => api<Program>(`/programs/${id}`),
+    // Shown at once from the programs list Train already loaded, while the program itself loads.
+    placeholderData: () => queryClient.getQueryData<Program[]>(['programs'])?.find((p) => p.id === id),
+  })
 }
 
 /**

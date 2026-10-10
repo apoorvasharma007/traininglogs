@@ -1,12 +1,16 @@
-import { ChevronRight, Plus } from 'lucide-react'
+import { ChevronRight, LayoutTemplate, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation, useSearch } from 'wouter'
 import NameSheet from '@/components/NameSheet'
+import { MenuGroup, MenuItem } from '@/components/Menu'
 import Sheet from '@/components/Sheet'
 import PageTitle from '@/components/PageTitle'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { useCreateProgram, usePrograms, workoutName } from '@/lib/programs'
 import type { Program } from '@/lib/types'
+import { errorText } from '@/lib/errors'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
+import { cn } from '@/lib/utils'
 
 function summary(p: Program): string {
   const count = `${p.workouts.length} ${p.workouts.length === 1 ? 'workout' : 'workouts'}`
@@ -18,7 +22,9 @@ export default function Programs() {
   const programs = usePrograms()
   const create = useCreateProgram()
   const [, navigate] = useLocation()
-  const [creating, setCreating] = useState(false)
+  // Train's Create Your Own lands here with ?new: straight to naming it.
+  const search = useSearch()
+  const [creating, setCreating] = useState(() => new URLSearchParams(search).has('new'))
   const [choosing, setChoosing] = useState(false) // "Create Your Own" or "From a Template"
 
   return (
@@ -26,27 +32,27 @@ export default function Programs() {
       <div className="flex items-end justify-between">
         <PageTitle>Programs</PageTitle>
         <button type="button" onClick={() => setChoosing(true)}
-          className="flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-sm font-semibold transition active:scale-95">
-          <Plus size={16} aria-hidden /> New
+          className={cn(BTN.smallSecondary, 'flex items-center gap-1.5')}>
+          <Plus size={18} aria-hidden /> New
         </button>
       </div>
 
       {programs.isPending && <Loading />}
       {programs.isError && <LoadError error={programs.error} retry={() => programs.refetch()} />}
       {programs.data?.length === 0 && (
-        <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-5 text-sm">
-          <p className="font-semibold">No programs yet</p>
+        <div className="flex flex-col items-start gap-3 rounded-2xl bg-muted p-5 text-[15px]">
+          <p className="font-semibold">No Programs Yet</p>
           <button type="button" onClick={() => setChoosing(true)}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3.5 font-semibold text-primary-foreground transition active:scale-95">
-            <Plus size={16} aria-hidden /> New Program
+            className={`${BTN.smallPrimary} flex items-center gap-1.5`}>
+            <Plus size={18} aria-hidden /> New Program
           </button>
         </div>
       )}
       {programs.data && programs.data.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-col gap-2.5">
           {programs.data.map((p) => (
             <Link key={p.id} href={`/programs/${p.id}`}
-              className="flex min-h-16 items-center gap-2.5 border-t border-border px-4 py-2 first:border-t-0 active:bg-muted">
+              className="flex min-h-16 items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-2 transition active:scale-[0.98]">
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex items-center gap-2 text-[15px] font-semibold">
                   {p.name}
@@ -56,7 +62,7 @@ export default function Programs() {
                     </span>
                   )}
                 </span>
-                <span className="text-xs text-muted-foreground">{summary(p)}</span>
+                <span className="text-[13px] text-muted-foreground">{summary(p)}</span>
               </span>
               <ChevronRight size={18} aria-hidden className="text-faint-foreground" />
             </Link>
@@ -65,18 +71,11 @@ export default function Programs() {
       )}
 
       <Sheet open={choosing} onClose={() => setChoosing(false)} label="New Program">
-        <span className="text-[17px] font-semibold">New Program</span>
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
-          <button type="button" onClick={() => { setChoosing(false); setCreating(true) }}
-            className="flex h-13 items-center px-4 text-left text-[15px] font-semibold active:bg-muted">
-            Create Your Own
-          </button>
-          <Link href="/programs/templates" onClick={() => setChoosing(false)}
-            className="flex h-13 items-center justify-between border-t border-border px-4 text-[15px] font-semibold active:bg-muted">
-            From a Template
-            <ChevronRight size={18} aria-hidden className="text-faint-foreground" />
-          </Link>
-        </div>
+        <span className={SHEET_TITLE}>New Program</span>
+        <MenuGroup>
+          <MenuItem icon={Plus} label="Create Your Own" onClick={() => { setChoosing(false); setCreating(true) }} />
+          <MenuItem icon={LayoutTemplate} label="From a Template" onClick={() => { setChoosing(false); navigate('/programs/templates') }} />
+        </MenuGroup>
       </Sheet>
 
       <NameSheet
@@ -86,7 +85,7 @@ export default function Programs() {
         placeholder="Strength, Hypertrophy…"
         saveLabel="Create"
         busy={create.isPending}
-        error={create.error?.message}
+        error={create.error ? errorText(create.error) : undefined}
         onClose={() => setCreating(false)}
         onSave={(name) =>
           create.mutate(name, {

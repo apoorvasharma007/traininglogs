@@ -1,8 +1,10 @@
+import { type FocusEvent, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * A weight or reps box on a set row: tap it and the number keypad opens. A grey placeholder is
- * last time's value; typing replaces it.
+ * A weight or reps box: tap it and the number keypad opens. A grey placeholder is last time's value
+ * (or a suggestion); typing replaces it. When `fillable`, the first tap fills the grey number in
+ * without the keypad, and the next tap opens the keypad with the number selected.
  */
 export default function NumberBox({
   label,
@@ -11,6 +13,8 @@ export default function NumberBox({
   inputMode = 'decimal',
   done,
   flagged,
+  fillable,
+  className,
   onChange,
   onBlur,
 }: {
@@ -21,9 +25,15 @@ export default function NumberBox({
   done?: boolean
   /** The AI wasn't sure of this value: an amber outline until it's looked at. */
   flagged?: boolean
+  /** The placeholder is a value worth taking as it is. */
+  fillable?: boolean
+  className?: string
   onChange: (value: string) => void
-  onBlur?: () => void
+  /** Typing is over: the box lost focus (not counting a tap-to-fill). */
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void
 }) {
+  const fill = Boolean(fillable && value === '' && placeholder)
+  const filling = useRef(false)
   return (
     <input
       aria-label={label}
@@ -33,7 +43,15 @@ export default function NumberBox({
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value.replace(',', '.'))}
-      onBlur={onBlur}
+      onBlur={(e) => { if (!filling.current) onBlur?.(e) }}
+      // Read-only until filled, so the first tap doesn't bring up the keypad.
+      readOnly={fill}
+      onClick={fill ? (e) => {
+        filling.current = true
+        onChange(placeholder)
+        e.currentTarget.blur()
+        filling.current = false
+      } : undefined}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       data-check={flagged ? '' : undefined}
@@ -43,6 +61,7 @@ export default function NumberBox({
         done ? 'bg-transparent' : 'bg-muted',
         // Last, so it wins over the plain transparent border.
         flagged && 'border-warning',
+        className,
       )}
     />
   )

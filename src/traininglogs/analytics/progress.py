@@ -62,18 +62,38 @@ def _other_lift_groups(sets: list[SetRow]) -> dict[str, list[SetRow]]:
     return groups
 
 
-def lift_summaries(rows: list[dict], today: date) -> dict:
+def chosen_lifts(names: list[str] | None) -> tuple[KeyLift, ...]:
+    """The person's key lifts: the built-in list, or the names they chose in Settings. A chosen name
+    that is a built-in lift keeps all of that lift's name variants."""
+    if names is None:
+        return KEY_LIFTS
+    return tuple(key_lift_named(n) or KeyLift(n.strip(), (normalise(n),)) for n in names)
+
+
+def lift_summaries(rows: list[dict], today: date, key_lifts: list[str] | None = None) -> dict:
     sets = to_set_rows(rows)
+    chosen = chosen_lifts(key_lifts)
+
+    def lift_of(exercise: str) -> KeyLift | None:
+        n = normalise(exercise)
+        return next((lift for lift in chosen if n in lift.names), None)
+
     key = []
-    for lift in KEY_LIFTS:
-        mine = [s for s in sets if key_lift_for(s.exercise) is lift]
+    for lift in chosen:
+        mine = [s for s in sets if lift_of(s.exercise) is lift]
         key.append(_summary(lift.name, lift, _points(mine, lift), today))
 
+    # Everything else, grouped by name; a built-in lift not chosen still gathers its variants.
+    groups: dict[str, tuple[KeyLift | None, list[SetRow]]] = {}
+    for s in sets:
+        if lift_of(s.exercise) is None:
+            builtin = key_lift_for(s.exercise)
+            groups.setdefault(normalise(builtin.name) if builtin else normalise(s.exercise), (builtin, []))[1].append(s)
     other = []
-    for group in _other_lift_groups(sets).values():
-        points = _points(group, None)
+    for builtin, group in groups.values():
+        points = _points(group, builtin)
         if len(points) >= MIN_SESSIONS_FOR_OTHER_LIFTS:
-            other.append(_summary(group[-1].exercise.strip(), None, points, today))
+            other.append(_summary(builtin.name if builtin else group[-1].exercise.strip(), builtin, points, today))
     other.sort(key=lambda o: (-o["sessions"], o["name"].casefold()))
     return {"key_lifts": key, "other_lifts": other}
 

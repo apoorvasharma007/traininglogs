@@ -28,6 +28,8 @@ from traininglogs.api.schemas import (
     ExerciseHistoryRow,
     LastExercise,
     LiftDetail,
+    FeedbackIn,
+    KeyLiftsIn,
     LiftsOut,
     ManualSessionIn,
     ProgramIn,
@@ -86,7 +88,7 @@ def _live_connection(pool: SimpleConnectionPool):
             pass
         _last_used.pop(id(conn), None)
         pool.putconn(conn, close=True)
-    raise HTTPException(status_code=503, detail="Database unavailable (503). Try again in a minute.")
+    raise HTTPException(status_code=503, detail="Couldn't reach your data. Try again in a minute.")
 
 
 def _db():
@@ -244,7 +246,21 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.fetch import get_working_set_rows
     from traininglogs.db.programs import utc_today
 
-    return lift_summaries(get_working_set_rows(conn, user), utc_today())
+    from traininglogs.db.fetch import get_key_lifts
+
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
+
+
+@app.put("/me/key-lifts", response_model=LiftsOut)
+def put_key_lifts(body: KeyLiftsIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves which lifts Progress shows first, in this order, and returns Progress's lifts."""
+    from traininglogs.analytics.progress import lift_summaries
+    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.insert import set_key_lifts
+    from traininglogs.db.programs import utc_today
+
+    set_key_lifts(conn, user, body.names)
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), body.names)
 
 
 @app.get("/progress/lifts/{name}", response_model=LiftDetail)
@@ -258,6 +274,14 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
+
+
+@app.post("/feedback", status_code=201)
+def post_feedback(body: FeedbackIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves a feature request, a bug report or any other message, with the release it came from."""
+    from traininglogs.db.insert import insert_feedback
+
+    return {"id": insert_feedback(conn, user, body.kind, body.message, version("traininglogs"))}
 
 
 @app.get("/me/ai-usage", response_model=AiUsage)
@@ -376,7 +400,8 @@ def correct_extraction(extraction_id: str, body: CorrectIn, conn=Depends(_db), u
     try:
         updated, edits = LLMExtractValidator(provider).apply_correction(current, body.instruction)
     except PatchError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Correction couldn't be applied for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail="That fix couldn't be applied. Try saying it another way.")
     except CorrectionRejected as exc:
         # The full technical reason goes to the server log; the person gets the plain one.
         print(f"Correction rejected for {extraction_id}: {exc}", flush=True)
@@ -421,7 +446,8 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: s
         else:
             updated, edits = apply_card_edits(current, body.edits)
     except CardEditError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Card edit rejected for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail=exc.plain)
 
     return CorrectOut(
         extract=updated.model_dump(mode="json"),
