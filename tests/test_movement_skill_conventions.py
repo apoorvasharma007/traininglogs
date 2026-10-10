@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from traininglogs.agent.extraction import PLACEHOLDER_NOTE_PREFIX
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.ingest.confirm import build_session_from_extract
 
@@ -122,6 +123,14 @@ class TestAdhocMovementSkillsSchemaFit:
         assert session.phase is None
         assert session.week is None
         assert session.session_id.startswith("2026-07-19-")
+
+    def test_build_session_from_extract_drops_a_failed_reading_note(self) -> None:
+        raw = {**ADHOC_MOVEMENT_SKILLS_RAW, "exercises": [dict(e) for e in ADHOC_MOVEMENT_SKILLS_RAW["exercises"]]}
+        raw["exercises"][0]["notes"] = f"{PLACEHOLDER_NOTE_PREFIX} LLM extraction failed after 3 attempts."
+        raw["exercises"][1]["notes"] = "Felt strong"
+        session = build_session_from_extract(TrainingLogLLMExtract.model_validate(raw), "stub")
+        assert session.exercises[0].notes is None
+        assert session.exercises[1].notes == "Felt strong"
 
     def test_skill_attempt_clean_vs_failed_maps_to_full_partial(self) -> None:
         """Skill attempts (e.g. muscle-up tries) use full/partial the same way in

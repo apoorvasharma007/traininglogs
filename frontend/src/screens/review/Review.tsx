@@ -23,6 +23,7 @@ import type { Card, CardExercise } from '@/lib/types'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import FixBox from './FixBox'
 import { useReviewDoc } from './useReviewDoc'
+import { errorText } from '@/lib/errors'
 
 type OpenSet = SetTarget & { path: string }
 
@@ -140,7 +141,7 @@ export default function Review({ params }: { params: { id: string } }) {
       await queryClient.invalidateQueries({ queryKey: ['lifts'] })
       navigate(`/history/${encodeURIComponent(out.session_id)}`)
     } catch (e) {
-      setConfirmError(e instanceof Error ? e.message : String(e))
+      setConfirmError(errorText(e))
       if (e instanceof ApiError && e.status === 409) setSavedAs((e.body as { session_id: string | null }).session_id)
     }
     setSaving(false)

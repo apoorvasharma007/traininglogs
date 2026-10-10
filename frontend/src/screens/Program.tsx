@@ -14,6 +14,7 @@ import { useEditingFlag } from '@/lib/editing'
 import { dayLabel } from '@/lib/format'
 import { usePrograms, useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import type { Program as ProgramT, Workout } from '@/lib/types'
+import { errorText } from '@/lib/errors'
 
 /** A program's workouts. Opens for looking; Edit shows renaming, reordering and settings. */
 export default function Program({ params }: { params: { id: string } }) {
@@ -51,7 +52,7 @@ export default function Program({ params }: { params: { id: string } }) {
       setDraft(null)
       return true
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e))
+      setSaveError(errorText(e))
       return false
     } finally {
       setSaving(false)
@@ -109,7 +110,7 @@ export default function Program({ params }: { params: { id: string } }) {
               </div>
             ))}
 
-          {change.isError && <p role="alert" className="px-1 text-sm text-destructive">{change.error.message}</p>}
+          {change.isError && <p role="alert" className="px-1 text-sm text-destructive">{errorText(change.error)}</p>}
 
           {editing && (
             <button type="button" disabled={change.isPending || saving}
@@ -156,7 +157,7 @@ export default function Program({ params }: { params: { id: string } }) {
       )}
 
       <NameSheet open={adding} title="New workout" label="Name" initial={`Workout ${(p?.workouts.length ?? 0) + 1}`}
-        saveLabel="Add Workout" allowBlank busy={change.isPending} error={change.error?.message}
+        saveLabel="Add Workout" allowBlank busy={change.isPending} error={change.error ? errorText(change.error) : undefined}
         onClose={() => setAdding(false)}
         onSave={(name) => {
           const n = (p?.workouts.length ?? 0) + 1

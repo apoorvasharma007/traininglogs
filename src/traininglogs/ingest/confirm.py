@@ -5,6 +5,7 @@ import hashlib
 
 from psycopg2.extensions import connection as Connection
 
+from traininglogs.agent.extraction import PLACEHOLDER_NOTE_PREFIX
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.db.fetch import get_card, get_input
 from traininglogs.db.insert import confirm_card, insert_session
@@ -32,6 +33,11 @@ def build_session_from_extract(extract: TrainingLogLLMExtract, content: str) -> 
     """An extract as a TrainingSession. `content` is the input's text, which the dedup key (kept in
     the model's session_id) is made from."""
     session = extract.model_dump(mode="python", exclude={"uncertain_fields"})
+    # An exercise the AI couldn't read carries the reason in its notes, for the card; the saved
+    # session never keeps that text.
+    for exercise in session["exercises"]:
+        if (exercise.get("notes") or "").startswith(PLACEHOLDER_NOTE_PREFIX):
+            exercise["notes"] = None
     session["session_id"] = dedup_key(content, extract.date)
     # The model still requires these; they aren't stored. The owner is workout_sessions.user_id.
     session["user_id"] = "-"

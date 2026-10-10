@@ -726,7 +726,9 @@ class TestEditExtraction:
             {"path": "exercises.0.sets.0", "field": "rpe", "value": 85},
         ]})
         assert r.status_code == 400
-        assert "exercises.0.sets.0.rpe" in r.json()["detail"]
+        detail = r.json()["detail"]
+        assert detail.startswith("Rpe: ")
+        assert "exercises." not in detail
 
     def test_non_editable_field_returns_400(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn, "edit test content 4")

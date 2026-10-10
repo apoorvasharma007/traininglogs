@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The app never shows a raw error. Messages come from the server's own wording or a plain
+  sentence ("Something went wrong on our side. Try again in a minute."), never a status code, a
+  field path like `exercises.0.sets.0.rpe` or a library's message. A card edit that's refused
+  says which field and why in words; the technical reason goes to the server log.
+- An exercise the AI couldn't read no longer saves its error as the exercise's note when the
+  card is confirmed.
+
 ## [5.0.0] - 2026-10-10
 
 ### Added

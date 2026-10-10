@@ -5,6 +5,7 @@ import BottomBar from '@/components/BottomBar'
 import { api } from '@/lib/api'
 import { localDate } from '@/lib/session'
 import type { CaptureOut } from '@/lib/types'
+import { errorText, ShownError } from '@/lib/errors'
 
 /** Paste a written note; AI reads it into sets, then Review shows them for checking. */
 export default function LogFromNotes() {
@@ -19,10 +20,10 @@ export default function LogFromNotes() {
     setError(null)
     try {
       const out = await api<CaptureOut>('/inputs', { method: 'POST', body: { content: text, date: localDate(new Date()) } })
-      if (!out.extraction_id) throw new Error(out.error ?? "Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.")
+      if (!out.extraction_id) throw new ShownError(out.error ?? "Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.")
       navigate(`/review/${out.extraction_id}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setBusy(false)
     }
   }

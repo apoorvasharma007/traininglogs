@@ -5,6 +5,7 @@
 // The pass (a JWT) and its renewal token stay on this phone. The pass is renewed shortly before it
 // runs out, so a person stays signed in; a renewal Supabase refuses signs them out.
 import { useSyncExternalStore } from 'react'
+import { ShownError } from '@/lib/errors'
 
 type Config = { supabase_url: string; supabase_publishable_key: string; version?: string }
 type Session = { access_token: string; refresh_token: string; expires_at: number; email: string }
@@ -68,7 +69,7 @@ export async function config(): Promise<Config> {
     // Offline: fall back to the copy from last time.
   }
   const kept = read<Config>(CONFIG_KEY)
-  if (!kept) throw new Error('No connection. Check your internet and try again.')
+  if (!kept) throw new ShownError('No connection. Check your internet and try again.')
   return kept
 }
 
@@ -123,12 +124,12 @@ export async function sendCode(email: string): Promise<void> {
     await auth('otp', { email, create_user: true })
   } catch (e) {
     if (!(e instanceof AuthError)) throw e
-    if (e.status === 0) throw e
+    if (e.status === 0) throw new ShownError(e.message)
     if (e.code === 'signup_disabled' || e.code === 'otp_disabled' || /signups? not allowed/i.test(e.message)) {
-      throw new Error("This email isn't invited yet.")
+      throw new ShownError("This email isn't invited yet.")
     }
-    if (e.status === 429) throw new Error('Too many codes asked for. Wait a few minutes and try again.')
-    throw new Error("Couldn't send the code. Try again in a minute.")
+    if (e.status === 429) throw new ShownError('Too many codes asked for. Wait a few minutes and try again.')
+    throw new ShownError("Couldn't send the code. Try again in a minute.")
   }
 }
 
@@ -137,7 +138,8 @@ export async function verifyCode(email: string, code: string): Promise<void> {
   try {
     setSession(sessionFrom(await auth('verify', { type: 'email', email, token: code }), email))
   } catch (e) {
-    if (e instanceof AuthError && e.status !== 0) throw new Error("That code didn't work. Check it, or send a new one.")
+    if (e instanceof AuthError && e.status !== 0) throw new ShownError("That code didn't work. Check it, or send a new one.")
+    if (e instanceof AuthError) throw new ShownError(e.message)
     throw e
   }
 }

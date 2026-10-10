@@ -15,6 +15,7 @@ import { choicesText, planText, useProgram, useProgramChange, workoutName } from
 import { startSession } from '@/lib/startSession'
 import { amountText, COOLDOWN_PRESETS, parseAmount, WARMUP_PRESETS } from '@/lib/movements'
 import type { Movement, PlanExercise, Workout } from '@/lib/types'
+import { errorText } from '@/lib/errors'
 
 const BLANK: PlanExercise = { name: '', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: true, alternatives: [] }
 
@@ -58,7 +59,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
       }
       setDraft(null)
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e))
+      setSaveError(errorText(e))
     } finally {
       setSaving(false)
     }

@@ -86,7 +86,7 @@ def _live_connection(pool: SimpleConnectionPool):
             pass
         _last_used.pop(id(conn), None)
         pool.putconn(conn, close=True)
-    raise HTTPException(status_code=503, detail="Database unavailable (503). Try again in a minute.")
+    raise HTTPException(status_code=503, detail="Couldn't reach your data. Try again in a minute.")
 
 
 def _db():
@@ -376,7 +376,8 @@ def correct_extraction(extraction_id: str, body: CorrectIn, conn=Depends(_db), u
     try:
         updated, edits = LLMExtractValidator(provider).apply_correction(current, body.instruction)
     except PatchError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Correction couldn't be applied for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail="That fix couldn't be applied. Try saying it another way.")
     except CorrectionRejected as exc:
         # The full technical reason goes to the server log; the person gets the plain one.
         print(f"Correction rejected for {extraction_id}: {exc}", flush=True)
@@ -421,7 +422,8 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: s
         else:
             updated, edits = apply_card_edits(current, body.edits)
     except CardEditError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Card edit rejected for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail=exc.plain)
 
     return CorrectOut(
         extract=updated.model_dump(mode="json"),

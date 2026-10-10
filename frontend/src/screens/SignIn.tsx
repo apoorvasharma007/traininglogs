@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { sendCode, verifyCode } from '@/lib/auth'
+import { errorText } from '@/lib/errors'
 
 /** Shown when nobody is signed in: an email, then the 6-digit code emailed to it. */
 export default function SignIn() {
@@ -15,7 +16,7 @@ export default function SignIn() {
     try {
       await step()
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
     setBusy(false)
   }

@@ -6,6 +6,7 @@ import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { planText, useCopyTemplate, useTemplates } from '@/lib/programs'
 import type { ProgramTemplate } from '@/lib/types'
+import { errorText } from '@/lib/errors'
 
 /** Ready-made programs. Tapping one shows its workouts; "Add Program" copies it into yours. */
 export default function Templates() {
@@ -53,7 +54,7 @@ export default function Templates() {
                 </section>
               ))}
             </div>
-            {copy.isError && <p role="alert" className="text-sm text-destructive">{copy.error.message}</p>}
+            {copy.isError && <p role="alert" className="text-sm text-destructive">{errorText(copy.error)}</p>}
             <button type="button" disabled={copy.isPending}
               onClick={() => copy.mutate(open.id, { onSuccess: (p) => navigate(`/programs/${p.id}`) })}
               className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">

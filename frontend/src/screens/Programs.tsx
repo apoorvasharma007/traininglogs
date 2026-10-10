@@ -7,6 +7,7 @@ import PageTitle from '@/components/PageTitle'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import { useCreateProgram, usePrograms, workoutName } from '@/lib/programs'
 import type { Program } from '@/lib/types'
+import { errorText } from '@/lib/errors'
 
 function summary(p: Program): string {
   const count = `${p.workouts.length} ${p.workouts.length === 1 ? 'workout' : 'workouts'}`
@@ -86,7 +87,7 @@ export default function Programs() {
         placeholder="Strength, Hypertrophy…"
         saveLabel="Create"
         busy={create.isPending}
-        error={create.error?.message}
+        error={create.error ? errorText(create.error) : undefined}
         onClose={() => setCreating(false)}
         onSave={(name) =>
           create.mutate(name, {

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import type { Card, CardEdit, CardOp, EditReply } from '@/lib/types'
+import { errorText } from '@/lib/errors'
 
 /** The review being edited: the extract to round-trip to the API, and the card to show. */
 type Doc = { extract: Record<string, unknown> | null; card: Card }
@@ -67,7 +68,7 @@ export function useReviewDoc(extractionId: string) {
         added.push(result.correction)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setErrorFromFix(steps.some((s) => typeof s !== 'function' && 'instruction' in s))
       setBusy(false)
       return undefined

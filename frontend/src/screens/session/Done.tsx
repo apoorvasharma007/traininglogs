@@ -8,6 +8,7 @@ import { applyChanges, isRemoval } from '@/lib/planChanges'
 import { useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import { useOutbox } from '@/lib/store'
 import { clearLastFinished, getLastFinished, loadLastFinished, setLastFinished, type Finished } from '@/screens/session/finished'
+import { errorText } from '@/lib/errors'
 
 /** After Finish: whether the session reached the server, an offer to update the workout, next time. */
 export default function Done() {
@@ -94,7 +95,7 @@ function ProgramCards({ finished, programId }: { finished: Finished; programId: 
       }
       answer('saved')
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setState('asking')
     }
   }
