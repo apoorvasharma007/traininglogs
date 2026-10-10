@@ -110,7 +110,7 @@ def test_a_failure_to_fetch_supabases_keys_is_503_not_signed_out(client, monkeyp
     monkeypatch.setattr(server_auth, "_signing_key", unreachable)
     r = _get(client, {"Authorization": f"Bearer {token()}"})
     assert r.status_code == 503
-    assert r.json()["detail"] == "Couldn't check your sign-in (503). Try again in a minute."
+    assert r.json()["detail"] == "Couldn't check your sign-in. Try again in a minute."
 
 
 def test_the_app_can_read_which_supabase_project_to_use_without_signing_in(client) -> None:

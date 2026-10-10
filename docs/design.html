@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">4.1.0</span> · 2026-10-10 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">4.1.0</span> · 2026-10-11 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -207,7 +207,7 @@
   <p>Log from notes is the original path: paste a note, the model reads it, and Review shows the card. You type over values on the card, open a set's drawer for RPE, type and notes, or describe a change in words, which calls the model. Confirm writes the session.</p>
 
   <h3>Progress</h3>
-  <p>The Progress tab shows six key lifts first: Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean and Pull-up, each with its latest and best estimated max, the number of sessions and an arrow for the 4-week trend. Under "Other lifts" is every other exercise trained in 3 or more sessions. Tapping a lift opens a chart with one point per session, record sessions in red and the program's goal weight as a dashed line, and below it each session's sets.</p>
+  <p>The Progress tab shows your key lifts first: by default Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean and Pull-up, or the ones you choose in Settings (up to 12, in your order, saved in <code>users.key_lifts</code>). Each shows its latest and best estimated max, the number of sessions and an arrow for the 4-week trend. Under "Other lifts" is every other exercise trained in 3 or more sessions. Tapping a lift opens a chart with one point per session, record sessions in red and the program's goal weight as a dashed line, and below it each session's sets.</p>
   <p>A set's estimated max is weight × (1 + (reps + reps left) / 30), where reps left is 10 minus RPE, so 1 rep at RPE 9 counts the same as 2 at RPE 10. A set without an RPE gives no estimate, since how many reps were left is unknown. Only working sets with a weight above 0, 1 to 12 full reps and an RPE of 6 or more count; a unilateral set counts its weaker side. The session's point is its best set. A session with no such set is plotted at its heaviest weight as a hollow dot, and doesn't count toward the latest, best or trend. Published RPE charts disagree with each other, which is why this uses a formula instead of a chart.</p>
   <p>Pull-ups are mostly bodyweight, and the app stores no bodyweight, so the chart shows best reps at bodyweight with added weight on a separate axis. Which logged names count as each key lift is a fixed list in <code>analytics/key_lifts.py</code> (Squat and Squats, for example); stored names are never changed.</p>
 </section>
@@ -518,8 +518,7 @@ exercise_pins
   <table>
     <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
     <tbody>
-      <tr><td><code>GET /</code></td><td>The web page, never cached</td></tr>
-      <tr><td><code>GET /app/</code></td><td>The new React app, never cached. It replaces <code>/</code> when it's finished.</td></tr>
+      <tr><td><code>GET /</code></td><td>The web page, never cached. Its script and style files under <code>/assets/</code> carry a hash in their names and are cached until a release renames them. Responses over 1 KB are gzip-compressed.</td></tr>
       <tr><td><code>POST /inputs</code></td><td>Saves the text, then runs the model. Returns <code>{raw_input_id, extraction_id}</code>; if the model fails, the app keeps the text anyway and the response says why.</td></tr>
       <tr><td><code>GET /extractions/{id}</code></td><td>The card for a reading, as JSON</td></tr>
       <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card, or one line added or removed. No model call. <code>400</code> names the field when a value is invalid.</td></tr>
@@ -532,6 +531,9 @@ exercise_pins
       <tr><td><code>GET /exercises/last?name=…</code></td><td>For each name, the latest session that had it (any program): date, note, warmup and working sets. Names match ignoring case.</td></tr>
       <tr><td><code>GET /exercises/{name}/history</code></td><td>Every working set of one exercise, across all sessions</td></tr>
       <tr><td><code>GET /progress/lifts</code></td><td>Key lifts, then other lifts with 3 or more sessions: latest and best value, sessions, 4-week trend</td></tr>
+      <tr><td><code>GET /me/export</code></td><td>Everything the person has logged, as a file: <code>?format=csv</code> (one line per set) or <code>?format=json</code> (sessions, exercises, sets, programs)</td></tr>
+      <tr><td><code>POST /feedback</code></td><td>Saves a message from Settings: <code>kind</code> (feature, bug or other) and <code>message</code> (up to 2000 characters), with the sender and the app's version</td></tr>
+      <tr><td><code>PUT /me/key-lifts</code></td><td>Saves which lifts Progress shows first, in order (up to 12 names); answers with Progress's lifts</td></tr>
       <tr><td><code>GET /progress/lifts/{name}</code></td><td>One lift's sessions: the value, the set behind it, records and goal weight. <code>404</code> for an unknown lift.</td></tr>
       <tr><td><code>GET /programs</code>, <code>POST /programs</code></td><td>Programs not archived, the followed one first, each with its workouts, their plans, when each was last done, the next workout, and the deload count (days since the program was followed, its last deload, or a break of 7 days or more; whether one is due or under way). Create one by name.</td></tr>
       <tr><td><code>GET</code>, <code>PATCH</code>, <code>DELETE /programs/{id}</code></td><td>One program; change its name or deload days; archive it</td></tr>
@@ -606,7 +608,7 @@ exercise_pins
 </section>
 
 <footer>
-  Last updated 2026-10-10
+  Last updated 2026-10-11
 </footer>
 
 </main>

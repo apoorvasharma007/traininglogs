@@ -47,6 +47,26 @@ describe('Train', () => {
     expect(calls.some((c) => c.key.startsWith('GET /exercises/last'))).toBe(true)
   })
 
+  it('shows Starting… and takes no second tap while last time is fetched', async () => {
+    fakeApi({ 'GET /programs': [program()] })
+    // Last time's sets take a while to come back.
+    const fake = globalThis.fetch
+    let lastCalls = 0
+    let answer: (r: Response) => void = () => {}
+    globalThis.fetch = ((url: string, init?: RequestInit) => {
+      if (!String(url).startsWith('/exercises/last')) return fake(url, init)
+      lastCalls += 1
+      return new Promise<Response>((r) => { answer = r })
+    }) as typeof fetch
+    renderApp('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Start Workout' }))
+    const button = await screen.findByRole('button', { name: 'Starting…' })
+    expect(button).toBeDisabled()
+    await userEvent.click(button)
+    expect(lastCalls).toBe(1)
+    answer(new Response('[]', { status: 200 }))
+  })
+
   it('lists the first 4 exercises and counts the rest', async () => {
     const many = program()
     many.workouts[1].exercises = Array.from({ length: 8 }, (_, i) => ({ name: `Exercise ${i + 1}`, warmup_sets: 0, working_sets: 3, target_reps: 10, amrap: false, alternatives: [] }))
@@ -62,7 +82,10 @@ describe('Train', () => {
     renderApp('/')
     expect(await screen.findByText('Start with a Program')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Browse Templates' })).toHaveAttribute('href', '/programs/templates')
-    expect(screen.getByRole('link', { name: 'Create Your Own' })).toHaveAttribute('href', '/programs')
+    // Create Your Own goes straight to naming the new program.
+    fakeApi({ 'GET /programs': [program({ following: false })] })
+    await userEvent.click(screen.getByRole('link', { name: 'Create Your Own' }))
+    expect(await screen.findByRole('dialog', { name: 'New Program' })).toBeInTheDocument()
   })
 
   it('a deload reminder is only a reminder: OK hides it', async () => {
@@ -78,7 +101,7 @@ describe('Train', () => {
     fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
     expect(await screen.findByRole('button', { name: /Ad-hoc Workout/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Wrote it down instead\?/ })).toHaveAttribute('href', '/log')
+    expect(screen.getByRole('link', { name: /Wrote It Down Instead\?/ })).toHaveAttribute('href', '/log')
     expect(screen.getByRole('link', { name: 'Repeat a Past Session' })).toHaveAttribute('href', '/history')
   })
 

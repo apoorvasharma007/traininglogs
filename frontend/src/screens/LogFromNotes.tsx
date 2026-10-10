@@ -5,6 +5,8 @@ import BottomBar from '@/components/BottomBar'
 import { api } from '@/lib/api'
 import { localDate } from '@/lib/session'
 import type { CaptureOut } from '@/lib/types'
+import { errorText, ShownError } from '@/lib/errors'
+import { BTN } from '@/lib/ui'
 
 /** Paste a written note; AI reads it into sets, then Review shows them for checking. */
 export default function LogFromNotes() {
@@ -19,10 +21,10 @@ export default function LogFromNotes() {
     setError(null)
     try {
       const out = await api<CaptureOut>('/inputs', { method: 'POST', body: { content: text, date: localDate(new Date()) } })
-      if (!out.extraction_id) throw new Error(out.error ?? "Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.")
+      if (!out.extraction_id) throw new ShownError(out.error ?? "Couldn't read your note. It's saved, so nothing is lost. Try again in a minute.")
       navigate(`/review/${out.extraction_id}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setBusy(false)
     }
   }
@@ -47,12 +49,12 @@ export default function LogFromNotes() {
           type="button"
           disabled={busy || !text.trim()}
           onClick={extract}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+          className={BTN.primary}
         >
-          {busy ? 'Sending…' : 'Send'}
+          {busy ? 'Reading your note…' : 'Send'}
         </button>
-        <p className="text-center text-xs text-muted-foreground">
-          Reads your note with AI for about $0.02 to $0.06; longer notes cost more. Each AI fix after that is $0.01 to $0.04 more. You check everything before it's saved.
+        <p className="text-center text-[13px] text-muted-foreground">
+          About $0.02 to $0.06 per note. You check everything before it's saved.
         </p>
       </BottomBar>
     </div>

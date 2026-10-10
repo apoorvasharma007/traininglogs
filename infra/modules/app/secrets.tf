@@ -1,4 +1,4 @@
-# The app's four secrets. Terraform creates them empty; their values are added once with
+# The app's secrets. Terraform creates them empty; their values are added once with
 # `gcloud secrets versions add` (infra/README.md), so no secret value is ever in Terraform state.
 # Deleting one would lose its value, hence prevent_destroy.
 
@@ -46,13 +46,26 @@ resource "google_secret_manager_secret" "supabase_publishable_key" {
   }
 }
 
-# app-runtime may read these four secrets, and nothing else in Secret Manager.
+# The Discord webhook new feedback is posted to. Made and filled with gcloud first (infra/README.md).
+resource "google_secret_manager_secret" "discord_webhook_url" {
+  project   = var.project_id
+  secret_id = "discord-webhook-url"
+  replication {
+    auto {}
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# app-runtime may read these secrets, and nothing else in Secret Manager.
 resource "google_secret_manager_secret_iam_member" "app_runtime" {
   for_each = {
     database_url             = google_secret_manager_secret.database_url.id
     api_key                  = google_secret_manager_secret.api_key.id
     anthropic_api_key        = google_secret_manager_secret.anthropic_api_key.id
     supabase_publishable_key = google_secret_manager_secret.supabase_publishable_key.id
+    discord_webhook_url      = google_secret_manager_secret.discord_webhook_url.id
   }
 
   secret_id = each.value

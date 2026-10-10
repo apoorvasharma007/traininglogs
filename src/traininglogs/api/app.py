@@ -4,10 +4,12 @@ import sys
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import psycopg2
@@ -27,6 +29,8 @@ from traininglogs.api.schemas import (
     ExerciseHistoryRow,
     LastExercise,
     LiftDetail,
+    FeedbackIn,
+    KeyLiftsIn,
     LiftsOut,
     ManualSessionIn,
     ProgramIn,
@@ -85,7 +89,7 @@ def _live_connection(pool: SimpleConnectionPool):
             pass
         _last_used.pop(id(conn), None)
         pool.putconn(conn, close=True)
-    raise HTTPException(status_code=503, detail="Database unavailable (503). Try again in a minute.")
+    raise HTTPException(status_code=503, detail="Couldn't reach your data. Try again in a minute.")
 
 
 def _db():
@@ -141,6 +145,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="traininglogs", lifespan=lifespan)
+
+# Compress responses over 1 KB when the browser accepts it: the app's JS goes from ~250 KB to ~70 KB.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
@@ -240,7 +247,21 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.fetch import get_working_set_rows
     from traininglogs.db.programs import utc_today
 
-    return lift_summaries(get_working_set_rows(conn, user), utc_today())
+    from traininglogs.db.fetch import get_key_lifts
+
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
+
+
+@app.put("/me/key-lifts", response_model=LiftsOut)
+def put_key_lifts(body: KeyLiftsIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves which lifts Progress shows first, in this order, and returns Progress's lifts."""
+    from traininglogs.analytics.progress import lift_summaries
+    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.insert import set_key_lifts
+    from traininglogs.db.programs import utc_today
+
+    set_key_lifts(conn, user, body.names)
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), body.names)
 
 
 @app.get("/progress/lifts/{name}", response_model=LiftDetail)
@@ -254,6 +275,40 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
+
+
+@app.post("/feedback", status_code=201)
+def post_feedback(body: FeedbackIn, background: BackgroundTasks, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves a feature request, a bug report or any other message, with the release it came from,
+    then posts it to Apoorva's Discord once the reply has gone back."""
+    from traininglogs.alerts import feedback_alert
+    from traininglogs.db.fetch import get_email
+    from traininglogs.db.insert import insert_feedback
+
+    app_version = version("traininglogs")
+    feedback_id = insert_feedback(conn, user, body.kind, body.message, app_version)
+    background.add_task(feedback_alert, body.kind, body.message, get_email(conn, user), app_version)
+    return {"id": feedback_id}
+
+
+@app.get("/me/export")
+def export_data(format: Literal["csv", "json"] = "csv", conn=Depends(_db), user: str = Depends(_user)):
+    """Everything the person has logged: a CSV with one line per set, or JSON with sessions,
+    exercises, sets and programs. Sent as a file to save."""
+    from datetime import datetime, timezone
+
+    from traininglogs.db.fetch import get_export_rows
+    from traininglogs.db.programs import list_programs
+    from traininglogs.export.export import to_csv, to_json
+
+    rows = get_export_rows(conn, user)
+    stamp = datetime.now(timezone.utc)
+    name = f"traininglogs-{stamp:%Y-%m-%d}"
+    if format == "csv":
+        return Response(to_csv(rows), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
+    body = to_json(rows, list_programs(conn, user), version("traininglogs"), stamp.isoformat(timespec="seconds"))
+    return JSONResponse(body, headers={"Content-Disposition": f'attachment; filename="{name}.json"'})
 
 
 @app.get("/me/ai-usage", response_model=AiUsage)
@@ -372,7 +427,8 @@ def correct_extraction(extraction_id: str, body: CorrectIn, conn=Depends(_db), u
     try:
         updated, edits = LLMExtractValidator(provider).apply_correction(current, body.instruction)
     except PatchError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Correction couldn't be applied for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail="That fix couldn't be applied. Try saying it another way.")
     except CorrectionRejected as exc:
         # The full technical reason goes to the server log; the person gets the plain one.
         print(f"Correction rejected for {extraction_id}: {exc}", flush=True)
@@ -417,7 +473,8 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: s
         else:
             updated, edits = apply_card_edits(current, body.edits)
     except CardEditError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        print(f"Card edit rejected for {extraction_id}: {exc}", flush=True)
+        raise HTTPException(status_code=400, detail=exc.plain)
 
     return CorrectOut(
         extract=updated.model_dump(mode="json"),
@@ -598,13 +655,18 @@ def workouts_archive(workout_id: str, conn=Depends(_db), user: str = Depends(_us
     return _program_or_404(conn, user, program_id)
 
 
-class _NoCacheStaticFiles(StaticFiles):
-    """The web UI, revalidated on every load. A browser serving a cached app.js after a deploy
-    is how an old UI kept appearing locally (and cost two paid extractions)."""
+class _AppFiles(StaticFiles):
+    """The web UI. index.html is revalidated on every load: a browser serving a cached app.js
+    after a deploy is how an old UI kept appearing locally (and cost two paid extractions).
+    Files under assets/ have their content's hash in the name, so a new build gets new names and
+    the browser can keep these until then without asking again."""
 
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
-        response.headers["Cache-Control"] = "no-cache"
+        if path.startswith("assets/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
 
@@ -622,4 +684,4 @@ def old_app_address():
 # image; locally `npm run build` in frontend/ makes frontend/dist.
 _app_dir = Path(os.environ.get("APP_DIR", "frontend/dist"))
 if _app_dir.is_dir():
-    app.mount("/", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")
+    app.mount("/", _AppFiles(directory=_app_dir, html=True), name="app")

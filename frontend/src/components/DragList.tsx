@@ -11,12 +11,15 @@ export default function DragList<T>({
   keyOf,
   label,
   onReorder,
+  bare,
   children,
 }: {
   items: T[]
   keyOf: (item: T) => string
   label: (item: T) => string
   onReorder: (keys: string[]) => void
+  /** No card of its own: it sits inside one (a SectionCard). */
+  bare?: boolean
   children: (item: T) => ReactNode
 }) {
   const original = items.map(keyOf)
@@ -30,7 +33,7 @@ export default function DragList<T>({
   }
 
   return (
-    <Reorder.Group axis="y" values={order} onReorder={setDragging} className="overflow-hidden rounded-2xl border border-border bg-card">
+    <Reorder.Group axis="y" values={order} onReorder={setDragging} className={bare ? '' : 'overflow-hidden rounded-2xl border border-border bg-card'}>
       {order.map((key) => {
         const item = byKey.get(key)
         return item ? (
@@ -47,7 +50,7 @@ function Row({ value, label, onDragEnd, children }: { value: string; label: stri
   const controls = useDragControls()
   return (
     <Reorder.Item value={value} dragListener={false} dragControls={controls} onDragEnd={onDragEnd}
-      className="relative flex items-center border-t border-border bg-card first:border-t-0"
+      className="relative flex items-center border-t border-border/60 bg-card first:border-t-0"
       whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 1 }}>
       <div className="min-w-0 flex-1">{children}</div>
       <button type="button" aria-label={`Drag to reorder ${label}`}

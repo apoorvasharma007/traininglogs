@@ -6,6 +6,7 @@ import { del, get, set } from 'idb-keyval'
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { api } from '@/lib/api'
 import { signedInEmail } from '@/lib/auth'
+import { errorText } from '@/lib/errors'
 import type { LiveSession, SessionRequest } from '@/lib/session'
 
 const CURRENT = 'session-in-progress'
@@ -74,7 +75,7 @@ export async function flush(): Promise<void> {
       publish({ pending, lastError: null })
     }
   } catch (e) {
-    publish({ lastError: e instanceof Error ? e.message : String(e) })
+    publish({ lastError: errorText(e, "Couldn't send. It will try again.") })
   } finally {
     publish({ sending: false })
   }

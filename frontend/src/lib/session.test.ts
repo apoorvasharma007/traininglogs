@@ -13,9 +13,14 @@ import {
   toRequest,
   type LastExercise,
   addRamp,
-  needsEffort,
   rampSets,
-  setLastEffort,
+  setEffort,
+  setValue,
+  addSet,
+  startBlank,
+  addExercise,
+  liveTitle,
+  updateExercise,
 } from './session'
 import type { Workout } from './types'
 
@@ -227,16 +232,58 @@ describe('warm-up ramp', () => {
   })
 })
 
-describe('effort nudge', () => {
-  it('asks once an exercise is done with no effort, and stops after an answer or Skip', () => {
-    let s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
-    const ex = s.exercises[0]
-    expect(needsEffort(ex)).toBe(false)
-    for (const set of ex.sets) s = toggleDone(s, set.key)
-    expect(needsEffort(s.exercises[0])).toBe(true)
-    const answered = setLastEffort(s, ex.key, 8.5)
-    expect(answered.exercises[0].sets.filter((x) => x.kind === 'working').at(-1)?.rpe).toBe(8.5)
-    expect(needsEffort(answered.exercises[0])).toBe(false)
-    expect(needsEffort({ ...s.exercises[0], effortSkipped: true })).toBe(false)
+describe('effort', () => {
+  it('is set on the one set it was asked about', () => {
+    const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
+    const second = s.exercises[0].sets[2]
+    const after = setEffort(s, second.key, 8.5).exercises[0].sets
+    expect(after.map((x) => x.rpe)).toEqual([null, null, 8.5, null])
+  })
+})
+
+describe('cascade fill', () => {
+  it("a typed weight shows in grey in the later sets of the same kind nobody has touched", () => {
+    const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
+    const squat = s.exercises[0]
+    const after = setValue(s, squat.sets[1].key, 'weight', '130').exercises[0].sets
+    expect(after.map((x) => [x.kind, x.weight, x.reps, x.ghost, x.own])).toEqual([
+      ['warmup', '80', '', true, undefined], // a warm-up: another kind, left alone
+      ['working', '130', '2', true, 'weight'], // typed: the weight is the person's own, the reps stay grey
+      ['working', '130', '2', true, undefined], // last time's 125 replaced, still grey
+      ['working', '130', '2', true, undefined],
+    ])
+  })
+
+  it("leaves ticked and typed-into sets alone, and doesn't spread a cleared box", () => {
+    let s = startBlank(now)
+    s = addExercise(s).session
+    const ex = s.exercises[0].key
+    s = addSet(s, ex).session
+    s = addSet(s, ex).session
+    const [a, b, c] = s.exercises[0].sets
+    s = setValue(s, b.key, 'reps', '8') // typed into; the 8 also shows in grey in the set below
+    s = toggleDone(s, c.key) // ticked, taking the grey 8
+    s = setValue(s, a.key, 'weight', '60')
+    expect(s.exercises[0].sets.map((x) => [x.weight, x.reps, x.done])).toEqual([['60', '', false], ['', '8', false], ['', '8', true]])
+    s = setValue(s, a.key, 'weight', '')
+    expect(s.exercises[0].sets.map((x) => x.weight)).toEqual(['', '', ''])
+  })
+})
+
+describe("an ad-hoc session's name", () => {
+  it("is Ad-hoc Workout until an exercise has a name, then its exercises", () => {
+    let s = startBlank(now)
+    expect(liveTitle(s)).toBe('Ad-hoc Workout')
+    s = addExercise(s).session
+    expect(liveTitle(s)).toBe('Ad-hoc Workout')
+    for (const name of ['Squat', 'Bench Press', 'Rows']) {
+      s = updateExercise(s, s.exercises.at(-1)!.key, { name, naming: false })
+      s = addExercise(s).session
+    }
+    expect(liveTitle(s)).toBe('Squat, Bench Press and 1 more')
+  })
+
+  it("leaves a program workout's name alone", () => {
+    expect(liveTitle(startFromWorkout(workout, 'Bench', 'p1', lasts, now))).toBe('Bench')
   })
 })

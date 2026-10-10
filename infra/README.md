@@ -97,8 +97,8 @@ The project layer never runs in the pipeline. Change it from your laptop with pl
 
 ## Secrets
 
-The app reads `database-url`, `api-key`, `anthropic-api-key` and `supabase-publishable-key` from
-Secret Manager. Terraform creates them but never holds their values, so no secret ends up in
+The app reads `database-url`, `api-key`, `anthropic-api-key`, `supabase-publishable-key` and
+`discord-webhook-url` (where new feedback is posted) from Secret Manager. Terraform creates them but never holds their values, so no secret ends up in
 Terraform's state. `supabase-publishable-key` was made with gcloud first and adopted by an
 `import` block in each environment's `main.tf`:
 

@@ -81,3 +81,19 @@ def test_ai_usage_is_the_persons_own_total(client) -> None:
     conn.close()
     assert client.get("/me/ai-usage", headers=auth()).json() == {"total_usd": 0.0205}
     assert client.get("/me/ai-usage", headers=auth(USER_B_AUTH)).json() == {"total_usd": 0.5}
+
+
+def test_chosen_key_lifts_are_saved_shown_first_and_only_for_that_person(client) -> None:
+    r = client.put("/me/key-lifts", headers=HEADERS, json={"names": ["Deadlift", "squat"]})
+    assert r.status_code == 200
+    assert [k["name"] for k in r.json()["key_lifts"]] == ["Deadlift", "Squat"]
+    assert [k["name"] for k in client.get("/progress/lifts", headers=HEADERS).json()["key_lifts"]] == ["Deadlift", "Squat"]
+    # Someone else still sees the built-in list.
+    other = client.get("/progress/lifts", headers=auth(sub=USER_B_AUTH)).json()["key_lifts"]
+    assert [k["name"] for k in other][:2] == ["Squat", "Bench Press"]
+    client.put("/me/key-lifts", headers=HEADERS, json={"names": ["Squat", "Bench Press", "Shoulder Press", "Deadlift", "Barbell Clean", "Pull-up"]})
+
+
+def test_key_lifts_refuses_a_name_listed_twice_or_blank(client) -> None:
+    assert client.put("/me/key-lifts", headers=HEADERS, json={"names": ["Squat", " squat "]}).status_code == 422
+    assert client.put("/me/key-lifts", headers=HEADERS, json={"names": [""]}).status_code == 422
