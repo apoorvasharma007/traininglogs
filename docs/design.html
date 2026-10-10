@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-06 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">4.0.0</span> · 2026-10-10 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -348,7 +348,7 @@ WorkingSet                    one model for every kind of set; the fields presen
   <table>
     <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
     <tbody>
-      <tr><td><code>GET /</code></td><td>The web page, never cached</td></tr>
+      <tr><td><code>GET /</code></td><td>The web page, never cached. Its script and style files under <code>/assets/</code> carry a hash in their names and are cached until a release renames them. Responses over 1 KB are gzip-compressed.</td></tr>
       <tr><td><code>POST /inputs</code></td><td>Saves the text, then runs the model. Returns <code>{raw_input_id, extraction_id}</code>; if the model fails, the app keeps the text anyway and the response says why.</td></tr>
       <tr><td><code>GET /extractions/{id}</code></td><td>The card for a reading, as JSON</td></tr>
       <tr><td><code>POST /extractions/{id}/edit</code></td><td>Values changed on the card, or one line added or removed. No model call. <code>400</code> names the field when a value is invalid.</td></tr>
@@ -432,7 +432,7 @@ WorkingSet                    one model for every kind of set; the fields presen
 </section>
 
 <footer>
-  Last updated 2026-10-06
+  Last updated 2026-10-10
 </footer>
 
 </main>

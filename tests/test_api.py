@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 
 import pytest
@@ -787,7 +788,8 @@ class TestEditExtraction:
 
 class TestWebUi:
     """The app (frontend/dist, built by `npm run build`) is served by the API itself (same origin,
-    one deploy), never cached, and mounted after every API route so it can't shadow one."""
+    one deploy), and mounted after every API route so it can't shadow one. index.html is never
+    cached; the hashed files under assets/ are kept until a release renames them."""
 
     def test_index_served_without_auth_and_not_cached(self, client) -> None:
         r = client.get("/")
@@ -795,6 +797,22 @@ class TestWebUi:
         assert "text/html" in r.headers["content-type"]
         assert 'id="root"' in r.text
         assert r.headers["cache-control"] == "no-cache"
+
+    def test_hashed_assets_cached_until_renamed(self, client) -> None:
+        script = re.search(r'src="(/assets/[^"]+\.js)"', client.get("/").text).group(1)
+        r = client.get(script)
+        assert r.status_code == 200
+        assert r.headers["cache-control"] == "public, max-age=31536000, immutable"
+
+    def test_missing_asset_not_cached(self, client) -> None:
+        r = client.get("/assets/not-a-file.js")
+        assert r.status_code == 404
+        assert "immutable" not in r.headers.get("cache-control", "")
+
+    def test_app_compressed_when_browser_accepts_it(self, client) -> None:
+        script = re.search(r'src="(/assets/[^"]+\.js)"', client.get("/").text).group(1)
+        assert client.get(script, headers={"Accept-Encoding": "gzip"}).headers["content-encoding"] == "gzip"
+        assert "content-encoding" not in client.get(script, headers={"Accept-Encoding": "identity"}).headers
 
     def test_old_app_address_redirects(self, client) -> None:
         r = client.get("/app/", follow_redirects=False)
