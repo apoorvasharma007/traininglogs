@@ -301,11 +301,12 @@ export function rampSets(target: number, count: number): { kg: number; reps: num
   })
 }
 
-/** Adds warm-up sets after the exercise's warm-ups and before its working sets, in grey to type
- * over. Sets already there stay as they are. */
-export function addRamp(s: LiveSession, exKey: string, ramp: { kg: number; reps: number }[]): LiveSession {
+/** Adds warm-up sets after the exercise's warm-ups and before its working sets: a ramp's numbers in
+ * grey to type over, or blank sets (null) to fill in. Sets already there stay as they are. */
+export function addRamp(s: LiveSession, exKey: string, ramp: ({ kg: number; reps: number } | null)[]): LiveSession {
   return mapExercise(s, exKey, (e) => {
-    const added = ramp.map((r) => ({ ...blankSet('warmup'), weight: String(r.kg), reps: String(r.reps), ghost: true }))
+    const added = ramp.map((r) =>
+      r ? { ...blankSet('warmup'), weight: String(r.kg), reps: String(r.reps), ghost: true } : blankSet('warmup'))
     const warm = e.sets.filter((x) => x.kind === 'warmup')
     return { ...e, sets: [...warm, ...added, ...e.sets.filter((x) => x.kind === 'working')] }
   })

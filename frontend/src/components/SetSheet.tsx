@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
 import NoteBox from '@/components/NoteBox'
+import NumberBox from '@/components/NumberBox'
 import Sheet from '@/components/Sheet'
 import { EFFORT_FILL, EFFORT_OUTLINE, EFFORTS, effortLevel } from '@/lib/effort'
 import { kg } from '@/lib/format'
@@ -31,7 +31,7 @@ export default function SetSheet({
   onDelete: () => void
   onClose: () => void
   /** Adds warm-up sets to the set's exercise; without it the Warm-up tab offers no ramp. */
-  onRamp?: (ramp: { kg: number; reps: number }[]) => void
+  onRamp?: (ramp: ({ kg: number; reps: number } | null)[]) => void
 }) {
   // Keeps showing the last set while the drawer slides away.
   const [shown, setShown] = useState(target)
@@ -65,7 +65,7 @@ function SetForm({
   onDone: (draft: SetDraft) => void
   onDelete: () => void
   rampFrom: number | null
-  onRamp?: (ramp: { kg: number; reps: number }[]) => void
+  onRamp?: (ramp: ({ kg: number; reps: number } | null)[]) => void
 }) {
   // Weight and reps are typed on the set's row; the drawer holds what the row can't show.
   const [draft, setDraft] = useState(initial)
@@ -92,7 +92,7 @@ function SetForm({
       <div className="flex min-h-38 flex-col">
         {draft.kind === 'warmup' &&
           (onRamp ? (
-            <RampUp from={rampFrom} onAdd={onRamp} />
+            <WarmupSets from={rampFrom} onAdd={onRamp} />
           ) : (
             <div className="flex flex-1 items-center justify-center rounded-xl bg-muted/50 text-sm text-muted-foreground">
               Warm-up sets don't track effort
@@ -158,56 +158,48 @@ function SetForm({
   )
 }
 
-/** A ramp of warm-up sets up to a working weight, added to the set's exercise in one tap. Hidden until asked for. */
-function RampUp({ from, onAdd }: { from: number | null; onAdd: (ramp: { kg: number; reps: number }[]) => void }) {
-  const [open, setOpen] = useState(false)
-  const [target, setTarget] = useState(from ? String(from) : '')
+/**
+ * Warm-up sets for the set's exercise, added in one tap: as many as the count says, blank to fill
+ * in later, or, with a weight to work up to, a ramp rounded to 2.5 kg. The weight box shows the
+ * first working weight in grey; one tap takes it.
+ */
+function WarmupSets({ from, onAdd }: { from: number | null; onAdd: (ramp: ({ kg: number; reps: number } | null)[]) => void }) {
+  const [target, setTarget] = useState('')
   const [count, setCount] = useState(3)
-  const weight = parseFloat(target.replace(',', '.'))
+  const weight = parseFloat(target)
   const ramp = weight > 0 ? rampSets(weight, count) : []
   const step = 'h-11 w-11 rounded-[10px] text-[22px] font-semibold disabled:opacity-30'
   return (
-    <div className="flex flex-col rounded-2xl bg-muted">
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
-        className="flex h-13 items-center gap-2 px-3.5 text-left text-[15px] font-semibold">
-        <span className="flex-1">Build Up to Working Weight</span>
-        <ChevronRight size={18} aria-hidden className={`text-faint-foreground transition-transform ${open ? 'rotate-90' : ''}`} />
-      </button>
-      {open && (
-        <div className="flex flex-col gap-2.5 px-3 pb-3">
-          <div className="grid grid-cols-2 gap-2.5">
-            <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-              Working weight
-              <span className="flex h-12 items-center gap-1.5 rounded-xl bg-card px-3">
-                <input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0"
-                  className="w-full bg-transparent font-mono text-lg font-semibold text-foreground outline-none" />
-                <span className="text-sm font-normal">kg</span>
-              </span>
-            </label>
-            <div className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-              Warm-up sets
-              <span className="flex h-12 items-center justify-between rounded-xl bg-card px-0.5 text-foreground">
-                <button type="button" aria-label="Fewer sets" disabled={count <= 1} onClick={() => setCount(count - 1)} className={step}>−</button>
-                <span className="font-mono text-lg">{count}</span>
-                <button type="button" aria-label="More sets" disabled={count >= MAX_RAMP} onClick={() => setCount(count + 1)} className={step}>+</button>
-              </span>
-            </div>
-          </div>
-          <div className="scrollbar-none -mr-3 flex min-h-9 items-center gap-2 overflow-x-auto pr-3">
-            {ramp.length ? (
-              ramp.map((r, i) => (
-                <span key={i} className="shrink-0 rounded-lg bg-card px-2.5 py-1.5 font-mono text-sm font-semibold">{kg(r.kg)} kg</span>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">Type your working weight to see the ramp</span>
-            )}
-          </div>
-          <button type="button" disabled={!ramp.length} onClick={() => onAdd(ramp)}
-            className="h-12 rounded-[14px] bg-primary font-semibold text-primary-foreground disabled:opacity-40">
-            Add
-          </button>
+    <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          How many
+          <span className="flex h-12 items-center justify-between rounded-xl bg-muted px-0.5 text-foreground">
+            <button type="button" aria-label="Fewer sets" disabled={count <= 1} onClick={() => setCount(count - 1)} className={step}>−</button>
+            <span className="font-mono text-lg">{count}</span>
+            <button type="button" aria-label="More sets" disabled={count >= MAX_RAMP} onClick={() => setCount(count + 1)} className={step}>+</button>
+          </span>
         </div>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          Work up to (kg)
+          <NumberBox label="Work up to, kg" value={target} placeholder={from ? kg(from) : 'optional'} fillable={from != null}
+            onChange={setTarget} className="h-12 rounded-xl text-lg font-semibold text-foreground" />
+        </label>
+      </div>
+      {ramp.length > 0 && (
+        <p aria-label="Ramp" className="scrollbar-none flex min-h-6 items-center gap-1.5 overflow-x-auto font-mono text-sm font-semibold whitespace-nowrap">
+          {ramp.map((r, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              {i > 0 && <span aria-hidden className="text-faint-foreground">→</span>}
+              {kg(r.kg)}×{r.reps}
+            </span>
+          ))}
+        </p>
       )}
+      <button type="button" onClick={() => onAdd(ramp.length ? ramp : Array(count).fill(null))}
+        className="h-12 rounded-[14px] bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+        Add {count} {count === 1 ? 'Set' : 'Sets'}
+      </button>
     </div>
   )
 }

@@ -209,6 +209,41 @@ describe('Session', () => {
       .map((x: { weight: string; reps: string }) => [x.weight, x.reps])).toEqual([['62.5', '5'], ['87.5', '4'], ['112.5', '2']]))
   })
 
+  it('adds blank warm-up sets from the set sheet in one tap', async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Set 1 options' }))[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Warm-up' }))
+    await userEvent.click(screen.getByRole('button', { name: 'More sets' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add 4 Sets' }))
+    await waitFor(async () => {
+      const warm = (await get('session-in-progress:a@example.com'))?.exercises[0].sets.filter((x: { kind: string }) => x.kind === 'warmup')
+      expect(warm.slice(-4).map((x: { weight: string; reps: string }) => [x.weight, x.reps])).toEqual([['', ''], ['', ''], ['', ''], ['', '']])
+    })
+  })
+
+  it('works up to the grey working weight: one tap fills it, the ladder shows, Add adds it', async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Set 1 options' }))[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Warm-up' }))
+    const box = screen.getByRole('textbox', { name: 'Work up to, kg' })
+    expect(box).toHaveValue('')
+    expect(box).toHaveAttribute('placeholder', '125')
+    await userEvent.click(box)
+    // Filled without the keypad: the box isn't focused.
+    expect(box).toHaveValue('125')
+    expect(box).not.toHaveFocus()
+    expect(screen.getByLabelText('Ramp')).toHaveTextContent('62.5×5→95×3→120×1')
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 Sets' }))
+    await waitFor(async () => {
+      const warm = (await get('session-in-progress:a@example.com'))?.exercises[0].sets.filter((x: { kind: string }) => x.kind === 'warmup')
+      expect(warm.slice(-3).map((x: { weight: string }) => x.weight)).toEqual(['62.5', '95', '120'])
+    })
+  })
+
   it('moves an exercise with Move Down', async () => {
     await saveSession(startFromWorkout(
       { ...workout, exercises: [...workout.exercises, { name: 'Bench press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: [] }] },

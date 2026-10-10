@@ -52,7 +52,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
   waits, with a word that fits: Start Workout and Ad-hoc Workout ("Starting…"), Repeat
   ("Starting…"), Follow This Program ("Following…"), Stop Following, Deload Save and Update
   Program ("Saving…"). Log from Notes says "Reading your note…" while the AI reads.
-- [ ] 3. **Warm-up sets in the set sheet.** Build Up to Working Weight becomes "Warm-up Sets":
+- [x] 3. **Warm-up sets in the set sheet.** Build Up to Working Weight becomes "Warm-up Sets":
   - "How many": the − 3 + count.
   - "Work up to": a kg box showing the first working weight (or last time's) in grey. Tap-to-fill
     applies. Empty: the sets are added blank. Filled: a ladder shows under it

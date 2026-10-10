@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils'
 
 /**
- * A weight or reps box on a set row: tap it and the number keypad opens. A grey placeholder is
- * last time's value; typing replaces it.
+ * A weight or reps box: tap it and the number keypad opens. A grey placeholder is last time's value
+ * (or a suggestion); typing replaces it. When `fillable`, the first tap fills the grey number in
+ * without the keypad, and the next tap opens the keypad with the number selected.
  */
 export default function NumberBox({
   label,
@@ -11,6 +12,8 @@ export default function NumberBox({
   inputMode = 'decimal',
   done,
   flagged,
+  fillable,
+  className,
   onChange,
   onBlur,
 }: {
@@ -21,9 +24,13 @@ export default function NumberBox({
   done?: boolean
   /** The AI wasn't sure of this value: an amber outline until it's looked at. */
   flagged?: boolean
+  /** The placeholder is a value worth taking as it is. */
+  fillable?: boolean
+  className?: string
   onChange: (value: string) => void
   onBlur?: () => void
 }) {
+  const fill = Boolean(fillable && value === '' && placeholder)
   return (
     <input
       aria-label={label}
@@ -34,6 +41,9 @@ export default function NumberBox({
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value.replace(',', '.'))}
       onBlur={onBlur}
+      // Read-only until filled, so the first tap doesn't bring up the keypad.
+      readOnly={fill}
+      onClick={fill ? (e) => { onChange(placeholder); e.currentTarget.blur() } : undefined}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       data-check={flagged ? '' : undefined}
@@ -43,6 +53,7 @@ export default function NumberBox({
         done ? 'bg-transparent' : 'bg-muted',
         // Last, so it wins over the plain transparent border.
         flagged && 'border-warning',
+        className,
       )}
     />
   )

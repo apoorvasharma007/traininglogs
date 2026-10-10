@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Warm-up sets in the set sheet's Warm-up tab: pick how many and tap Add for that many blank
+  warm-up sets. To work up to a weight instead, tap the grey working weight (one tap fills it in)
+  or type one: the ladder shows under it, rounded to 2.5 kg, and the same Add button adds it.
 - Buttons that wait for the server can't be tapped twice and say what they're doing: Start
   Workout, Ad-hoc Workout and Repeat say "Starting…", Follow This Program "Following…", deleting
   "Deleting…", saving "Saving…". Send on Log from Notes says "Reading your note…" while the AI
