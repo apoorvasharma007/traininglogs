@@ -62,7 +62,7 @@ This is the order prod was built in. Each step needs the one before it.
    terraform apply tfplan
    ```
 
-3. Create the three secrets, empty. Cloud Run won't start a revision that reads a secret with no
+3. Create the secrets, empty. Cloud Run won't start a revision that reads a secret with no
    value, so you create and fill the secrets before the service:
 
    ```bash
@@ -71,7 +71,8 @@ This is the order prod was built in. Each step needs the one before it.
    terraform plan -out=tfplan \
      -target=module.app.google_secret_manager_secret.database_url \
      -target=module.app.google_secret_manager_secret.api_key \
-     -target=module.app.google_secret_manager_secret.anthropic_api_key
+     -target=module.app.google_secret_manager_secret.anthropic_api_key \
+     -target=module.app.google_secret_manager_secret.supabase_publishable_key
    terraform apply tfplan
    ```
 
@@ -96,8 +97,15 @@ The project layer never runs in the pipeline. Change it from your laptop with pl
 
 ## Secrets
 
-The app reads `database-url`, `api-key` and `anthropic-api-key` from Secret Manager. Terraform
-creates them but never holds their values, so no secret ends up in Terraform's state.
+The app reads `database-url`, `api-key`, `anthropic-api-key` and `supabase-publishable-key` from
+Secret Manager. Terraform creates them but never holds their values, so no secret ends up in
+Terraform's state. `supabase-publishable-key` was made with gcloud first and adopted by an
+`import` block in each environment's `main.tf`:
+
+```bash
+gcloud secrets create supabase-publishable-key --replication-policy=automatic
+printf '%s' "$VALUE" | gcloud secrets versions add supabase-publishable-key --data-file=-
+```
 
 To add or change a value, add a new version. From a terminal, without the value appearing on
 screen:

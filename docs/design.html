@@ -185,7 +185,7 @@
 <main>
 
 <header class="header">
-  <div class="eyebrow">Technical Design · App v<span class="app-version">4.1.0</span> · 2026-10-04 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
+  <div class="eyebrow">Technical Design · App v<span class="app-version">4.1.0</span> · 2026-10-10 · <a href="https://github.com/apoorvasharma007/traininglogs" style="color:inherit;text-decoration:underline;">github.com/apoorvasharma007/traininglogs</a></div>
   <h1>traininglogs</h1>
   <p class="subtitle">Workout notes written however you like, turned into structured training data.</p>
 </header>
@@ -555,7 +555,7 @@ exercise_pins
     <tbody>
       <tr><td>Cloud Run service <code>traininglogs</code></td><td>512 MiB, 0 to 2 instances, CPU only while handling a request. Runs as <code>app-runtime</code>.</td></tr>
       <tr><td>Artifact Registry <code>images</code></td><td>The app's images, tagged by commit. Only the newest two are kept.</td></tr>
-      <tr><td>Secret Manager</td><td><code>database-url</code>, <code>api-key</code>, <code>anthropic-api-key</code>, readable by <code>app-runtime</code> only. Terraform creates them empty and you add the values with <code>gcloud</code>, so no secret is in Terraform's state. An instance that starts after you add a new version uses the new value.</td></tr>
+      <tr><td>Secret Manager</td><td><code>database-url</code>, <code>api-key</code>, <code>anthropic-api-key</code>, <code>supabase-publishable-key</code>, readable by <code>app-runtime</code> only. Terraform creates them empty and you add the values with <code>gcloud</code>, so no secret is in Terraform's state. An instance that starts after you add a new version uses the new value.</td></tr>
       <tr><td>Service accounts</td><td><code>terraform</code> applies the app layer, <code>app-deploy</code> ships images and works only from <code>main</code>, <code>app-runtime</code> is the running app.</td></tr>
       <tr><td>GitHub sign-in</td><td>Workload identity federation. Workflows in this repository get short-lived tokens; no service account key file exists.</td></tr>
     </tbody>
@@ -606,7 +606,7 @@ exercise_pins
 </section>
 
 <footer>
-  Last updated 2026-10-04
+  Last updated 2026-10-10
 </footer>
 
 </main>

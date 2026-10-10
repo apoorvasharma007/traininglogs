@@ -84,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Production releases failed: Terraform set the app's Supabase key to empty, so the server
+  refused to start. The key now comes from Secret Manager (`supabase-publishable-key`) in both
+  environments, and no key is written in the repo.
 - The deload count's break check counted every person's training days, not only yours.
 - A pasted note with no date gets today's date on your phone. It took the server's UTC date,
   which in India is the day before until 5:30 am.
