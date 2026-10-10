@@ -28,11 +28,6 @@ variable "supabase_url" {
   type        = string
 }
 
-variable "supabase_publishable_key" {
-  description = "That project's publishable key, which the app sends with sign-in requests. Public by design."
-  type        = string
-}
-
 variable "memory" {
   description = "Memory per Cloud Run instance."
   type        = string

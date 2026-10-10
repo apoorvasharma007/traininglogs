@@ -35,6 +35,11 @@ module "app" {
   app_deploy_service_account = data.terraform_remote_state.project.outputs.app_deploy_service_account
   anthropic_workspace_id     = "wrkspc_011QiVX8TkGjpXRWKN8trAtn"
   supabase_url               = "https://rjmkdhmvmbbpkmjrqrdc.supabase.co"
-  # Production's publishable key goes here before the release; until then the new server won't start.
-  supabase_publishable_key = ""
+}
+
+# The secret is made and filled with gcloud before this applies (infra/README.md, Secrets), so the
+# first revision that reads it can start. This adopts it into Terraform.
+import {
+  to = module.app.google_secret_manager_secret.supabase_publishable_key
+  id = "projects/${local.project_id}/secrets/supabase-publishable-key"
 }

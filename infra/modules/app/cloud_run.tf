@@ -57,8 +57,13 @@ resource "google_cloud_run_v2_service" "traininglogs" {
       }
 
       env {
-        name  = "SUPABASE_PUBLISHABLE_KEY"
-        value = var.supabase_publishable_key
+        name = "SUPABASE_PUBLISHABLE_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.supabase_publishable_key.secret_id
+            version = "latest"
+          }
+        }
       }
 
       # Only the code from before accounts reads this. It stays for one release, so that release's
