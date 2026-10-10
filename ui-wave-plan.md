@@ -7,23 +7,24 @@ together on staging, released to `main` together.
 
 The app should never show a raw error, should always show that it's working while it waits for
 the server, and should make the common things (warm-up sets, effort after a set, opening and
-closing an exercise) take as few taps as possible and look good doing it. Then a screen-by-screen
-audit for consistency and fewer taps, with Apoorva picking which fixes go in.
+closing an exercise, entering last time's numbers) take as few taps as possible and look good
+doing it. The screen-by-screen audit (`ui-audit.md`) fixes inconsistencies and extra taps.
 
 ## Blast radius
 
 | Area | Files |
 |---|---|
-| Errors | `frontend/src/lib/api.ts`, `auth.ts`, every screen that shows an error; `src/traininglogs/agent/extraction.py`, `validation_card_builder.py` |
+| Errors | `frontend/src/lib/api.ts`, `auth.ts`, `errors.ts`, every screen that shows an error; `src/traininglogs/agent/card_edits.py`, `ingest/confirm.py`, `api/app.py` |
 | Busy states | Every button that calls the server |
-| Warm-ups | `frontend/src/components/SetSheet.tsx` (Build Up to Working Weight), `frontend/src/lib/session.ts` |
-| Effort sheet | `frontend/src/screens/session/ExerciseCard.tsx`, `Session.tsx`, a new sheet component |
-| Collapse | `frontend/src/screens/session/ExerciseCard.tsx` |
-| Audit | All 13 screens |
-| Prod data | One exercise note (30 Sep "Strength", Barbell Clean), with approval |
+| Warm-ups | `frontend/src/components/SetSheet.tsx`, `frontend/src/lib/session.ts` |
+| Effort sheet | `frontend/src/screens/session/Session.tsx`, a new `EffortSheet` component |
+| Tap-to-fill, cascade fill | `frontend/src/components/NumberBox.tsx`, `frontend/src/lib/session.ts` |
+| Transitions, loading, open/close, press feedback | `frontend/src/App.tsx`, `components/QueryStatus.tsx`, a new `Collapsible` component, every screen |
+| Key Lifts | `src/traininglogs/db/schema.sql`, `analytics/progress.py`, `api/app.py`, `frontend/src/screens/Settings.tsx` |
+| Prod data | One exercise note (30 Sep "Strength", Barbell Clean); one new column for Key Lifts. Both with approval. |
 
-The look is locked: items 4, 5 and 6 change it and need Apoorva's yes on a mock-up or a
-description first.
+The look is locked: steps 3, 4 and 6 change it. Apoorva agreed the designs below on 2026-10-10;
+step 4 still needs a mock-up first.
 
 ## Branches
 
@@ -31,29 +32,73 @@ Base `ui/wave-1` from `dev`. One sub-branch per step, `ui/wave-1-N-<step>`, squa
 base with the full suite green (0 failed, 0 skipped). The base merges into `dev` when every step
 is done; Apoorva tests it on staging; then one release to `main`.
 
+## Decisions (2026-10-10)
+
+- Weights are kg only. No lb setting in this wave.
+- Tap-to-fill for every grey number: the first tap fills it in without the keyboard; a second
+  tap opens the keyboard with the number selected, so typing replaces it.
+- Cascade fill: a weight or reps typed into a set shows in grey in the empty sets below it.
+- Screen transitions are iOS style.
+- Later, not this wave: exercise-name cleanup and suggestions (D1), lb units, a rest timer,
+  "Save as a workout" from an ad-hoc session.
+
 ## Steps
 
-- [x] 1. **No raw errors on screen.** One function turns any error into a plain sentence; every
-  screen uses it. The review card says the exercise couldn't be read instead of showing the
-  model's error, and a confirmed session never stores that error in its notes. Clean the one
-  existing note in prod (show the row and the statement first).
-- [ ] 2. **Busy states.** Every button that calls the server is disabled while it waits and says
-  what it's doing in words that fit the action ("Saving…", "Sending…", "Signing in…").
-- [ ] 3. **Warm-up sets in one step.** Redesign Build Up to Working Weight: the obvious action is
-  "Add N warm-up sets" (blank weights, filled in later). Below it, optionally, a working weight
-  turns the same N into a ramp, shown as a ladder before adding. Weights round to 2.5 kg, or
-  5 lb when the unit is lb. The warm-up templates stay as they are.
-- [ ] 4. **Effort after every working set**, as a bottom sheet like the set menu so it is never
-  hidden by an exercise folding away. Swipe down to skip. Colourful and engaging enough that
-  people answer it. Mock-up first.
-- [x] 5. **Completed exercises open and close every time**, with a smooth height animation.
-- [ ] 6. **Screen-by-screen audit**: inconsistencies, extra taps, abrupt loads and transitions,
-  one line each. Apoorva picks the fixes per screen.
+- [x] 1. **No raw errors on screen.** `errorText()` and `ShownError` in `lib/errors.ts`: only the
+  server's own wording or a plain sentence reaches the screen. Card edit and correction errors
+  send a plain message and log the technical one. A failed exercise reading no longer saves its
+  error as the note.
+- [ ] 2. **Busy states.** Every button that calls the server is disabled (and looks it) while it
+  waits, with a word that fits: Start Workout and Ad-hoc Workout ("Starting…"), Repeat
+  ("Starting…"), Follow This Program ("Following…"), Stop Following, Deload Save and Update
+  Program ("Saving…"). Log from Notes says "Reading your note…" while the AI reads.
+- [ ] 3. **Warm-up sets in the set sheet.** Build Up to Working Weight becomes "Warm-up Sets":
+  - "How many": the − 3 + count.
+  - "Work up to": a kg box showing the first working weight (or last time's) in grey. Tap-to-fill
+    applies. Empty: the sets are added blank. Filled: a ladder shows under it
+    (`40×5 → 60×3 → 80×2`), rounded to 2.5 kg, and the sets are added with those numbers.
+  - One button, "Add 3 Sets" (the count changes with the stepper).
+  - The exercise menu's Add Warm-up Set and Warm-up Set Templates stay as they are.
+- [ ] 4. **Effort after every working set.** Ticking a working set (not a warm-up) opens a bottom
+  sheet asking how hard it was. Picking an answer saves it and closes the sheet; swiping down
+  skips. It never hides behind a folding exercise. Colourful and engaging enough that people
+  answer it. **Mock-up first, for Apoorva's yes.**
+- [x] 5. **Completed exercises open and close every time**, with the sets sliding in and out.
+- [ ] 6. **Audit fixes** (`ui-audit.md`):
+  - A1. iOS-style transitions: a deeper screen slides in from the right, Back slides it out to the
+    right, switching tabs fades. Motion, in `App.tsx`.
+  - A2. Loading shows grey outlines shaped like the content, then fades the content in. Replaces
+    `Loading` on Train, History, Progress, Lift, Programs, Program and Session view.
+  - A3. One `Collapsible` (arrow turns, content slides) for History months, Progress "Other
+    lifts", Build Up and exercise cards.
+  - A4. Press feedback everywhere: rows darken, buttons shrink.
+  - A6. Title Case for every button, sheet title and screen title.
+  - A7. Done screen: the change rows tick with the set tick circle instead of phone checkboxes.
+  - A8. Each error shows where its action is (the Deload sheet's error inside the sheet).
+  - B1. Train's "Create Your Own" opens the new-program name sheet directly.
+  - B3. Program shows + Add Workout while viewing, not only in Edit.
+  - B4. "Reorder" in the session's exercise menu opens a drag list of names (like a program's
+    workouts), replacing Move Up and Move Down.
+  - B6. A session row on a lift's page opens that session.
+  - B7. Sign in: "Send a New Code" under the code box.
+  - B9. Key Lifts in Settings become your own choice: add or remove lifts from your logged
+    exercises. Stored per person (a new column, through `.claude/db-migration.md`; the prod SQL
+    shown first). Progress shows your chosen lifts first; the built-in list is the default.
+  - B10. Settings AI Use shows a placeholder while loading and the error line if it fails.
+  - B11. Log from Notes' cost note becomes one line.
+- [ ] 7. **Tap-to-fill and cascade fill** for set weight and reps (see Decisions). Ticking ✓ still
+  accepts all grey numbers at once.
+- [ ] 8. **Confirm checks first (C1).** On Review, when "N things to check" is showing, Confirm
+  Session asks "N things still to check. Save anyway?" with Check Them (jumps to the first) and
+  Save Anyway. Nothing flagged: it saves straight away, as now.
+- [ ] 9. **Ad-hoc sessions named after what you did (D6).** An ad-hoc session's title becomes its
+  first exercises ("Squat, Bench Press, Rows"), shown in the session header and History.
 
 ## ▶ Resume here
 
-2026-10-10: plan written; base `ui/wave-1` cut from `dev` at `2e7b5a5` (includes release 5.0.0
-bump). Steps 1 and 5 done and squashed into `ui/wave-1`. Next: step 6 audit report (Apoorva picks fixes),
-then steps 2, 3, 4. Worktree: `../traininglogs-wave`. Before merging the wave into `dev`: check it in a
-browser against the local app (repo rule), and get Apoorva's yes to clean the one prod note
-(30 Sep "Strength", Barbell Clean).
+2026-10-11: all items agreed with Apoorva; implementation details above, waiting for his sign-off
+on this plan. Steps 1 and 5 done and squashed into `ui/wave-1`; the audit (`ui-audit.md`) is
+committed on `ui/wave-1-6-audit`. Worktree: `../traininglogs-wave`. Next after sign-off: step 2,
+then 3, then the step 4 mock-up. Before merging the wave into `dev`: check it in a browser against
+the local app (repo rule), and get Apoorva's yes to clean the one prod note (30 Sep "Strength",
+Barbell Clean) and to add the Key Lifts column in prod.
