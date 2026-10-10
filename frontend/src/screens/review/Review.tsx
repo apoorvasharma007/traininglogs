@@ -7,6 +7,7 @@ import EffortBars from '@/components/EffortBars'
 import NumberBox from '@/components/NumberBox'
 import ScreenHeader from '@/components/ScreenHeader'
 import BottomBar from '@/components/BottomBar'
+import ConfirmSheet from '@/components/ConfirmSheet'
 import Sheet from '@/components/Sheet'
 import { api, ApiError } from '@/lib/api'
 import { dayLabel, kg } from '@/lib/format'
@@ -115,6 +116,9 @@ export default function Review({ params }: { params: { id: string } }) {
     const n = parseFloat(value)
     await review.run([{ edits: [{ path, field, value: field === 'reps' || value === '' || Number.isNaN(n) ? value : n }] }])
   }
+
+  // Things still to check when Confirm was tapped: asked before saving.
+  const [asking, setAsking] = useState(false)
 
   async function confirm() {
     if (!doc) return
@@ -363,7 +367,7 @@ export default function Review({ params }: { params: { id: string } }) {
         <button
           type="button"
           disabled={review.busy || saving}
-          onClick={confirm}
+          onClick={() => (checks > 0 ? setAsking(true) : confirm())}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
           {review.busy || saving ? 'Saving…' : 'Confirm Session'}
@@ -375,6 +379,12 @@ export default function Review({ params }: { params: { id: string } }) {
         )}
       </BottomBar>
 
+      <ConfirmSheet open={asking} tone="primary"
+        title={`${checks} ${checks === 1 ? 'Thing' : 'Things'} Still to Check`}
+        body="The AI wasn't sure of these. Saved as they are, a wrong number goes into your history and progress."
+        confirmLabel="Save Anyway" cancelLabel="Check Them"
+        onConfirm={() => { setAsking(false); confirm() }}
+        onClose={() => { setAsking(false); jumpToCheck() }} />
       <Sheet open={picking} onClose={() => setPicking(false)} label="Which workout was it?">
         <span className="text-[17px] font-semibold">Which workout was it?</span>
         <div className="flex flex-col overflow-hidden rounded-2xl border border-border">

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Confirm Session on Review asks first when there are things still to check: Check Them goes
+  to the first one, Save Anyway saves as it is. A card with nothing flagged saves in one tap.
 - Effort is asked after every working set, not once per exercise: ticking a working set opens a
   sheet with three big coloured answers (Moderate, Hard, All Out). One tap saves it; swiping
   down skips. It replaces the "How hard was the last set?" card, which an exercise folding

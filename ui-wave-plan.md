@@ -90,7 +90,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
   - B11. Log from Notes' cost note becomes one line.
 - [x] 7. **Tap-to-fill and cascade fill** for set weight and reps (see Decisions). Ticking ✓ still
   accepts all grey numbers at once.
-- [ ] 8. **Confirm checks first (C1).** On Review, when "N things to check" is showing, Confirm
+- [x] 8. **Confirm checks first (C1).** On Review, when "N things to check" is showing, Confirm
   Session asks "N things still to check. Save anyway?" with Check Them (jumps to the first) and
   Save Anyway. Nothing flagged: it saves straight away, as now.
 - [ ] 9. **Ad-hoc sessions named after what you did (D6).** An ad-hoc session's title becomes its
