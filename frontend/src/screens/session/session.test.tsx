@@ -132,7 +132,7 @@ describe('Session', () => {
     expect(queued).toHaveLength(1)
   })
 
-  it('takes a typed weight over last time and keeps it on the phone', async () => {
+  it("one tap takes last time's weight; a second tap types over it, and it stays on the phone", async () => {
     await seed()
     fakeApi({})
     renderApp('/session')
@@ -140,7 +140,13 @@ describe('Session', () => {
     // Last time's value is a grey hint until something is typed.
     expect(weight).toHaveValue('')
     expect(weight).toHaveAttribute('placeholder', '125')
-    await userEvent.type(weight, '127.5')
+    await userEvent.click(weight)
+    expect(weight).toHaveValue('125')
+    expect(weight).not.toHaveFocus()
+    // The second tap opens the keypad with 125 selected, so typing replaces it.
+    await userEvent.click(weight)
+    expect(weight).toHaveFocus()
+    await userEvent.keyboard('127.5')
     expect(screen.getByLabelText('Reps for set 1')).toHaveValue('2')
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].weight).toBe('127.5'))
   })

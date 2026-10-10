@@ -135,10 +135,10 @@ export default function ExerciseCard({
                       {!set.note && set.rpe == null && <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />}
                     </button>
                     <NumberBox label={`Weight for set ${label}`} done={set.done}
-                      value={set.ghost ? '' : set.weight} placeholder={set.ghost && set.weight ? set.weight : 'kg'}
+                      value={set.ghost ? '' : set.weight} placeholder={set.ghost && set.weight ? set.weight : 'kg'} fillable={set.ghost && !!set.weight}
                       onChange={(v) => onValue(set, 'weight', v)} />
                     <NumberBox label={`Reps for set ${label}`} inputMode="numeric" done={set.done}
-                      value={set.ghost ? '' : set.reps} placeholder={set.ghost && set.reps ? set.reps : 'reps'}
+                      value={set.ghost ? '' : set.reps} placeholder={set.ghost && set.reps ? set.reps : 'reps'} fillable={set.ghost && !!set.reps}
                       onChange={(v) => onValue(set, 'reps', v)} />
                     <button type="button" onClick={() => onTick(set)} aria-label={`Set ${label} done`} aria-pressed={set.done}
                       className="flex size-12 items-center justify-center">

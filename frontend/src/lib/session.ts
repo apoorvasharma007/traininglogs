@@ -226,10 +226,22 @@ export function toggleDone(s: LiveSession, setKey: string): LiveSession {
 export function setValue(s: LiveSession, setKey: string, field: 'weight' | 'reps', value: string): LiveSession {
   return {
     ...s,
-    exercises: s.exercises.map((e) => ({
-      ...e,
-      sets: e.sets.map((x) => (x.key === setKey ? { ...x, [field]: value, ghost: false } : x)),
-    })),
+    exercises: s.exercises.map((e) => {
+      const at = e.sets.findIndex((x) => x.key === setKey)
+      if (at < 0) return e
+      const kind = e.sets[at].kind
+      return {
+        ...e,
+        sets: e.sets.map((x, i) => {
+          if (i === at) return { ...x, [field]: value, ghost: false }
+          // Cascade: the value shows in grey in the later sets of the same kind that nobody has
+          // typed into or ticked yet, so typing a weight once covers every set.
+          const untouched = x.ghost || (x.weight === '' && x.reps === '')
+          if (i > at && value && x.kind === kind && !x.done && untouched) return { ...x, [field]: value, ghost: true }
+          return x
+        }),
+      }
+    }),
   }
 }
 

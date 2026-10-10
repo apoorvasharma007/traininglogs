@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A grey number (last time's, or a suggestion) fills in with one tap, without the keypad; a
+  second tap opens the keypad with it selected, so typing replaces it. Ticking a set still takes
+  all its grey numbers at once.
+- A weight or reps typed into a set shows in grey in the later sets of the same kind that haven't
+  been typed into or ticked, so a weight typed once covers the rest.
 - Warm-up sets in the set sheet's Warm-up tab: pick how many and tap Add for that many blank
   warm-up sets. To work up to a weight instead, tap the grey working weight (one tap fills it in)
   or type one: the ladder shows under it, rounded to 2.5 kg, and the same Add button adds it.

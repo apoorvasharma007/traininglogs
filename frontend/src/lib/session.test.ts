@@ -16,6 +16,10 @@ import {
   needsEffort,
   rampSets,
   setLastEffort,
+  setValue,
+  addSet,
+  startBlank,
+  addExercise,
 } from './session'
 import type { Workout } from './types'
 
@@ -238,5 +242,34 @@ describe('effort nudge', () => {
     expect(answered.exercises[0].sets.filter((x) => x.kind === 'working').at(-1)?.rpe).toBe(8.5)
     expect(needsEffort(answered.exercises[0])).toBe(false)
     expect(needsEffort({ ...s.exercises[0], effortSkipped: true })).toBe(false)
+  })
+})
+
+describe('cascade fill', () => {
+  it("a typed weight shows in grey in the later sets of the same kind nobody has touched", () => {
+    const s = startFromWorkout(workout, '1 · Bench', 'p1', lasts, now)
+    const squat = s.exercises[0]
+    const after = setValue(s, squat.sets[1].key, 'weight', '130').exercises[0].sets
+    expect(after.map((x) => [x.kind, x.weight, x.reps, x.ghost])).toEqual([
+      ['warmup', '80', '', true], // a warm-up: another kind, left alone
+      ['working', '130', '2', false], // typed
+      ['working', '130', '2', true], // last time's 125 replaced, still grey
+      ['working', '130', '2', true],
+    ])
+  })
+
+  it("leaves ticked and typed-into sets alone, and doesn't spread a cleared box", () => {
+    let s = startBlank(now)
+    s = addExercise(s).session
+    const ex = s.exercises[0].key
+    s = addSet(s, ex).session
+    s = addSet(s, ex).session
+    const [a, b, c] = s.exercises[0].sets
+    s = setValue(s, b.key, 'reps', '8') // typed into; the 8 also shows in grey in the set below
+    s = toggleDone(s, c.key) // ticked, taking the grey 8
+    s = setValue(s, a.key, 'weight', '60')
+    expect(s.exercises[0].sets.map((x) => [x.weight, x.reps, x.done])).toEqual([['60', '', false], ['', '8', false], ['', '8', true]])
+    s = setValue(s, a.key, 'weight', '')
+    expect(s.exercises[0].sets.map((x) => x.weight)).toEqual(['', '', ''])
   })
 })

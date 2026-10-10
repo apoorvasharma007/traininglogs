@@ -86,7 +86,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
     shown first). Progress shows your chosen lifts first; the built-in list is the default.
   - B10. Settings AI Use shows a placeholder while loading and the error line if it fails.
   - B11. Log from Notes' cost note becomes one line.
-- [ ] 7. **Tap-to-fill and cascade fill** for set weight and reps (see Decisions). Ticking ✓ still
+- [x] 7. **Tap-to-fill and cascade fill** for set weight and reps (see Decisions). Ticking ✓ still
   accepts all grey numbers at once.
 - [ ] 8. **Confirm checks first (C1).** On Review, when "N things to check" is showing, Confirm
   Session asks "N things still to check. Save anyway?" with Check Them (jumps to the first) and
