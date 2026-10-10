@@ -1,6 +1,6 @@
 """Posts new feedback to Apoorva's Discord channel, through the webhook in DISCORD_WEBHOOK_URL.
 
-Best effort: the feedback is already saved, so a failed or slow post (3 s at most) is only logged. Without the variable
+Best effort: the feedback is already saved, so a failed post is only logged. Without the variable
 (tests, a local server) nothing is sent. Mentions are switched off, so text like "@everyone" in a
 message can't ping the server.
 """
@@ -22,6 +22,6 @@ def feedback_alert(kind: str, message: str, email: str | None, app_version: str 
     prefix = "" if environment == "prod" else f"[{environment}] "
     text = f"{prefix}**{KIND_LABEL[kind]}** from {email or 'someone'} (version {app_version})\n{message}"
     try:
-        httpx.post(url, json={"content": text[:DISCORD_LIMIT], "allowed_mentions": {"parse": []}}, timeout=3).raise_for_status()
+        httpx.post(url, json={"content": text[:DISCORD_LIMIT], "allowed_mentions": {"parse": []}}, timeout=5).raise_for_status()
     except httpx.HTTPError as exc:
         print(f"Discord feedback alert failed: {exc}", flush=True)
