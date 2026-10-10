@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-10-10
+
 ### Added
 
 - A warm-up ramp in the set sheet's Warm-up tab: "Ramp up to [weight] kg in [sets] sets" shows
@@ -1348,7 +1350,8 @@ Initial tagged release. Seed entry — describes the system as it stands at v1.0
 - `rest_minutes` and `actual_rest_minutes` must be between 0 and 15.
 - Required string fields reject empty or whitespace-only values.
 
-[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/apoorvasharma007/traininglogs/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/apoorvasharma007/traininglogs/compare/v3.0.0...v3.1.0
