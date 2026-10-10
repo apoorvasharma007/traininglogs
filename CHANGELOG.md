@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Export Your Data in Settings: everything you've logged as a CSV (one line per set) or as
+  JSON (sessions, exercises, sets and programs), saved to the phone (`GET /me/export`).
 - Send Feedback in Settings: pick Feature, Problem or Other, type it and send. Saved with the
   sender and the app's version (`POST /feedback`, a new `feedback` table).
 - Key Lifts in Settings are your own: drag to reorder, × to remove, + Add Lift to pick from the

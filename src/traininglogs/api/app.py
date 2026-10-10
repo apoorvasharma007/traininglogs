@@ -4,6 +4,7 @@ import sys
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
@@ -282,6 +283,26 @@ def post_feedback(body: FeedbackIn, conn=Depends(_db), user: str = Depends(_user
     from traininglogs.db.insert import insert_feedback
 
     return {"id": insert_feedback(conn, user, body.kind, body.message, version("traininglogs"))}
+
+
+@app.get("/me/export")
+def export_data(format: Literal["csv", "json"] = "csv", conn=Depends(_db), user: str = Depends(_user)):
+    """Everything the person has logged: a CSV with one line per set, or JSON with sessions,
+    exercises, sets and programs. Sent as a file to save."""
+    from datetime import datetime, timezone
+
+    from traininglogs.db.fetch import get_export_rows
+    from traininglogs.db.programs import list_programs
+    from traininglogs.export.export import to_csv, to_json
+
+    rows = get_export_rows(conn, user)
+    stamp = datetime.now(timezone.utc)
+    name = f"traininglogs-{stamp:%Y-%m-%d}"
+    if format == "csv":
+        return Response(to_csv(rows), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
+    body = to_json(rows, list_programs(conn, user), version("traininglogs"), stamp.isoformat(timespec="seconds"))
+    return JSONResponse(body, headers={"Content-Disposition": f'attachment; filename="{name}.json"'})
 
 
 @app.get("/me/ai-usage", response_model=AiUsage)

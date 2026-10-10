@@ -260,3 +260,29 @@ def get_last_exercises(conn: Connection, user_id: str, names: list[str]) -> list
                      for s in mine if s["kind"] == "working"],
         })
     return result
+
+
+def get_export_rows(conn: Connection, user_id: str) -> list[dict]:
+    """Every set the person has logged, one row each, with its exercise and session, oldest first:
+    what Export builds its CSV and JSON from. A session with no sets still gives one row (set
+    columns empty), so nothing logged is left out."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id::text AS session_id, s.date, s.focus, s.notes AS session_notes,
+                   s.duration_minutes, s.program, p.name AS program_name, w.position AS workout_position,
+                   w.name AS workout_name, e.position AS exercise_number, e.name AS exercise,
+                   e.notes AS exercise_notes, x.kind AS set_kind, x.position AS set_number,
+                   x.weight_kg, x.reps_full AS reps, x.reps_partial, x.rpe, x.duration_seconds,
+                   x.distance_meters, x.notes AS set_notes
+            FROM workout_sessions s
+            LEFT JOIN program_workouts w ON w.user_id = s.user_id AND w.id = s.program_workout_id
+            LEFT JOIN programs p ON p.user_id = w.user_id AND p.id = w.program_id
+            LEFT JOIN workout_session_exercises e ON e.user_id = s.user_id AND e.session_id = s.id
+            LEFT JOIN workout_session_sets x ON x.user_id = e.user_id AND x.exercise_id = e.id
+            WHERE s.user_id = %s
+            ORDER BY s.date, s.created_at, e.position, x.kind, x.position  -- warmup sorts before working
+            """,
+            (user_id,),
+        )
+        return _rows(cur)
