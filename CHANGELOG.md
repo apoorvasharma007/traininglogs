@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   says which field and why in words; the technical reason goes to the server log.
 - An exercise the AI couldn't read no longer saves its error as the exercise's note when the
   card is confirmed.
+- A finished exercise opened again can be folded back: an up arrow next to its menu closes it.
+  Opening and closing slide the sets in and out instead of jumping.
 
 ## [5.0.0] - 2026-10-10
 

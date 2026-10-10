@@ -200,6 +200,7 @@ export default function Session() {
                 }
               }}
               collapsed={finished(ex) && !reopened.has(ex.key)}
+              canCollapse={finished(ex)}
               onToggleCollapsed={() => setReopened((r) => {
                 const n = new Set(r)
                 if (n.has(ex.key)) n.delete(ex.key)

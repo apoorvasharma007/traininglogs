@@ -173,10 +173,24 @@ describe('Session', () => {
     await userEvent.click(screen.getAllByRole('button', { name: 'Set 1 done' })[0])
 
     const collapsed = await screen.findByRole('button', { name: 'Squat: all 1 set done. Show sets' })
-    expect(screen.queryAllByRole('button', { name: 'Set 1 done' })).toHaveLength(1)
+    // The sets slide closed, then leave.
+    await waitFor(() => expect(screen.queryAllByRole('button', { name: 'Set 1 done' })).toHaveLength(1))
 
     await userEvent.click(collapsed)
     expect(screen.getAllByRole('button', { name: 'Set 1 done' })).toHaveLength(2)
+
+    // Opened by hand, it folds back the same way, as often as wanted.
+    await userEvent.click(screen.getByRole('button', { name: 'Hide sets of Squat' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Squat: all 1 set done. Show sets' }))
+    expect(await screen.findByRole('button', { name: 'Hide sets of Squat' })).toBeInTheDocument()
+  })
+
+  it("doesn't offer to fold an exercise that still has sets to do", async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    await screen.findByRole('button', { name: 'Options for Squat' })
+    expect(screen.queryByRole('button', { name: /^Hide sets of/ })).not.toBeInTheDocument()
   })
 
   it('fills the warmup sets from a ramp', async () => {

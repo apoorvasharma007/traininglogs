@@ -46,11 +46,14 @@ is done; Apoorva tests it on staging; then one release to `main`.
 - [ ] 4. **Effort after every working set**, as a bottom sheet like the set menu so it is never
   hidden by an exercise folding away. Swipe down to skip. Colourful and engaging enough that
   people answer it. Mock-up first.
-- [ ] 5. **Completed exercises open and close every time**, with a smooth height animation.
+- [x] 5. **Completed exercises open and close every time**, with a smooth height animation.
 - [ ] 6. **Screen-by-screen audit**: inconsistencies, extra taps, abrupt loads and transitions,
   one line each. Apoorva picks the fixes per screen.
 
 ## ▶ Resume here
 
 2026-10-10: plan written; base `ui/wave-1` cut from `dev` at `2e7b5a5` (includes release 5.0.0
-bump). Step 1 in progress on `ui/wave-1-1-errors` in the worktree `../traininglogs-wave`.
+bump). Steps 1 and 5 done and squashed into `ui/wave-1`. Next: step 6 audit report (Apoorva picks fixes),
+then steps 2, 3, 4. Worktree: `../traininglogs-wave`. Before merging the wave into `dev`: check it in a
+browser against the local app (repo rule), and get Apoorva's yes to clean the one prod note
+(30 Sep "Strength", Barbell Clean).
