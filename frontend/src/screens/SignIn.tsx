@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { sendCode, verifyCode } from '@/lib/auth'
 import { errorText } from '@/lib/errors'
+import { BTN } from '@/lib/ui'
 
 /** Shown when nobody is signed in: an email, then the 6-digit code emailed to it. */
 export default function SignIn() {
@@ -36,12 +37,12 @@ export default function SignIn() {
     >
       <div className="flex flex-col items-center gap-1 pb-4 text-center">
         <h1 className="text-[28px] font-bold tracking-tight">Training Logs</h1>
-        <p className="text-sm text-muted-foreground">Log workouts however you like.</p>
-        <p className="text-sm text-muted-foreground">We'll track your progress from them.</p>
+        <p className="text-[15px] text-muted-foreground">Log workouts however you like.</p>
+        <p className="text-[15px] text-muted-foreground">We'll track your progress from them.</p>
       </div>
       {sentTo ? (
         <>
-          <p className="px-1 text-sm text-muted-foreground">We sent a code to {sentTo}.</p>
+          <p className="px-1 text-[15px] text-muted-foreground">We sent a code to {sentTo}.</p>
           <label htmlFor="code" className="sr-only">
             Code
           </label>
@@ -59,21 +60,21 @@ export default function SignIn() {
             className="h-11 rounded-xl border border-border bg-background px-3.5" />
         </div>
       )}
-      {error && <p role="alert" className="px-1 text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="px-1 text-[15px] text-destructive">{error}</p>}
       <button type="submit" disabled={busy || (sentTo ? code.trim().length < 6 : !email.includes('@'))}
-        className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+        className={BTN.primary}>
         {busy ? (sentTo ? 'Signing In…' : 'Sending…') : sentTo ? 'Sign In' : 'Email Me a Code'}
       </button>
       {sentTo && (
         <button type="button" disabled={busy}
           onClick={() => run(async () => { setResent(false); await sendCode(sentTo); setResent(true) })}
-          className="h-11 text-sm font-semibold text-muted-foreground disabled:opacity-50">
+          className="h-11 text-[15px] font-semibold text-muted-foreground disabled:opacity-50">
           {resent ? 'New Code Sent' : 'Send a New Code'}
         </button>
       )}
       {sentTo && (
         <button type="button" onClick={() => { setSentTo(null); setCode(''); setError(null); setResent(false) }}
-          className="h-11 text-sm font-semibold text-muted-foreground">
+          className="h-11 text-[15px] font-semibold text-muted-foreground">
           Use a Different Email
         </button>
       )}

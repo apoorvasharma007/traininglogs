@@ -16,7 +16,7 @@ export type SetDraft = {
 export const RPES = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
 
 // Placeholder name the server gives an added exercise (card_edits.NEW_EXERCISE_NAME).
-export const NEW_EXERCISE_NAME = 'New exercise'
+export const NEW_EXERCISE_NAME = 'New Exercise'
 
 export function draftFromWarmup(row: CardWarmupRow): SetDraft {
   return {

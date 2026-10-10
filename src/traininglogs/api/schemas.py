@@ -223,6 +223,20 @@ class KeyLiftsIn(BaseModel):
         return cleaned
 
 
+class FeedbackIn(BaseModel):
+    """A message from Settings: what kind, and what it says (up to 2000 characters)."""
+
+    kind: Literal["feature", "bug", "other"]
+    message: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, message: str) -> str:
+        if not message.strip():
+            raise ValueError("the message is empty")
+        return message.strip()
+
+
 class AiUsage(BaseModel):
     total_usd: float  # every AI call so far: reading notes and AI fixes
 

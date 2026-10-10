@@ -6,6 +6,8 @@ import TabBar from '@/components/TabBar'
 import { useIsEditing } from '@/lib/editing'
 import { useSignedIn } from '@/lib/auth'
 import { flush, startOutbox } from '@/lib/store'
+import { api } from '@/lib/api'
+import type { AiUsage, LiftsOut, SessionSummary } from '@/lib/types'
 import SignIn from '@/screens/SignIn'
 import Train from '@/screens/Train'
 
@@ -59,6 +61,14 @@ export default function App() {
     }
     queryClient.invalidateQueries()
     flush()
+    // History, Progress and Settings' data is fetched in the background once the first screen is
+    // up, so opening those tabs shows it at once instead of waiting on the server.
+    const id = setTimeout(() => {
+      queryClient.prefetchQuery({ queryKey: ['sessions'], queryFn: () => api<SessionSummary[]>('/sessions?limit=500') })
+      queryClient.prefetchQuery({ queryKey: ['lifts'], queryFn: () => api<LiftsOut>('/progress/lifts') })
+      queryClient.prefetchQuery({ queryKey: ['ai-usage'], queryFn: () => api<AiUsage>('/me/ai-usage') })
+    }, 1000)
+    return () => clearTimeout(id)
   }, [email, queryClient])
 
   if (!email) {
@@ -100,15 +110,18 @@ export default function App() {
 
 /**
  * Where a screen comes in from, iOS style: a deeper screen (a program, a session, a lift) slides in
- * from the right (48), going back slides in from the left (-48), and switching tabs just fades (0).
+ * from the right (32), going back slides in from the left (-32), and switching tabs just fades (0).
  * The animation itself is `.screen-in` in index.css.
  */
 function useEntrance(location: string): number {
   const [seen, setSeen] = useState({ at: location, from: 0 })
   if (seen.at === location) return seen.from
   const depth = (path: string) => path.split('/').filter(Boolean).length
-  const step = depth(location) - depth(seen.at)
-  const from = step > 0 ? 48 : step < 0 ? -48 : 0
+  // Moving between the five tabs only fades; Train's address (/) is shallower than the others',
+  // so counting depth there would make it slide in as if going back.
+  const tabs = ['/', '/programs', '/progress', '/history', '/settings']
+  const step = tabs.includes(location) && tabs.includes(seen.at) ? 0 : depth(location) - depth(seen.at)
+  const from = step > 0 ? 32 : step < 0 ? -32 : 0
   setSeen({ at: location, from })
   return from
 }

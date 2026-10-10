@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { planText, workoutName } from '@/lib/programs'
+import { workingText, workoutName } from '@/lib/programs'
 import type { Program } from '@/lib/types'
 import { fakeApi, renderApp } from '@/test-utils'
 
@@ -32,9 +32,9 @@ describe('workout display', () => {
   })
 
   it('summarises a plan', () => {
-    expect(planText({ name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] })).toBe('2 warm-up + 3 × 2')
-    expect(planText({ name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true, alternatives: [] })).toBe('1 × max')
-    expect(planText({ name: 'Row', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: false, alternatives: [] })).toBe('3 sets')
+    expect(workingText({ name: 'Squat', warmup_sets: 2, working_sets: 3, target_reps: 2, amrap: false, alternatives: [] })).toBe('3 × 2')
+    expect(workingText({ name: 'Chinups', warmup_sets: 0, working_sets: 1, target_reps: null, amrap: true, alternatives: [] })).toBe('1 × max')
+    expect(workingText({ name: 'Row', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: false, alternatives: [] })).toBe('3 sets')
   })
 })
 
@@ -46,10 +46,10 @@ describe('Programs', () => {
       'GET /programs/p1': program({ workouts: [], next_workout_id: null }),
     })
     const location = renderApp('/programs')
-    expect(await screen.findByText('No programs yet')).toBeInTheDocument()
+    expect(await screen.findByText('No Programs Yet')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'New Program' }))
     const choice = await screen.findByRole('dialog', { name: 'New Program' })
-    expect(within(choice).getByRole('link', { name: 'From a Template' })).toHaveAttribute('href', expect.stringContaining('/programs/templates'))
+    expect(within(choice).getByRole('button', { name: 'From a Template' })).toBeInTheDocument()
     await userEvent.click(within(choice).getByRole('button', { name: 'Create Your Own' }))
     const sheet = (await screen.findByLabelText('Name')).closest('[role="dialog"]') as HTMLElement
     await userEvent.type(within(sheet).getByLabelText('Name'), 'Strength')
@@ -71,7 +71,9 @@ describe('Programs', () => {
     const location = renderApp('/programs/templates')
     await userEvent.click(await screen.findByRole('button', { name: /5×5 strength/ }))
     const sheet = await screen.findByRole('dialog', { name: '5×5 strength' })
-    expect(within(sheet).getByText('2 warm-up + 5 × 5')).toBeInTheDocument()
+    // The working sets first, the warm-ups fainter under them.
+    expect(within(sheet).getByText('5 × 5')).toBeInTheDocument()
+    expect(within(sheet).getByText('+2 warm-up')).toBeInTheDocument()
     await userEvent.click(within(sheet).getByRole('button', { name: 'Add Program' }))
     await waitFor(() => expect(location.history.at(-1)).toBe('/programs/p1'))
     expect(calls.some((c) => c.key === 'POST /templates/5x5/copy')).toBe(true)
@@ -136,9 +138,8 @@ describe('Programs', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByText('Bench press'))
     const sheet = await screen.findByRole('dialog', { name: 'Edit exercise' })
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Remove' }))
-    expect(calls.some((c) => c.key === 'PUT /workouts/w2/exercises')).toBe(false)
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Tap again to remove' }))
+    // It only changes the draft: nothing is saved until Save Changes.
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Remove Exercise' }))
     expect(calls.some((c) => c.key === 'PUT /workouts/w2/exercises')).toBe(false)
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
     await waitFor(() => expect(calls.find((c) => c.key === 'PUT /workouts/w2/exercises')?.body).toEqual({
@@ -165,9 +166,12 @@ describe('Programs', () => {
     const calls = fakeApi({ 'GET /programs/p1': program(), 'PUT /workouts/w2/movements': program(), 'GET /programs': [program()] })
     renderApp('/programs/p1/workouts/w2')
     await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
-    // The warm-up editor comes first; the cool-down one also offers Easy Cardio.
-    await userEvent.click(screen.getAllByRole('button', { name: '+ Easy Cardio' })[0])
-    await userEvent.click(screen.getByRole('button', { name: '+ Dynamic stretching' }))
+    // Add Warm-up opens the same picker as in a session; one template after another.
+    for (const template of [/^Easy Cardio/, /^Dynamic stretching/]) {
+      await userEvent.click(screen.getByRole('button', { name: '+ Add Warm-up' }))
+      await userEvent.click(within(await screen.findByRole('dialog', { name: 'Add Warm-up' })).getByRole('button', { name: template }))
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add Warm-up' })).not.toBeInTheDocument())
+    }
     expect(calls.some((c) => c.key === 'PUT /workouts/w2/movements')).toBe(false)
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
     const last = () => calls.filter((c) => c.key === 'PUT /workouts/w2/movements').at(-1)?.body as { warmup: { name: string }[] } | undefined
@@ -183,12 +187,12 @@ describe('Programs', () => {
     // Editing hides the tabs and the back arrow: Save or Cancel are the ways out.
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Back to/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'No changes' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'No Changes' })).toBeDisabled()
 
     await userEvent.clear(screen.getByLabelText('Workout name'))
     await userEvent.type(screen.getByLabelText('Workout name'), 'Light')
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    const sheet = await screen.findByRole('dialog', { name: 'Discard your changes?' })
+    const sheet = await screen.findByRole('dialog', { name: 'Discard Your Changes?' })
     await userEvent.click(within(sheet).getByRole('button', { name: 'Discard Changes' }))
 
     expect(await screen.findByRole('heading', { name: 'Workout 2' })).toBeInTheDocument()
@@ -251,8 +255,8 @@ describe('Programs', () => {
     const sheet = await screen.findByRole('dialog', { name: 'Add Exercise' })
     await userEvent.type(within(sheet).getByLabelText('Exercise'), 'Deadlift')
     // Reps start empty (as many as you can); typing a number sets a target.
-    expect(within(sheet).getByLabelText('Target reps')).toHaveValue('')
-    await userEvent.type(within(sheet).getByLabelText('Target reps'), '5')
+    expect(within(sheet).getByLabelText('Target Reps')).toHaveValue('')
+    await userEvent.type(within(sheet).getByLabelText('Target Reps'), '5')
     await userEvent.click(within(sheet).getByRole('button', { name: 'Add Exercise' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
 

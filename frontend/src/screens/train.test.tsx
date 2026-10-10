@@ -101,7 +101,7 @@ describe('Train', () => {
     fakeApi({ 'GET /programs': [program()] })
     renderApp('/')
     expect(await screen.findByRole('button', { name: /Ad-hoc Workout/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Wrote it down instead\?/ })).toHaveAttribute('href', '/log')
+    expect(screen.getByRole('link', { name: /Wrote It Down Instead\?/ })).toHaveAttribute('href', '/log')
     expect(screen.getByRole('link', { name: 'Repeat a Past Session' })).toHaveAttribute('href', '/history')
   })
 

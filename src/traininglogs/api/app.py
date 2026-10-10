@@ -28,6 +28,7 @@ from traininglogs.api.schemas import (
     ExerciseHistoryRow,
     LastExercise,
     LiftDetail,
+    FeedbackIn,
     KeyLiftsIn,
     LiftsOut,
     ManualSessionIn,
@@ -273,6 +274,14 @@ def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
     if detail is None:
         raise HTTPException(status_code=404, detail="No lift with that name")
     return detail
+
+
+@app.post("/feedback", status_code=201)
+def post_feedback(body: FeedbackIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Saves a feature request, a bug report or any other message, with the release it came from."""
+    from traininglogs.db.insert import insert_feedback
+
+    return {"id": insert_feedback(conn, user, body.kind, body.message, version("traininglogs"))}
 
 
 @app.get("/me/ai-usage", response_model=AiUsage)

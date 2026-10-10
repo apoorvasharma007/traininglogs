@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { localDate } from '@/lib/session'
 import type { CaptureOut } from '@/lib/types'
 import { errorText, ShownError } from '@/lib/errors'
+import { BTN } from '@/lib/ui'
 
 /** Paste a written note; AI reads it into sets, then Review shows them for checking. */
 export default function LogFromNotes() {
@@ -48,11 +49,11 @@ export default function LogFromNotes() {
           type="button"
           disabled={busy || !text.trim()}
           onClick={extract}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+          className={BTN.primary}
         >
           {busy ? 'Reading your note…' : 'Send'}
         </button>
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-[13px] text-muted-foreground">
           About $0.02 to $0.06 per note. You check everything before it's saved.
         </p>
       </BottomBar>

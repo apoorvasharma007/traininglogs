@@ -243,14 +243,14 @@ describe('effort', () => {
 
 describe('cascade fill', () => {
   it("a typed weight shows in grey in the later sets of the same kind nobody has touched", () => {
-    const s = startFromWorkout(workout, '1 · Bench', 'p1', lasts, now)
+    const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
     const squat = s.exercises[0]
     const after = setValue(s, squat.sets[1].key, 'weight', '130').exercises[0].sets
-    expect(after.map((x) => [x.kind, x.weight, x.reps, x.ghost])).toEqual([
-      ['warmup', '80', '', true], // a warm-up: another kind, left alone
-      ['working', '130', '2', false], // typed
-      ['working', '130', '2', true], // last time's 125 replaced, still grey
-      ['working', '130', '2', true],
+    expect(after.map((x) => [x.kind, x.weight, x.reps, x.ghost, x.own])).toEqual([
+      ['warmup', '80', '', true, undefined], // a warm-up: another kind, left alone
+      ['working', '130', '2', true, 'weight'], // typed: the weight is the person's own, the reps stay grey
+      ['working', '130', '2', true, undefined], // last time's 125 replaced, still grey
+      ['working', '130', '2', true, undefined],
     ])
   })
 
@@ -284,6 +284,6 @@ describe("an ad-hoc session's name", () => {
   })
 
   it("leaves a program workout's name alone", () => {
-    expect(liveTitle(startFromWorkout(workout, '1 · Bench', 'p1', lasts, now))).toBe('1 · Bench')
+    expect(liveTitle(startFromWorkout(workout, 'Bench', 'p1', lasts, now))).toBe('Bench')
   })
 })

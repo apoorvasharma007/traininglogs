@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Sheet from '@/components/Sheet'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
 
 /** A sheet asking for one name: a new program, a rename. Save is off while the name is blank. */
 export default function NameSheet({
@@ -58,7 +59,7 @@ function NameForm(props: {
         if (!blocked) props.onSave(name.trim())
       }}
     >
-      <span className="text-[17px] font-semibold">{props.title}</span>
+      <span className={SHEET_TITLE}>{props.title}</span>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="name-input" className="text-[13px] font-semibold">
           {props.label}
@@ -67,9 +68,9 @@ function NameForm(props: {
           onChange={(e) => setName(e.target.value)}
           className="h-12 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
       </div>
-      {props.error && <p role="alert" className="text-sm text-destructive">{props.error}</p>}
+      {props.error && <p role="alert" className="text-[15px] text-destructive">{props.error}</p>}
       <button type="submit" disabled={blocked}
-        className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+        className={BTN.primary}>
         {props.busy ? 'Saving…' : props.saveLabel}
       </button>
     </form>

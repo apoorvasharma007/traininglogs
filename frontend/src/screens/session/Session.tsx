@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import Parts from '@/components/Parts'
-import { ChevronDown, X } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, Flame, MessageSquareText, Pencil, Trash2, X } from 'lucide-react'
 import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
+import UndoBar from '@/components/UndoBar'
 import DragList from '@/components/DragList'
 import { Loading } from '@/components/QueryStatus'
 import SetSheet, { type SetTarget } from '@/components/SetSheet'
@@ -20,7 +21,6 @@ import {
   addRamp,
   setEffort,
   liveTitle,
-  addWarmupSet,
   counts,
   draftOf,
   reorderExercises,
@@ -48,6 +48,9 @@ import { setLastFinished } from '@/screens/session/finished'
 import type { Program } from '@/lib/types'
 import ExerciseCard from './ExerciseCard'
 import MovementCard from './MovementCard'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
+import { cn } from '@/lib/utils'
+import { MenuGroup, MenuItem } from '@/components/Menu'
 
 function minutesSince(iso: string, now: number): number {
   return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000))
@@ -65,9 +68,11 @@ export default function Session() {
   const [reordering, setReordering] = useState(false)
   // Finished exercises collapse; these were opened again by hand.
   const [reopened, setReopened] = useState<Set<string>>(() => new Set())
+  // Any exercise can be folded by hand, finished or not, to keep the page short.
+  const [folded, setFolded] = useState<Set<string>>(() => new Set())
   // The working set just ticked, asked how hard it was.
   const [effortFor, setEffortFor] = useState<EffortTarget | null>(null)
-  const [undo, setUndo] = useState<{ text: string; before: LiveSession } | null>(null)
+  const [undo, setUndo] = useState<{ text: string; before: LiveSession; at: number } | null>(null)
   const [finishing, setFinishing] = useState(false)
   const [discarding, setDiscarding] = useState(false)
   const [finishError, setFinishError] = useState<string | null>(null)
@@ -82,7 +87,7 @@ export default function Session() {
   if (session === null) {
     return (
       <div className="flex flex-col gap-3 pt-16 text-center">
-        <p className="font-semibold">No session in progress</p>
+        <p className="font-semibold">No Session in Progress</p>
         <Link href="/" className="font-semibold text-muted-foreground underline">
           Back to Train
         </Link>
@@ -93,6 +98,7 @@ export default function Session() {
   const s = session
   const { done, total } = counts(s)
   const finished = (e: LiveExercise) => e.sets.length > 0 && e.sets.every((x) => x.done)
+  const isCollapsed = (e: LiveExercise) => folded.has(e.key) || (finished(e) && !reopened.has(e.key))
 
   /** After an exercise's last set is ticked, bring the next unfinished one into view. */
   function scrollToNext(next: LiveSession, fromKey: string) {
@@ -111,7 +117,7 @@ export default function Session() {
   }
   const removeWithUndo = (next: LiveSession, text: string) => {
     update(next)
-    setUndo({ text, before: s })
+    setUndo({ text, before: s, at: Date.now() })
   }
 
   function tick(ex: LiveExercise, set: LiveSet) {
@@ -128,7 +134,7 @@ export default function Session() {
   function askEffort(ex: LiveExercise, set: LiveSet) {
     const number = ex.sets.filter((x) => x.kind === 'working').findIndex((x) => x.key === set.key) + 1
     setEffortFor({
-      setKey: set.key, exercise: ex.name || 'Exercise', set: String(number),
+      setKey: set.key, set: String(number),
       did: set.weight && set.reps ? `${set.weight} kg × ${set.reps}` : '',
     })
   }
@@ -150,7 +156,7 @@ export default function Session() {
     const finishedAt = new Date()
     const request = toRequest(s, finishedAt)
     if (request.exercises.length === 0) {
-      setFinishError('Tick at least one set first. Unticked sets are not saved.')
+      setFinishError("You haven't checked any sets. This workout session is empty.")
       return
     }
     // The plan to compare against: cached, or fetched; offline, there's simply nothing to offer.
@@ -186,7 +192,7 @@ export default function Session() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="pb-24">
-        <header className="sticky top-0 z-10 -mx-4 mb-3 flex items-center gap-1 border-b border-border bg-background px-2 pt-3 pb-2">
+        <header className="sticky top-0 z-10 -mx-4 mb-3 flex items-center gap-1 bg-muted/85 px-2 pt-3 pb-2 backdrop-blur-xl backdrop-saturate-150">
           <Link href="/" aria-label="Minimise; the session keeps going" className="flex size-11 shrink-0 items-center justify-center">
             <ChevronDown size={22} aria-hidden />
           </Link>
@@ -197,7 +203,7 @@ export default function Session() {
             </span>
           </div>
           <button type="button" onClick={() => { setFinishError(null); setFinishing(true) }}
-            className="h-10 shrink-0 rounded-xl bg-primary px-4 font-semibold text-primary-foreground transition active:scale-95">
+            className={cn(BTN.smallPrimary, 'shrink-0')}>
             Finish
           </button>
         </header>
@@ -219,14 +225,18 @@ export default function Session() {
                 // Both numbers typed and the keyboard gone: the set is done, no tick needed.
                 if (!set.done && !set.ghost && set.weight && set.reps) tick(ex, set)
               }}
-              collapsed={finished(ex) && !reopened.has(ex.key)}
-              canCollapse={finished(ex)}
-              onToggleCollapsed={() => setReopened((r) => {
-                const n = new Set(r)
-                if (n.has(ex.key)) n.delete(ex.key)
-                else n.add(ex.key)
-                return n
-              })}
+              collapsed={isCollapsed(ex)}
+              onToggleCollapsed={() => {
+                const opening = isCollapsed(ex)
+                const toggle = (on: boolean) => (set: Set<string>) => {
+                  const n = new Set(set)
+                  if (on) n.add(ex.key)
+                  else n.delete(ex.key)
+                  return n
+                }
+                setFolded(toggle(!opening))
+                setReopened(toggle(opening))
+              }}
               onAddSet={() => change(addSet(s, ex.key).session)}
               onMenu={() => setMenuFor(ex)}
               onRename={(name) => change(updateExercise(s, ex.key, { name, naming: false }))}
@@ -235,7 +245,7 @@ export default function Session() {
             />
           ))}
           <button type="button" onClick={() => change(addExercise(s).session)}
-            className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
+            className={BTN.secondary}>
             + Exercise
           </button>
           <MovementCard title="Cool-down" movements={movementsOf(s, 'cooldown')} presets={COOLDOWN_PRESETS}
@@ -244,17 +254,8 @@ export default function Session() {
         </div>
 
         {undo && (
-          <div role="status" className="fixed inset-x-4 bottom-6 z-20 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1.5 pr-1.5 pl-4 text-sm text-primary-foreground">
-            <span>{undo.text}</span>
-            <span className="flex">
-              <button type="button" onClick={() => { update(undo.before); setUndo(null) }} className="h-10 px-3.5 font-bold text-highlight">
-                Undo
-              </button>
-              <button type="button" aria-label="Dismiss" onClick={() => setUndo(null)} className="h-10 px-3 opacity-70">
-                ✕
-              </button>
-            </span>
-          </div>
+          <UndoBar key={undo.at} text={undo.text} className="bottom-6"
+            onUndo={() => { update(undo.before); setUndo(null) }} onDismiss={() => setUndo(null)} />
         )}
       </div>
 
@@ -267,91 +268,86 @@ export default function Session() {
       <EffortSheet target={effortFor} onClose={() => setEffortFor(null)}
         onPick={(setKey, rpe) => { change(setEffort(s, setKey, rpe)); setEffortFor(null) }} />
 
-      <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise options">
+      <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise Options">
         {menuFor && (
           <>
-            <span className="text-[17px] font-semibold">{menuFor.name || 'New exercise'}</span>
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
-              {[
-                { label: 'Add Warm-up Set', run: () => { const r = addWarmupSet(s, menuFor.key); change(r.session); open(menuFor.key, r.setKey, r.session) } },
-                { label: menuFor.note ? 'Edit Note' : 'Add Note', run: () => change(updateExercise(s, menuFor.key, { noteOpen: true })) },
-                { label: 'Rename', run: () => change(updateExercise(s, menuFor.key, { naming: true })) },
-                ...(s.exercises.length > 1 ? [{ label: 'Reorder Exercises', run: () => setReordering(true) }] : []),
-                { label: 'Warm-up Set Templates', run: () => setWarmupFor(menuFor) },
-                { label: 'Remove Exercise', danger: true, run: () => removeWithUndo(removeExercise(s, menuFor.key), `${menuFor.name || 'Exercise'} removed`) },
-              ].map((item) => (
-                <button key={item.label} type="button" onClick={() => { setMenuFor(null); item.run() }}
-                  className={`h-13 border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0 ${item.danger ? 'text-destructive' : ''}`}>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+            <span className={SHEET_TITLE}>{menuFor.name || 'New Exercise'}</span>
+            <MenuGroup>
+              {s.exercises.length > 1 && (
+                <MenuItem icon={ArrowUpDown} label="Reorder Exercises" onClick={() => { setMenuFor(null); setReordering(true) }} />
+              )}
+              <MenuItem icon={MessageSquareText} label={menuFor.note ? 'Edit Exercise Note' : 'Add Exercise Note'}
+                onClick={() => { setMenuFor(null); change(updateExercise(s, menuFor.key, { noteOpen: true })) }} />
+              <MenuItem icon={Pencil} label="Rename Exercise"
+                onClick={() => { setMenuFor(null); change(updateExercise(s, menuFor.key, { naming: true })) }} />
+              <MenuItem icon={Flame} label="Warm-up Set Templates" onClick={() => { setMenuFor(null); setWarmupFor(menuFor) }} />
+            </MenuGroup>
+            <MenuGroup danger>
+              <MenuItem icon={Trash2} label="Remove Exercise" danger
+                onClick={() => { setMenuFor(null); removeWithUndo(removeExercise(s, menuFor.key), `${menuFor.name || 'Exercise'} removed`) }} />
+            </MenuGroup>
           </>
         )}
       </Sheet>
 
       <Sheet open={reordering} onClose={() => setReordering(false)} label="Reorder Exercises">
-        <span className="text-[17px] font-semibold">Reorder Exercises</span>
+        <span className={SHEET_TITLE}>Reorder Exercises</span>
         <DragList items={s.exercises} keyOf={(e) => e.key} label={(e) => e.name || 'Exercise'}
           onReorder={(keys) => change(reorderExercises(s, keys))}>
           {(e) => <span className="flex h-14 items-center truncate px-4 text-[15px] font-medium">{e.name || 'Exercise'}</span>}
         </DragList>
         <button type="button" onClick={() => setReordering(false)}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+          className={BTN.primary}>
           Done
         </button>
       </Sheet>
 
-      <Sheet open={warmupFor != null} onClose={() => setWarmupFor(null)} label="Warm-up set templates">
+      <Sheet open={warmupFor != null} onClose={() => setWarmupFor(null)} label="Warm-up Set Templates">
         {warmupFor && <WarmupPicker exercise={warmupFor} onPick={(sets) => { change(setWarmups(s, warmupFor.key, sets)); setWarmupFor(null) }} />}
       </Sheet>
 
-      <Sheet open={switchFor != null} onClose={() => setSwitchFor(null)} label="Switch exercise">
+      <Sheet open={switchFor != null} onClose={() => setSwitchFor(null)} label="Alternatives">
         {switchFor && (
           <>
-            <div className="flex flex-col gap-1">
-              <span className="text-[17px] font-semibold">Switch {switchFor.name}</span>
-              <span className="text-sm text-muted-foreground">The program lists these as alternatives.</span>
-            </div>
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
+            <span className={SHEET_TITLE}>Alternatives</span>
+            <MenuGroup>
               {switchFor.choices
                 .filter((c) => c.trim().toLowerCase() !== switchFor.name.trim().toLowerCase())
                 .map((c) => (
-                  <button key={c} type="button"
-                    onClick={() => { change(switchExercise(s, switchFor.key, c)); setSwitchFor(null) }}
-                    className="h-13 border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0">
-                    {c}
-                  </button>
+                  <MenuItem key={c} label={c} onClick={() => { change(switchExercise(s, switchFor.key, c)); setSwitchFor(null) }} />
                 ))}
-            </div>
+            </MenuGroup>
           </>
         )}
       </Sheet>
 
       <Sheet open={finishing} onClose={() => setFinishing(false)} label="Finish Session">
         <div className="flex flex-col gap-1.5">
-          <span className="text-xl font-bold">Finish Session?</span>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {done === total
-              ? `All ${total} sets are ticked.`
-              : `${done} of ${total} sets are ticked. The ${total - done} unticked are left out.`}{' '}
-            It goes to your history now, or as soon as you're online.
-          </p>
+          <span className={SHEET_TITLE}>Finish Session?</span>
+          {/* Said only when something won't be saved. */}
+          {done < total && (
+            <p className="text-[15px] leading-snug text-muted-foreground">
+              {done === 0
+                ? "You haven't checked any sets. This workout session is empty."
+                : `Only checked (green) sets are saved. You have ${total - done} unchecked ${total - done === 1 ? 'set' : 'sets'}.`}
+            </p>
+          )}
         </div>
-        {finishError && <p role="alert" className="text-sm text-destructive">{finishError}</p>}
-        <button type="button" onClick={finish}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+        {finishError && <p role="alert" className="text-[15px] text-destructive">{finishError}</p>}
+        {/* Nothing checked: the line above says so, and there's nothing to save. */}
+        <button type="button" onClick={finish} disabled={done === 0} className={BTN.primary}>
           Save Session
         </button>
-        <button type="button" onClick={() => setFinishing(false)} className="h-12 rounded-2xl border border-border font-semibold">
+        <button type="button" onClick={() => setFinishing(false)} className={BTN.secondary}>
           Keep Going
         </button>
-        <button type="button" onClick={() => { setFinishing(false); setDiscarding(true) }} className="h-10 text-sm font-semibold text-destructive">
+        <button type="button" onClick={() => { setFinishing(false); setDiscarding(true) }} className={BTN.danger}>
           Discard Session
         </button>
       </Sheet>
 
-      <ConfirmSheet open={discarding} title="Discard This Session?" body="Nothing from it is saved."
+      <ConfirmSheet open={discarding} title="Discard This Session?"
+        body={done > 0 ? `The ${done} ${done === 1 ? 'set' : 'sets'} you logged will be deleted.` : 'Nothing in it has been checked yet.'}
         confirmLabel="Discard Session" onClose={() => setDiscarding(false)}
         onConfirm={() => { update(null); navigate('/') }} />
     </MotionConfig>
@@ -366,31 +362,26 @@ function WarmupPicker({ exercise, onPick }: { exercise: LiveExercise; onPick: (s
   return (
     <>
       <div className="flex flex-col gap-0.5">
-        <span className="text-[17px] font-semibold">Warm-up set templates</span>
-        <span className="text-sm text-muted-foreground">
+        <span className={SHEET_TITLE}>Warm-up Set Templates</span>
+        <span className="text-[15px] text-muted-foreground">
           {working > 0
             ? `Builds up to your first working set, ${working} kg.`
-            : 'Add a weight to your first working set, and these build the warm-up sets up to it.'}
+            : 'Add a weight to your first working set. Warm-up templates are calculated from it.'}
         </span>
       </div>
       {working > 0 && existing > 0 && (
-        <span className="text-sm text-warning">Replaces the {existing} warm-up {existing === 1 ? 'set' : 'sets'} already here.</span>
+        <span className="text-[15px] text-warning">Replaces the {existing} warm-up {existing === 1 ? 'set' : 'sets'} already here.</span>
       )}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
+      <MenuGroup>
         {WARMUPS.map((w) => {
           // Without a working weight there's nothing to build toward: shown, but not tappable.
           const sets = working > 0 ? warmupSets(w.id, working) : []
           return (
-            <button key={w.id} type="button" disabled={!(working > 0)} onClick={() => onPick(sets)}
-              className="flex flex-col gap-1 border-t border-border px-4 py-3 text-left first:border-t-0 active:bg-muted disabled:opacity-40">
-              <span className="text-[15px] font-semibold">{w.name}</span>
-              {sets.length > 0 && (
-                <Parts className="font-mono text-[13px] text-muted-foreground" items={sets.map((x) => `${x.kg}×${x.reps}`)} />
-              )}
-            </button>
+            <MenuItem key={w.id} label={w.name} disabled={!(working > 0)} onClick={() => onPick(sets)}
+              detail={sets.length > 0 && <Parts className="font-mono" items={sets.map((x) => `${x.kg}×${x.reps}`)} />} />
           )
         })}
-      </div>
+      </MenuGroup>
     </>
   )
 }
@@ -415,20 +406,20 @@ function WarmupNudge({ session, onChange }: { session: LiveSession; onChange: (s
   }, [left, session, onChange])
 
   return (
-    <div className="flex min-h-12 items-center gap-1 rounded-2xl border border-highlight/40 bg-highlight-soft py-1 pr-1 pl-4 text-sm">
+    <div className="flex min-h-12 items-center gap-1 rounded-2xl border border-highlight/40 bg-highlight-soft py-1 pr-1 pl-4 text-[15px]">
       {left == null ? (
         <>
           <span className="flex flex-1 flex-col">
-            <span className="font-semibold">Warm up first</span>
+            <span className="font-semibold">Warm Up First</span>
             <span>{CARDIO_MINUTES} min easy cardio</span>
           </span>
           <button type="button" onClick={() => onChange({ ...session, cardioStartedAt: new Date().toISOString() })}
-            className="h-10 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">
+            className={BTN.smallPrimary}>
             Start
           </button>
           <button type="button" aria-label="Skip the warm-up" onClick={() => onChange({ ...session, warmupNudge: 'skipped' })}
             className="flex size-10 items-center justify-center text-muted-foreground">
-            <X size={16} aria-hidden />
+            <X size={18} aria-hidden />
           </button>
         </>
       ) : (
@@ -438,7 +429,7 @@ function WarmupNudge({ session, onChange }: { session: LiveSession; onChange: (s
             {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}
           </span>
           <button type="button" onClick={() => onChange(recordCardio(session, new Date()))}
-            className="ml-2 h-10 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">
+            className={cn(BTN.smallPrimary, 'ml-2')}>
             Done
           </button>
         </>

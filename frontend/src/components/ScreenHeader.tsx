@@ -18,7 +18,7 @@ export default function ScreenHeader({
   titleSlot?: ReactNode
 }) {
   return (
-    <header className="sticky top-0 z-10 -mx-4 mb-4 flex items-center gap-1 border-b border-border bg-background px-3 pt-3 pb-2">
+    <header className="sticky top-0 z-10 -mx-4 mb-4 flex items-center gap-1 bg-muted/85 px-3 pt-3 pb-2 backdrop-blur-xl backdrop-saturate-150">
       {back ? (
         <Link href={back} aria-label={backLabel} className="flex size-11 items-center justify-center">
           <ChevronLeft size={22} strokeWidth={1.8} aria-hidden />

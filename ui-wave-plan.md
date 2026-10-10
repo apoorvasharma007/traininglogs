@@ -96,11 +96,18 @@ is done; Apoorva tests it on staging; then one release to `main`.
 - [x] 9. **Ad-hoc sessions named after what you did (D6).** An ad-hoc session's title becomes its
   first exercises ("Squat, Bench Press, Rows"), shown in the session header and History.
 
+## Added during testing (2026-10-11)
+
+Effort colours (Apoorva's palette), solid red destructive buttons, shared buttons, menus, confirm
+sheet and section cards, one type/icon/radius scale, frosted sheets and bars, grey header bands, no
+dashed styles, fewer divider lines, folded warm-up and cool-down on a workout, a card per program,
+the Undo countdown, Key Lifts confirm, agreed copy and "check" wording, and Send Feedback in
+Settings (`feedback` table, `POST /feedback`).
+
 ## ▶ Resume here
 
-2026-10-11: all items agreed with Apoorva; implementation details above, waiting for his sign-off
-on this plan. Steps 1 and 5 done and squashed into `ui/wave-1`; the audit (`ui-audit.md`) is
-committed on `ui/wave-1-6-audit`. Worktree: `../traininglogs-wave`. Next after sign-off: step 2,
-then 3, then the step 4 mock-up. Before merging the wave into `dev`: check it in a browser against
-the local app (repo rule), and get Apoorva's yes to clean the one prod note (30 Sep "Strength",
-Barbell Clean) and to add the Key Lifts column in prod.
+2026-10-11: every step done; suites green (server 737, app 137, 0 skipped); first load 93.8 KB.
+Shipping as 5.0.0: changelog folded into 5.0.0. Next: merge `ui/wave-1` into `dev` (staging needs
+the new schema: `users.key_lifts`, `feedback`), then prod SQL with Apoorva's yes (both schema
+additions, plus clearing the one raw-error note on 30 Sep "Strength", Barbell Clean), then release
+`dev` into `main`.

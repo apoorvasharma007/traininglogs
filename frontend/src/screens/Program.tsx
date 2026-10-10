@@ -15,6 +15,7 @@ import { dayLabel } from '@/lib/format'
 import { usePrograms, useProgram, useProgramChange, workoutName } from '@/lib/programs'
 import type { Program as ProgramT, Workout } from '@/lib/types'
 import { errorText } from '@/lib/errors'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
 
 /** A program's workouts. Opens for looking; Edit shows renaming, reordering and settings. */
 export default function Program({ params }: { params: { id: string } }) {
@@ -80,12 +81,12 @@ export default function Program({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-4">
           <p className="-mt-2 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
             {p.following && <span className="mr-1.5 font-semibold text-highlight">Following</span>}
-            <Repeat size={13} aria-label="on repeat" />
+            <Repeat size={14} aria-label="on repeat" />
             {p.workouts.length} {p.workouts.length === 1 ? 'workout' : 'workouts'}
           </p>
 
           {p.workouts.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+            <p className="rounded-2xl bg-muted p-4 text-[15px] text-muted-foreground">
               No workouts yet. Add the first one.
             </p>
           )}
@@ -113,13 +114,13 @@ export default function Program({ params }: { params: { id: string } }) {
 
           {/* A failure from a sheet shows in that sheet. */}
           {changeError && !pickingWeeks && !confirm && !archiving && !adding && (
-            <p role="alert" className="px-1 text-sm text-destructive">{changeError}</p>
+            <p role="alert" className="px-1 text-[15px] text-destructive">{changeError}</p>
           )}
 
           <button type="button" disabled={change.isPending || saving}
             // Adding opens the new workout, so unsaved changes here are saved first.
             onClick={async () => { if (!dirty || (await save())) setAdding(true) }}
-            className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
+            className={BTN.secondary}>
             + Add Workout
           </button>
 
@@ -127,7 +128,7 @@ export default function Program({ params }: { params: { id: string } }) {
             <BottomBar aboveTabs>
               <button type="button" disabled={change.isPending}
                 onClick={() => (otherFollowed ? setConfirm('follow') : change.mutate({ path: `${base}/follow`, method: 'POST' }))}
-                className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+                className={BTN.primary}>
                 {change.isPending && !confirm ? 'Following…' : 'Follow This Program'}
               </button>
             </BottomBar>
@@ -146,7 +147,7 @@ export default function Program({ params }: { params: { id: string } }) {
           </div>
 
           {editing && (
-            <button type="button" onClick={() => setArchiving(true)} className="h-11 text-sm font-semibold text-destructive">
+            <button type="button" onClick={() => setArchiving(true)} className={BTN.danger}>
               Delete Program
             </button>
           )}
@@ -171,8 +172,8 @@ export default function Program({ params }: { params: { id: string } }) {
 
       <Sheet open={pickingWeeks} onClose={() => setPickingWeeks(false)} label="Deload Reminder">
         <div className="flex flex-col gap-1">
-          <span className="text-[17px] font-semibold">Deload Reminder</span>
-          <span className="text-sm text-muted-foreground">Remind me to take a lighter week after this many weeks of training.</span>
+          <span className={SHEET_TITLE}>Deload Reminder</span>
+          <span className="text-[15px] text-muted-foreground">Remind me to take a lighter week after this many weeks of training.</span>
         </div>
         <div role="group" aria-label="Weeks" className="grid grid-cols-5 gap-1.5">
           {[3, 4, 5, 6, 8].map((weeks) => {
@@ -185,13 +186,13 @@ export default function Program({ params }: { params: { id: string } }) {
             )
           })}
         </div>
-        <span className="-mt-2 text-center text-xs text-muted-foreground">weeks</span>
+        <span className="-mt-2 text-center text-[13px] text-muted-foreground">weeks</span>
         <button type="button" disabled={change.isPending || weeksChoice === savedWeeks}
           onClick={() => change.mutate({ path: base, method: 'PATCH', body: { deload_after_days: weeksChoice * 7 } }, { onSuccess: () => setPickingWeeks(false) })}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-40">
+          className={BTN.primary}>
           {change.isPending ? 'Saving…' : 'Save'}
         </button>
-        {changeError && <p role="alert" className="text-sm text-destructive">{changeError}</p>}
+        {changeError && <p role="alert" className="text-[15px] text-destructive">{changeError}</p>}
       </Sheet>
 
       <ConfirmSheet open={confirm === 'unfollow'} title={`Stop Following ${p?.name ?? 'this program'}?`}
@@ -207,7 +208,7 @@ export default function Program({ params }: { params: { id: string } }) {
         onConfirm={() => change.mutate({ path: `${base}/follow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={archiving} title={`Delete ${p?.name ?? 'program'}?`}
-        body="It disappears from the app. Sessions you logged from it stay in History."
+        body="It's removed from Programs. Your logged sessions stay in History."
         confirmLabel="Delete Program" busy={change.isPending} busyLabel="Deleting…" error={changeError}
         onClose={() => setArchiving(false)}
         onConfirm={() => change.mutate({ path: base, method: 'DELETE' }, { onSuccess: () => navigate('/programs') })} />
@@ -225,17 +226,17 @@ function WorkoutRow({ program, workout: w, href }: { program: ProgramT; workout:
           <span className="rounded-full bg-highlight-soft px-2 py-0.5 text-[11px] font-semibold text-highlight">Next</span>
         )}
       </span>
-      {w.last_done && <span className="text-xs text-faint-foreground">Last done {dayLabel(w.last_done)}</span>}
+      {w.last_done && <span className="text-[13px] text-faint-foreground">Last done {dayLabel(w.last_done)}</span>}
       {w.exercises.length ? (
         <ol className="mt-1.5 flex flex-col">
           {w.exercises.map((e, i) => (
-            <li key={i} className="grid min-h-8 grid-cols-[1.5rem_minmax(0,1fr)] items-center border-t border-border text-sm">
+            <li key={i} className="grid min-h-8 grid-cols-[1.5rem_minmax(0,1fr)] items-center text-[15px]">
               <span className="font-mono text-[13px] text-faint-foreground">{i + 1}</span>
               <span className="truncate">{e.name}</span>
             </li>
           ))}
         </ol>
-      ) : <span className="text-xs text-muted-foreground">No exercises yet</span>}
+      ) : <span className="text-[13px] text-muted-foreground">No exercises yet</span>}
     </div>
   )
   return href ? (

@@ -281,3 +281,15 @@ def set_key_lifts(conn: Connection, user_id: str, names: list[str]) -> None:
     with conn.cursor() as cur:
         cur.execute("UPDATE users SET key_lifts = %s, updated_at = now() WHERE id = %s", (names, user_id))
     conn.commit()
+
+
+def insert_feedback(conn: Connection, user_id: str, kind: str, message: str, app_version: str | None) -> str:
+    """Saves a message sent from Settings; returns its id."""
+    feedback_id = new_id()
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO feedback (id, user_id, kind, message, app_version) VALUES (%s, %s, %s, %s, %s)",
+            (feedback_id, user_id, kind, message, app_version),
+        )
+    conn.commit()
+    return feedback_id

@@ -148,7 +148,7 @@ describe('Review', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('This note is already saved.')
     expect(calls.filter((c) => c.key === 'POST /extractions/x1/confirm')).toHaveLength(1)
-    await userEvent.click(screen.getByRole('link', { name: 'Open it' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Open It' }))
     expect(location.history.at(-1)).toBe('/history/s9')
   })
 
@@ -159,7 +159,7 @@ describe('Review', () => {
     fakeApi({ 'GET /extractions/x1': unsure })
     renderApp('/review/x1')
     expect(await screen.findByRole('button', { name: '2 things to check' })).toBeInTheDocument()
-    expect(screen.getByText('Check this')).toBeInTheDocument()
+    expect(screen.getByText('Check This')).toBeInTheDocument()
     expect(screen.getByLabelText('Weight for set 1')).toHaveClass('border-warning')
     expect(screen.getByLabelText('Reps for set 1')).not.toHaveClass('border-warning')
   })
@@ -207,7 +207,7 @@ describe('Review', () => {
     // No fake for /correct, so it fails; the server's plain reason is shown in the box.
     fakeApi({ 'GET /extractions/x1': card(120) })
     renderApp('/review/x1')
-    const box = await screen.findByLabelText('What to change')
+    const box = await screen.findByLabelText('What to Change')
     await userEvent.type(box, 'Add two warm-up sets')
     await userEvent.click(screen.getByRole('button', { name: 'Fix It' }))
 

@@ -1,4 +1,6 @@
+import { Trash2 } from 'lucide-react'
 import Sheet from '@/components/Sheet'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
 
 /**
  * Asks before something that changes what's saved. "danger" (red) for removing things; "primary"
@@ -33,20 +35,24 @@ export default function ConfirmSheet({
 }) {
   return (
     <Sheet open={open} onClose={onClose} label={title}>
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[17px] font-semibold">{title}</span>
-        <p className="text-sm text-muted-foreground">{body}</p>
+      <div className="flex flex-col items-center gap-2.5 px-2 pt-1 text-center">
+        {tone === 'danger' && (
+          <span className="flex size-13 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <Trash2 size={22} aria-hidden />
+          </span>
+        )}
+        <span className={SHEET_TITLE}>{title}</span>
+        <p className="text-[15px] leading-snug text-muted-foreground">{body}</p>
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <button type="button" disabled={busy} onClick={onConfirm}
-        className={`h-13 rounded-2xl font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
-          tone === 'danger' ? 'bg-destructive text-white' : 'bg-primary text-primary-foreground'
-        }`}>
-        {busy ? busyLabel : confirmLabel}
-      </button>
-      <button type="button" onClick={onClose} className="h-12 rounded-2xl border border-border font-semibold">
-        {cancelLabel}
-      </button>
+      {error && <p role="alert" className="text-center text-[15px] text-destructive">{error}</p>}
+      <div className="flex flex-col gap-2.5">
+        <button type="button" disabled={busy} onClick={onConfirm} className={tone === 'danger' ? BTN.dangerFill : BTN.primary}>
+          {busy ? busyLabel : confirmLabel}
+        </button>
+        <button type="button" onClick={onClose} className={BTN.secondary}>
+          {cancelLabel}
+        </button>
+      </div>
     </Sheet>
   )
 }

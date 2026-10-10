@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, Ellipsis, MessageSquareText, Pencil, TriangleAlert } from 'lucide-react'
+import { ChevronDown, ChevronRight, Ellipsis, MessageSquareText, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
@@ -8,6 +8,8 @@ import NumberBox from '@/components/NumberBox'
 import ScreenHeader from '@/components/ScreenHeader'
 import BottomBar from '@/components/BottomBar'
 import ConfirmSheet from '@/components/ConfirmSheet'
+import UndoBar from '@/components/UndoBar'
+import { MenuGroup, MenuItem } from '@/components/Menu'
 import Sheet from '@/components/Sheet'
 import { api, ApiError } from '@/lib/api'
 import { dayLabel, kg } from '@/lib/format'
@@ -25,6 +27,8 @@ import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import FixBox from './FixBox'
 import { useReviewDoc } from './useReviewDoc'
 import { errorText } from '@/lib/errors'
+import ColumnHead from '@/components/ColumnHead'
+import { BTN, SHEET_TITLE } from '@/lib/ui'
 
 type OpenSet = SetTarget & { path: string }
 
@@ -45,7 +49,8 @@ export default function Review({ params }: { params: { id: string } }) {
   const [, navigate] = useLocation()
   const [openSet, setOpenSet] = useState<OpenSet | null>(null)
   const [menuFor, setMenuFor] = useState<CardExercise | null>(null)
-  const [removed, setRemoved] = useState('') // the Undo toast: "Set removed", "Squat removed"
+  // The Undo bar: "Set removed", "Squat removed", and when, so each removal gets its own countdown.
+  const [removed, setRemoved] = useState({ text: '', at: 0 })
   const [naming, setNaming] = useState<string | null>(null) // exercise path being renamed
   const [noteFor, setNoteFor] = useState<string | null>(null) // exercise path with its note open
   const [confirmError, setConfirmError] = useState<string | null>(null)
@@ -85,7 +90,7 @@ export default function Review({ params }: { params: { id: string } }) {
 
   async function deleteSet() {
     if (!openSet) return
-    setRemoved('Set removed')
+    setRemoved({ text: 'Set removed', at: Date.now() })
     const ok = await review.run([{ op: { op: 'remove', path: openSet.path } }], { undoable: true })
     if (ok !== undefined) setOpenSet(null)
   }
@@ -190,9 +195,9 @@ export default function Review({ params }: { params: { id: string } }) {
             <span className="w-20 shrink-0 text-muted-foreground">Date</span>
             <span className={`flex flex-1 flex-col font-semibold ${dateUnsure ? 'text-warning' : ''}`}>
               {dayLabel(header.date)}
-              {dateUnsure && <span className="text-xs font-normal">Check this</span>}
+              {dateUnsure && <span className="text-[13px] font-normal">Check This</span>}
             </span>
-            <Pencil size={16} aria-hidden className="text-muted-foreground" />
+            <Pencil size={18} aria-hidden className="text-muted-foreground" />
             {/* The phone's date picker sits invisibly over the row and opens on tap. */}
             <input
               aria-label="Date"
@@ -207,7 +212,7 @@ export default function Review({ params }: { params: { id: string } }) {
           </label>
           {followed && followed.workouts.length > 0 && (
             <button type="button" onClick={() => setPicking(true)}
-              className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
+              className="flex min-h-13 w-full items-center gap-3 border-t border-border/60 px-4 text-left text-[15px]">
               <span className="w-20 shrink-0 text-muted-foreground">Workout</span>
               <span className="min-w-0 flex-1 truncate font-semibold">
                 {countsAsWorkout ? workoutName(countsAsWorkout) : 'Not Part of a Program'}
@@ -217,19 +222,19 @@ export default function Review({ params }: { params: { id: string } }) {
             </button>
           )}
           <button type="button" onClick={() => setTimingOpen(true)}
-            className="flex min-h-13 w-full items-center gap-3 border-t border-border px-4 text-left text-[15px]">
+            className="flex min-h-13 w-full items-center gap-3 border-t border-border/60 px-4 text-left text-[15px]">
             <span className="w-20 shrink-0 text-muted-foreground">Duration</span>
             <span className={`flex-1 ${header.duration_minutes ? 'font-semibold' : 'text-muted-foreground'}`}>
               {header.duration_minutes ? `${header.duration_minutes} min` : 'Add'}
             </span>
-            <Pencil size={16} aria-hidden className="text-muted-foreground" />
+            <Pencil size={18} aria-hidden className="text-muted-foreground" />
           </button>
         </div>
 
         {checks > 0 && (
           <button type="button" onClick={jumpToCheck}
-            className="flex h-11 items-center gap-2 self-start rounded-xl border border-warning/50 bg-warning-soft px-3.5 text-sm font-semibold text-warning">
-            <TriangleAlert size={16} aria-hidden />
+            className="flex h-11 items-center gap-2 self-start rounded-xl border border-warning/50 bg-warning-soft px-3.5 text-[15px] font-semibold text-warning">
+            <TriangleAlert size={18} aria-hidden />
             {checks} {checks === 1 ? 'thing' : 'things'} to check
           </button>
         )}
@@ -268,7 +273,7 @@ export default function Review({ params }: { params: { id: string } }) {
                   onClick={() => setMenuFor(ex)}
                   className="flex size-11 shrink-0 items-center justify-center text-muted-foreground"
                 >
-                  <Ellipsis size={20} aria-hidden />
+                  <Ellipsis size={22} aria-hidden />
                 </button>
               </div>
 
@@ -280,7 +285,7 @@ export default function Review({ params }: { params: { id: string } }) {
                     initial={note}
                     autoFocus={noteFor === exPath}
                     placeholder="Note for this exercise"
-                    className="h-11 w-full rounded-xl border border-muted-foreground/60 bg-card px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-muted-foreground/60 bg-card px-3 text-[15px]"
                     onCommit={async (v) => {
                       if (await saveField(exPath, 'notes', v, note)) setNoteFor(null)
                     }}
@@ -288,11 +293,11 @@ export default function Review({ params }: { params: { id: string } }) {
                 </div>
               )}
 
-              <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] gap-1.5 pr-3 pl-3 text-[11px] font-semibold tracking-wide text-faint-foreground">
+              <ColumnHead className="grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] pr-3 pl-3">
                 <span className="pl-1">SET</span>
                 <span className="text-center">KG</span>
                 <span className="text-center">REPS</span>
-              </div>
+              </ColumnHead>
               {ex.warmup_rows.map((w) => (
                 <SetRow key={`${w.path}:${w.weight_kg}:${w.rep_count}`} label="W" warmup
                   weight={kg(w.weight_kg)} reps={w.rep_count?.toString() ?? ''} note={w.notes}
@@ -310,12 +315,12 @@ export default function Review({ params }: { params: { id: string } }) {
                   onReps={(v) => saveValue(s.path, 'reps', v, s.reps ?? '')} />
               ))}
 
-              <div className="border-t border-border px-3 pt-2 pb-3">
+              <div className="px-3 pt-2 pb-3">
                 <button
                   type="button"
                   disabled={review.busy}
                   onClick={() => addLine('add_set', exPath)}
-                  className="h-10 rounded-xl border border-dashed border-muted-foreground/50 px-3.5 text-[13px] font-semibold text-muted-foreground"
+                  className={BTN.smallSecondary}
                 >
                   + Set
                 </button>
@@ -328,7 +333,7 @@ export default function Review({ params }: { params: { id: string } }) {
           type="button"
           disabled={review.busy}
           onClick={addExercise}
-          className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground"
+          className={BTN.secondary}
         >
           + Exercise
         </button>
@@ -342,7 +347,7 @@ export default function Review({ params }: { params: { id: string } }) {
       </div>
 
       {review.error && !review.errorFromFix && !openSet && (
-        <div role="alert" className="fixed inset-x-4 bottom-32 mx-auto flex max-w-md items-start justify-between gap-3 rounded-2xl bg-destructive px-4 py-3 text-sm text-white">
+        <div role="alert" className="fixed inset-x-4 bottom-32 mx-auto flex max-w-md items-start justify-between gap-3 rounded-2xl bg-destructive px-4 py-3 text-[15px] text-white">
           <span>{review.error}</span>
           <button type="button" onClick={review.clearError} className="font-semibold">
             OK
@@ -350,17 +355,7 @@ export default function Review({ params }: { params: { id: string } }) {
         </div>
       )}
       {review.canUndo && !review.error && (
-        <div role="status" className="fixed inset-x-4 bottom-32 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-primary py-1.5 pr-1.5 pl-4 text-sm text-primary-foreground">
-          <span>{removed}</span>
-          <span className="flex">
-            <button type="button" onClick={review.undo} className="h-10 px-3.5 font-bold text-highlight">
-              Undo
-            </button>
-            <button type="button" onClick={review.dismissUndo} aria-label="Dismiss" className="h-10 px-3 opacity-70">
-              ✕
-            </button>
-          </span>
-        </div>
+        <UndoBar key={removed.at} text={removed.text} className="bottom-32" onUndo={review.undo} onDismiss={review.dismissUndo} />
       )}
 
       <BottomBar error={confirmError}>
@@ -368,38 +363,34 @@ export default function Review({ params }: { params: { id: string } }) {
           type="button"
           disabled={review.busy || saving}
           onClick={() => (checks > 0 ? setAsking(true) : confirm())}
-          className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+          className={BTN.primary}
         >
           {review.busy || saving ? 'Saving…' : 'Confirm Session'}
         </button>
         {savedAs && (
           <Link href={`/history/${encodeURIComponent(savedAs)}`} className="self-start px-1 text-[13px] font-semibold text-muted-foreground underline underline-offset-2">
-            Open it
+            Open It
           </Link>
         )}
       </BottomBar>
 
       <ConfirmSheet open={asking} tone="primary"
         title={`${checks} ${checks === 1 ? 'Thing' : 'Things'} Still to Check`}
-        body="The AI wasn't sure of these. Saved as they are, a wrong number goes into your history and progress."
+        body="The AI can make mistakes. Check the flagged fields before you save."
         confirmLabel="Save Anyway" cancelLabel="Check Them"
         onConfirm={() => { setAsking(false); confirm() }}
         onClose={() => { setAsking(false); jumpToCheck() }} />
       <Sheet open={picking} onClose={() => setPicking(false)} label="Which Workout Was It?">
-        <span className="text-[17px] font-semibold">Which Workout Was It?</span>
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
+        <span className={SHEET_TITLE}>Which Workout Was It?</span>
+        <MenuGroup>
           {(followed?.workouts ?? []).map((w) => (
-            <button key={w.id} type="button" onClick={() => { setCountsAs(w.id); setPicking(false) }}
-              className="flex h-13 items-center justify-between border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0">
-              {workoutName(w)}
-              {w.id === followed?.next_workout_id && <span className="text-xs text-muted-foreground">next</span>}
-            </button>
+            <MenuItem key={w.id} label={workoutName(w)} aside={w.id === followed?.next_workout_id ? 'Next' : undefined}
+              onClick={() => { setCountsAs(w.id); setPicking(false) }} />
           ))}
-          <button type="button" onClick={() => { setCountsAs(''); setPicking(false) }}
-            className="flex h-13 items-center border-t border-border px-4 text-left text-[15px] font-medium text-muted-foreground">
-            Not Part of a Program
-          </button>
-        </div>
+        </MenuGroup>
+        <MenuGroup>
+          <MenuItem label="Not Part of a Program" onClick={() => { setCountsAs(''); setPicking(false) }} />
+        </MenuGroup>
       </Sheet>
 
       <DurationSheet open={timingOpen} initial={header.duration_minutes} busy={review.busy}
@@ -423,34 +414,36 @@ export default function Review({ params }: { params: { id: string } }) {
       <Sheet open={menuFor != null} onClose={() => setMenuFor(null)} label="Exercise options">
         {menuFor && (
           <>
-            <span className="text-[17px] font-semibold">{menuFor.header.name}</span>
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-border">
-              <MenuItem label="Add Warm-up Set" run={() => addLine('add_warmup_set', menuFor.header.path)} />
-              <MenuItem
-                label={menuFor.note_preview ? 'Edit Note' : 'Add Note'}
-                run={() => {
+            <span className={SHEET_TITLE}>{menuFor.header.name}</span>
+            <MenuGroup>
+              <MenuItem icon={Plus} label="Add Warm-up Set" onClick={() => addLine('add_warmup_set', menuFor.header.path)} />
+              <MenuItem icon={MessageSquareText}
+                label={menuFor.note_preview ? 'Edit Exercise Note' : 'Add Exercise Note'}
+                onClick={() => {
                   setNoteFor(menuFor.header.path)
                   setMenuFor(null)
                 }}
               />
-              <MenuItem
-                label="Rename"
-                run={() => {
+              <MenuItem icon={Pencil}
+                label="Rename Exercise"
+                onClick={() => {
                   setNaming(menuFor.header.path)
                   setMenuFor(null)
                 }}
               />
-              <MenuItem
+            </MenuGroup>
+            <MenuGroup danger>
+              <MenuItem icon={Trash2}
                 label="Remove Exercise"
                 danger
-                run={async () => {
+                onClick={async () => {
                   const path = menuFor.header.path
-                  setRemoved(`${menuFor.header.name || 'Exercise'} removed`)
+                  setRemoved({ text: `${menuFor.header.name || 'Exercise'} removed`, at: Date.now() })
                   setMenuFor(null)
                   await review.run([{ op: { op: 'remove', path } }], { undoable: true })
                 }}
               />
-            </div>
+            </MenuGroup>
           </>
         )}
       </Sheet>
@@ -475,7 +468,7 @@ function SetRow(props: {
   const [weight, setWeight] = useState(props.weight)
   const [reps, setReps] = useState(props.reps)
   return (
-    <div className="grid min-h-13 grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-1.5 border-t border-border pr-3 pl-3">
+    <div className="grid min-h-13 grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-1.5 pr-3 pl-3">
       {/* As on the session screen: effort and a note show as small marks beside the set number. */}
       <button type="button" onClick={props.onOpen} aria-label={`Set ${props.label} options`}
         className={`flex h-10 items-center justify-center gap-1 rounded-lg font-mono text-[13px] font-semibold transition active:scale-95 ${
@@ -483,28 +476,14 @@ function SetRow(props: {
         }`}>
         {props.label}
         <EffortBars rpe={props.rpe ?? null} />
-        {props.note && <MessageSquareText size={12} strokeWidth={2.2} aria-label="has a note" className="text-foreground" />}
-        {!props.note && props.rpe == null && <ChevronDown size={12} strokeWidth={2.5} aria-hidden className="opacity-60" />}
+        {props.note && <MessageSquareText size={14} strokeWidth={2.2} aria-label="has a note" className="text-foreground" />}
+        {!props.note && props.rpe == null && <ChevronDown size={14} strokeWidth={2.5} aria-hidden className="opacity-60" />}
       </button>
       <NumberBox label={`Weight for set ${props.label}`} value={weight} placeholder="kg" flagged={props.flagWeight && weight === props.weight}
         onChange={setWeight} onBlur={() => props.onWeight(weight)} />
       <NumberBox label={`Reps for set ${props.label}`} value={reps} placeholder="reps" inputMode="numeric" flagged={props.flagReps && reps === props.reps}
         onChange={setReps} onBlur={() => props.onReps(reps)} />
     </div>
-  )
-}
-
-function MenuItem({ label, run, danger }: { label: string; run: () => void; danger?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={run}
-      className={`h-13 border-t border-border px-4 text-left text-[15px] font-medium first:border-t-0 ${
-        danger ? 'text-destructive' : ''
-      }`}
-    >
-      {label}
-    </button>
   )
 }
 
@@ -555,14 +534,14 @@ function DurationForm({ initial, busy, onSave }: { initial: number | null; busy:
       const n = parseInt(text, 10)
       onSave(n > 0 ? n : null)
     }}>
-      <span className="text-[17px] font-semibold">How long was it?</span>
+      <span className={SHEET_TITLE}>How Long Was It?</span>
       <div className="flex items-baseline justify-center gap-2">
         <label htmlFor="duration" className="sr-only">Minutes</label>
         <input id="duration" autoFocus inputMode="numeric" value={text} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))}
           className="h-14 w-28 rounded-xl bg-muted text-center font-mono text-[28px] font-semibold" />
         <span className="text-muted-foreground">min</span>
       </div>
-      <button type="submit" disabled={busy} className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">
+      <button type="submit" disabled={busy} className={BTN.primary}>
         Save
       </button>
     </form>

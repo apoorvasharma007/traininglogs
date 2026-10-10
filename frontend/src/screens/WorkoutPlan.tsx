@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import ConfirmSheet from '@/components/ConfirmSheet'
+import { Chevron, Collapse } from '@/components/Collapse'
 import CountStepper from '@/components/CountStepper'
 import DragList from '@/components/DragList'
 import DraftBar from '@/components/DraftBar'
@@ -11,11 +12,15 @@ import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
 import Sheet from '@/components/Sheet'
 import { useEditingFlag } from '@/lib/editing'
-import { choicesText, planText, useProgram, useProgramChange, workoutName } from '@/lib/programs'
+import { choicesText, useProgram, useProgramChange, workoutName } from '@/lib/programs'
+import PlanSets from '@/components/PlanSets'
 import { startSession } from '@/lib/startSession'
 import { amountText, COOLDOWN_PRESETS, parseAmount, WARMUP_PRESETS } from '@/lib/movements'
 import type { Movement, PlanExercise, Workout } from '@/lib/types'
 import { errorText } from '@/lib/errors'
+import { BTN } from '@/lib/ui'
+import { cn } from '@/lib/utils'
+import MovementPicker from '@/components/MovementPicker'
 
 const BLANK: PlanExercise = { name: '', warmup_sets: 0, working_sets: 3, target_reps: null, amrap: true, alternatives: [] }
 
@@ -69,9 +74,9 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
     <>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[15px] font-semibold">{e.name}</span>
-        {e.alternatives.length > 0 && <span className="text-xs text-muted-foreground">{choicesText(e)}</span>}
+        {e.alternatives.length > 0 && <span className="text-[13px] text-muted-foreground">{choicesText(e)}</span>}
       </span>
-      <span className="shrink-0 font-mono text-[13px] text-muted-foreground">{planText(e)}</span>
+      <PlanSets exercise={e} />
     </>
   )
   const exercises = draft?.exercises ?? w?.exercises ?? []
@@ -91,7 +96,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
       />
       {program.isPending && <Loading />}
       {program.isError && <LoadError error={program.error} retry={() => program.refetch()} />}
-      {program.data && !w && <p className="px-1 text-sm text-muted-foreground">This workout was removed.</p>}
+      {program.data && !w && <p className="px-1 text-[15px] text-muted-foreground">This workout was removed.</p>}
       {w && (
         <div className="flex flex-col gap-4">
           {draft ? (
@@ -100,11 +105,11 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
             <MovementsLine title="Warm-up" list={w.warmup} />
           )}
           {exercises.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-4 text-sm">
+            <div className="flex flex-col items-start gap-3 rounded-2xl bg-muted p-4 text-[15px]">
               <p className="text-muted-foreground">No exercises yet</p>
               {!draft && (
                 <button type="button" onClick={() => startEditing(w)}
-                  className="h-10 rounded-xl bg-primary px-3.5 font-semibold text-primary-foreground transition active:scale-95">
+                  className={BTN.smallPrimary}>
                   Add Exercises
                 </button>
               )}
@@ -128,7 +133,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
               <h2 className="px-1 text-[13px] font-semibold">Exercises</h2>
               <ol className="overflow-hidden rounded-2xl border border-border bg-card">
                 {w.exercises.map((e, i) => (
-                  <li key={i} className="flex min-h-14 items-center gap-3 border-t border-border px-4 py-2 first:border-t-0">
+                  <li key={i} className="flex min-h-14 items-center gap-3 px-4 py-2 first:border-t-0">
                     <span className="w-4 shrink-0 font-mono text-[13px] text-faint-foreground">{i + 1}</span>
                     {exerciseText(e)}
                   </li>
@@ -139,7 +144,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
           {draft && (
             <button type="button" onClick={() => setEditing('new')}
-              className="h-12 rounded-2xl border border-dashed border-muted-foreground/50 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]">
+              className={BTN.secondary}>
               + Exercise
             </button>
           )}
@@ -151,7 +156,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
           )}
 
           {draft && (
-            <button type="button" onClick={() => setRemoving(true)} className="h-11 text-sm font-semibold text-destructive">
+            <button type="button" onClick={() => setRemoving(true)} className={BTN.danger}>
               Delete Workout
             </button>
           )}
@@ -162,7 +167,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
         <BottomBar aboveTabs>
           <button type="button"
             onClick={() => startSession({ program: program.data!, workout: w }).then(() => navigate('/session'))}
-            className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
+            className={BTN.primary}>
             Start Workout
           </button>
         </BottomBar>
@@ -194,7 +199,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
       )}
 
       <ConfirmSheet open={removing} title={`Delete ${w ? workoutName(w) : 'workout'}?`}
-        body="The workouts after it move up one. Sessions you logged from it stay in History."
+        body="This removes the workout from your program. Sessions you've already logged stay in History."
         confirmLabel="Delete Workout" busy={change.isPending} busyLabel="Deleting…"
         onClose={() => setRemoving(false)}
         onConfirm={() => change.mutate({ path: `/workouts/${params.wid}`, method: 'DELETE' }, { onSuccess: () => { setDraft(null); navigate(back) } })} />
@@ -229,7 +234,6 @@ function ExerciseForm(props: {
   onClose: () => void
 }) {
   const [e, setE] = useState(props.initial)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const set = (patch: Partial<PlanExercise>) => setE((x) => ({ ...x, ...patch }))
   return (
     <>
@@ -241,17 +245,17 @@ function ExerciseForm(props: {
           <label htmlFor="exercise-name" className="text-[13px] font-semibold">
             Exercise
           </label>
-          <input id="exercise-name" autoFocus={props.isNew} autoCapitalize="words" value={e.name} placeholder="Squat"
+          <input id="exercise-name" autoCapitalize="words" value={e.name} placeholder="Squat"
             onChange={(ev) => set({ name: ev.target.value })}
             className="h-12 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
         </div>
         <Alternatives name={e.name} list={e.alternatives} onChange={(alternatives) => set({ alternatives })} />
-        <div className="flex flex-col divide-y divide-border rounded-2xl border border-border px-4">
-          <CountStepper label="Warm-up sets" value={e.warmup_sets} max={20} onChange={(v) => set({ warmup_sets: v })} />
-          <CountStepper label="Working sets" value={e.working_sets} min={1} max={20} onChange={(v) => set({ working_sets: v })} />
+        <div className="flex flex-col divide-y divide-border/60 rounded-2xl border border-border px-4">
+          <CountStepper label="Warm-up Sets" value={e.warmup_sets} max={20} onChange={(v) => set({ warmup_sets: v })} />
+          <CountStepper label="Working Sets" value={e.working_sets} min={1} max={20} onChange={(v) => set({ working_sets: v })} />
           <div className="flex items-center justify-between gap-3 py-2">
             <label htmlFor="target-reps" className="text-[15px]">
-              Target reps
+              Target Reps
             </label>
             <input id="target-reps" inputMode="numeric" value={e.target_reps ?? ''} placeholder="max"
               onChange={(ev) => {
@@ -261,19 +265,17 @@ function ExerciseForm(props: {
               className="h-10 w-20 rounded-lg bg-muted text-center font-mono text-[15px] placeholder:text-faint-foreground" />
           </div>
         </div>
-        <p className="-mt-2 px-1 text-xs text-muted-foreground">Leave empty for AMRAP (as many reps as possible).</p>
-        <div className="flex gap-2.5">
+        <p className="-mt-2 px-1 text-[13px] text-muted-foreground">Leave empty for AMRAP (as many reps as possible).</p>
+        <div className="flex items-center gap-3">
+          {/* Like Remove Set: red text. It only changes the draft, which Cancel undoes. */}
           {!props.isNew && (
-            <button type="button" disabled={props.busy}
-              onClick={() => (confirmDelete ? props.onDelete() : setConfirmDelete(true))}
-              className={`h-13 rounded-2xl border px-4 font-semibold disabled:opacity-50 ${
-                confirmDelete ? 'border-destructive bg-destructive text-white' : 'border-destructive/40 text-destructive'
-              }`}>
-              {confirmDelete ? 'Tap again to remove' : 'Remove'}
+            <button type="button" disabled={props.busy} onClick={props.onDelete}
+              className={BTN.danger}>
+              Remove Exercise
             </button>
           )}
           <button type="submit" disabled={props.busy || !e.name.trim()}
-            className="h-13 flex-1 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+            className={cn(BTN.primary, 'flex-1')}>
             {props.busy ? 'Saving…' : props.isNew ? 'Add Exercise' : 'Done'}
           </button>
         </div>
@@ -301,7 +303,7 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
           <span>{alt}</span>
           <button type="button" aria-label={`Remove ${alt}`} onClick={() => onChange(list.filter((x) => x !== alt))}
             className="flex size-10 items-center justify-center text-muted-foreground">
-            <X size={16} aria-hidden />
+            <X size={18} aria-hidden />
           </button>
         </div>
       ))}
@@ -318,7 +320,7 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
           }}
           className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
         <button type="button" onClick={add} disabled={!draft.trim()}
-          className="h-11 rounded-xl border border-border px-3.5 text-sm font-semibold disabled:opacity-40">
+          className={cn(BTN.smallSecondary, 'h-11')}>
           Add
         </button>
       </div>
@@ -327,20 +329,30 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
 }
 
 /** A workout's warm-up or cool-down while viewing: a numbered list, or nothing when there is none. */
+/** A workout's warm-up or cool-down while viewing it: folded to one row, opened with a tap.
+ * Edit shows it in full to change it. */
 function MovementsLine({ title, list }: { title: string; list: Movement[] }) {
+  const [open, setOpen] = useState(false)
   if (list.length === 0) return null
   return (
-    <section className="flex flex-col gap-1.5">
-      <h2 className="px-1 text-[13px] font-semibold">{title}</h2>
-      <ol className="overflow-hidden rounded-2xl border border-border bg-card">
-        {list.map((m, i) => (
-          <li key={i} className="flex min-h-10 items-center gap-3 border-t border-border px-4 text-sm first:border-t-0">
-            <span className="w-4 shrink-0 font-mono text-[13px] text-faint-foreground">{i + 1}</span>
-            <span className="min-w-0 flex-1">{m.name}</span>
-            <span className="shrink-0 font-mono text-[13px] text-muted-foreground">{amountText(m)}</span>
-          </li>
-        ))}
-      </ol>
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        className="flex min-h-13 w-full items-center gap-3 px-4 text-left active:bg-muted">
+        <span className="flex-1 text-[15px] font-semibold">{title}</span>
+        <span className="text-[13px] text-muted-foreground">{list.length} {list.length === 1 ? 'movement' : 'movements'}</span>
+        <Chevron open={open} className="text-muted-foreground" />
+      </button>
+      <Collapse open={open}>
+        <ol className="pb-1.5">
+          {list.map((m, i) => (
+            <li key={i} className="flex min-h-10 items-center gap-3 px-4 text-[15px] first:border-t-0">
+              <span className="w-4 shrink-0 font-mono text-[13px] text-faint-foreground">{i + 1}</span>
+              <span className="min-w-0 flex-1">{m.name}</span>
+              <span className="shrink-0 font-mono text-[13px] text-muted-foreground">{amountText(m)}</span>
+            </li>
+          ))}
+        </ol>
+      </Collapse>
     </section>
   )
 }
@@ -361,17 +373,18 @@ function MovementsEditor({
   const toRows = (l: Movement[]): Row[] => l.map((m) => ({ name: m.name, amount: amountText(m) }))
   // Rows keep the text as typed ("3 mi" while typing); the draft gets the parsed movements.
   const [rows, setRows] = useState<Row[]>(() => toRows(list))
+  const [choosing, setChoosing] = useState(false)
   const save = (next: Row[]) => {
     setRows(next)
     onChange(next.filter((r) => r.name.trim()).map((r) => ({ name: r.name.trim(), ...parseAmount(r.amount) })))
   }
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm font-semibold">{title}</h2>
+      <h2 className="px-1 text-[15px] font-semibold">{title}</h2>
       {rows.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {rows.map((r, i) => (
-            <div key={i} className="grid min-h-12 grid-cols-[minmax(0,1fr)_96px_44px] items-center gap-1.5 border-t border-border pl-4 first:border-t-0">
+            <div key={i} className="grid min-h-12 grid-cols-[minmax(0,1fr)_96px_44px] items-center gap-1.5 pl-4 first:border-t-0">
               <input aria-label={`${title} movement ${i + 1}`} value={r.name} placeholder="Movement"
                 onChange={(e) => save(rows.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
                 className="h-10 min-w-0 bg-transparent text-[15px] placeholder:text-faint-foreground focus:outline-none" />
@@ -380,24 +393,17 @@ function MovementsEditor({
                 className="h-10 w-full rounded-lg bg-muted text-center font-mono text-[13px] placeholder:font-sans placeholder:text-[11px] placeholder:text-faint-foreground" />
               <button type="button" aria-label={`Remove ${r.name || 'movement'}`} onClick={() => save(rows.filter((_, j) => j !== i))}
                 className="flex size-11 items-center justify-center text-muted-foreground">
-                <X size={16} aria-hidden />
+                <X size={18} aria-hidden />
               </button>
             </div>
           ))}
         </div>
       )}
-      <div className="flex flex-wrap gap-1.5">
-        <button type="button" onClick={() => setRows([...rows, { name: '', amount: '' }])}
-          className="h-9 rounded-lg border border-dashed border-muted-foreground/50 px-3 text-[13px] font-semibold text-muted-foreground">
-          + Movement
-        </button>
-        {presets.map((p) => (
-          <button key={p.name} type="button" onClick={() => save([...rows, ...toRows(p.movements)])}
-            className="h-9 rounded-lg bg-muted px-3 text-[13px] font-semibold">
-            + {p.name}
-          </button>
-        ))}
-      </div>
+      <button type="button" onClick={() => setChoosing(true)} className={BTN.secondary}>
+        + Add {title}
+      </button>
+      <MovementPicker open={choosing} title={title} presets={presets} onClose={() => setChoosing(false)}
+        onPreset={(movements) => save([...rows, ...toRows(movements)])} onOwn={() => setRows([...rows, { name: '', amount: '' }])} />
     </section>
   )
 }

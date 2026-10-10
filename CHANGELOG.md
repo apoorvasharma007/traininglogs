@@ -7,66 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-10-11
+
 ### Added
 
+- Send Feedback in Settings: pick Feature, Problem or Other, type it and send. Saved with the
+  sender and the app's version (`POST /feedback`, a new `feedback` table).
 - Key Lifts in Settings are your own: drag to reorder, × to remove, + Add Lift to pick from the
   lifts you log. Progress shows them first. Saved per person (`PUT /me/key-lifts`, a new
   `users.key_lifts` column); without a choice the built-in six stay.
 - Send a New Code on the sign-in screen.
 - Reorder Exercises in a session's exercise menu: a drag list, in place of Move Up and Move Down.
-
-### Changed
-
-- Screens slide in from the right when you go deeper and from the left when you go back; tabs
-  fade. Loading shows grey placeholder cards instead of a "Loading…" line.
-- Every open and close (History months, Progress's other lifts, exercises) uses one arrow that
-  turns and content that slides. Rows and buttons that weren't reacting to a press now do.
-- Buttons, sheet titles and screen titles are in Title Case throughout.
-- The Done screen's program changes tick with the same circle as a set.
-- A failed change on a program shows in the sheet it came from.
-- Train's Create Your Own opens the new program's name straight away. Program shows + Add
-  Workout without Edit. A session row on a lift's page opens that session. Settings' AI Use
-  shows a placeholder while loading and says when it couldn't load. Log from Notes' cost note
-  is one line.
-- An ad-hoc session is named after its exercises while it runs ("Squat, Bench Press and 1
-  more"), in its header, on Train and on the Done screen, as History already names it.
-- Confirm Session on Review asks first when there are things still to check: Check Them goes
-  to the first one, Save Anyway saves as it is. A card with nothing flagged saves in one tap.
-- Effort is asked after every working set, not once per exercise: ticking a working set opens a
-  sheet with three big coloured answers (Moderate, Hard, All Out). One tap saves it; swiping
-  down skips. It replaces the "How hard was the last set?" card, which an exercise folding
-  away could hide.
-- A set ticks itself once its weight and reps are typed and the keyboard leaves it (moving
-  between its two boxes doesn't count), and then asks how hard it was. Bodyweight sets with no
-  weight are still ticked by hand.
-- A grey number (last time's, or a suggestion) fills in with one tap, without the keypad; a
-  second tap opens the keypad with it selected, so typing replaces it. Ticking a set still takes
-  all its grey numbers at once.
-- A weight or reps typed into a set shows in grey in the later sets of the same kind that haven't
-  been typed into or ticked, so a weight typed once covers the rest.
-- Warm-up sets in the set sheet's Warm-up tab: pick how many and tap Add for that many blank
-  warm-up sets. To work up to a weight instead, tap the grey working weight (one tap fills it in)
-  or type one: the ladder shows under it, rounded to 2.5 kg, and the same Add button adds it.
-- Buttons that wait for the server can't be tapped twice and say what they're doing: Start
-  Workout, Ad-hoc Workout and Repeat say "Starting…", Follow This Program "Following…", deleting
-  "Deleting…", saving "Saving…". Send on Log from Notes says "Reading your note…" while the AI
-  reads it.
-
-### Fixed
-
-- The app never shows a raw error. Messages come from the server's own wording or a plain
-  sentence ("Something went wrong on our side. Try again in a minute."), never a status code, a
-  field path like `exercises.0.sets.0.rpe` or a library's message. A card edit that's refused
-  says which field and why in words; the technical reason goes to the server log.
-- An exercise the AI couldn't read no longer saves its error as the exercise's note when the
-  card is confirmed.
-- A finished exercise opened again can be folded back: an up arrow next to its menu closes it.
-  Opening and closing slide the sets in and out instead of jumping.
-
-## [5.0.0] - 2026-10-10
-
-### Added
-
+  The menu reads Reorder Exercises, Add Exercise Note, Rename Exercise, Warm-up Set Templates,
+  Remove Exercise; warm-up sets are added from the set sheet's Warm-up tab.
 - A warm-up ramp in the set sheet's Warm-up tab: "Ramp up to [weight] kg in [sets] sets" shows
   the sets it would add (50% x 5, 70% x 3, 85% x 2 for 3 sets) and Add puts them before the
   working sets, in grey, leaving the sets already there alone.
@@ -95,6 +48,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Screens slide in from the right when you go deeper and from the left when you go back; tabs
+  fade. History, Progress and Settings' data loads in the background when the app opens, and a
+  program shows at once from the programs list; grey placeholder cards show only when loading takes
+  longer than 0.3 s, instead of a "Loading…" line. The column names over every table of sets look
+  the same and sit the same distance above the rows.
+- Every open and close (History months, Progress's other lifts, exercises) uses one arrow that
+  turns and content that slides. Rows and buttons that weren't reacting to a press now do.
+- Buttons, sheet titles and screen titles are in Title Case throughout. Destructive actions look
+  the same everywhere: red text to start one, the filled red button to confirm it, a grey × to take
+  one item out of a list; the workout editor's Remove Exercise is red text like Remove Set.
+- The Done screen's program changes tick with the same circle as a set.
+- A failed change on a program shows in the sheet it came from.
+- Train's Create Your Own opens the new program's name straight away. Program shows + Add
+  Workout without Edit. A session row on a lift's page opens that session. Settings' AI Use
+  shows a placeholder while loading and says when it couldn't load. Log from Notes' cost note
+  is one line.
+- An ad-hoc session is named after its exercises while it runs ("Squat, Bench Press and 1
+  more"), in its header, on Train and on the Done screen, as History already names it.
+- Confirm Session on Review asks first when there are things still to check: Check Them goes
+  to the first one, Save Anyway saves as it is. A card with nothing flagged saves in one tap.
+- Effort is asked after every working set, not once per exercise: ticking a working set opens a
+  sheet with three big coloured answers (Moderate, Hard, All Out), under two pills, "Set 2" and
+  "100 kg × 5". Effort colours are now green, amber and the app's own red (the red of Delete and Discard)
+  everywhere. Under each answer: "Could do 3+ more", "Could do 1 or 2 more", "Couldn't do another". One tap saves it; swiping
+  down skips. It replaces the "How hard was the last set?" card, which an exercise folding
+  away could hide.
+- A set ticks itself once its weight and reps are typed and the keyboard leaves it (moving
+  between its two boxes doesn't count), and then asks how hard it was. Bodyweight sets with no
+  weight are still ticked by hand.
+- A grey number (last time's, or a suggestion) fills in with one tap, without the keypad, and only
+  that box: the other stays grey until it's tapped too. A second tap opens the keypad with the
+  number selected, so typing replaces it. Ticking a set still takes
+  all its grey numbers at once.
+- A weight or reps typed into a set shows in grey in the later sets of the same kind that haven't
+  been typed into or ticked, so a weight typed once covers the rest.
+- Warm-up sets in the set sheet's Warm-up tab: pick how many and tap Add for that many blank
+  warm-up sets. To work up to a weight instead, tap the grey working weight (one tap fills it in)
+  or type one: the ladder shows under it, rounded to 2.5 kg, and the same Add button adds it.
+- Buttons that wait for the server can't be tapped twice and say what they're doing: Start
+  Workout, Ad-hoc Workout and Repeat say "Starting…", Follow This Program "Following…", deleting
+  "Deleting…", saving "Saving…". Send on Log from Notes says "Reading your note…" while the AI
+  reads it.
 - The app opens faster. The server compresses what it sends (the app's main file goes from
   248 KB to 77 KB), and the browser keeps the app's script and style files until a release
   changes them instead of checking with the server on every open.
@@ -145,6 +140,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The app never shows a raw error. Messages come from the server's own wording or a plain
+  sentence ("Something went wrong on our side. Try again in a minute."), never a status code, a
+  field path like `exercises.0.sets.0.rpe` or a library's message. A card edit that's refused
+  says which field and why in words; the technical reason goes to the server log.
+- An exercise the AI couldn't read no longer saves its error as the exercise's note when the
+  card is confirmed.
+- Any exercise in a session can be folded to one line with the up arrow next to its menu,
+  finished or not, showing how many of its sets are done. A finished one still folds by itself.
+  Opening and closing slide the sets in and out instead of jumping.
 - Production releases failed: Terraform set the app's Supabase key to empty, so the server
   refused to start. The key now comes from Secret Manager (`supabase-publishable-key`) in both
   environments, and no key is written in the repo.

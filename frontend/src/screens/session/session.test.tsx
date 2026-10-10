@@ -42,7 +42,7 @@ describe('Session', () => {
     const location = renderApp('/session/done')
     expect(await screen.findByText('40 min')).toBeInTheDocument()
     expect(screen.getByText('3 sets')).toBeInTheDocument()
-    expect(screen.getByText('Update the program?')).toBeInTheDocument()
+    expect(screen.getByText('Update the Program?')).toBeInTheDocument()
 
     // Kept as is: remembered, so a second restart doesn't ask again.
     await userEvent.click(screen.getByRole('button', { name: 'Keep as Is' }))
@@ -114,7 +114,7 @@ describe('Session', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
 
-    expect(await screen.findByText('Update the program?')).toBeInTheDocument()
+    expect(await screen.findByText('Update the Program?')).toBeInTheDocument()
     expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
     await userEvent.click(screen.getByRole('button', { name: 'Update Program' }))
     // Nothing is written until the reminder is confirmed.
@@ -144,7 +144,7 @@ describe('Session', () => {
 
     // Two send attempts can overlap (the one at Finish and the one when the app opened), so the
     // status may flick to "Sending…" before it settles; wait for the settled screen.
-    await waitFor(() => expect(screen.getByText('Waiting to send')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Waiting to Send')).toBeInTheDocument())
     const queued = (await get('sessions-to-send:a@example.com')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
   })
@@ -164,7 +164,9 @@ describe('Session', () => {
     await userEvent.click(weight)
     expect(weight).toHaveFocus()
     await userEvent.keyboard('127.5')
-    expect(screen.getByLabelText('Reps for set 1')).toHaveValue('2')
+    // Only the weight was filled in: the reps still show last time's 2 in grey.
+    expect(screen.getByLabelText('Reps for set 1')).toHaveValue('')
+    expect(screen.getByLabelText('Reps for set 1')).toHaveAttribute('placeholder', '2')
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].weight).toBe('127.5'))
   })
 
@@ -185,6 +187,20 @@ describe('Session', () => {
     await userEvent.click(document.body)
     expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+  })
+
+  it('fills one box per tap, and filling both by tapping never ticks the set', async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    const weight = await screen.findByLabelText('Weight for set 1')
+    const reps = screen.getByLabelText('Reps for set 1')
+    await userEvent.click(weight)
+    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', ''])
+    await userEvent.click(reps)
+    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', '2'])
+    expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
   })
 
   it('switches an exercise to an alternative from the swap icon', async () => {
@@ -228,12 +244,14 @@ describe('Session', () => {
     expect(await screen.findByRole('button', { name: 'Hide sets of Squat' })).toBeInTheDocument()
   })
 
-  it("doesn't offer to fold an exercise that still has sets to do", async () => {
+  it('folds any exercise by hand, finished or not, and opens it again', async () => {
     await seed()
     fakeApi({})
     renderApp('/session')
-    await screen.findByRole('button', { name: 'Options for Squat' })
-    expect(screen.queryByRole('button', { name: /^Hide sets of/ })).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Hide sets of Squat' }))
+    const folded = await screen.findByRole('button', { name: /^Squat: 0 of \d+ sets done\. Show sets$/ })
+    await userEvent.click(folded)
+    expect(await screen.findByRole('button', { name: 'Hide sets of Squat' })).toBeInTheDocument()
   })
 
   it('fills the warmup sets from a ramp', async () => {
@@ -295,7 +313,7 @@ describe('Session', () => {
     fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Options for Squat' }))
-    const menu = await screen.findByRole('dialog', { name: 'Exercise options' })
+    const menu = await screen.findByRole('dialog', { name: 'Exercise Options' })
     await userEvent.click(within(menu).getByRole('button', { name: 'Reorder Exercises' }))
     const sheet = await screen.findByRole('dialog', { name: 'Reorder Exercises' })
     expect(within(sheet).getAllByRole('button', { name: /^Drag to reorder/ }).map((b) => b.getAttribute('aria-label')))
@@ -306,10 +324,10 @@ describe('Session', () => {
     await seed()
     fakeApi({})
     renderApp('/session')
-    expect(await screen.findByText('Warm up first')).toBeInTheDocument()
+    expect(await screen.findByText('Warm Up First')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Start' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Done' }))
-    expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
+    expect(screen.queryByText('Warm Up First')).not.toBeInTheDocument()
     await waitFor(async () => {
       const saved = await get('session-in-progress:a@example.com')
       expect(saved.warmup.map((m: { name: string; amount: string; done: boolean }) => [m.name, m.amount, m.done])).toEqual([['Easy cardio', '1 min', true]])
@@ -321,7 +339,7 @@ describe('Session', () => {
     fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Skip the warm-up' }))
-    expect(screen.queryByText('Warm up first')).not.toBeInTheDocument()
+    expect(screen.queryByText('Warm Up First')).not.toBeInTheDocument()
     await waitFor(async () => expect((await get('session-in-progress:a@example.com')).warmupNudge).toBe('skipped'))
   })
 
@@ -330,8 +348,8 @@ describe('Session', () => {
     fakeApi({})
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: 'Finish' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save Session' }))
-    expect(await screen.findByText('Tick at least one set first. Unticked sets are not saved.')).toBeInTheDocument()
+    expect(await screen.findByText("You haven't checked any sets. This workout session is empty.")).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save Session' })).toBeDisabled()
   })
 
   it('adds an exercise as a blank card with a name field', async () => {

@@ -111,10 +111,20 @@ body {
 }
 .screen-in {
   position: relative;
-  animation: screen-in 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  animation: screen-in 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .screen-in {
     animation: none;
   }
+}
+
+/* The Undo bar's ring (UndoBar.tsx) empties as its time runs out. */
+@keyframes undo-countdown {
+  to {
+    stroke-dashoffset: 100;
+  }
+}
+.undo-countdown {
+  animation: undo-countdown linear forwards;
 }

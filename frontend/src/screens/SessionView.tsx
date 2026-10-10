@@ -7,6 +7,8 @@ import { api } from '@/lib/api'
 import { dayLabel, historyName, kg, repsText } from '@/lib/format'
 import { startSession } from '@/lib/startSession'
 import type { SessionDetail } from '@/lib/types'
+import ColumnHead from '@/components/ColumnHead'
+import { BTN } from '@/lib/ui'
 
 function weightText(w: number | null): string {
   return w ? kg(w) : 'BW'
@@ -33,13 +35,13 @@ export default function SessionView({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 px-1">
             <span className="text-xl font-bold tracking-tight">{title?.name}</span>
-            {title?.kind && <span className="text-sm text-muted-foreground">{title.kind}</span>}
-            {s.notes && <p className="text-sm text-muted-foreground">{s.notes}</p>}
+            {title?.kind && <span className="text-[15px] text-muted-foreground">{title.kind}</span>}
+            {s.notes && <p className="text-[15px] text-muted-foreground">{s.notes}</p>}
           </div>
           {s.exercises.length > 0 && (
             <button type="button" disabled={starting}
               onClick={() => { setStarting(true); startSession({ past: s }).then(() => navigate('/session'), () => setStarting(false)) }}
-              className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+              className={BTN.primary}>
               {starting ? 'Starting…' : 'Repeat'}
             </button>
           )}
@@ -47,14 +49,14 @@ export default function SessionView({ params }: { params: { id: string } }) {
             <section key={ex.number} className="overflow-hidden rounded-2xl border border-border bg-card">
               <div className="flex flex-col gap-1 px-4 pt-3 pb-2">
                 <h2 className="text-base font-semibold">{ex.name}</h2>
-                {ex.notes && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
+                {ex.notes && <p className="text-[13px] text-muted-foreground">{ex.notes}</p>}
               </div>
-              <div className={`${COLUMNS} px-4 pb-1 text-[11px] font-semibold tracking-wide text-faint-foreground`}>
+              <ColumnHead className={`${COLUMNS} gap-0 px-4`}>
                 <span>SET</span>
                 <span>KG</span>
                 <span>REPS</span>
                 <span>RPE</span>
-              </div>
+              </ColumnHead>
               {ex.warmup_sets.map((w) => (
                 <Row key={`w${w.number}`} label="W" warmup weight={weightText(w.weight_kg)} reps={w.rep_count?.toString() ?? '–'} note={w.notes} />
               ))}
@@ -81,7 +83,7 @@ const COLUMNS = 'grid grid-cols-[34px_70px_60px_minmax(0,1fr)]'
 /** One set; its note, when it has one, on its own line under it, so nothing is cut off. */
 function Row(props: { label: string; warmup?: boolean; weight: string; reps: string; rpe?: number | null; note: string | null }) {
   return (
-    <div className="flex min-h-11 flex-col justify-center border-t border-border px-4 py-1.5">
+    <div className="flex min-h-11 flex-col justify-center px-4 py-1.5">
       <div className={`${COLUMNS} items-center`}>
         <span className={`font-mono text-[13px] font-semibold ${props.warmup ? 'text-warning' : 'text-muted-foreground'}`}>
           {props.label}

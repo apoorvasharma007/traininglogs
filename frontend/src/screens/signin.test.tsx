@@ -96,7 +96,7 @@ describe('Signing out', () => {
     expect(await screen.findByText('a@example.com')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Sign Out' }))
     const sheet = await screen.findByRole('dialog', { name: 'Sign Out?' })
-    expect(sheet).toHaveTextContent("1 session hasn't sent yet. It stays on this phone and sends after you sign in again.")
+    expect(sheet).toHaveTextContent("1 session hasn't sent yet. It stays on this phone and sends after you sign in.")
     await userEvent.click(within(sheet).getByRole('button', { name: 'Sign Out' }))
     expect(await screen.findByRole('button', { name: 'Email Me a Code' })).toBeInTheDocument()
     expect(localStorage.getItem('tl_session')).toBeNull()

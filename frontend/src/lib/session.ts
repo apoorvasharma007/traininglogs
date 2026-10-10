@@ -15,6 +15,8 @@ export type LiveSet = {
   done: boolean
   // Values carried over from last time, shown grey until the set is edited or ticked.
   ghost: boolean
+  // While the set is still grey: the one box already filled in or typed into, shown as the person's own.
+  own?: 'weight' | 'reps'
   last: string | null // "120 × 2", what this set was last time
   planned?: boolean // one of the sets the workout's plan asked for, not one added today
 }
@@ -224,7 +226,7 @@ export function toggleDone(s: LiveSession, setKey: string): LiveSession {
     ...s,
     exercises: s.exercises.map((e) => ({
       ...e,
-      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false } : x)),
+      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false, own: undefined } : x)),
     })),
   }
 }
@@ -241,10 +243,16 @@ export function setValue(s: LiveSession, setKey: string, field: 'weight' | 'reps
       return {
         ...e,
         sets: e.sets.map((x, i) => {
-          if (i === at) return { ...x, [field]: value, ghost: false }
+          if (i === at) {
+            // A grey set takes this box as the person's own; the other box stays grey until it's
+            // filled in too, or the set is ticked.
+            const other = field === 'weight' ? 'reps' : 'weight'
+            const stillGrey = x.ghost && x.own !== other && x[other] !== ''
+            return { ...x, [field]: value, ghost: stillGrey, own: stillGrey ? field : undefined }
+          }
           // Cascade: the value shows in grey in the later sets of the same kind that nobody has
           // typed into or ticked yet, so typing a weight once covers every set.
-          const untouched = x.ghost || (x.weight === '' && x.reps === '')
+          const untouched = (x.ghost && !x.own) || (x.weight === '' && x.reps === '')
           if (i > at && value && x.kind === kind && !x.done && untouched) return { ...x, [field]: value, ghost: true }
           return x
         }),
@@ -360,7 +368,7 @@ export function switchExercise(s: LiveSession, exKey: string, name: string): Liv
       const from = (x.kind === 'warmup' ? last?.warmup_sets : last?.sets) ?? []
       const source = from[i] ?? from[from.length - 1]
       const lastLabel = from[i] ? lastText(from[i]) : null
-      if (x.done || !x.ghost) return { ...x, last: lastLabel }
+      if (x.done || !x.ghost || x.own) return { ...x, last: lastLabel }
       return {
         ...x,
         weight: source?.weight_kg != null ? String(source.weight_kg) : '',

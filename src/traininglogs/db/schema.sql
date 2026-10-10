@@ -157,6 +157,18 @@ CREATE TABLE IF NOT EXISTS input_text_confirmation_cards (
     FOREIGN KEY (user_id, input_id) REFERENCES input_text(user_id, id) ON DELETE CASCADE
 );
 
+-- A message sent from Settings: a feature request, something broken, or anything else. The sender's
+-- email is their users row; app_version is the release they were on.
+CREATE TABLE IF NOT EXISTS feedback (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind        TEXT NOT NULL CHECK (kind IN ('feature', 'bug', 'other')),
+    message     TEXT NOT NULL CHECK (length(btrim(message)) BETWEEN 1 AND 2000),
+    app_version TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, id)
+);
+
 -- One paid AI call, kept whether it worked or not: a failed call still cost money.
 CREATE TABLE IF NOT EXISTS ai_call_logs (
     id            UUID PRIMARY KEY,
@@ -367,6 +379,7 @@ CREATE INDEX IF NOT EXISTS idx_workout_session_cooldowns      ON workout_session
 CREATE INDEX IF NOT EXISTS idx_workout_session_exercises      ON workout_session_exercises (user_id, session_id);
 CREATE INDEX IF NOT EXISTS idx_workout_session_exercises_name ON workout_session_exercises (user_id, user_exercise_id);
 CREATE INDEX IF NOT EXISTS idx_workout_session_sets           ON workout_session_sets (user_id, exercise_id);
+CREATE INDEX IF NOT EXISTS idx_feedback                       ON feedback (user_id, created_at);
 
 -- Row-level security on, no policies (see the top of this file) ---------------
 ALTER TABLE users                         ENABLE ROW LEVEL SECURITY;
@@ -384,3 +397,4 @@ ALTER TABLE workout_session_warmups       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_cooldowns     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_exercises     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_session_sets          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedback                      ENABLE ROW LEVEL SECURITY;
