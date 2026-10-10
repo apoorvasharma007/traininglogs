@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export Your Data in Settings: everything you've logged as a CSV (one line per set) or as
   JSON (sessions, exercises, sets and programs), saved to the phone (`GET /me/export`).
 - Send Feedback in Settings: pick Feature, Problem or Other, type it and send. Saved with the
-  sender and the app's version (`POST /feedback`, a new `feedback` table).
+  sender and the app's version (`POST /feedback`, a new `feedback` table), and posted to
+  Apoorva's Discord channel (`discord-webhook-url` secret; marked [staging] off prod).
 - Key Lifts in Settings are your own: drag to reorder, × to remove, + Add Lift to pick from the
   lifts you log. Progress shows them first. Saved per person (`PUT /me/key-lifts`, a new
   `users.key_lifts` column); without a choice the built-in six stay.

@@ -153,6 +153,14 @@ def get_key_lifts(conn: Connection, user_id: str) -> list[str] | None:
     return row[0] if row else None
 
 
+def get_email(conn: Connection, user_id: str) -> str | None:
+    """The person's email, as their sign-in account has it."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+    return row[0] if row else None
+
+
 def get_input(conn: Connection, user_id: str, input_id: str) -> dict | None:
     with conn.cursor() as cur:
         cur.execute(
