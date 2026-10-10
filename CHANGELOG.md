@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The app opens faster. The server compresses what it sends (the app's main file goes from
+  248 KB to 77 KB), and the browser keeps the app's script and style files until a release
+  changes them instead of checking with the server on every open.
 - UX audit fixes: the app is named Training Logs and has a home-screen icon on iPhone. The home
   page shows 4 exercises of the next workout and two side-by-side tiles for an ad-hoc workout and
   Log from Notes. The workout header no longer shows the current exercise or the set count. The

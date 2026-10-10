@@ -8,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import psycopg2
@@ -141,6 +142,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="traininglogs", lifespan=lifespan)
+
+# Compress responses over 1 KB when the browser accepts it: the app's JS goes from ~250 KB to ~70 KB.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
@@ -598,13 +602,18 @@ def workouts_archive(workout_id: str, conn=Depends(_db), user: str = Depends(_us
     return _program_or_404(conn, user, program_id)
 
 
-class _NoCacheStaticFiles(StaticFiles):
-    """The web UI, revalidated on every load. A browser serving a cached app.js after a deploy
-    is how an old UI kept appearing locally (and cost two paid extractions)."""
+class _AppFiles(StaticFiles):
+    """The web UI. index.html is revalidated on every load: a browser serving a cached app.js
+    after a deploy is how an old UI kept appearing locally (and cost two paid extractions).
+    Files under assets/ have their content's hash in the name, so a new build gets new names and
+    the browser can keep these until then without asking again."""
 
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
-        response.headers["Cache-Control"] = "no-cache"
+        if path.startswith("assets/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
 
@@ -622,4 +631,4 @@ def old_app_address():
 # image; locally `npm run build` in frontend/ makes frontend/dist.
 _app_dir = Path(os.environ.get("APP_DIR", "frontend/dist"))
 if _app_dir.is_dir():
-    app.mount("/", _NoCacheStaticFiles(directory=_app_dir, html=True), name="app")
+    app.mount("/", _AppFiles(directory=_app_dir, html=True), name="app")
