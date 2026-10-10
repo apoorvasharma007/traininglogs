@@ -195,7 +195,7 @@ export default function WorkoutPlan({ params }: { params: { id: string; wid: str
 
       <ConfirmSheet open={removing} title={`Delete ${w ? workoutName(w) : 'workout'}?`}
         body="The workouts after it move up one. Sessions you logged from it stay in History."
-        confirmLabel="Delete Workout" busy={change.isPending}
+        confirmLabel="Delete Workout" busy={change.isPending} busyLabel="Deleting…"
         onClose={() => setRemoving(false)}
         onConfirm={() => change.mutate({ path: `/workouts/${params.wid}`, method: 'DELETE' }, { onSuccess: () => { setDraft(null); navigate(back) } })} />
     </div>

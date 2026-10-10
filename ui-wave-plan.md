@@ -48,7 +48,7 @@ is done; Apoorva tests it on staging; then one release to `main`.
   server's own wording or a plain sentence reaches the screen. Card edit and correction errors
   send a plain message and log the technical one. A failed exercise reading no longer saves its
   error as the note.
-- [ ] 2. **Busy states.** Every button that calls the server is disabled (and looks it) while it
+- [x] 2. **Busy states.** Every button that calls the server is disabled (and looks it) while it
   waits, with a word that fits: Start Workout and Ad-hoc Workout ("Starting…"), Repeat
   ("Starting…"), Follow This Program ("Following…"), Stop Following, Deload Save and Update
   Program ("Saving…"). Log from Notes says "Reading your note…" while the AI reads.

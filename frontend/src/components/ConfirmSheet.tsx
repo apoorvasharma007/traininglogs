@@ -10,6 +10,7 @@ export default function ConfirmSheet({
   body,
   confirmLabel,
   busy,
+  busyLabel = 'Saving…',
   tone = 'danger',
   onConfirm,
   onClose,
@@ -19,6 +20,8 @@ export default function ConfirmSheet({
   body: string
   confirmLabel: string
   busy?: boolean
+  /** What the confirm button says while it waits: "Deleting…", "Following…". */
+  busyLabel?: string
   tone?: 'danger' | 'primary'
   onConfirm: () => void
   onClose: () => void
@@ -33,7 +36,7 @@ export default function ConfirmSheet({
         className={`h-13 rounded-2xl font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
           tone === 'danger' ? 'bg-destructive text-white' : 'bg-primary text-primary-foreground'
         }`}>
-        {busy ? 'Working…' : confirmLabel}
+        {busy ? busyLabel : confirmLabel}
       </button>
       <button type="button" onClick={onClose} className="h-12 rounded-2xl border border-border font-semibold">
         Cancel

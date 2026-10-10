@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useLocation } from 'wouter'
 import { LoadError, Loading } from '@/components/QueryStatus'
 import ScreenHeader from '@/components/ScreenHeader'
@@ -15,6 +16,7 @@ function weightText(w: number | null): string {
 export default function SessionView({ params }: { params: { id: string } }) {
   const id = decodeURIComponent(params.id)
   const [, navigate] = useLocation()
+  const [starting, setStarting] = useState(false)
   const session = useQuery({
     queryKey: ['session', id],
     queryFn: () => api<SessionDetail>(`/sessions/${encodeURIComponent(id)}`),
@@ -35,9 +37,10 @@ export default function SessionView({ params }: { params: { id: string } }) {
             {s.notes && <p className="text-sm text-muted-foreground">{s.notes}</p>}
           </div>
           {s.exercises.length > 0 && (
-            <button type="button" onClick={() => startSession({ past: s }).then(() => navigate('/session'))}
-              className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-              Repeat
+            <button type="button" disabled={starting}
+              onClick={() => { setStarting(true); startSession({ past: s }).then(() => navigate('/session'), () => setStarting(false)) }}
+              className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+              {starting ? 'Starting…' : 'Repeat'}
             </button>
           )}
           {s.exercises.map((ex) => (

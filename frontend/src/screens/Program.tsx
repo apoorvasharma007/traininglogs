@@ -125,8 +125,8 @@ export default function Program({ params }: { params: { id: string } }) {
             <BottomBar aboveTabs>
               <button type="button" disabled={change.isPending}
                 onClick={() => (otherFollowed ? setConfirm('follow') : change.mutate({ path: `${base}/follow`, method: 'POST' }))}
-                className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-                Follow This Program
+                className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+                {change.isPending && !confirm ? 'Following…' : 'Follow This Program'}
               </button>
             </BottomBar>
           )}
@@ -187,25 +187,25 @@ export default function Program({ params }: { params: { id: string } }) {
         <button type="button" disabled={change.isPending || weeksChoice === savedWeeks}
           onClick={() => change.mutate({ path: base, method: 'PATCH', body: { deload_after_days: weeksChoice * 7 } }, { onSuccess: () => setPickingWeeks(false) })}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-40">
-          Save
+          {change.isPending ? 'Saving…' : 'Save'}
         </button>
       </Sheet>
 
       <ConfirmSheet open={confirm === 'unfollow'} title={`Stop following ${p?.name ?? 'this program'}?`}
         body="Train won't show its next workout any more. The program and its history stay; you can follow it again any time."
-        confirmLabel="Stop Following" busy={change.isPending}
+        confirmLabel="Stop Following" busy={change.isPending} busyLabel="Stopping…"
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/unfollow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={confirm === 'follow'} tone="primary" title={`Follow ${p?.name ?? 'this program'}?`}
         body={`You'll stop following ${otherFollowed?.name ?? 'your current program'}. Its history stays, and you can switch back any time.`}
-        confirmLabel="Follow This Program" busy={change.isPending}
+        confirmLabel="Follow This Program" busy={change.isPending} busyLabel="Following…"
         onClose={() => setConfirm(null)}
         onConfirm={() => change.mutate({ path: `${base}/follow`, method: 'POST' }, { onSuccess: () => setConfirm(null) })} />
 
       <ConfirmSheet open={archiving} title={`Delete ${p?.name ?? 'program'}?`}
         body="It disappears from the app. Sessions you logged from it stay in History."
-        confirmLabel="Delete Program" busy={change.isPending}
+        confirmLabel="Delete Program" busy={change.isPending} busyLabel="Deleting…"
         onClose={() => setArchiving(false)}
         onConfirm={() => change.mutate({ path: base, method: 'DELETE' }, { onSuccess: () => navigate('/programs') })} />
     </div>

@@ -50,7 +50,7 @@ export default function LogFromNotes() {
           onClick={extract}
           className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? 'Sending…' : 'Send'}
+          {busy ? 'Reading your note…' : 'Send'}
         </button>
         <p className="text-center text-xs text-muted-foreground">
           Reads your note with AI for about $0.02 to $0.06; longer notes cost more. Each AI fix after that is $0.01 to $0.04 more. You check everything before it's saved.

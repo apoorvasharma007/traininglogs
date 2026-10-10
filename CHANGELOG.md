@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Buttons that wait for the server can't be tapped twice and say what they're doing: Start
+  Workout, Ad-hoc Workout and Repeat say "Starting…", Follow This Program "Following…", deleting
+  "Deleting…", saving "Saving…". Send on Log from Notes says "Reading your note…" while the AI
+  reads it.
+
 ### Fixed
 
 - The app never shows a raw error. Messages come from the server's own wording or a plain

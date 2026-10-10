@@ -22,6 +22,12 @@ export default function Train() {
   const outbox = useOutbox()
   const [current, setCurrent] = useState<LiveSession | null | undefined>(undefined)
   const [, redraw] = useState(0)
+  // Which start button is waiting for its session (last time's sets come from the server).
+  const [starting, setStarting] = useState<'workout' | 'blank' | null>(null)
+  function start(from: Parameters<typeof startSession>[0], which: 'workout' | 'blank') {
+    setStarting(which)
+    startSession(from).then(() => navigate('/session'), () => setStarting(null))
+  }
   useEffect(() => {
     loadSession().then(setCurrent)
   }, [])
@@ -102,10 +108,10 @@ export default function Train() {
                 )}
               </ul>
             )}
-            <button type="button"
-              onClick={() => startSession({ program: followed, workout: next }).then(() => navigate('/session'))}
-              className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98]">
-              Start Workout
+            <button type="button" disabled={starting != null}
+              onClick={() => start({ program: followed, workout: next }, 'workout')}
+              className="h-13 rounded-2xl bg-primary font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50">
+              {starting === 'workout' ? 'Starting…' : 'Start Workout'}
             </button>
           </div>
         </div>
@@ -134,11 +140,11 @@ export default function Train() {
       )}
 
       <div className="grid grid-cols-2 gap-2.5">
-        <button type="button" onClick={() => startSession('blank').then(() => navigate('/session'))}
-          className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.98]">
+        <button type="button" disabled={starting != null} onClick={() => start('blank', 'blank')}
+          className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.98] disabled:opacity-50">
           <span className="flex size-10 items-center justify-center rounded-xl bg-muted"><Plus size={22} aria-hidden /></span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-[15px] font-semibold">Ad-hoc Workout</span>
+            <span className="text-[15px] font-semibold">{starting === 'blank' ? 'Starting…' : 'Ad-hoc Workout'}</span>
             <span className="text-[13px] leading-snug text-muted-foreground">Type in exercises as you go</span>
           </span>
         </button>
