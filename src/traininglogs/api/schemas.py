@@ -490,3 +490,59 @@ class LastExercise(BaseModel):
     notes: Optional[str]
     warmup_sets: list[LastSet]
     sets: list[LastSet]
+
+
+class ExerciseFields(BaseModel):
+    """What an exercise records, in the library or someone's own (exercise-library-plan.md,
+    section 1). The database refuses a value that isn't on the approved lists."""
+
+    measures: list[str] = ["weight", "reps"]
+    compound: Optional[bool] = None
+    primary_muscles: list[str] = []
+    secondary_muscles: list[str] = []
+    joint_actions: list[str] = []
+    movement_patterns: list[str] = []
+
+
+class LibraryExercise(ExerciseFields):
+    id: str
+    name: str
+    other_names: list[str]
+    equipment: str
+
+
+class MyExercise(ExerciseFields):
+    """One of the person's own exercises: custom when it has a primary muscle, linked when
+    `exercise_id` names a library exercise, otherwise unlinked."""
+
+    id: str
+    name: str
+    exercise_id: Optional[str]
+    equipment: Optional[str]
+    equipment_other: Optional[str]
+
+
+class ExercisesOut(BaseModel):
+    library: list[LibraryExercise]
+    mine: list[MyExercise]
+
+
+class MyExerciseIn(ExerciseFields):
+    """Adds or changes one of the person's own exercises. `exercise_id` links it to a library
+    exercise; without a link it needs a primary muscle."""
+
+    name: str = Field(min_length=1, max_length=80)
+    exercise_id: Optional[str] = None
+    equipment: Optional[str] = None
+    equipment_other: Optional[str] = Field(default=None, max_length=80)
+
+    @model_validator(mode="after")
+    def _check(self) -> MyExerciseIn:
+        self.name = self.name.strip()
+        if not self.name:
+            raise ValueError("an exercise needs a name")
+        if self.exercise_id is None and not self.primary_muscles:
+            raise ValueError("choose a primary muscle")
+        if self.equipment != "other":
+            self.equipment_other = None
+        return self

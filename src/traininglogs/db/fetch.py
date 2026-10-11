@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from psycopg2.extensions import connection as Connection
 
-from traininglogs.db.insert import name_key
+from traininglogs.db.insert import MY_EXERCISE_COLUMNS, name_key
 
 
 def _rows(cur) -> list[dict]:
@@ -225,6 +225,22 @@ def get_working_set_rows(conn: Connection, user_id: str) -> list[dict]:
             (user_id,),
         )
         return _rows(cur)
+
+
+def get_exercises(conn: Connection, user_id: str) -> dict[str, list[dict]]:
+    """The shared library and the person's own exercises, sorted by name, for the phone to keep."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id::text, name, other_names, equipment, measures, compound, primary_muscles,
+                   secondary_muscles, joint_actions, movement_patterns
+            FROM exercises ORDER BY name
+            """
+        )
+        library = _rows(cur)
+        cur.execute(f"SELECT {MY_EXERCISE_COLUMNS} FROM user_exercises WHERE user_id = %s ORDER BY name", (user_id,))
+        mine = _rows(cur)
+    return {"library": library, "mine": mine}
 
 
 def get_last_exercises(conn: Connection, user_id: str, names: list[str]) -> list[dict]:

@@ -361,8 +361,19 @@ squashed into the base; the base merges into `dev` when every step is done and t
         person to pick the exercise for each name.
       - For step 4: own exercises pick equipment from the list; "other" asks what it is and
         stores the text in `equipment_other`.
-- [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
-      measures; tests.
+- [ ] 4. Own exercises (server): `GET /exercises` (the library and your own),
+      `POST /exercises` and `PUT /exercises/{user_exercise_id}`; tests. Agreed 2026-10-12:
+      - Own exercises are `user_exercises` rows with the library's fields as columns (same
+        names); custom means it has a primary muscle. Equipment becomes one `equipment_name`
+        domain for both tables.
+      - Required: a name and a primary muscle, unless linked to a library exercise. Measures
+        default to weight and reps; equipment is optional (section 9 overrides section 5).
+      - Names are saved as typed; the name box asks the phone keyboard for capital words, as
+        the session's does.
+      - PUT edits, renames, links and unlinks. A name that is a library exercise's name must
+        link to that exercise; a clash with the library or your own names is 409.
+      - Saving a session needs no change: a pick puts the exact name in the box, and exact
+        names already link.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
 - [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
       counted by group as in section 1; tests.

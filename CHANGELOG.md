@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   measure or equipment that isn't on the approved lists.
 - `free_exercise_db`: free-exercise-db's 876 exercises, kept as they are, from a copy of their
   file at one commit; 110 library exercises link to one of theirs.
+- `GET /exercises` sends the library and the person's own exercises. `POST /exercises` adds an
+  own exercise (a name and a primary muscle, or a link to a library exercise) and
+  `PUT /exercises/{user_exercise_id}` changes, renames, links or unlinks one. A name that is a
+  library exercise's name has to link to it; a clash with the library or your own names is 409.
 
 ### Changed
 
@@ -23,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   name.
 - A typed exercise name links to the library only when it is exactly a library exercise's name.
   Other names are search words and never link.
+- Equipment is checked against one list for the library and people's own exercises.
 
 ### Removed
 

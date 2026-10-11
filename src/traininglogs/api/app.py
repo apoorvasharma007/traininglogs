@@ -27,12 +27,15 @@ from traininglogs.api.schemas import (
     CorrectOut,
     EditIn,
     ExerciseHistoryRow,
+    ExercisesOut,
     LastExercise,
     LiftDetail,
     FeedbackIn,
     KeyLiftsIn,
     LiftsOut,
     ManualSessionIn,
+    MyExercise,
+    MyExerciseIn,
     ProgramIn,
     ProgramOut,
     ProgramPatch,
@@ -217,6 +220,47 @@ def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), user:
     from traininglogs.db.fetch import get_last_exercises
 
     return get_last_exercises(conn, user, name)
+
+
+NO_LIBRARY_EXERCISE = "No library exercise with that id."
+
+
+@app.get("/exercises", response_model=ExercisesOut)
+def exercises(conn=Depends(_db), user: str = Depends(_user)):
+    """The exercise library and the person's own exercises, for the phone to keep and search."""
+    from traininglogs.db.fetch import get_exercises
+
+    return get_exercises(conn, user)
+
+
+@app.post("/exercises", response_model=MyExercise, status_code=201)
+def my_exercise_add(body: MyExerciseIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Adds one of the person's own exercises."""
+    return _save_my_exercise(conn, user, body)
+
+
+@app.put("/exercises/{user_exercise_id}", response_model=MyExercise)
+def my_exercise_change(user_exercise_id: str, body: MyExerciseIn, conn=Depends(_db), user: str = Depends(_user)):
+    """Changes one of the person's own exercises: its name, what it records, or its link."""
+    saved = _save_my_exercise(conn, user, body, user_exercise_id) if _is_id(user_exercise_id) else None
+    if saved is None:
+        raise HTTPException(status_code=404, detail="No exercise with that id.")
+    return saved
+
+
+def _save_my_exercise(conn, user: str, body: MyExerciseIn, user_exercise_id: str | None = None) -> dict | None:
+    from traininglogs.db.insert import NameTaken, save_my_exercise
+
+    if body.exercise_id is not None and not _is_id(body.exercise_id):
+        raise HTTPException(status_code=422, detail=NO_LIBRARY_EXERCISE)
+    try:
+        return save_my_exercise(conn, user, body.model_dump(), user_exercise_id)
+    except NameTaken as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except psycopg2.errors.CheckViolation:
+        raise HTTPException(status_code=422, detail="Choose each value from its list.")
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(status_code=422, detail=NO_LIBRARY_EXERCISE)
 
 
 @app.get("/sessions/{session_id}", response_model=SessionDetail)

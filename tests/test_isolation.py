@@ -51,10 +51,13 @@ def a(client, conn) -> dict:
     extract = {"date": "3002-01-06", "exercises": [{"number": 1, "name": "Squat", "sets": [
         {"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}], "uncertain_fields": []}
     extraction_id = insert_card(conn, USER_A, raw_input_id, "m", "v1", extract)
+    client.post("/exercises", json={"name": "Spider Curl", "primary_muscles": ["Biceps"]}, headers=A)
+    mine = client.get("/exercises", headers=A).json()["mine"]
     return {
         "program_id": program["id"], "workout_id": workout_id, "client_id": client_id,
         "session_id": saved.json()["session_id"], "extraction_id": extraction_id,
         "program": client.get(f"/programs/{program['id']}", headers=A).json(),
+        "user_exercise_id": mine[0]["id"], "mine": mine,
     }
 
 
@@ -66,6 +69,7 @@ def test_lists_show_only_your_own(client, a) -> None:
     assert all(l["sessions"] == 0 for l in lifts["key_lifts"]) and lifts["other_lifts"] == []
     assert client.get("/progress/lifts/Squat", headers=B).json()["points"] == []
     assert client.get("/exercises/Squat/history", headers=B).status_code == 404
+    assert client.get("/exercises", headers=B).json()["mine"] == []
     # A still sees theirs.
     assert len(client.get("/sessions", headers=A).json()) == 1
 
@@ -88,6 +92,7 @@ ATTEMPTS = [
     ("PUT", "/workouts/{workout_id}/exercises", {"exercises": [{"name": "Curl"}]}),
     ("PUT", "/workouts/{workout_id}/movements", {"warmup": [{"name": "Jog"}], "cooldown": []}),
     ("DELETE", "/workouts/{workout_id}", None),
+    ("PUT", "/exercises/{user_exercise_id}", {"name": "B was here", "primary_muscles": ["Biceps"]}),
 ]
 
 
@@ -107,6 +112,7 @@ def test_someone_elses_things_are_not_found_and_unchanged(client, conn, a, metho
     assert r.status_code == 404, r.text
     assert client.get(f"/programs/{a['program_id']}", headers=A).json() == a["program"]
     assert client.get(f"/extractions/{a['extraction_id']}", headers=A).status_code == 200
+    assert client.get("/exercises", headers=A).json()["mine"] == a["mine"]
     with conn.cursor() as cur:
         cur.execute("SELECT count(*) FROM input_text WHERE user_id = %s", (USER_B,))
         assert cur.fetchone()[0] == 0, "nothing is created for B either"
@@ -154,7 +160,7 @@ def test_every_endpoint_that_names_a_thing_is_covered_here() -> None:
         (method, route.path)
         for route in app.routes
         for method in getattr(route, "methods", set()) - {"HEAD"}
-        if "{" in route.path and not route.path.startswith(("/templates", "/progress", "/exercises"))
+        if "{" in route.path and not route.path.startswith(("/templates", "/progress", "/exercises/{name}"))
     }
     assert named <= {(m, p) for m, p, _ in ATTEMPTS}, named - {(m, p) for m, p, _ in ATTEMPTS}
     assert covered
