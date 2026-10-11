@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The exercise library: 161 exercises with equipment, measures, type, primary and secondary
+  muscles, joint actions and patterns, loaded by hand with `scripts/load_exercise_library.py`
+  (a dry run unless given `--apply`). The database refuses a muscle, joint action, pattern,
+  measure or equipment that isn't on the approved lists.
+- `free_exercise_db`: free-exercise-db's 876 exercises, kept as they are, from a copy of their
+  file at one commit; 110 library exercises link to one of theirs.
+
+### Changed
+
+- The 32 starter exercises take their library names ("Barbell Back Squat" is now "Squat
+  (Barbell)") and keep their ids, so every link to them holds; each old name becomes an other
+  name.
+- A typed exercise name links to the library only when it is exactly a library exercise's name.
+  Other names are search words and never link.
+
+### Removed
+
+- `exercises.movement` and `exercises.muscles`, replaced by the new columns; nothing read them.
+
 ## [5.0.0] - 2026-10-11
 
 ### Added

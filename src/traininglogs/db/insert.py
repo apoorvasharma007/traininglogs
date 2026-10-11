@@ -128,8 +128,9 @@ def name_key(name: str) -> str:
 
 def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
     """The person's exercise id for each name, by name_key, making the ones they haven't used yet.
-    A new one links to a shared exercise when the name is that exercise's name or one of its other
-    names. Two queries for the whole session, however many exercises it has."""
+    A new one links to a library exercise only when the name is exactly that exercise's name;
+    other names are search words, never a link. Two queries for the whole session, however many
+    exercises it has."""
     wanted = {name_key(n): n.strip() for n in names if n.strip()}
     if not wanted:
         return {}
@@ -145,7 +146,7 @@ def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
             """
             INSERT INTO user_exercises (id, user_id, name, exercise_id)
             SELECT v.id::uuid, v.user_id::uuid, v.name,
-                   (SELECT e.id FROM exercises e WHERE lower(e.name) = v.key OR v.key = ANY(e.other_names) LIMIT 1)
+                   (SELECT e.id FROM exercises e WHERE lower(e.name) = v.key)
             FROM (VALUES %s) AS v (id, user_id, name, key)
             ON CONFLICT (user_id, name_key) DO NOTHING
             """,

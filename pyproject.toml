@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # For the tests and for making the lock files.
-dev = ["pytest", "pytest-asyncio", "pip-tools"]
+dev = ["pytest", "pytest-asyncio", "pip-tools", "pyyaml"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

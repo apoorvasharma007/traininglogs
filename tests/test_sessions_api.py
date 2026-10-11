@@ -175,15 +175,18 @@ class TestSaveSession:
             cur.execute("SELECT count(DISTINCT user_exercise_id) FROM workout_session_exercises WHERE name ILIKE '%%squat%%'")
             assert cur.fetchone()[0] == 1
 
-    def test_an_obvious_name_links_to_the_shared_list_and_others_stay_your_own(self, client, conn) -> None:
+    def test_only_a_library_name_links_and_other_names_never_do(self, client, conn) -> None:
         b = body()
-        b["exercises"].append({"name": "SSB squat", "sets": [{"weight_kg": 100, "reps": 5}]})
+        b["exercises"].append({"name": "bench press (barbell)", "sets": [{"weight_kg": 100, "reps": 5}]})
         client.post("/sessions", json=b, headers=HEADERS)
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT ue.name, x.name FROM user_exercises ue LEFT JOIN exercises x ON x.id = ue.exercise_id"
                 " WHERE ue.user_id = %s", (USER_A,))
-            assert set(cur.fetchall()) == {("Chinups", "Chin-up"), ("SSB squat", None), ("Squat", "Barbell Back Squat")}
+            # "Squat" is an other name of Squat (Barbell) and "chinups" of Chin-up (Bodyweight).
+            assert set(cur.fetchall()) == {
+                ("Chinups", None), ("Squat", None), ("bench press (barbell)", "Bench Press (Barbell)"),
+            }
 
     def test_needs_a_pass(self, client) -> None:
         assert client.post("/sessions", json=body()).status_code == 401

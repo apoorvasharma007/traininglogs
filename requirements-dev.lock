@@ -98,6 +98,8 @@ pytest-asyncio==1.4.0
     # via traininglogs (pyproject.toml)
 python-dotenv==1.2.4
     # via traininglogs (pyproject.toml)
+pyyaml==6.0.3
+    # via traininglogs (pyproject.toml)
 sniffio==1.3.1
     # via
     #   anthropic

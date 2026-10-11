@@ -7,7 +7,8 @@
 #
 # Fields:
 #   name               required
-#   other_names        how people write it, lower case; used only to link typed names
+#   other_names        how people write it, lower case; search words only, never used to link,
+#                      so one can be on several exercises ("leg curl" on both leg curls)
 #   equipment          required: barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine,
 #                      smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other
 #   measures           required, one or more of: weight, reps, time, distance
@@ -405,7 +406,7 @@
 
 # Wide grip: the arms come down out to the side (shoulder adduction).
 - name: Lat Pulldown (Cable, Wide Grip)
-  other_names: [wide grip lat pulldown, wide lat pulldown, wide-grip lat pulldown]
+  other_names: [wide grip lat pulldown, wide lat pulldown, wide-grip lat pulldown, lat pulldown]
   equipment: cable
   measures: [weight, reps]
   type: compound
@@ -439,7 +440,7 @@
   patterns: [Vertical Pull]
 
 - name: Pull-up (Bodyweight)
-  other_names: [pull ups, pull up, pullup, pullups, pull-ups]
+  other_names: [pull ups, pull up, pullup, pullups, pull-ups, pull-up]
   equipment: bodyweight
   measures: [reps]
   type: compound
@@ -506,7 +507,7 @@
   patterns: [Horizontal Pull]
 
 - name: Row (Cable, Seated, Neutral Grip)
-  other_names: [neutral grip seated cable row, v bar cable row, seated cable rows]
+  other_names: [neutral grip seated cable row, v bar cable row, seated cable rows, seated cable row]
   equipment: cable
   measures: [weight, reps]
   type: compound
@@ -1257,7 +1258,7 @@
   free_exercise_db_id: Seated_Leg_Curl
 
 - name: Leg Curl (Machine, Lying)
-  other_names: [lying leg curl, prone leg curl, lying hamstring curl, lying leg curls]
+  other_names: [lying leg curl, prone leg curl, lying hamstring curl, lying leg curls, leg curl]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -1327,7 +1328,7 @@
   patterns: [Lunge]
 
 - name: Walking Lunge (Dumbbell)
-  other_names: [dumbbell walking lunge, db walking lunge]
+  other_names: [dumbbell walking lunge, db walking lunge, walking lunge]
   equipment: dumbbell
   measures: [weight, reps]
   type: compound

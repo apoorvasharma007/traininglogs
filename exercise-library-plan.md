@@ -27,7 +27,7 @@ recovery tracking all read from the library instead of from typed names. With li
 | Field | How many | Required | Values |
 |---|---|---|---|
 | Name | one | yes | "Bench Press (Barbell)" |
-| Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
+| Other names | any number | no | how people write it: "bench", "bb bench"; search words only, never used to link (changed 2026-10-11) |
 | Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
 | Type | one | no | Compound, Isolation |
@@ -256,6 +256,13 @@ squashed into the base; the base merges into `dev` when every step is done and t
         `scripts/data/`, loaded by the same script, never edited.
       - Rollout: tests, then local dev (a prod copy), then staging (a fresh prod copy), checking
         every link points at the same row id and no counts moved. Prod at the release (step 9).
+      - Hard linking only: other names are search words, never used to link, and can repeat
+        across exercises. The server links a typed name only when it is exactly a library name
+        (`db/insert.py`); anything else becomes the person's own exercise until they pick one
+        (step 7) or step 5's reviewed mapping links it. Already-linked names stay linked.
+      - Names that arrive as text (notes read by the AI, phones on the old app) become own
+        exercises for now. Follow-up after the picker: the AI's confirmation card asks the
+        person to pick the exercise for each name.
       - For step 4: own exercises pick equipment from the list; "other" asks what it is and
         stores the text in `equipment_other`.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
@@ -304,10 +311,24 @@ no longer listed on any exercise, rules written in the file header. The check sc
 the repo yet; step 3's loader tests should carry the list and joint-action checks. Batch 1 ids
 filled: 53 of 84 matched (110 of 161 overall), each checked against their instructions; the rest
 are variations they lack; Apoorva approved them. Step 2 squashed into `exercises/library` as
-`c8fb8a6` (suite green, 743 passed). Next: step 3 on `exercises/library-3-schema` (cut from
-`c8fb8a6`, nothing on it yet). Start by proposing the schema change for review before writing
-it: the new exercise columns, the lists as checks, the `free_exercise_db` table and its pinned
-load, the unique foreign key; read `.claude/db-migration.md` first.
+`c8fb8a6` (suite green, 743 passed).
+
+2026-10-11 (step 3): design agreed (see step 3 in Steps) and written on
+`exercises/library-3-schema`: `schema.sql` (lists as domains, `free_exercise_db`, new columns,
+`movement` and `muscles` dropped, starter insert removed), `db/library.py`,
+`scripts/load_exercise_library.py`, `scripts/data/free_exercise_db.json`, exact-name linking in
+`db/insert.py`, `tests/test_exercise_library.py`, pyyaml in the dev lock (hand-inserted: no Python
+3.12 on this Mac, and pip-compile on 3.13 rewrites other lines). Suite green: 767 passed, on the
+existing test database and on a fresh one. Dry run on local dev: 32 renamed, 129 added, 32
+updated, 0 left alone; the 19 links point at the same row ids. Applied to local dev: everything the app reads (sessions,
+history, last values, Progress, export) byte-identical before and after, counts unchanged. Step 5
+must fix three old guessed links: Seated Leg Curl -> Leg Curl (Machine, Lying) is wrong; Shoulder
+Press -> Overhead Press (Barbell) and Calf raise -> Calf Raise (Machine, Standing) need checking.
+Apoorva wants the server and app side built and tried locally before staging. Next: staging
+(fresh prod copy, `copy_prod_to_dev.py` with `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`, then the
+script with `--database-url`), then squash into `exercises/library`. Run scripts with
+`PYTHONPATH=src ../traininglogs/.venv/bin/python`; it has PyYAML. `docs/design.html` predates
+the accounts redesign; update it at the release.
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
@@ -349,7 +370,8 @@ type, like the corrections card) with a per-person daily cap and a monthly spend
 
 Rules settled while writing batch 1 (also in the file's header):
 - Other names only hold spellings that can mean just that exercise; generic names link only
-  where there's a clear convention (bench press, squat, deadlift, lateral raise).
+  where there's a clear convention (bench press, squat, deadlift, lateral raise). Replaced
+  2026-10-11: other names are search words only and can repeat across exercises.
 - Equipment is bodyweight only when nothing is added; weighted versions use other.
 - Forearm Flexors only where grip commonly limits the set.
 - Pauses are tempo, bottom-half reps are partial reps. Follow-up outside this plan: the app has
