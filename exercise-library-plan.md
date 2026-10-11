@@ -242,7 +242,22 @@ squashed into the base; the base merges into `dev` when every step is done and t
       afterwards), reviewed by Apoorva.
 - [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
       loaded from a pinned commit, then the library with its foreign key, unique (one of
-      theirs links to one of ours at most); tests.
+      theirs links to one of ours at most); tests. Agreed 2026-10-11:
+      - `schema.sql` holds the lists as domains and the equipment check; the database refuses
+        a value not on them, whoever writes it. Adding to a list is a `schema.sql` change.
+      - `movement` and `muscles` are dropped (nothing reads them; Apoorva's one-off exception
+        to never dropping in place). The starter insert comes out of `schema.sql`.
+      - `scripts/load_exercise_library.py`, run by hand. It does everything in one transaction
+        and rolls back unless given `--apply`, printing what it added, renamed and updated.
+        Matches by exact name; never deletes (lists rows not in the file).
+      - The 32 starter rows are renamed from an explicit list of pairs Apoorva reviews, keeping
+        their ids; each old name goes into the new row's other names.
+      - free-exercise-db: their `dist/exercises.json` at commit `f00c92c` kept as plain text in
+        `scripts/data/`, loaded by the same script, never edited.
+      - Rollout: tests, then local dev (a prod copy), then staging (a fresh prod copy), checking
+        every link points at the same row id and no counts moved. Prod at the release (step 9).
+      - For step 4: own exercises pick equipment from the list; "other" asks what it is and
+        stores the text in `equipment_other`.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
@@ -348,8 +363,17 @@ Context for the next session:
   `docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_dev`.
 - This worktree has no `.venv`; `../traininglogs/.venv/bin/python` has PyYAML for checking the
   library file.
-- Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
-  107 exercise names for one person, 23 linked; prod has a few more people.
+- Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) was
+  re-copied from prod on 2026-10-11 (the old one had test data): 2 people, 99 exercise names, 19
+  linked, 133 sessions, 3419 sets, the same counts as prod. The prod connection string is the
+  `database-url` secret in Secret Manager; `.env` has it commented out on purpose.
+- Step 3 decision (2026-10-11): the 32 starter rows in `exercises` are renamed in place to their
+  library names, keeping their ids so every link holds, and each old name goes into the new
+  row's other names. Leg Curl becomes Leg Curl (Machine, Lying); Pull-up, Lat Pulldown, Seated
+  Cable Row and Walking Lunge go to Pull-up (Bodyweight), Lat Pulldown (Cable, Wide Grip), Row
+  (Cable, Seated, Neutral Grip) and Walking Lunge (Dumbbell). Rollout: tests, then a prod copy in
+  staging, checked (every link points at the same row id before and after, counts unchanged),
+  then prod.
 - The Title Case change (program templates now "Bench Press", "Upper / Lower") is on `docs/guide`,
   not on dev yet. If this branch touches `program_templates.py`, merge `docs/guide` first or
   expect a conflict.
