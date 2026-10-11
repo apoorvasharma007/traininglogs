@@ -239,6 +239,13 @@ Rules settled while writing batch 1 (also in the file's header):
   no tempo input.
 
 Context for the next session:
+- Work in the worktree `~/Projects/traininglogs-wave`, not `~/Projects/traininglogs` (that one is
+  on an unrelated `codebase-cleanup-...` branch).
+- The local database runs in the main checkout's container `traininglogs-db_test-1` (port 5433);
+  `docker compose up` from this worktree fails because the port is taken. Read it with
+  `docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_dev`.
+- This worktree has no `.venv`; `../traininglogs/.venv/bin/python` has PyYAML for checking the
+  library file.
 - Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
   107 exercise names for one person, 23 linked; prod has a few more people.
 - The Title Case change (program templates now "Bench Press", "Upper / Lower") is on `docs/guide`,
