@@ -513,7 +513,7 @@ class LibraryExercise(ExerciseFields):
 
 class MyExercise(ExerciseFields):
     """One of the person's own exercises: custom when it has a primary muscle, linked when
-    `exercise_id` names a library exercise, otherwise unlinked."""
+    `exercise_id` names a library exercise, otherwise unrecognized."""
 
     id: str
     name: str

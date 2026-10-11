@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS user_exercises (
     UNIQUE (user_id, name_key)
 );
 -- What it records, with the library's column names. A custom exercise has a primary muscle; a name
--- that has none and no link is unlinked. A linked one keeps these, so unlinking restores them.
+-- that has none and no link is unrecognized. A linked one keeps these, so unlinking restores them.
 ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS equipment         equipment_name;
 -- What "other" equipment is, in the person's words.
 ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS equipment_other   TEXT;
