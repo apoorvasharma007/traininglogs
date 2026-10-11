@@ -247,6 +247,15 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   typed name shows on My Exercises. Linking an own exercise to a library one makes the library's
   muscles, equipment and measures count, past sets included; the own version is kept, so
   unlinking restores it; both show what changes and offer Undo.
+- **Picker**: the exercise name box searches as you type (names and other names, library and
+  your own, on the phone), with a list under it; nothing shows before typing. Picking a row is
+  the link. The last row is always "Add '…' as your own". Same box in sessions and workout
+  plans. The set row shows the exercise's measures (time and distance boxes are new; the
+  database already stores both).
+- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle
+  (picked by group, then muscle). Measures start as weight and reps. Optional, under "More
+  details": equipment, secondary muscles, compound, joint actions (grouped by joint), patterns.
+  Equipment is optional for own exercises (no metric uses it).
 - Not in v1: the second tier. Later, "Link to a library exercise" on My Exercises also searches
   `free_exercise_db` on the server.
 
