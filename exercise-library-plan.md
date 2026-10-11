@@ -491,8 +491,8 @@ checked out in the main checkout.
 Local demo: `~/Projects/traininglogs-wave/.env` (git-ignored) points at the local dev copy and
 the prod Supabase project (publishable key from Secret Manager). From the worktree:
 `cd frontend && npm run build`, then
-`PYTHONPATH=src ../traininglogs/.venv/bin/uvicorn traininglogs.api.app:app --port 8010`. If
-sign-in bounces, add `http://localhost:8010` to the prod Supabase project's redirect URLs.
+`PYTHONPATH=src ../traininglogs/.venv/bin/uvicorn traininglogs.api.app:app --port 8010`, then
+sign in with an email code as on prod.
 `schema.sql` is applied by hand (`.claude/db-migration.md`); the dev copy has it, counts
 unchanged (133 sessions, 1064 session exercises, 3419 sets, 99 names, 19 linked, 161 library).
 The staging rehearsal confirms the five dropped columns are empty on the prod copy first.
