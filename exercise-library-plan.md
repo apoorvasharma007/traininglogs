@@ -288,8 +288,11 @@ calls. Second pass done (2026-10-11): every muscle must be moved by a listed joi
 no longer listed on any exercise, rules written in the file header. The check scripts are not in
 the repo yet; step 3's loader tests should carry the list and joint-action checks. Batch 1 ids
 filled: 53 of 84 matched (110 of 161 overall), each checked against their instructions; the rest
-are variations they lack. Next: Apoorva reviews the matches, then step 2 is done and squashes
-into `exercises/library`; step 3 starts on `exercises/library-3-schema`. Each id links to one
+are variations they lack; Apoorva approved them. Step 2 squashed into `exercises/library` as
+`c8fb8a6` (suite green, 743 passed). Next: step 3 on `exercises/library-3-schema` (cut from
+`c8fb8a6`, nothing on it yet). Start by proposing the schema change for review before writing
+it: the new exercise columns, the lists as checks, the `free_exercise_db` table and its pinned
+load, the unique foreign key; read `.claude/db-migration.md` first.
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
