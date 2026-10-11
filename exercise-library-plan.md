@@ -35,6 +35,7 @@ recovery tracking all read from the library instead of from typed names. With li
 | Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
 | Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
 | Patterns | any number | no | from the pattern list; isolation exercises have none |
+| free-exercise-db id | one | no | the matching free-exercise-db exercise, "Barbell_Hip_Thrust"; empty when it has none (section 4) |
 
 Library exercises have every field filled; a person's own exercises may leave the optional ones
 empty.
@@ -147,6 +148,29 @@ equipment) as the starting data. A script maps it onto our lists; the result is 
 the repo, and only exercises worth keeping go in (about 150 to 200 to start). Apoorva reviews the
 list. Nothing is fetched at runtime.
 
+**Keeping their data apart from ours (approved 2026-10-11).** Their rows and our library are
+separate tables, linked by their id:
+
+```
+free_exercise_db                  exercises (our library)
+----------------                  -----------------------
+id  text  primary key   <------   free_exercise_db_id  text  null, references free_exercise_db(id)
+name                              name, equipment, muscles ... (ours, curated)
+primary_muscles, secondary_muscles
+equipment, mechanic, force, level
+instructions, images
+```
+
+- `free_exercise_db` holds their rows unchanged, with their column names; nobody edits it by
+  hand. It's loaded from one pinned commit of their repo (they have no releases), recorded in
+  the loader, so a reload gives the same ids and an update is a reviewed change.
+- `exercises.free_exercise_db_id` links our exercise to theirs; the foreign key makes a mistyped
+  id fail at load. Empty where they have no match.
+- Their data never fills our columns. Our muscles stay our 36; theirs are for cross-checking.
+  Their images and instructions are reachable through the link; only the paths are stored for
+  now (the images sit on GitHub). Showing them is a visual change and needs Apoorva's yes.
+- No generic sources table: there is one source. A second one would get its own table and column.
+
 ### 5. A person's own exercises
 
 Allowed, for anything the library lacks. They belong to the person who made them, live in
@@ -207,7 +231,10 @@ squashed into the base; the base merges into `dev` when every step is done and t
       log (batch 1: the 107 local names merged into exercises; batch 2: gaps up to 150 to 200,
       found in free-exercise-db, which is also the cross-check for muscles). Names are movement
       first, equipment in brackets: "Lateral Raise (Cable)". No abbreviations, Title Case.
-- [ ] 3. Schema and loading: new fields, the lists as checks, library loaded; tests.
+      Every exercise gets `free_exercise_db_id` where they have a match (batch 1 filled in
+      afterwards), reviewed by Apoorva.
+- [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
+      loaded from a pinned commit, then the library with its foreign key; tests.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
@@ -217,10 +244,12 @@ squashed into the base; the base merges into `dev` when every step is done and t
 - [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
 - [ ] 9. Release.
 - [ ] 10. Second tier (after the release): when nothing in the library or the person's own
-      exercises matches, search free-exercise-db's full list (about 870) on the server, online
-      only. The list is loaded into our database, not fetched from GitHub while the app runs. A pick is copied into the person's own exercises, its 17 muscles mapped roughly onto
-      ours; it never goes into the shared library directly. Picks are counted, and the most
-      picked are reviewed for adding to the library.
+      exercises matches, search the `free_exercise_db` table (about 870) on the server, online
+      only. A result that a library exercise links to shows that library exercise instead
+      ("glute ham raise" finds `Floor_Glute-Ham_Raise`, which shows Nordic Curl). A pick is
+      copied into the person's own exercises with `user_exercises.free_exercise_db_id` set, its 17 muscles mapped
+      roughly onto ours; it never goes into the shared library directly. Picks are counted by
+      grouping on that column, and the most picked are reviewed for adding to the library.
 
 Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
@@ -242,8 +271,12 @@ region for review before writing, one exercise per row.
 
 2026-10-11 (later): batch 2 names approved: 77 in 14 regions (the proposed 82 minus
 conditioning, dropped because its sets would distort weekly muscle totals; a follow-up). Equipment
-gained trap bar, medicine ball, sled, box and jump rope. Next: fields per region, starting with
-Chest. The approved names (free-exercise-db's own names go in other_names):
+gained trap bar, medicine ball, sled, box and jump rope. `free_exercise_db_id` approved (section
+4). Next: fields per region, including `free_exercise_db_id`, starting with Chest; then fill the
+id in for batch 1. Matching rule: search their names and instructions, read the description,
+and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
+Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
+github.com/yuhonas/free-exercise-db. The approved names (free-exercise-db's own names go in other_names):
 - Chest: Bench Press (Dumbbell); Bench Press (Barbell, Close Grip); Incline Press (Barbell);
   Chest Press (Machine); Push-up (Bodyweight); Push-up (Weighted); Dip (Bodyweight); Dip (Weighted)
 - Shoulders: Arnold Press (Dumbbell); Landmine Press (Barbell, Single Arm); Push Press (Barbell);

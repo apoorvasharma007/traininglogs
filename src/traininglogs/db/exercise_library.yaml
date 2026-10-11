@@ -16,6 +16,8 @@
 #   secondary_muscles  each counts 0.5 sets toward the muscle
 #   joint_actions      "<joint> <action>", e.g. "shoulder horizontal adduction"
 #   patterns           empty for isolation exercises
+#   free_exercise_db_id  the matching free-exercise-db id, e.g. "Barbell_Hip_Thrust"; left out
+#                      when they have no match
 #
 # Range of motion and pauses are not variations. Bottom-half reps are logged on the full exercise
 # as partial reps; a pause is logged as tempo (see Shrug (Cable)).
