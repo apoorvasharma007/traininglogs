@@ -149,14 +149,19 @@ list. Nothing is fetched at runtime.
 
 ### 5. A person's own exercises
 
-Allowed, for anything the library lacks. Creating one asks for the primary muscles, equipment and
-measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
+Allowed, for anything the library lacks. They belong to the person who made them, live in
+`user_exercises`, and nobody else sees them; they never change the shared library. Creating one
+asks for the primary muscles, equipment and measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
 Names people create are reviewed from time to time and added to the library.
 
 ### 6. Logging
 
 The exercise name box becomes a search over the library and the person's own exercises, kept on
-the phone so it works offline (the plan from `db-redesign-plan.md`). Picking one fills last time's
+the phone so it works offline (the plan from `db-redesign-plan.md`). The library isn't part of the
+app build: once the app has loaded and gone idle, it fetches the library and the person's own
+exercises and saves them on the phone. Later opens ask the server whether the library has changed;
+the answer is "no change" unless we edited it. Searching never goes to the server. A new own
+exercise is saved on the phone and sent to the server. Picking one fills last time's
 sets in grey (history prefill). Not found: "Add Your Own". The picker's look is a visual change:
 mockup first, approved before it's built.
 
@@ -211,6 +216,11 @@ squashed into the base; the base merges into `dev` when every step is done and t
       the phone.
 - [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
 - [ ] 9. Release.
+- [ ] 10. Second tier (after the release): when nothing in the library or the person's own
+      exercises matches, search free-exercise-db's full list (about 870) on the server, online
+      only. The list is loaded into our database, not fetched from GitHub while the app runs. A pick is copied into the person's own exercises, its 17 muscles mapped roughly onto
+      ours; it never goes into the shared library directly. Picks are counted, and the most
+      picked are reviewed for adding to the library.
 
 Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
@@ -229,6 +239,15 @@ incline press, bicep curl, tricep extension) are matched by hand in step 5's map
 Next: batch 2, the gaps up to 150 to 200 (dips, hip thrust, carries, jumps, throws, Olympic
 lifts, neck, serratus, rotator cuff, obliques), searched in free-exercise-db. Present them by
 region for review before writing, one exercise per row.
+
+2026-10-11 (later): a list of 82 names in 15 regions was proposed in chat, not yet approved.
+Open: keep it or trim to the most popular only; drop conditioning (run, rowing machine, bike,
+sleds) because its sets would distort weekly muscle totals (recommended); medicine ball, trap bar,
+sled, box and jump rope as equipment "other" or new values. Also agreed: section 5 (own
+exercises stay private) and section 6 (library fetched after load, kept on the phone), and step 10
+(second tier). Separate idea, not in this plan: optional AI during a session (button, speak or
+type, like the corrections card) with a per-person daily cap and a monthly spend cap; add it to
+`~/Projects/PLAN.md` once the library ships, Groq first.
 
 Rules settled while writing batch 1 (also in the file's header):
 - Other names only hold spellings that can mean just that exercise; generic names link only
