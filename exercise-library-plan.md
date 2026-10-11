@@ -398,9 +398,34 @@ The picker and Add Your Own mockup is approved (section 9, link there). Agreed b
 written into the code: muscle groups and joints head to toe. Research report on Progress metrics
 was in the session scratchpad (not kept); its conclusions are in section 9.
 
+2026-10-12 (later): My Exercises mockup, version 4 (https://claude.ai/artifact/84eR4cUKKa8EkYsJfmvHi1),
+in review; Apoorva refines it on the artifact. Agreed so far:
+- Settings row "My Exercises", subtitle "Your custom exercise collection", pill "2 unlinked"
+  only when something is unlinked. It opens a page with Unlinked, Custom, and a Linked row that
+  opens its own screen (filter, two-line rows: typed name, library name).
+- Unlinked note, word for word: "These don't count toward your weekly muscle volume. Link each
+  one to a library exercise, or make it custom and pick its muscles, to make all logged sets
+  count. Then they show in Progress."
+- Decided: unlinked names count nowhere in Progress and get no chart of their own.
+- Unlinked rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
+  count) or "Make It Custom". Every custom exercise uses the one approved Add Your Own sheet (all
+  fields, Primary Muscles open first): Make It Custom fills the name, "+ Add" in the Custom
+  header opens it empty, tapping a custom exercise opens it filled to edit. Linked rows: Change Link (same search sheet) or Unlink (back to
+  Unlinked). Every change shows Undo for 5 seconds. No suggested matches.
+- Search results that matched an other name show `Matches "rdl"` (replaces "Also called", in the
+  session picker too). Other names are ours, from step 2; users never add to them.
+- Link searches the 161 library exercises only; free-exercise-db stays second tier.
+On the dev copy, exact-name linking leaves 2 of Apoorva's 99 names unlinked (Shoulder Press,
+Calf raise) and moves Barbell Clean to Clean (Barbell). Open for step 7: should the picker also
+find a person's linked names?
+Mockup design approved; its layout is rough (hand-copied CSS). The build uses the app's own
+pieces; new layout (Settings row with subtitle and pill, Custom header with count and + Add,
+two-line Linked rows) gets shown before it's written. `SectionCard` puts the description to the
+right of the title; follow that unless Apoorva wants it underneath.
+
 Next:
-1. Mockup My Exercises (own exercises plus unlinked names, Link or Keep as My Own), then the
-   Progress tiles, then Profile (bodyweight log, height, date of birth).
+1. Mockup the Progress tiles (section 9's agreed list), then Profile (bodyweight log, height,
+   date of birth).
 2. Then build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
    `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
    the base branch is checked out in the main checkout).
