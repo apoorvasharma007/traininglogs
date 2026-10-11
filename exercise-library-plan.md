@@ -260,7 +260,23 @@ Built and tried locally against the dev copy of prod before staging. On top of s
     - Skills page: Edit in the header, same edit list; skills editing lives here, not Settings.
 - **Profile**: bodyweight (the person updates it when it changes; each update kept with its
   date, so past ratios use the weight at the time), height, and date of birth (age is worked
-  out from it).
+  out from it). Approved on the mockup (2026-10-12,
+  https://claude.ai/artifact/P6y4a98aj3y6Pir7qDaC5Q); only these parts get built:
+  - A Profile row in Settings under Account, subtitle "Bodyweight, height, date of birth",
+    current weight on the right. It opens its own page.
+  - Bodyweight: current weight large, with the date it was logged. "Update" opens a sheet with
+    a kg box and a date (today by default); Save is off until a weight is typed. Entries listed
+    newest first; tapping one opens the same sheet to change or delete it. Every change offers
+    Undo. No chart.
+  - Height (cm) and Date of Birth (shown with the age, "14 Mar 1997 (29)") are rows that open a
+    sheet; empty ones show "Add".
+  - Units are kg and cm only.
+  - A set's ratio uses the latest entry on or before its date; sets older than the first entry
+    use the first entry.
+  - Strength with no bodyweight logged shows estimated max in kg, plus one row linking to
+    Profile: "Add your bodyweight in Profile to see these as ratios."
+  - Not decided by the mockup: whether Profile and My Exercises share a card or each get a
+    SectionCard. Ask before building.
 - **Linking**: past names show the library name once linked (History, Progress, sessions); the
   typed name shows on My Exercises. Linking an own exercise to a library one makes the library's
   muscles, equipment and measures count, past sets included; the own version is kept, so
@@ -441,14 +457,16 @@ two-line Linked rows) gets shown before it's written. `SectionCard` puts the des
 right of the title; follow that unless Apoorva wants it underneath.
 
 2026-10-12 (later): Progress mockup approved (section 9, link there), with the group counting
-rule. Key Lifts and Skills editing move onto their Progress pages.
+rule. Key Lifts and Skills editing move onto their Progress pages. Profile mockup approved too
+(section 9). Build rule from Apoorva: only what section 9 records as approved goes into code,
+never extras copied from a mockup; reuse existing components, and every new line has to earn
+its place.
 
 Next:
-1. Mockup Profile (bodyweight log, height, date of birth).
-2. Then build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
+1. Build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
    `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
    the base branch is checked out in the main checkout).
-3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
+2. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
    which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
 Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
 `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
