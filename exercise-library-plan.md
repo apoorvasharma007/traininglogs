@@ -241,6 +241,23 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   - A front and back body map with `body-highlighter` (MIT).
   - Left out: recovery percentages, tonnage across exercises, composite scores.
   - Chart details are decided on mockups.
+  - Approved on the mockup (2026-10-12, https://claude.ai/artifact/Gv916fCpkybdLy8e9JtPwf;
+    its bugs get fixed in the build):
+    - Overview, in order: Muscle Volume (full width: total sets this week, one small bar per
+      group from Neck to Shins, "Sets per muscle group."), Strength and Skills side by side
+      (first three each, then "+N more"), and Not Trained as a small row. No subtitle.
+    - Muscle Volume page: week picker at the top (Monday to Sunday, arrows back through earlier
+      weeks), the body map follows it. Each group opens to its muscles and an 8-week bar chart
+      captioned with its date range; tapping a bar picks that week. Footer: "A set counts 1 for
+      its primary muscle group and 0.5 for each secondary one. One set of bench press counts 1
+      for Chest and 0.5 each for Triceps and Shoulders."
+    - Group rule: a set counts once per group, 1 if any primary muscle is in it, else 0.5 if
+      any secondary one is. Muscle rows count per muscle.
+    - Not Trained: groups with no sets in the last 20 weeks, with the last date or "Never".
+    - Strength page: Key Lifts with an Edit button (reorder, remove, add; moves out of
+      Settings), each opening today's lift page. All Exercises is a collapsible list with
+      search inside; each row opens the lift page. Other Lifts is gone.
+    - Skills page: Edit in the header, same edit list; skills editing lives here, not Settings.
 - **Profile**: bodyweight (the person updates it when it changes; each update kept with its
   date, so past ratios use the weight at the time), height, and date of birth (age is worked
   out from it).
@@ -423,9 +440,11 @@ pieces; new layout (Settings row with subtitle and pill, Custom header with coun
 two-line Linked rows) gets shown before it's written. `SectionCard` puts the description to the
 right of the title; follow that unless Apoorva wants it underneath.
 
+2026-10-12 (later): Progress mockup approved (section 9, link there), with the group counting
+rule. Key Lifts and Skills editing move onto their Progress pages.
+
 Next:
-1. Mockup the Progress tiles (section 9's agreed list), then Profile (bodyweight log, height,
-   date of birth).
+1. Mockup Profile (bodyweight log, height, date of birth).
 2. Then build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
    `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
    the base branch is checked out in the main checkout).
@@ -433,38 +452,6 @@ Next:
    which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
 Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
 `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
-exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
-and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
-Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
-github.com/yuhonas/free-exercise-db. The approved names (free-exercise-db's own names go in other_names):
-- Chest: Bench Press (Dumbbell); Bench Press (Barbell, Close Grip); Incline Press (Barbell);
-  Chest Press (Machine); Push-up (Bodyweight); Push-up (Weighted); Dip (Bodyweight); Dip (Weighted)
-- Shoulders: Arnold Press (Dumbbell); Landmine Press (Barbell, Single Arm); Push Press (Barbell);
-  Handstand Push-up (Bodyweight)
-- Rotator cuff: External Rotation (Cable); External Rotation (Band); Internal Rotation (Cable)
-- Serratus: Push-up Plus (Bodyweight); Serratus Punch (Cable)
-- Back: Straight-Arm Pulldown (Cable); Pullover (Dumbbell); Inverted Row (Bodyweight); T-Bar Row
-  (Barbell); Shrug (Barbell); Shrug (Dumbbell); Scapular Pull-up (Bodyweight); Dead Hang
-  (Bodyweight); Muscle-up (Bodyweight)
-- Arms: Biceps Curl (Barbell); Hammer Curl (Dumbbell); Triceps Pressdown (Cable, Rope)
-- Core: Plank (Bodyweight); Side Plank (Bodyweight); Pallof Press (Cable); Woodchop (Cable); Dead
-  Bug (Bodyweight); Hollow Body Hold (Bodyweight); L-sit (Bodyweight); Hanging Knee Raise
-  (Bodyweight); Crunch (Bodyweight)
-- Hips and glutes: Hip Thrust (Barbell); Hip Thrust (Machine); Glute Bridge (Bodyweight, Single
-  Leg); Glute Kickback (Cable); Copenhagen Plank (Bodyweight)
-- Legs: Front Squat (Barbell); Goblet Squat (Dumbbell); Pistol Squat (Bodyweight); Step-up
-  (Dumbbell); Reverse Lunge (Dumbbell); Sumo Deadlift (Barbell); Deadlift (Trap Bar); Romanian
-  Deadlift (Dumbbell); Single-Leg Romanian Deadlift (Dumbbell); Good Morning (Barbell); Nordic
-  Curl (Bodyweight)
-- Carries: Farmer Carry (Dumbbell); Suitcase Carry (Dumbbell); Overhead Carry (Kettlebell)
-- Jumps: Box Jump; Broad Jump; Depth Jump; Jump Rope
-- Throws: Slam (Medicine Ball); Chest Pass (Medicine Ball); Rotational Throw (Medicine Ball);
-  Overhead Backward Throw (Medicine Ball)
-- Olympic and kettlebell: Power Clean (Barbell); Hang Clean (Barbell); Snatch (Barbell); Power
-  Snatch (Barbell); Clean and Jerk (Barbell); Swing (Kettlebell); Snatch (Kettlebell); Turkish
-  Get-up (Kettlebell)
-- Neck: Neck Curl (Plate); Neck Extension (Plate); Lateral Neck Flexion (Plate); Neck Extension
-  (Harness)
 
 Also agreed: section 5 (own
 exercises stay private) and section 6 (library fetched after load, kept on the phone), and step 10
