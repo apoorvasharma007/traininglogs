@@ -28,7 +28,7 @@ recovery tracking all read from the library instead of from typed names. With li
 |---|---|---|---|
 | Name | one | yes | "Bench Press (Barbell)" |
 | Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
-| Equipment | one | yes | barbell, ez bar, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
+| Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
 | Type | one | no | Compound, Isolation |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
@@ -240,10 +240,40 @@ Next: batch 2, the gaps up to 150 to 200 (dips, hip thrust, carries, jumps, thro
 lifts, neck, serratus, rotator cuff, obliques), searched in free-exercise-db. Present them by
 region for review before writing, one exercise per row.
 
-2026-10-11 (later): a list of 82 names in 15 regions was proposed in chat, not yet approved.
-Open: keep it or trim to the most popular only; drop conditioning (run, rowing machine, bike,
-sleds) because its sets would distort weekly muscle totals (recommended); medicine ball, trap bar,
-sled, box and jump rope as equipment "other" or new values. Also agreed: section 5 (own
+2026-10-11 (later): batch 2 names approved: 77 in 14 regions (the proposed 82 minus
+conditioning, dropped because its sets would distort weekly muscle totals; a follow-up). Equipment
+gained trap bar, medicine ball, sled, box and jump rope. Next: fields per region, starting with
+Chest. The approved names (free-exercise-db's own names go in other_names):
+- Chest: Bench Press (Dumbbell); Bench Press (Barbell, Close Grip); Incline Press (Barbell);
+  Chest Press (Machine); Push-up (Bodyweight); Push-up (Weighted); Dip (Bodyweight); Dip (Weighted)
+- Shoulders: Arnold Press (Dumbbell); Landmine Press (Barbell, Single Arm); Push Press (Barbell);
+  Handstand Push-up (Bodyweight)
+- Rotator cuff: External Rotation (Cable); External Rotation (Band); Internal Rotation (Cable)
+- Serratus: Push-up Plus (Bodyweight); Serratus Punch (Cable)
+- Back: Straight-Arm Pulldown (Cable); Pullover (Dumbbell); Inverted Row (Bodyweight); T-Bar Row
+  (Barbell); Shrug (Barbell); Shrug (Dumbbell); Scapular Pull-up (Bodyweight); Dead Hang
+  (Bodyweight); Muscle-up (Bodyweight)
+- Arms: Biceps Curl (Barbell); Hammer Curl (Dumbbell); Triceps Pressdown (Cable, Rope)
+- Core: Plank (Bodyweight); Side Plank (Bodyweight); Pallof Press (Cable); Woodchop (Cable); Dead
+  Bug (Bodyweight); Hollow Body Hold (Bodyweight); L-sit (Bodyweight); Hanging Knee Raise
+  (Bodyweight); Crunch (Bodyweight)
+- Hips and glutes: Hip Thrust (Barbell); Hip Thrust (Machine); Glute Bridge (Bodyweight, Single
+  Leg); Glute Kickback (Cable); Copenhagen Plank (Bodyweight)
+- Legs: Front Squat (Barbell); Goblet Squat (Dumbbell); Pistol Squat (Bodyweight); Step-up
+  (Dumbbell); Reverse Lunge (Dumbbell); Sumo Deadlift (Barbell); Deadlift (Trap Bar); Romanian
+  Deadlift (Dumbbell); Single-Leg Romanian Deadlift (Dumbbell); Good Morning (Barbell); Nordic
+  Curl (Bodyweight)
+- Carries: Farmer Carry (Dumbbell); Suitcase Carry (Dumbbell); Overhead Carry (Kettlebell)
+- Jumps: Box Jump; Broad Jump; Depth Jump; Jump Rope
+- Throws: Slam (Medicine Ball); Chest Pass (Medicine Ball); Rotational Throw (Medicine Ball);
+  Overhead Backward Throw (Medicine Ball)
+- Olympic and kettlebell: Power Clean (Barbell); Hang Clean (Barbell); Snatch (Barbell); Power
+  Snatch (Barbell); Clean and Jerk (Barbell); Swing (Kettlebell); Snatch (Kettlebell); Turkish
+  Get-up (Kettlebell)
+- Neck: Neck Curl (Plate); Neck Extension (Plate); Lateral Neck Flexion (Plate); Neck Extension
+  (Harness)
+
+Also agreed: section 5 (own
 exercises stay private) and section 6 (library fetched after load, kept on the phone), and step 10
 (second tier). Separate idea, not in this plan: optional AI during a session (button, speak or
 type, like the corrections card) with a per-person daily cap and a monthly spend cap; add it to
