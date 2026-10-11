@@ -165,3 +165,10 @@ export type ProgramTemplate = {
   days: string // "3 days a week"
   workouts: { name: string; exercises: PlanExercise[] }[]
 }
+
+/** `GET /exercises`: the shared library and the person's own exercises. */
+export type ExercisesOut = {
+  library: { id: string; name: string; other_names: string[] }[]
+  // Linked when exercise_id is set, custom when it has a primary muscle, otherwise unrecognized.
+  mine: { id: string; name: string; exercise_id: string | null; primary_muscles: string[] }[]
+}
