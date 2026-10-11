@@ -61,7 +61,7 @@ ALTER DOMAIN muscle_list ADD CONSTRAINT muscle_list_check CHECK (VALUE <@ ARRAY[
         'Rotator Cuff', 'Serratus', 'Lats', 'Upper Traps', 'Mid Traps', 'Lower Traps', 'Rhomboids',
         'Spinal Erectors', 'Quadratus Lumborum', 'Biceps', 'Brachialis', 'Triceps Long Head',
         'Triceps Lateral/Medial Heads', 'Brachioradialis', 'Forearm Flexors', 'Forearm Extensors',
-        'Abs', 'Obliques', 'Transverse Abdominis', 'Glute Max', 'Abductors', 'Adductors',
+        'Abs', 'Obliques', 'Transverse Abdominis', 'Glute Max', 'Glute Med', 'Abductors', 'Adductors',
         'Hip Flexors', 'Rectus Femoris', 'Vastus Muscles', 'Hamstrings', 'Gastrocnemius', 'Soleus',
         'Tibialis', 'Neck Flexors', 'Neck Extensors'
     ]::text[]);

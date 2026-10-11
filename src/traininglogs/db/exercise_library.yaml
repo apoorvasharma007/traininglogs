@@ -1092,14 +1092,14 @@
   patterns: [Anti-Extension]
   free_exercise_db_id: Plank
 
-# The side plank works the obliques and the hip abductors (Wikipedia, Plank).
+# The side plank works the obliques and the hip abductors, glute med most (Wikipedia, Plank).
 - name: Side Plank (Bodyweight)
   other_names: [side plank, side planks, side bridge]
   equipment: bodyweight
   measures: [time]
   compound: true
   primary_muscles: [Obliques]
-  secondary_muscles: [Quadratus Lumborum, Abductors]
+  secondary_muscles: [Quadratus Lumborum, Glute Med, Abductors]
   joint_actions: []
   patterns: [Anti-Lateral Flexion]
   free_exercise_db_id: Side_Bridge
@@ -1342,8 +1342,8 @@
   equipment: cable
   measures: [weight, reps]
   compound: false
-  primary_muscles: [Abductors]
-  secondary_muscles: [Glute Max]
+  primary_muscles: [Glute Med]
+  secondary_muscles: [Abductors, Glute Max]
   joint_actions: [hip abduction]
   patterns: []
 
@@ -1352,8 +1352,8 @@
   equipment: machine
   measures: [weight, reps]
   compound: false
-  primary_muscles: [Abductors]
-  secondary_muscles: [Glute Max]
+  primary_muscles: [Glute Med]
+  secondary_muscles: [Abductors, Glute Max]
   joint_actions: [hip abduction]
   patterns: []
   free_exercise_db_id: Thigh_Abductor

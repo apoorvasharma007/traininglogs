@@ -61,7 +61,7 @@ a bench press set gives chest 1 and triceps 0.5. The per-muscle numbers stay for
 
 ### 2. The fixed lists (approved 2026-10-11)
 
-**Muscles (approved 2026-10-11): 17 groups, 36 muscles.** An exercise's primary and secondary
+**Muscles (approved 2026-10-11, Glute Med added the same day): 17 groups, 37 muscles.** An exercise's primary and secondary
 muscles are muscles; Progress and recovery total them by group. Checked against anatomy
 references (StatPearls, Kenhub, TeachMeAnatomy) and EMG studies.
 
@@ -77,7 +77,7 @@ references (StatPearls, Kenhub, TeachMeAnatomy) and EMG studies.
 | Triceps | Triceps Long Head, Triceps Lateral/Medial Heads |
 | Forearms | Brachioradialis, Forearm Flexors, Forearm Extensors |
 | Core | Abs, Obliques, Transverse Abdominis |
-| Glutes | Glute Max |
+| Glutes | Glute Max, Glute Med |
 | Hips | Abductors, Adductors, Hip Flexors |
 | Quads | Rectus Femoris, Vastus Muscles |
 | Hamstrings | Hamstrings |
@@ -93,7 +93,8 @@ What each one covers, where it isn't obvious:
 - Upper Traps also extend the neck; they stay under Upper Back.
 - Brachialis isn't part of the biceps; the group keeps the name people search for.
 - Brachioradialis is a forearm muscle that bends the elbow (hammer and reverse curls).
-- Glute Max only; Abductors are glute med, glute min and TFL. Hip Flexors are iliopsoas and
+- Glute Max and Glute Med (split out 2026-10-11, since people train the side glute on its own);
+  Abductors are what's left of the hip abductors, glute min and TFL. Hip Flexors are iliopsoas and
   sartorius; rectus femoris counts under Quads.
 - Triceps Long Head and Rectus Femoris are split out because they cross a second joint
   (shoulder, hip).
@@ -173,7 +174,7 @@ instructions, images
   the loader, so a reload gives the same ids and an update is a reviewed change.
 - `exercises.free_exercise_db_id` links our exercise to theirs; the foreign key makes a mistyped
   id fail at load. Empty where they have no match.
-- Their data never fills our columns. Our muscles stay our 36; theirs are for cross-checking.
+- Their data never fills our columns. Our muscles stay our 37; theirs are for cross-checking.
   Their images and instructions are reachable through the link; only the paths are stored for
   now (the images sit on GitHub). Showing them is a visual change and needs Apoorva's yes.
 - No generic sources table: there is one source. A second one would get its own table and column.
