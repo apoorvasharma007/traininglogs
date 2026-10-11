@@ -253,10 +253,30 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   the link. The last row is always "Add '…' as your own". Same box in sessions and workout
   plans. The set row shows the exercise's measures (time and distance boxes are new; the
   database already stores both).
-- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle
-  (picked by group, then muscle). Measures start as weight and reps. Optional, under "More
-  details": equipment, secondary muscles, compound, joint actions (grouped by joint), patterns.
-  Equipment is optional for own exercises (no metric uses it).
+- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle.
+  Equipment is optional for own exercises (no metric uses it). Approved on the mockup
+  (2026-10-12, https://claude.ai/artifact/LzNyXSqvfHAXF7HDkW5cQ1):
+  - A name box with the placeholder "Exercise Name", no label; the search text carries over.
+    Names are saved in Title Case (first letter of each word; "RDL" stays). The session's
+    exercise card relies on the phone keyboard for this today; the picker build fixes it there
+    too (changes how new names are saved, so confirm before building).
+  - Then rows that open on tap, one at a time, each showing its value on the right (green when
+    set, "Add" or "Required" in grey): Primary Muscles (tag "+1 Per Set", open first) and Log
+    in the first group; Equipment, Secondary Muscles (tag "+0.5 Per Set"), Compound, Joint
+    Movements and Patterns under "Optional".
+  - Big lists open in two steps: a 3-column grid of groups, then the group's options. A group
+    tile that opens further shows an arrow and its count beside the name ("Shoulders 4", then
+    "Shoulders 1/4" once something inside is picked). Picking an option goes back to the grid.
+    Groups with one option (Lats) select directly.
+  - Order: muscle groups, the muscles in them, and joints run head to toe; everything else
+    (joint movements within a joint, equipment, patterns, Log) is alphabetical.
+  - Single choices close their row on pick: Log (one of seven real combinations, Weight and
+    Reps by default), Equipment ("Other" asks what it is). Compound is a two-part switch,
+    "Compound" and "Isolation", neither picked at first.
+  - Names on screen: Primary Muscles and Secondary Muscles; Joint Movements (the column stays
+    `joint_actions`); no "Type" label anywhere.
+  - Save is pinned at the bottom; until it can save, one line says why ("Add a name to save",
+    "Choose a primary muscle to save").
 - Not in v1: the second tier. Later, "Link to a library exercise" on My Exercises also searches
   `free_exercise_db` on the server.
 
@@ -367,11 +387,27 @@ updated, 0 left alone; the 19 links point at the same row ids. Applied to local 
 history, last values, Progress, export) byte-identical before and after, counts unchanged. Step 5
 must fix three old guessed links: Seated Leg Curl -> Leg Curl (Machine, Lying) is wrong; Shoulder
 Press -> Overhead Press (Barbell) and Calf raise -> Calf Raise (Machine, Standing) need checking.
-Apoorva wants the server and app side built and tried locally before staging. Next: staging
-(fresh prod copy, `copy_prod_to_dev.py` with `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`, then the
-script with `--database-url`), then squash into `exercises/library`. Run scripts with
+Apoorva wants the server and app side built and tried locally before staging. Run scripts with
 `PYTHONPATH=src ../traininglogs/.venv/bin/python`; it has PyYAML. `docs/design.html` predates
 the accounts redesign; update it at the release.
+
+2026-10-12: v1 scope agreed (section 9). Since step 3's first commit: `type` became `compound`
+(yes/no), Glute Med added under Glutes (37 muscles; Abductors now glute min and TFL; checked
+against Wikipedia's anatomy pages), both applied to local dev with history still byte-identical.
+The picker and Add Your Own mockup is approved (section 9, link there). Agreed but not yet
+written into the code: muscle groups and joints head to toe. Research report on Progress metrics
+was in the session scratchpad (not kept); its conclusions are in section 9.
+
+Next:
+1. Mockup My Exercises (own exercises plus unlinked names, Link or Keep as My Own), then the
+   Progress tiles, then Profile (bodyweight log, height, date of birth).
+2. Then build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
+   `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
+   the base branch is checked out in the main checkout).
+3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
+   which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
+Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
+`DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
