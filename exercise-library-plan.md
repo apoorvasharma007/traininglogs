@@ -234,7 +234,7 @@ Base branch `exercises/library` from `dev`, a sub-branch per step (`exercises/li
 squashed into the base; the base merges into `dev` when every step is done and the suite is green.
 
 - [x] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
-- [ ] 2. Library data: `src/traininglogs/db/exercise_library.yaml`, built from the names people
+- [x] 2. Library data: `src/traininglogs/db/exercise_library.yaml`, built from the names people
       log (batch 1: the 107 local names merged into exercises; batch 2: gaps up to 150 to 200,
       found in free-exercise-db, which is also the cross-check for muscles). Names are movement
       first, equipment in brackets: "Lateral Raise (Cable)". No abbreviations, Title Case.
@@ -286,8 +286,10 @@ other_names, ids, muscles, joint actions, patterns, equipment). Apoorva reviews 
 calls. Second pass done (2026-10-11): every muscle must be moved by a listed joint action
 (anatomy references) or measured in a cited study; 56 exercises trimmed, Transverse Abdominis
 no longer listed on any exercise, rules written in the file header. The check scripts are not in
-the repo yet; step 3's loader tests should carry the list and joint-action checks. Next: fill
-`free_exercise_db_id` in for batch 1's 84. Each id links to one
+the repo yet; step 3's loader tests should carry the list and joint-action checks. Batch 1 ids
+filled: 53 of 84 matched (110 of 161 overall), each checked against their instructions; the rest
+are variations they lack. Next: Apoorva reviews the matches, then step 2 is done and squashes
+into `exercises/library`; step 3 starts on `exercises/library-3-schema`. Each id links to one
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in

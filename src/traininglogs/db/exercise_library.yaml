@@ -43,7 +43,7 @@
 # Chest
 
 - name: Bench Press (Barbell)
-  other_names: [barbell bench press, bench press, bench, bb bench, barbell bench, flat bench press]
+  other_names: [barbell bench press, bench press, bench, bb bench, barbell bench, flat bench press, barbell bench press - medium grip]
   equipment: barbell
   measures: [weight, reps]
   type: compound
@@ -51,6 +51,7 @@
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, elbow extension]
   patterns: [Horizontal Push]
+  free_exercise_db_id: Barbell_Bench_Press_-_Medium_Grip
 
 # Upper chest activity peaks at 30 degrees; from 45 degrees the front delts take over more of the
 # work (Rodríguez-Ridao 2020), so both are primary.
@@ -63,9 +64,10 @@
   secondary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder flexion, shoulder horizontal adduction, elbow extension]
   patterns: [Horizontal Push]
+  free_exercise_db_id: Incline_Dumbbell_Press
 
 - name: Pec Deck (Machine)
-  other_names: [pec dec, pec deck, machine fly, machine flye]
+  other_names: [pec dec, pec deck, machine fly, machine flye, butterfly]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -73,6 +75,7 @@
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
   patterns: []
+  free_exercise_db_id: Butterfly
 
 - name: Pec Deck (Machine, Single Arm)
   other_names: [pec dec single arm, single arm pec deck]
@@ -95,7 +98,7 @@
   patterns: []
 
 - name: Flye (Dumbbell)
-  other_names: [bottom half db flye, dumbbell flye, dumbbell fly, db flye, db fly]
+  other_names: [bottom half db flye, dumbbell flye, dumbbell fly, db flye, db fly, dumbbell flyes]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -103,6 +106,7 @@
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
   patterns: []
+  free_exercise_db_id: Dumbbell_Flyes
 
 - name: Bench Press (Dumbbell)
   other_names: [dumbbell bench press, db bench press, dumbbell bench, db bench, flat dumbbell press, flat db press]
@@ -210,9 +214,10 @@
   secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, shoulder abduction, elbow extension, shoulder blade upward rotation]
   patterns: [Vertical Push]
+  free_exercise_db_id: Dumbbell_Shoulder_Press
 
 - name: Overhead Press (Barbell)
-  other_names: [overhead press, ohp, barbell overhead press, military press, standing press]
+  other_names: [overhead press, ohp, barbell overhead press, military press, standing press, standing military press]
   equipment: barbell
   measures: [weight, reps]
   type: compound
@@ -220,9 +225,10 @@
   secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
   patterns: [Vertical Push]
+  free_exercise_db_id: Standing_Military_Press
 
 - name: Lateral Raise (Dumbbell)
-  other_names: [lateral raise, dumbbell lateral raise, db lateral raise, side raise]
+  other_names: [lateral raise, dumbbell lateral raise, db lateral raise, side raise, side lateral raise]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -230,6 +236,7 @@
   secondary_muscles: [Upper Traps, Rotator Cuff]
   joint_actions: [shoulder abduction, shoulder blade upward rotation]
   patterns: []
+  free_exercise_db_id: Side_Lateral_Raise
 
 - name: Lateral Raise (Cable, High Pulley)
   other_names: [high cable lateral raise]
@@ -260,6 +267,7 @@
   secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder blade retraction]
   patterns: []
+  free_exercise_db_id: Cable_Rear_Delt_Fly
 
 - name: Rear Delt Flye (Cable, Single Arm, 45 Degree)
   other_names: [1 arm 45 degree cable rear fly, single arm 45 degree cable rear fly]
@@ -281,6 +289,7 @@
   secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder external rotation, shoulder blade retraction, elbow flexion]
   patterns: [Horizontal Pull]
+  free_exercise_db_id: Face_Pull
 
 # Same muscles as Overhead Press (Barbell); no study measured the Arnold press on its own. The
 # elbows travel from in front out to the sides, which adds horizontal abduction.
@@ -396,7 +405,7 @@
 
 # Wide grip: the arms come down out to the side (shoulder adduction).
 - name: Lat Pulldown (Cable, Wide Grip)
-  other_names: [wide grip lat pulldown, wide lat pulldown]
+  other_names: [wide grip lat pulldown, wide lat pulldown, wide-grip lat pulldown]
   equipment: cable
   measures: [weight, reps]
   type: compound
@@ -404,6 +413,7 @@
   secondary_muscles: [Lower Traps, Rhomboids, Biceps, Brachialis]
   joint_actions: [shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
+  free_exercise_db_id: Wide-Grip_Lat_Pulldown
 
 # Neutral grip: the elbows come down in front (shoulder extension), and the thumbs-up hand
 # position brings in the brachioradialis.
@@ -437,6 +447,7 @@
   secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
+  free_exercise_db_id: Pullups
 
 - name: Pull-up (Bodyweight, Wide Grip)
   other_names: [wide grip pullup, wide grip pull up, wide grip pull-up, wide pull up]
@@ -457,11 +468,12 @@
   secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
+  free_exercise_db_id: Weighted_Pull_Ups
 
 # Palms facing you: the elbows come down in front (shoulder extension) and the biceps work harder
 # than in a pull-up.
 - name: Chin-up (Bodyweight)
-  other_names: [chinups, chin up, chin ups, chinup, chin-ups]
+  other_names: [chinups, chin up, chin ups, chinup, chin-ups, chin-up]
   equipment: bodyweight
   measures: [reps]
   type: compound
@@ -469,6 +481,7 @@
   secondary_muscles: [Biceps, Brachialis, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
+  free_exercise_db_id: Chin-Up
 
 - name: Chin-up (Weighted)
   other_names: [weighted chin up, weighted chin ups, weighted chinup, weighted chin-up]
@@ -493,7 +506,7 @@
   patterns: [Horizontal Pull]
 
 - name: Row (Cable, Seated, Neutral Grip)
-  other_names: [neutral grip seated cable row, v bar cable row]
+  other_names: [neutral grip seated cable row, v bar cable row, seated cable rows]
   equipment: cable
   measures: [weight, reps]
   type: compound
@@ -501,6 +514,7 @@
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
+  free_exercise_db_id: Seated_Cable_Rows
 
 - name: Row (Cable, Seated, Wide Grip)
   other_names: [seated cable row wide grip, wide grip seated cable row, wide grip cable row]
@@ -542,9 +556,10 @@
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
+  free_exercise_db_id: Smith_Machine_Bent_Over_Row
 
 - name: Row (Barbell)
-  other_names: [barbell row, bent over row, barbell bent over row, bb row]
+  other_names: [barbell row, bent over row, barbell bent over row, bb row, bent over barbell row]
   equipment: barbell
   measures: [weight, reps]
   type: compound
@@ -552,6 +567,7 @@
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
+  free_exercise_db_id: Bent_Over_Barbell_Row
 
 # Each rep starts from a dead stop on the floor; standing on a plate (deficit) adds range.
 - name: Pendlay Row (Barbell, Deficit)
@@ -565,7 +581,7 @@
   patterns: [Horizontal Pull]
 
 - name: Row (Dumbbell, Single Arm)
-  other_names: [single arm db row, single arm dumbbell row, one arm dumbbell row, db row, dumbbell row]
+  other_names: [single arm db row, single arm dumbbell row, one arm dumbbell row, db row, dumbbell row, one-arm dumbbell row]
   equipment: dumbbell
   measures: [weight, reps]
   type: compound
@@ -573,6 +589,7 @@
   secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
+  free_exercise_db_id: One-Arm_Dumbbell_Row
 
 # A paused shrug is this exercise with the pause logged as tempo. Tempo is four numbers in
 # seconds, in the order lowering, pause at the bottom, lifting, pause at the top; X means as fast
@@ -586,6 +603,7 @@
   secondary_muscles: [Forearm Flexors]
   joint_actions: [shoulder blade elevation]
   patterns: []
+  free_exercise_db_id: Cable_Shrugs
 
 # A hold: the lats keep the straight arms pulled down toward the hips while the trunk is kept
 # from sagging.
@@ -602,7 +620,7 @@
 # Done with a rounded back it trains the spinal erectors; done as a hip hinge with a flat back it
 # shifts toward the glutes and hamstrings. The erectors work either way.
 - name: Back Extension (Bodyweight)
-  other_names: [hyperextension, hyperextensions, back extension, back extensions, 45 degree back extension]
+  other_names: [hyperextension, hyperextensions, back extension, back extensions, 45 degree back extension, hyperextensions (back extensions)]
   equipment: bodyweight
   measures: [reps]
   type: compound
@@ -610,6 +628,7 @@
   secondary_muscles: [Glute Max, Hamstrings]
   joint_actions: [trunk extension, hip extension]
   patterns: [Hinge]
+  free_exercise_db_id: Hyperextensions_Back_Extensions
 
 # The straight arms are pulled down by the lats; the triceps long head also extends the shoulder.
 - name: Straight-Arm Pulldown (Cable)
@@ -727,9 +746,10 @@
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
   patterns: []
+  free_exercise_db_id: Dumbbell_Bicep_Curl
 
 - name: Biceps Curl (Cable, EZ Bar)
-  other_names: [ez bar cable curl, cable ez bar curl]
+  other_names: [ez bar cable curl, cable ez bar curl, standing biceps cable curl]
   equipment: cable
   measures: [weight, reps]
   type: isolation
@@ -737,6 +757,7 @@
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
   patterns: []
+  free_exercise_db_id: Standing_Biceps_Cable_Curl
 
 # The arm is behind the body, so the biceps starts each rep stretched.
 - name: Bayesian Curl (Cable)
@@ -759,9 +780,10 @@
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
   patterns: []
+  free_exercise_db_id: Incline_Dumbbell_Curl
 
 - name: Concentration Curl (Dumbbell)
-  other_names: [db concentration curl, dumbbell concentration curl, concentration curl]
+  other_names: [db concentration curl, dumbbell concentration curl, concentration curl, concentration curls]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -769,9 +791,10 @@
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
   patterns: []
+  free_exercise_db_id: Concentration_Curls
 
 - name: Preacher Curl (EZ Bar)
-  other_names: [ez bar preacher curl, ez preacher curl]
+  other_names: [ez bar preacher curl, ez preacher curl, preacher curl]
   equipment: ez bar
   measures: [weight, reps]
   type: isolation
@@ -779,11 +802,12 @@
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
   patterns: []
+  free_exercise_db_id: Preacher_Curl
 
 # Thumbs up (neutral grip): the biceps loses some of its leverage, and the brachialis and
 # brachioradialis do more of the work.
 - name: Hammer Curl (Cable, Rope)
-  other_names: [cable rope hammer curl, rope hammer curl, cable hammer curl]
+  other_names: [cable rope hammer curl, rope hammer curl, cable hammer curl, cable hammer curls - rope attachment]
   equipment: cable
   measures: [weight, reps]
   type: isolation
@@ -791,11 +815,12 @@
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
   patterns: []
+  free_exercise_db_id: Cable_Hammer_Curls_-_Rope_Attachment
 
 # Palms down: the biceps is at its weakest, so the brachioradialis and brachialis lead, and the
 # wrist extensors hold the wrist straight.
 - name: Reverse Curl (Dumbbell)
-  other_names: [pronated grip curl, dumbbell reverse curl, reverse dumbbell curl]
+  other_names: [pronated grip curl, dumbbell reverse curl, reverse dumbbell curl, standing dumbbell reverse curl]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -803,6 +828,7 @@
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
   patterns: []
+  free_exercise_db_id: Standing_Dumbbell_Reverse_Curl
 
 - name: Reverse Curl (EZ Bar)
   other_names: [pronated grip ez bar curl, reverse ez bar curl, ez bar reverse curl]
@@ -852,6 +878,7 @@
   secondary_muscles: []
   joint_actions: [elbow extension]
   patterns: []
+  free_exercise_db_id: Triceps_Pushdown
 
 - name: Overhead Triceps Extension (Cable, Bar)
   other_names: [overhead cable tricep extension bar, overhead cable tricep extension, overhead tricep extension bar, cable overhead triceps extension]
@@ -864,7 +891,7 @@
   patterns: []
 
 - name: Overhead Triceps Extension (Dumbbell)
-  other_names: [overhead tricep extension db, dumbbell overhead triceps extension, db overhead tricep extension]
+  other_names: [overhead tricep extension db, dumbbell overhead triceps extension, db overhead tricep extension, standing dumbbell triceps extension]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -872,9 +899,10 @@
   secondary_muscles: []
   joint_actions: [elbow extension]
   patterns: []
+  free_exercise_db_id: Standing_Dumbbell_Triceps_Extension
 
 - name: Skull Crusher (EZ Bar)
-  other_names: [ez bar skull crusher, skull crusher, skull crushers, ez bar skullcrusher, lying triceps extension]
+  other_names: [ez bar skull crusher, skull crusher, skull crushers, ez bar skullcrusher, lying triceps extension, ez-bar skullcrusher]
   equipment: ez bar
   measures: [weight, reps]
   type: isolation
@@ -882,6 +910,7 @@
   secondary_muscles: []
   joint_actions: [elbow extension]
   patterns: []
+  free_exercise_db_id: EZ-Bar_Skullcrusher
 
 - name: Triceps Kickback (Cable, Upright)
   other_names: [cable tricep kickback upright, upright cable kickback]
@@ -904,7 +933,7 @@
   patterns: []
 
 - name: Triceps Kickback (Dumbbell)
-  other_names: [tricep kickback db, dumbbell kickback, dumbbell tricep kickback, db kickback]
+  other_names: [tricep kickback db, dumbbell kickback, dumbbell tricep kickback, db kickback, tricep dumbbell kickback]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -912,6 +941,7 @@
   secondary_muscles: []
   joint_actions: [elbow extension]
   patterns: []
+  free_exercise_db_id: Tricep_Dumbbell_Kickback
 
 - name: Triceps Pressdown (Cable, Rope)
   other_names: [rope pushdown, rope pressdown, tricep rope pushdown, triceps rope pushdown, rope tricep pushdown, cable rope pushdown, triceps pushdown - rope attachment]
@@ -927,7 +957,7 @@
 # Forearms
 
 - name: Wrist Curl (Dumbbell)
-  other_names: [wrist flexion db curl, wrist flexion db, forearm preacher curl, forearm preacher curl db, dumbbell wrist curl, db wrist curl]
+  other_names: [wrist flexion db curl, wrist flexion db, forearm preacher curl, forearm preacher curl db, dumbbell wrist curl, db wrist curl, seated dumbbell palms-up wrist curl]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -935,9 +965,10 @@
   secondary_muscles: []
   joint_actions: [wrist flexion]
   patterns: []
+  free_exercise_db_id: Seated_Dumbbell_Palms-Up_Wrist_Curl
 
 - name: Reverse Wrist Curl (Dumbbell)
-  other_names: [wrist extension db curl, wrist extension db, dumbbell reverse wrist curl, db reverse wrist curl]
+  other_names: [wrist extension db curl, wrist extension db, dumbbell reverse wrist curl, db reverse wrist curl, seated dumbbell palms-down wrist curl]
   equipment: dumbbell
   measures: [weight, reps]
   type: isolation
@@ -945,6 +976,7 @@
   secondary_muscles: []
   joint_actions: [wrist extension]
   patterns: []
+  free_exercise_db_id: Seated_Dumbbell_Palms-Down_Wrist_Curl
 
 - name: Wrist Curl (Cable, Single Arm)
   other_names: [wrist flexion cable curl single hand, single arm cable wrist curl]
@@ -992,7 +1024,7 @@
 
 # Rolling out and back, the abs keep the lower back from arching while the lats pull the arms back.
 - name: Ab Wheel Rollout
-  other_names: [ab wheel rollout, ab wheel, ab rollout, ab wheel rollouts]
+  other_names: [ab wheel rollout, ab wheel, ab rollout, ab wheel rollouts, ab roller]
   equipment: other
   measures: [reps]
   type: compound
@@ -1000,6 +1032,7 @@
   secondary_muscles: [Obliques, Lats]
   joint_actions: [shoulder flexion, shoulder extension]
   patterns: [Anti-Extension]
+  free_exercise_db_id: Ab_Roller
 
 - name: Crunch (Cable)
   other_names: [cable crunch, cable crunches, kneeling cable crunch]
@@ -1010,6 +1043,7 @@
   secondary_muscles: [Obliques]
   joint_actions: [trunk flexion]
   patterns: []
+  free_exercise_db_id: Cable_Crunch
 
 - name: Decline Crunch (Weighted)
   other_names: [decline weighted crunch, weighted decline crunch]
@@ -1032,6 +1066,7 @@
   secondary_muscles: [Rectus Femoris, Obliques, Forearm Flexors]
   joint_actions: [hip flexion, trunk flexion]
   patterns: []
+  free_exercise_db_id: Hanging_Leg_Raise
 
 - name: Roman Chair Leg Raise (Bodyweight)
   other_names: [roman chair leg raise, hanging roman chair leg raise, captains chair leg raise, captain's chair leg raise]
@@ -1161,6 +1196,7 @@
   secondary_muscles: [Spinal Erectors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
   patterns: [Squat]
+  free_exercise_db_id: Barbell_Squat
 
 - name: Squat (Smith Machine)
   other_names: [smith machine squat, smith squat]
@@ -1171,6 +1207,7 @@
   secondary_muscles: []
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
   patterns: [Squat]
+  free_exercise_db_id: Smith_Machine_Squat
 
 - name: Hack Squat (Machine)
   other_names: [hack squat, machine hack squat]
@@ -1181,6 +1218,7 @@
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
   patterns: [Squat]
+  free_exercise_db_id: Hack_Squat
 
 - name: Leg Press (Machine)
   other_names: [leg press, machine leg press, 45 degree leg press]
@@ -1191,6 +1229,7 @@
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
   patterns: [Squat]
+  free_exercise_db_id: Leg_Press
 
 # The only common exercise that trains the rectus femoris through the knee.
 - name: Leg Extension (Machine)
@@ -1202,6 +1241,7 @@
   secondary_muscles: []
   joint_actions: [knee extension]
   patterns: []
+  free_exercise_db_id: Leg_Extensions
 
 # Seated curls grew the hamstrings more than lying curls (Maeo 2021: 14% against 9%): with the
 # hip bent, the hamstrings work at a longer length.
@@ -1214,9 +1254,10 @@
   secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
   patterns: []
+  free_exercise_db_id: Seated_Leg_Curl
 
 - name: Leg Curl (Machine, Lying)
-  other_names: [lying leg curl, prone leg curl, lying hamstring curl]
+  other_names: [lying leg curl, prone leg curl, lying hamstring curl, lying leg curls]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -1224,6 +1265,7 @@
   secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
   patterns: []
+  free_exercise_db_id: Lying_Leg_Curls
 
 # The lower back holds the hinge in RDLs and good mornings (McAllister 2014).
 - name: Romanian Deadlift (Barbell)
@@ -1235,6 +1277,7 @@
   secondary_muscles: [Spinal Erectors, Adductors, Forearm Flexors]
   joint_actions: [hip extension]
   patterns: [Hinge]
+  free_exercise_db_id: Romanian_Deadlift
 
 # The lower back works hard but holds still; the hips and knees do the lifting, so it's secondary
 # (Andersen 2018 measured it in barbell and trap bar deadlifts).
@@ -1247,6 +1290,7 @@
   secondary_muscles: [Spinal Erectors, Vastus Muscles, Adductors, Upper Traps, Forearm Flexors]
   joint_actions: [hip extension, knee extension]
   patterns: [Hinge]
+  free_exercise_db_id: Barbell_Deadlift
 
 # Pulled from the floor like a deadlift, caught on the shoulders in a squat.
 - name: Clean (Barbell)
@@ -1258,9 +1302,10 @@
   secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
   patterns: [Hinge, Squat]
+  free_exercise_db_id: Clean
 
 - name: Bulgarian Split Squat (Dumbbell)
-  other_names: [db bulgarian split squat, dumbbell bulgarian split squat, bulgarian split squat, bss]
+  other_names: [db bulgarian split squat, dumbbell bulgarian split squat, bulgarian split squat, bss, split squat with dumbbells]
   equipment: dumbbell
   measures: [weight, reps]
   type: compound
@@ -1268,6 +1313,7 @@
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
   patterns: [Lunge]
+  free_exercise_db_id: Split_Squat_with_Dumbbells
 
 # A lunge with the feet staying in place is a split squat.
 - name: Split Squat (Smith Machine, Front Foot Elevated)
@@ -1301,7 +1347,7 @@
   patterns: []
 
 - name: Hip Abduction (Machine)
-  other_names: [machine hip abduction, hip abduction machine, abductor machine, seated hip abduction]
+  other_names: [machine hip abduction, hip abduction machine, abductor machine, seated hip abduction, thigh abductor]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -1309,6 +1355,7 @@
   secondary_muscles: [Glute Max]
   joint_actions: [hip abduction]
   patterns: []
+  free_exercise_db_id: Thigh_Abductor
 
 - name: Hip Adduction (Cable)
   other_names: [cable hip adduction, standing cable hip adduction]
@@ -1319,9 +1366,10 @@
   secondary_muscles: []
   joint_actions: [hip adduction]
   patterns: []
+  free_exercise_db_id: Cable_Hip_Adduction
 
 - name: Hip Adduction (Machine)
-  other_names: [machine hip adduction, hip adduction machine, adductor machine, seated hip adduction]
+  other_names: [machine hip adduction, hip adduction machine, adductor machine, seated hip adduction, thigh adductor]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -1329,6 +1377,7 @@
   secondary_muscles: []
   joint_actions: [hip adduction]
   patterns: []
+  free_exercise_db_id: Thigh_Adductor
 
 # Same muscles as the back squat: the bar position changes the torso angle, not which muscles
 # do the work.
@@ -1523,6 +1572,7 @@
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
   patterns: []
+  free_exercise_db_id: Standing_Calf_Raises
 
 - name: Calf Raise (Machine, Seated)
   other_names: [seated calf raise, calf raise seated, seated calf raises]
@@ -1533,6 +1583,7 @@
   secondary_muscles: [Gastrocnemius]
   joint_actions: [ankle plantarflexion]
   patterns: []
+  free_exercise_db_id: Seated_Calf_Raise
 
 - name: Calf Raise (Smith Machine)
   other_names: [smith machine calf raise, smith calf raise]
@@ -1543,9 +1594,10 @@
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
   patterns: []
+  free_exercise_db_id: Smith_Machine_Calf_Raise
 
 - name: Calf Raise (Machine, Leg Press)
-  other_names: [leg press calf raise, leg press calf press, calf press]
+  other_names: [leg press calf raise, leg press calf press, calf press, calf press on the leg press machine]
   equipment: machine
   measures: [weight, reps]
   type: isolation
@@ -1553,6 +1605,7 @@
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
   patterns: []
+  free_exercise_db_id: Calf_Press_On_The_Leg_Press_Machine
 
 - name: Calf Raise (Machine, Hack Squat)
   other_names: [standing calf raise on hack squat, hack squat calf raise]
