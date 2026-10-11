@@ -223,8 +223,7 @@ def insert_session(
             rep_range = goal.rep_range if goal else None
             exercise_rows.append((
                 row_id, user_id, session_id, exercise.number, exercise_ids[name_key(exercise.name)],
-                exercise.name, exercise.notes, exercise.warmup_notes, exercise.tags, exercise.modality,
-                exercise.movement_pattern, exercise.form_cues, exercise.target_muscle_groups, exercise.rep_tempo,
+                exercise.name, exercise.notes, exercise.warmup_notes, exercise.form_cues,
                 goal.weight_kg if goal else None, goal.sets if goal else None,
                 rep_range.min if rep_range else None, rep_range.max if rep_range else None,
                 _rest_minutes(goal.rest if goal else None), _rest_seconds(goal.rest if goal else None),
@@ -251,9 +250,8 @@ def insert_session(
             cur,
             """
             INSERT INTO workout_session_exercises (
-                id, user_id, session_id, position, user_exercise_id, name, notes, warmup_notes, tags,
-                modality, movement_pattern, form_cues, target_muscle_groups, rep_tempo, goal_weight_kg,
-                goal_sets, goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds,
+                id, user_id, session_id, position, user_exercise_id, name, notes, warmup_notes, form_cues,
+                goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds,
                 goal_distance_meters, goal_target_duration_sec
             ) VALUES %s
             """,

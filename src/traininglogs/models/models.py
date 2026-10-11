@@ -389,12 +389,7 @@ class SessionCooldown(BaseModel):
 class Exercise(BaseModel):
     number: int
     name: str
-    tags: Optional[List[str]] = None
-    modality: Optional[str] = None
-    movement_pattern: Optional[List[str]] = None
     sets: Optional[List[WorkingSet]] = None
-    target_muscle_groups: Optional[List[str]] = None
-    rep_tempo: Optional[str] = None
     current_goal: Optional[Goal] = None
     warmup_sets: Optional[List[WarmupSet]] = None
     notes: Optional[str] = None

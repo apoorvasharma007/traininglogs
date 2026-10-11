@@ -468,6 +468,11 @@ Next:
    the base branch is checked out in the main checkout).
 2. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
    which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
+2026-10-12: `patterns` renamed `movement_patterns`; five empty session-exercise columns (`tags`,
+`modality`, `movement_pattern`, `target_muscle_groups`, `rep_tempo`) dropped from the database,
+the model and the API. `schema.sql` drops them on startup, so the staging rehearsal must confirm
+they are empty on the prod copy before the release. Local dev still has them until the app next
+starts against it.
 Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
 `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
 

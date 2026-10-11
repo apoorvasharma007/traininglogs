@@ -348,12 +348,7 @@ CREATE TABLE IF NOT EXISTS workout_session_exercises (
     name                     TEXT NOT NULL,
     notes                    TEXT,
     warmup_notes             TEXT,
-    tags                     TEXT[],
-    modality                 TEXT,
-    movement_pattern         TEXT[],
     form_cues                TEXT[],
-    target_muscle_groups     TEXT[],
-    rep_tempo                TEXT,
     goal_weight_kg           NUMERIC,
     goal_sets                INT,
     goal_rep_min             INT,
@@ -367,6 +362,11 @@ CREATE TABLE IF NOT EXISTS workout_session_exercises (
     FOREIGN KEY (user_id, session_id) REFERENCES workout_sessions(user_id, id) ON DELETE CASCADE,
     FOREIGN KEY (user_id, user_exercise_id) REFERENCES user_exercises(user_id, id)
 );
+-- Classifications the AI stopped filling, empty in every row; the library's muscles and movement
+-- patterns replace them (dropped 2026-10-12).
+ALTER TABLE workout_session_exercises
+    DROP COLUMN IF EXISTS tags, DROP COLUMN IF EXISTS modality, DROP COLUMN IF EXISTS movement_pattern,
+    DROP COLUMN IF EXISTS target_muscle_groups, DROP COLUMN IF EXISTS rep_tempo;
 
 -- Warm-up and working sets in one table. Drop sets, myo-reps and the like stay as detail on their
 -- set (failure_technique).

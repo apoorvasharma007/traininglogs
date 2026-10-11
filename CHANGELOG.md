@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The exercise library: 161 exercises with equipment, measures, compound or not, primary and secondary
-  muscles, joint actions and patterns, loaded by hand with `scripts/load_exercise_library.py`
-  (a dry run unless given `--apply`). The database refuses a muscle, joint action, pattern,
+  muscles, joint actions and movement patterns, loaded by hand with `scripts/load_exercise_library.py`
+  (a dry run unless given `--apply`). The database refuses a muscle, joint action, movement pattern,
   measure or equipment that isn't on the approved lists.
 - `free_exercise_db`: free-exercise-db's 876 exercises, kept as they are, from a copy of their
   file at one commit; 110 library exercises link to one of theirs.
@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `exercises.movement` and `exercises.muscles`, replaced by the new columns; nothing read them.
+- A session exercise's `tags`, `modality`, `movement_pattern`, `target_muscle_groups` and
+  `rep_tempo`, from the database, the API and the AI corrections prompt. They were empty in every
+  row; the library's muscles and movement patterns replace them.
 
 ## [5.0.0] - 2026-10-11
 

@@ -317,19 +317,10 @@ class TestExercise:
         ex = Exercise(number=1, name="Bench Press")
         assert "exercise_type" not in ex.model_dump()
 
-    def test_tags_is_a_list_and_accepts_multiple_values(self) -> None:
-        ex = Exercise(number=1, name="Bench Press", tags=["absolute_strength", "muscle_growth"])
-        assert ex.tags == ["absolute_strength", "muscle_growth"]
-
-    def test_movement_pattern_accepts_multiple_values(self) -> None:
-        ex = Exercise(number=1, name="Trap Bar Deadlift", movement_pattern=["squat", "hip_hinge"])
-        assert set(ex.movement_pattern) == {"squat", "hip_hinge"}
-
-    def test_all_classification_fields_optional(self) -> None:
-        ex = Exercise(number=1, name="Plank")
-        assert ex.tags is None
-        assert ex.modality is None
-        assert ex.movement_pattern is None
+    def test_classification_fields_absent_from_model(self) -> None:
+        dumped = Exercise(number=1, name="Plank").model_dump()
+        for field in ("tags", "modality", "movement_pattern", "target_muscle_groups", "rep_tempo"):
+            assert field not in dumped
 
     def test_null_warmup_sets_filtered(self) -> None:
         ex = Exercise.model_validate({
@@ -351,9 +342,6 @@ class TestExercise:
         ex = Exercise(
             number=1,
             name="Bench Press",
-            tags=["absolute_strength"],
-            modality="barbell",
-            movement_pattern=["push"],
             sets=[
                 WorkingSet(number=1, weight_kg=90.0, rep_count=RepCount(full=5), rpe=8.0),
                 WorkingSet(number=2, weight_kg=90.0, rep_count=RepCount(full=5), rpe=8.5),
