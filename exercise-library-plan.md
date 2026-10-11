@@ -478,17 +478,35 @@ rule. Key Lifts and Skills editing move onto their Progress pages. Profile mocku
 never extras copied from a mockup; reuse existing components, and every new line has to earn
 its place.
 
+2026-10-12 (end of session): step 4 built and committed on `exercises/library-4-own`
+(`e657700`, suite green 785 passed): `GET /exercises`, `POST /exercises`,
+`PUT /exercises/{user_exercise_id}`, own-exercise columns on `user_exercises`, one
+`equipment_name` domain. Before it, on `exercises/library-3-schema`: `patterns` became
+`movement_patterns` (`e4d5fe8`) and five empty session-exercise columns (`tags`, `modality`,
+`movement_pattern`, `target_muscle_groups`, `rep_tempo`) were dropped from the database, the
+model and the API (`da037a8`). "Unlinked" is now "Unrecognized" everywhere (`864ad3c`). Picker
+search design agreed (section 9). Neither branch is squashed, since `exercises/library` is
+checked out in the main checkout.
+
+Local demo: `~/Projects/traininglogs-wave/.env` (git-ignored) points at the local dev copy and
+the prod Supabase project (publishable key from Secret Manager). From the worktree:
+`cd frontend && npm run build`, then
+`PYTHONPATH=src ../traininglogs/.venv/bin/uvicorn traininglogs.api.app:app --port 8010`. If
+sign-in bounces, add `http://localhost:8010` to the prod Supabase project's redirect URLs.
+`schema.sql` is applied by hand (`.claude/db-migration.md`); the dev copy has it, counts
+unchanged (133 sessions, 1064 session exercises, 3419 sets, 99 names, 19 linked, 161 library).
+The staging rehearsal confirms the five dropped columns are empty on the prod copy first.
+
 Next:
-1. Build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
-   `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
-   the base branch is checked out in the main checkout).
-2. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
+1. Wait for Apoorva's yes, then build the picker on `exercises/library-7-picker` from
+   `exercises/library-4-own`, in this order, showing the diff before each commit:
+   `lib/lists.ts` (lists, groups and joints head to toe, the 7 Log combinations), the search
+   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and
+   `WorkoutPlan`, then the Add Your Own sheet. Left for later in step 7: keeping the library on
+   the phone (section 6) and the time and distance boxes in the set row.
+2. Then My Exercises, Profile, and the Progress redesign (needs step 6's reads by exercise).
+3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
    which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
-2026-10-12: `patterns` renamed `movement_patterns`; five empty session-exercise columns (`tags`,
-`modality`, `movement_pattern`, `target_muscle_groups`, `rep_tempo`) dropped from the database,
-the model and the API. `schema.sql` is applied by hand (`.claude/db-migration.md`), so the
-staging rehearsal confirms they are empty on the prod copy before applying it. Applied to local
-dev 2026-10-12 (step 4 included): counts unchanged, the five were empty.
 Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
 `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
 
