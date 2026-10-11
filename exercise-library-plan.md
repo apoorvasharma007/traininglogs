@@ -30,11 +30,11 @@ recovery tracking all read from the library instead of from typed names. With li
 | Other names | any number | no | how people write it: "bench", "bb bench"; search words only, never used to link (changed 2026-10-11) |
 | Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
-| Compound | one | no | yes (moves two or more joints) or no (isolation); `compound` in the database, renamed from Type 2026-10-11 so it can't be mistaken for patterns |
+| Compound | one | no | yes (moves two or more joints) or no (isolation); `compound` in the database, renamed from Type 2026-10-11 so it can't be mistaken for movement patterns |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
 | Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
 | Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
-| Patterns | any number | no | from the pattern list; isolation exercises have none |
+| Movement patterns | any number | no | from the movement pattern list (`movement_patterns`, renamed from patterns 2026-10-12); isolation exercises have none |
 | free-exercise-db id | one | no | the matching free-exercise-db exercise, "Barbell_Hip_Thrust"; empty when it has none (section 4) |
 
 Library exercises have every field filled; a person's own exercises may leave the optional ones
@@ -120,10 +120,10 @@ brackets.
 Knee rotation happens only with the knee bent (about 20 to 30° inward, 30 to 40° outward); it's
 trained in mobility and knee rehab work, such as seated tibial rotations.
 
-**Patterns (approved 2026-10-11): 15.** No single scientific standard exists; this follows
+**Movement patterns (approved 2026-10-11): 15.** No single scientific standard exists; this follows
 coaching consensus (Dan John, John Rusin) and the anti-movement model for core training.
 
-| Kind | Patterns |
+| Kind | Movement patterns |
 |---|---|
 | Lower body | Squat, Hinge, Lunge |
 | Push | Horizontal Push, Vertical Push |
@@ -296,13 +296,13 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   - Then rows that open on tap, one at a time, each showing its value on the right (green when
     set, "Add" or "Required" in grey): Primary Muscles (tag "+1 Per Set", open first) and Log
     in the first group; Equipment, Secondary Muscles (tag "+0.5 Per Set"), Compound, Joint
-    Movements and Patterns under "Optional".
+    Movements and Movement Patterns under "Optional".
   - Big lists open in two steps: a 3-column grid of groups, then the group's options. A group
     tile that opens further shows an arrow and its count beside the name ("Shoulders 4", then
     "Shoulders 1/4" once something inside is picked). Picking an option goes back to the grid.
     Groups with one option (Lats) select directly.
   - Order: muscle groups, the muscles in them, and joints run head to toe; everything else
-    (joint movements within a joint, equipment, patterns, Log) is alphabetical.
+    (joint movements within a joint, equipment, movement patterns, Log) is alphabetical.
   - Single choices close their row on pick: Log (one of seven real combinations, Weight and
     Reps by default), Equipment ("Other" asks what it is). Compound is a two-part switch,
     "Compound" and "Isolation", neither picked at first.

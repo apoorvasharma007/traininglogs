@@ -59,9 +59,9 @@ STARTER_RENAMES = {
 
 FIELDS = [
     "equipment", "other_names", "measures", "compound", "primary_muscles", "secondary_muscles",
-    "joint_actions", "patterns", "free_exercise_db_id",
+    "joint_actions", "movement_patterns", "free_exercise_db_id",
 ]
-ARRAYS = {"other_names", "measures", "primary_muscles", "secondary_muscles", "joint_actions", "patterns"}
+ARRAYS = {"other_names", "measures", "primary_muscles", "secondary_muscles", "joint_actions", "movement_patterns"}
 REQUIRED = ["name", "equipment", "measures", "primary_muscles"]
 THEIR_FIELDS = {
     "id": "id", "name": "name", "force": "force", "level": "level", "mechanic": "mechanic",
@@ -159,7 +159,7 @@ def load_library(cur: Cursor, library: list[dict]) -> dict[str, list[str]]:
     stored = {r[0]: dict(zip(FIELDS, r[1:])) for r in cur.fetchall()}
     for e in library:
         values = {f: e.get(f) for f in FIELDS}
-        for f in ("other_names", "secondary_muscles", "joint_actions", "patterns"):
+        for f in ("other_names", "secondary_muscles", "joint_actions", "movement_patterns"):
             values[f] = values[f] or []
         try:
             _write(cur, e["name"], values, stored.get(e["name"]), report)

@@ -112,7 +112,7 @@ class TestTheDatabaseRefuses:
         ("primary_muscles", ["Side Delt"]),
         ("secondary_muscles", ["Pecs"]),
         ("joint_actions", ["shoulder press"]),
-        ("patterns", ["Push"]),
+        ("movement_patterns", ["Push"]),
         ("measures", ["sets"]),
     ])
     def test_a_value_not_on_the_list(self, cur, column, value) -> None:

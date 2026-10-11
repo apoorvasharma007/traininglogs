@@ -51,10 +51,10 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- The approved lists (exercise-library-plan.md, section 2). The database refuses a value that
 -- isn't on them, whoever writes it. To change a list, edit it here: each startup re-adds the
 -- check, and fails if a stored value is no longer on the list.
-DO $$ BEGIN CREATE DOMAIN muscle_list       AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE DOMAIN joint_action_list AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE DOMAIN pattern_list      AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE DOMAIN measure_list      AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN muscle_list           AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN joint_action_list     AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN movement_pattern_list AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN measure_list          AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 ALTER DOMAIN muscle_list DROP CONSTRAINT IF EXISTS muscle_list_check;
 ALTER DOMAIN muscle_list ADD CONSTRAINT muscle_list_check CHECK (VALUE <@ ARRAY[
         'Upper Chest', 'Mid/Lower Chest', 'Front Delts', 'Side Delts', 'Rear Delts',
@@ -80,8 +80,8 @@ ALTER DOMAIN joint_action_list ADD CONSTRAINT joint_action_list_check CHECK (VAL
         'knee flexion', 'knee extension', 'knee internal rotation', 'knee external rotation',
         'ankle dorsiflexion', 'ankle plantarflexion', 'foot inversion', 'foot eversion'
     ]::text[]);
-ALTER DOMAIN pattern_list DROP CONSTRAINT IF EXISTS pattern_list_check;
-ALTER DOMAIN pattern_list ADD CONSTRAINT pattern_list_check CHECK (VALUE <@ ARRAY[
+ALTER DOMAIN movement_pattern_list DROP CONSTRAINT IF EXISTS movement_pattern_list_check;
+ALTER DOMAIN movement_pattern_list ADD CONSTRAINT movement_pattern_list_check CHECK (VALUE <@ ARRAY[
         'Squat', 'Hinge', 'Lunge', 'Horizontal Push', 'Vertical Push', 'Horizontal Pull',
         'Vertical Pull', 'Carry', 'Jump', 'Throw', 'Rotation', 'Anti-Rotation', 'Anti-Extension',
         'Anti-Flexion', 'Anti-Lateral Flexion'
@@ -124,7 +124,7 @@ ALTER TABLE exercises ADD COLUMN IF NOT EXISTS compound            BOOLEAN;
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS primary_muscles     muscle_list       NOT NULL DEFAULT '{}';
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS secondary_muscles   muscle_list       NOT NULL DEFAULT '{}';
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS joint_actions       joint_action_list NOT NULL DEFAULT '{}';
-ALTER TABLE exercises ADD COLUMN IF NOT EXISTS patterns            pattern_list      NOT NULL DEFAULT '{}';
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS movement_patterns   movement_pattern_list NOT NULL DEFAULT '{}';
 -- One of theirs links to one of ours at most.
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS free_exercise_db_id TEXT UNIQUE REFERENCES free_exercise_db(id);
 ALTER TABLE exercises DROP CONSTRAINT IF EXISTS exercises_equipment_check;
