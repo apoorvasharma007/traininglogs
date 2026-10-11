@@ -49,8 +49,15 @@ the exact rule is decided in step 6.
 
 **Counting sets per muscle:** a set counts 1 for each primary muscle and 0.5 for each secondary
 muscle, worked out when read, never stored. 3 sets of bench press give the chest 3 and the
-triceps 1.5. This is the "fractional" method that fit best in Pelland et al. 2024 (meta-regression
-of 67 studies). Weekly sets per muscle and recovery tracking read these totals.
+triceps 1.5. This is the "fractional" method that fit best in Pelland et al. (Sports Medicine
+2026, meta-regression of 67 studies). Weekly sets per muscle and recovery tracking read these
+totals.
+
+**Counting by group (agreed 2026-10-11):** Pelland and Fitbod count chest or triceps as one
+muscle. Our groups split some (Upper Chest and Mid/Lower Chest, two triceps muscles), so adding
+them would count one set twice: a pressdown would give triceps 2. A group's count for a set is
+its highest muscle: 1 if any of its muscles is primary, 0.5 if only secondary, 0 otherwise. So
+a bench press set gives chest 1 and triceps 0.5. The per-muscle numbers stay for detail.
 
 ### 2. The fixed lists (approved 2026-10-11)
 
@@ -239,7 +246,8 @@ squashed into the base; the base merges into `dev` when every step is done and t
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
-- [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; tests.
+- [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
+      counted by group as in section 1; tests.
 - [ ] 7. Picker: mockup approved, then built, with history prefill on pick; tests, checked on
       the phone.
 - [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
@@ -275,7 +283,11 @@ conditioning, dropped because its sets would distort weekly muscle totals; a fol
 gained trap bar, medicine ball, sled, box and jump rope. `free_exercise_db_id` approved (section
 4). Batch 2 written: all 77, 161 in the file, checked by script against the lists (names,
 other_names, ids, muscles, joint actions, patterns, equipment). Apoorva reviews the judgment
-calls. Next: fill `free_exercise_db_id` in for batch 1's 84. Each id links to one
+calls. Second pass done (2026-10-11): every muscle must be moved by a listed joint action
+(anatomy references) or measured in a cited study; 56 exercises trimmed, Transverse Abdominis
+no longer listed on any exercise, rules written in the file header. The check scripts are not in
+the repo yet; step 3's loader tests should carry the list and joint-action checks. Next: fill
+`free_exercise_db_id` in for batch 1's 84. Each id links to one
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in

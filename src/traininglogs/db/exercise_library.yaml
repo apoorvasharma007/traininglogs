@@ -25,8 +25,17 @@
 # Range of motion and pauses are not variations. Bottom-half reps are logged on the full exercise
 # as partial reps; a pause is logged as tempo (see Shrug (Cable)).
 #
+# Which muscles get listed: a muscle is listed only when it moves one of the exercise's joint
+# actions (anatomy references: Gray's Anatomy, via Wikipedia's muscle pages) or a study cited here
+# measured it working in that exercise. Anything less certain is left out: a missing muscle makes
+# a weekly total slightly low, a wrong one makes it wrong. Holds list the movement they resist
+# (a plank resists trunk extension, so the trunk flexors work).
+#
 # Grip: Forearm Flexors are listed only where grip commonly limits the set (shrugs, deadlifts,
 # carries, hangs), not on every exercise that holds a weight.
+#
+# Type: compound when the exercise has a pattern or moves two or more joints (the shoulder blade
+# counts with the shoulder, the forearm with the elbow); isolation otherwise.
 #
 # Equipment is bodyweight only when nothing is added. Weighted versions ("Pull-up (Weighted)") use
 # other, and the logged weight is the added load.
@@ -106,15 +115,15 @@
   patterns: [Horizontal Push]
   free_exercise_db_id: Dumbbell_Bench_Press
 
-# Grip width barely changes chest activity; a narrow grip raises triceps activity
-# (Saeterbakken 2021), so the triceps are primary here.
+# Triceps activity was about the same with narrow and medium grips (Saeterbakken 2021), so the
+# muscles match Bench Press (Barbell).
 - name: Bench Press (Barbell, Close Grip)
   other_names: [close grip bench press, close-grip bench press, close grip bench, close-grip barbell bench press, cgbp]
   equipment: barbell
   measures: [weight, reps]
   type: compound
-  primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
-  secondary_muscles: [Upper Chest, Front Delts]
+  primary_muscles: [Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, shoulder flexion, elbow extension]
   patterns: [Horizontal Push]
   free_exercise_db_id: Close-Grip_Barbell_Bench_Press
@@ -167,7 +176,7 @@
   joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
   patterns: [Horizontal Push]
 
-# The chest and triceps are the main muscles (McKenzie 2022). Pressing down along the body is a
+# The chest and triceps are the main muscles (Wikipedia, Dip; McKenzie 2022). Pressing down along the body is a
 # Vertical Push.
 - name: Dip (Bodyweight)
   other_names: [dip, dips, parallel bar dip, parallel bar dips, bar dip, bar dips]
@@ -208,7 +217,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Front Delts]
-  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
   patterns: [Vertical Push]
 
@@ -269,7 +278,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Rear Delts]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rotator Cuff]
+  secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder external rotation, shoulder blade retraction, elbow flexion]
   patterns: [Horizontal Pull]
 
@@ -306,7 +315,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Front Delts]
-  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation, hip extension, knee extension, ankle plantarflexion]
   patterns: [Vertical Push]
   free_exercise_db_id: Push_Press
@@ -317,7 +326,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Front Delts]
-  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
   patterns: [Vertical Push]
   free_exercise_db_id: Handstand_Push-Ups
@@ -379,7 +388,7 @@
   measures: [weight, reps]
   type: isolation
   primary_muscles: [Serratus]
-  secondary_muscles: [Front Delts]
+  secondary_muscles: []
   joint_actions: [shoulder blade protraction]
   patterns: []
 
@@ -392,7 +401,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
+  secondary_muscles: [Lower Traps, Rhomboids, Biceps, Brachialis]
   joint_actions: [shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -404,7 +413,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis, Brachioradialis]
+  secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -425,7 +434,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
+  secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -435,7 +444,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
+  secondary_muscles: [Lower Traps, Rhomboids, Biceps, Brachialis]
   joint_actions: [shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -445,7 +454,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
+  secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -457,7 +466,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Biceps, Brachialis, Mid Traps, Lower Traps, Rhomboids, Rear Delts]
+  secondary_muscles: [Biceps, Brachialis, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -467,7 +476,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats]
-  secondary_muscles: [Biceps, Brachialis, Mid Traps, Lower Traps, Rhomboids, Rear Delts]
+  secondary_muscles: [Biceps, Brachialis, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
   patterns: [Vertical Pull]
 
@@ -479,7 +488,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -489,7 +498,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Brachioradialis]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -499,7 +508,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
-  secondary_muscles: [Lats, Lower Traps, Biceps, Brachialis]
+  secondary_muscles: [Biceps, Brachialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -509,7 +518,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
-  secondary_muscles: [Lats, Lower Traps, Biceps, Brachialis]
+  secondary_muscles: [Biceps, Brachialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -519,18 +528,18 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
-  secondary_muscles: [Lats, Lower Traps, Biceps, Brachialis, Brachioradialis]
+  secondary_muscles: [Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
-# Bent-over rows: the lower back holds the hinge the whole set.
+# Bent-over rows: the lower back holds the hinge the whole set (Fenwick 2009).
 - name: Row (Smith Machine)
   other_names: [smith machine row, smith row, smith machine bent over row]
   equipment: smith machine
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Spinal Erectors]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -540,7 +549,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Spinal Erectors]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -551,7 +560,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Spinal Erectors]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -561,7 +570,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
 
@@ -632,7 +641,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
   free_exercise_db_id: Inverted_Row
@@ -643,7 +652,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Lats, Mid Traps, Rhomboids]
-  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Spinal Erectors]
+  secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
   patterns: [Horizontal Pull]
   free_exercise_db_id: T-Bar_Row_with_Handle
@@ -791,7 +800,7 @@
   measures: [weight, reps]
   type: isolation
   primary_muscles: [Brachioradialis, Brachialis]
-  secondary_muscles: [Biceps, Forearm Extensors]
+  secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
   patterns: []
 
@@ -801,7 +810,7 @@
   measures: [weight, reps]
   type: isolation
   primary_muscles: [Brachioradialis, Brachialis]
-  secondary_muscles: [Biceps, Forearm Extensors]
+  secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
   patterns: []
 
@@ -988,7 +997,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Abs]
-  secondary_muscles: [Obliques, Transverse Abdominis, Lats, Serratus]
+  secondary_muscles: [Obliques, Lats]
   joint_actions: [shoulder flexion, shoulder extension]
   patterns: [Anti-Extension]
 
@@ -1020,7 +1029,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Hip Flexors, Abs]
-  secondary_muscles: [Obliques, Forearm Flexors]
+  secondary_muscles: [Rectus Femoris, Obliques, Forearm Flexors]
   joint_actions: [hip flexion, trunk flexion]
   patterns: []
 
@@ -1030,7 +1039,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Hip Flexors, Abs]
-  secondary_muscles: [Obliques]
+  secondary_muscles: [Rectus Femoris, Obliques]
   joint_actions: [hip flexion, trunk flexion]
   patterns: []
 
@@ -1041,19 +1050,20 @@
   equipment: bodyweight
   measures: [time]
   type: compound
-  primary_muscles: [Abs, Transverse Abdominis]
+  primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: []
   patterns: [Anti-Extension]
   free_exercise_db_id: Plank
 
+# The side plank works the obliques and the hip abductors (Wikipedia, Plank).
 - name: Side Plank (Bodyweight)
   other_names: [side plank, side planks, side bridge]
   equipment: bodyweight
   measures: [time]
   type: compound
   primary_muscles: [Obliques]
-  secondary_muscles: [Quadratus Lumborum, Transverse Abdominis, Abductors]
+  secondary_muscles: [Quadratus Lumborum, Abductors]
   joint_actions: []
   patterns: [Anti-Lateral Flexion]
   free_exercise_db_id: Side_Bridge
@@ -1063,8 +1073,8 @@
   equipment: cable
   measures: [weight, reps]
   type: compound
-  primary_muscles: [Obliques, Transverse Abdominis]
-  secondary_muscles: [Abs]
+  primary_muscles: [Obliques]
+  secondary_muscles: []
   joint_actions: []
   patterns: [Anti-Rotation]
   free_exercise_db_id: Pallof_Press
@@ -1075,7 +1085,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Obliques]
-  secondary_muscles: [Abs, Transverse Abdominis]
+  secondary_muscles: []
   joint_actions: [trunk rotation]
   patterns: [Rotation]
   free_exercise_db_id: Standing_Cable_Wood_Chop
@@ -1085,8 +1095,8 @@
   equipment: bodyweight
   measures: [reps]
   type: compound
-  primary_muscles: [Abs, Transverse Abdominis]
-  secondary_muscles: [Obliques, Hip Flexors]
+  primary_muscles: [Abs]
+  secondary_muscles: [Obliques]
   joint_actions: []
   patterns: [Anti-Extension]
   free_exercise_db_id: Dead_Bug
@@ -1097,8 +1107,8 @@
   measures: [time]
   type: compound
   primary_muscles: [Abs]
-  secondary_muscles: [Transverse Abdominis, Obliques, Hip Flexors]
-  joint_actions: []
+  secondary_muscles: [Obliques, Hip Flexors]
+  joint_actions: [hip flexion]
   patterns: [Anti-Extension]
 
 # Holding the legs up is the hip flexors and abs, as in the hanging leg raise; the arms press the
@@ -1109,8 +1119,8 @@
   measures: [time]
   type: compound
   primary_muscles: [Hip Flexors, Abs]
-  secondary_muscles: [Rectus Femoris, Triceps Lateral/Medial Heads, Lower Traps]
-  joint_actions: [shoulder blade depression]
+  secondary_muscles: [Rectus Femoris, Lower Traps]
+  joint_actions: [hip flexion, trunk flexion, shoulder blade depression]
   patterns: []
 
 - name: Hanging Knee Raise (Bodyweight)
@@ -1119,7 +1129,7 @@
   measures: [reps]
   type: compound
   primary_muscles: [Hip Flexors, Abs]
-  secondary_muscles: [Obliques, Forearm Flexors]
+  secondary_muscles: [Rectus Femoris, Obliques, Forearm Flexors]
   joint_actions: [hip flexion, trunk flexion]
   patterns: []
 
@@ -1136,9 +1146,11 @@
 
 # Legs
 #
-# Squats and leg presses grow the vastus muscles, glute max and adductors, but not the rectus
-# femoris or hamstrings (Kubo 2019, 10 weeks): the rectus femoris and hamstrings cross both hip and
-# knee, so they shorten at one end while lengthening at the other.
+# Squats grow the vastus muscles, glute max and adductors, but not the rectus femoris or
+# hamstrings (Kubo 2019, 10 weeks): the rectus femoris and hamstrings cross both hip and knee, so
+# they shorten at one end while lengthening at the other. Leg presses follow the same knee and hip
+# actions; Kubo didn't test them, so their adductors are secondary. The lower back holds the
+# torso upright in squats (Wikipedia, Squat).
 
 - name: Squat (Barbell)
   other_names: [squat, squats, back squat, barbell back squat, barbell squat, bb squat]
@@ -1213,6 +1225,7 @@
   joint_actions: [knee flexion]
   patterns: []
 
+# The lower back holds the hinge in RDLs and good mornings (McAllister 2014).
 - name: Romanian Deadlift (Barbell)
   other_names: [barbell romanian deadlift, romanian deadlift, rdl, barbell rdl]
   equipment: barbell
@@ -1223,13 +1236,15 @@
   joint_actions: [hip extension]
   patterns: [Hinge]
 
+# The lower back works hard but holds still; the hips and knees do the lifting, so it's secondary
+# (Andersen 2018 measured it in barbell and trap bar deadlifts).
 - name: Deadlift (Barbell)
   other_names: [deadlift, deadlifts, barbell deadlift, conventional deadlift]
   equipment: barbell
   measures: [weight, reps]
   type: compound
-  primary_muscles: [Glute Max, Hamstrings, Spinal Erectors]
-  secondary_muscles: [Vastus Muscles, Adductors, Upper Traps, Lats, Forearm Flexors]
+  primary_muscles: [Glute Max, Hamstrings]
+  secondary_muscles: [Spinal Erectors, Vastus Muscles, Adductors, Upper Traps, Forearm Flexors]
   joint_actions: [hip extension, knee extension]
   patterns: [Hinge]
 
@@ -1240,7 +1255,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Gastrocnemius, Soleus, Adductors, Forearm Flexors]
+  secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
   patterns: [Hinge, Squat]
 
@@ -1339,14 +1354,13 @@
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
   patterns: [Squat]
 
-# On one leg the hip abductors keep the knee and pelvis level.
 - name: Pistol Squat (Bodyweight)
   other_names: [pistol squat, pistol squats, pistol, single leg squat]
   equipment: bodyweight
   measures: [reps]
   type: compound
   primary_muscles: [Vastus Muscles, Glute Max]
-  secondary_muscles: [Adductors, Abductors]
+  secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
   patterns: [Squat]
 
@@ -1380,8 +1394,8 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Vastus Muscles, Adductors]
-  secondary_muscles: [Hamstrings, Spinal Erectors, Upper Traps, Forearm Flexors]
-  joint_actions: [hip extension, knee extension, hip adduction]
+  secondary_muscles: [Hamstrings, Upper Traps, Forearm Flexors]
+  joint_actions: [hip extension, knee extension]
   patterns: [Hinge]
   free_exercise_db_id: Sumo_Deadlift
 
@@ -1408,14 +1422,13 @@
   joint_actions: [hip extension]
   patterns: [Hinge]
 
-# On one leg the hip abductors keep the pelvis level.
 - name: Single-Leg Romanian Deadlift (Dumbbell)
   other_names: [single leg romanian deadlift, single leg rdl, single-leg rdl, single leg deadlift, one leg rdl, dumbbell single leg rdl]
   equipment: dumbbell
   measures: [weight, reps]
   type: compound
   primary_muscles: [Hamstrings, Glute Max]
-  secondary_muscles: [Abductors, Spinal Erectors]
+  secondary_muscles: []
   joint_actions: [hip extension]
   patterns: [Hinge]
 
@@ -1438,7 +1451,7 @@
   measures: [reps]
   type: isolation
   primary_muscles: [Hamstrings]
-  secondary_muscles: []
+  secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
   patterns: []
   free_exercise_db_id: Floor_Glute-Ham_Raise
@@ -1563,14 +1576,14 @@
 
 # Carries
 
-# Grip and the upper traps hold the load; walking with it, the trunk and hips keep the body upright.
+# Grip and the upper traps hold the load (the upper trapezius supports the weight of the arm).
 - name: Farmer Carry (Dumbbell)
   other_names: [farmer carry, farmers carry, farmer's carry, farmer walk, farmers walk, farmer's walk]
   equipment: dumbbell
   measures: [weight, distance]
   type: compound
   primary_muscles: [Forearm Flexors, Upper Traps]
-  secondary_muscles: [Obliques, Quadratus Lumborum]
+  secondary_muscles: []
   joint_actions: []
   patterns: [Carry]
   free_exercise_db_id: Farmers_Walk
@@ -1593,8 +1606,8 @@
   measures: [weight, distance]
   type: compound
   primary_muscles: [Front Delts, Upper Traps]
-  secondary_muscles: [Side Delts, Serratus, Triceps Lateral/Medial Heads, Obliques]
-  joint_actions: []
+  secondary_muscles: [Serratus]
+  joint_actions: [shoulder flexion, shoulder blade upward rotation]
   patterns: [Carry]
 
 # Jumps
@@ -1674,7 +1687,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Obliques]
-  secondary_muscles: [Abs, Glute Max]
+  secondary_muscles: [Glute Max]
   joint_actions: [trunk rotation, hip internal rotation, hip external rotation]
   patterns: [Throw, Rotation]
 
@@ -1686,7 +1699,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings]
-  secondary_muscles: [Vastus Muscles, Spinal Erectors, Front Delts]
+  secondary_muscles: [Vastus Muscles, Front Delts]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder flexion]
   patterns: [Throw]
   free_exercise_db_id: Backward_Medicine_Ball_Throw
@@ -1700,7 +1713,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Gastrocnemius, Soleus, Adductors, Forearm Flexors]
+  secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
   patterns: [Hinge]
   free_exercise_db_id: Power_Clean
@@ -1711,7 +1724,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Gastrocnemius, Soleus, Adductors, Forearm Flexors]
+  secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
   patterns: [Hinge, Squat]
   free_exercise_db_id: Hang_Clean
@@ -1722,7 +1735,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
+  secondary_muscles: [Upper Traps, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
   patterns: [Hinge, Squat]
   free_exercise_db_id: Snatch
@@ -1733,7 +1746,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
+  secondary_muscles: [Upper Traps, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
   patterns: [Hinge]
   free_exercise_db_id: Power_Snatch
@@ -1744,7 +1757,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
-  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Triceps Lateral/Medial Heads, Gastrocnemius, Soleus, Adductors]
+  secondary_muscles: [Upper Traps, Front Delts, Triceps Lateral/Medial Heads, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion, shoulder flexion, elbow extension]
   patterns: [Hinge, Squat, Vertical Push]
   free_exercise_db_id: Clean_and_Jerk
@@ -1756,7 +1769,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings]
-  secondary_muscles: [Spinal Erectors, Forearm Flexors]
+  secondary_muscles: []
   joint_actions: [hip extension]
   patterns: [Hinge]
 
@@ -1766,7 +1779,7 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Glute Max, Hamstrings]
-  secondary_muscles: [Spinal Erectors, Upper Traps, Front Delts, Forearm Flexors]
+  secondary_muscles: [Upper Traps, Front Delts]
   joint_actions: [hip extension, shoulder blade elevation, shoulder flexion, shoulder blade upward rotation]
   patterns: [Hinge]
   free_exercise_db_id: One-Arm_Kettlebell_Snatch
@@ -1779,8 +1792,8 @@
   measures: [weight, reps]
   type: compound
   primary_muscles: [Obliques, Front Delts]
-  secondary_muscles: [Abs, Rotator Cuff, Serratus, Triceps Lateral/Medial Heads, Glute Max, Vastus Muscles]
-  joint_actions: [trunk flexion, trunk rotation, hip extension, knee extension]
+  secondary_muscles: [Abs, Glute Max, Vastus Muscles]
+  joint_actions: [shoulder flexion, trunk flexion, trunk rotation, hip extension, knee extension]
   patterns: [Lunge]
   free_exercise_db_id: Kettlebell_Turkish_Get-Up_Lunge_style
 

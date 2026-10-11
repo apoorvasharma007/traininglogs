@@ -8,10 +8,10 @@ entry says what it decided in the library.
 
 - Pelland JC, Remmert JF, Robinson ZP, Hinson S, Zourdos MC. *The resistance training dose
   response: meta-regressions exploring the effects of weekly volume and frequency on muscle
-  hypertrophy and strength gain.* SportRxiv preprint.
-  [sportrxiv.org](https://sportrxiv.org/index.php/server/preprint/view/460)
-  Counting sets per muscle: a set counts 1 for each primary muscle and 0.5 for each secondary
-  muscle.
+  hypertrophy and strength gains.* Sports Medicine 56(2):481-505, 2026.
+  [doi:10.1007/s40279-025-02344-w](https://doi.org/10.1007/s40279-025-02344-w)
+  Counting sets: a set counts 1 for each primary muscle and 0.5 for each secondary muscle, by
+  muscle group.
 - Maeo S, et al. *Triceps brachii
   hypertrophy is substantially greater after elbow extension training performed in the overhead
   versus neutral arm position.* European Journal of Sport Science, 2023.
@@ -30,8 +30,8 @@ entry says what it decided in the library.
   delts as primary alongside the upper chest.
 - Kubo K, Ikebukuro T, Yata H. *Effects of squat training with different depths on lower limb
   muscle volumes.* European Journal of Applied Physiology 119(9):1933-1942, 2019.
-  [Summary](https://www.strongerbyscience.com/squats-adductors/)
-  Squats and leg presses list the vastus muscles, glute max and adductors, not the rectus femoris
+  [PubMed](https://pubmed.ncbi.nlm.nih.gov/31230110/)
+  Squats list the vastus muscles, glute max and adductors as primary, not the rectus femoris
   or hamstrings.
 - Maeo S, et al. *Greater hamstrings muscle hypertrophy but similar damage protection after
   training at long versus short muscle lengths.* Medicine & Science in Sports & Exercise, 2021.
@@ -53,7 +53,7 @@ entry says what it decided in the library.
   activity in bench press among novice- and resistance-trained men.* International Journal of
   Environmental Research and Public Health, 2021.
   [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC8296276/)
-  The close grip bench press has the triceps as primary alongside the chest.
+  The close grip bench press lists the same muscles as the bench press.
 - Calatayud J, Borreani S, Colado JC, Martin F, Tella V, Andersen LL. *Bench press and push-up at
   comparable levels of muscle activity results in similar strength gains.* Journal of Strength
   and Conditioning Research 29(1):246-253, 2015.
@@ -68,6 +68,18 @@ entry says what it decided in the library.
   Journal of Environmental Research and Public Health, 2022.
   [MDPI](https://www.mdpi.com/1660-4601/19/21/14390)
   Dips have the chest and triceps as primary.
+- Andersen V, et al. *Electromyographic comparison of barbell deadlift, hex bar deadlift, and hip
+  thrust exercises: a cross-over study.* Journal of Strength and Conditioning Research, 2018.
+  [PubMed](https://pubmed.ncbi.nlm.nih.gov/28151780/)
+  Barbell and trap bar deadlifts list the lower back as secondary.
+- Fenwick CMJ, Brown SHM, McGill SM. *Comparison of different rowing exercises: trunk muscle
+  activation and lumbar spine motion, load, and stiffness.* Journal of Strength and Conditioning
+  Research, 2009. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19197209/)
+  Bent-over rows list the lower back as secondary.
+- McAllister MJ, et al. *Muscle activation during various hamstring exercises.* Journal of
+  Strength and Conditioning Research 28(6):1573-1580, 2014.
+  [University of Memphis](https://digitalcommons.memphis.edu/facpubs/9934)
+  Romanian deadlifts and good mornings list the lower back as secondary.
 - Marchetti PH, Uchida MC. *Effects of the pullover exercise on the pectoralis major and
   latissimus dorsi muscles as evaluated by EMG.* Journal of Applied Biomechanics, 2011.
   The dumbbell pullover has the chest and lats as primary.
@@ -108,7 +120,18 @@ Used to check every muscle, what it does, and every joint action.
   [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11250012/)
 - Subtalar joint motion, University of Oklahoma Health Sciences Center:
   [OUHSC](https://ouhsc.edu/bserdac/dthompso/web/gait/knmatics/STJOPEN.HTM)
-- Neck muscles: [antranik.org](https://antranik.org/muscles-of-the-neck-and-vertebral-column/)
+- Wikipedia: [sternocleidomastoid](https://en.wikipedia.org/wiki/Sternocleidomastoid_muscle)
+  (Neck Flexors: flexes the neck and bends it to the side) and
+  [splenius capitis](https://en.wikipedia.org/wiki/Splenius_capitis_muscle) (Neck Extensors:
+  extends the head and bends it to the side)
+- Wikipedia: [trapezius](https://en.wikipedia.org/wiki/Trapezius_muscle) (upper fibres elevate
+  and support the weight of the arm, middle fibres retract, lower fibres depress; citing Bakkum
+  and Cramer, *Clinical Anatomy of the Spine*),
+  [gluteus maximus](https://en.wikipedia.org/wiki/Gluteus_maximus) (upper fibres abduct the hip;
+  citing Gray's Anatomy), [squat](https://en.wikipedia.org/wiki/Squat_(exercise)) (the erector
+  spinae work isometrically), [dip](https://en.wikipedia.org/wiki/Dip_(exercise)) (triceps,
+  chest and front delts), [plank](https://en.wikipedia.org/wiki/Plank_(exercise)) (the side
+  plank works the obliques and the hip abductors)
 
 ## Movement patterns
 
