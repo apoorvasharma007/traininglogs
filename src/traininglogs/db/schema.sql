@@ -119,7 +119,8 @@ CREATE TABLE IF NOT EXISTS exercises (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS measures            measure_list      NOT NULL DEFAULT '{}';
-ALTER TABLE exercises ADD COLUMN IF NOT EXISTS type                TEXT CHECK (type IN ('compound', 'isolation'));
+-- Moves two or more joints (compound) or one (isolation); NULL when not set.
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS compound            BOOLEAN;
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS primary_muscles     muscle_list       NOT NULL DEFAULT '{}';
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS secondary_muscles   muscle_list       NOT NULL DEFAULT '{}';
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS joint_actions       joint_action_list NOT NULL DEFAULT '{}';

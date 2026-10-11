@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- The exercise library: 161 exercises with equipment, measures, type, primary and secondary
+- The exercise library: 161 exercises with equipment, measures, compound or not, primary and secondary
   muscles, joint actions and patterns, loaded by hand with `scripts/load_exercise_library.py`
   (a dry run unless given `--apply`). The database refuses a muscle, joint action, pattern,
   measure or equipment that isn't on the approved lists.

@@ -12,7 +12,7 @@
 #   equipment          required: barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine,
 #                      smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other
 #   measures           required, one or more of: weight, reps, time, distance
-#   type               compound or isolation
+#   compound           true when it moves two or more joints, false for isolation
 #   primary_muscles    required, one or more; each counts 1 set toward the muscle
 #   secondary_muscles  each counts 0.5 sets toward the muscle
 #   joint_actions      "<joint> <action>", e.g. "shoulder horizontal adduction"
@@ -35,8 +35,8 @@
 # Grip: Forearm Flexors are listed only where grip commonly limits the set (shrugs, deadlifts,
 # carries, hangs), not on every exercise that holds a weight.
 #
-# Type: compound when the exercise has a pattern or moves two or more joints (the shoulder blade
-# counts with the shoulder, the forearm with the elbow); isolation otherwise.
+# Compound: true when the exercise has a pattern or moves two or more joints (the shoulder blade
+# counts with the shoulder, the forearm with the elbow); false (isolation) otherwise.
 #
 # Equipment is bodyweight only when nothing is added. Weighted versions ("Pull-up (Weighted)") use
 # other, and the logged weight is the added load.
@@ -47,7 +47,7 @@
   other_names: [barbell bench press, bench press, bench, bb bench, barbell bench, flat bench press, barbell bench press - medium grip]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, elbow extension]
@@ -60,7 +60,7 @@
   other_names: [incline db press 45 degree, incline dumbbell press, incline db press]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Upper Chest, Front Delts]
   secondary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder flexion, shoulder horizontal adduction, elbow extension]
@@ -71,7 +71,7 @@
   other_names: [pec dec, pec deck, machine fly, machine flye, butterfly]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
@@ -82,7 +82,7 @@
   other_names: [pec dec single arm, single arm pec deck]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
@@ -92,7 +92,7 @@
   other_names: [bottom half seated cable flye, seated cable flye, seated cable fly]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
@@ -102,7 +102,7 @@
   other_names: [bottom half db flye, dumbbell flye, dumbbell fly, db flye, db fly, dumbbell flyes]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
@@ -113,7 +113,7 @@
   other_names: [dumbbell bench press, db bench press, dumbbell bench, db bench, flat dumbbell press, flat db press]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, elbow extension]
@@ -126,7 +126,7 @@
   other_names: [close grip bench press, close-grip bench press, close grip bench, close-grip barbell bench press, cgbp]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, shoulder flexion, elbow extension]
@@ -139,7 +139,7 @@
   other_names: [incline bench press, incline barbell press, incline barbell bench press, incline bench, barbell incline bench press, barbell incline bench press - medium grip]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Upper Chest]
   secondary_muscles: [Mid/Lower Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder flexion, shoulder horizontal adduction, elbow extension]
@@ -150,7 +150,7 @@
   other_names: [chest press, machine chest press, seated chest press, machine bench press]
   equipment: machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, elbow extension]
@@ -164,7 +164,7 @@
   other_names: [push up, push ups, push-up, push-ups, pushup, pushups]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads, Serratus]
   joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
@@ -175,7 +175,7 @@
   other_names: [weighted push up, weighted push ups, weighted push-up, weighted push-ups, weighted pushup, weighted pushups]
   equipment: other
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads, Serratus]
   joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
@@ -187,7 +187,7 @@
   other_names: [dip, dips, parallel bar dip, parallel bar dips, bar dip, bar dips]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
   secondary_muscles: [Front Delts]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade depression]
@@ -198,7 +198,7 @@
   other_names: [weighted dip, weighted dips, weighted bar dip, weighted parallel bar dip]
   equipment: other
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
   secondary_muscles: [Front Delts]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade depression]
@@ -210,7 +210,7 @@
   other_names: [seated db shoulder press, seated dumbbell shoulder press, dumbbell shoulder press, db shoulder press]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, shoulder abduction, elbow extension, shoulder blade upward rotation]
@@ -221,7 +221,7 @@
   other_names: [overhead press, ohp, barbell overhead press, military press, standing press, standing military press]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
@@ -232,7 +232,7 @@
   other_names: [lateral raise, dumbbell lateral raise, db lateral raise, side raise, side lateral raise]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Side Delts]
   secondary_muscles: [Upper Traps, Rotator Cuff]
   joint_actions: [shoulder abduction, shoulder blade upward rotation]
@@ -243,7 +243,7 @@
   other_names: [high cable lateral raise]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Side Delts]
   secondary_muscles: [Upper Traps, Rotator Cuff]
   joint_actions: [shoulder abduction, shoulder blade upward rotation]
@@ -253,7 +253,7 @@
   other_names: [lateral raise leaning, leaning cable lateral raise, leaning lateral raise]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Side Delts]
   secondary_muscles: [Upper Traps, Rotator Cuff]
   joint_actions: [shoulder abduction, shoulder blade upward rotation]
@@ -263,7 +263,7 @@
   other_names: [rear-delt cable fly, rear delt cable fly, cable rear delt fly, cable reverse fly]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rear Delts]
   secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder blade retraction]
@@ -274,7 +274,7 @@
   other_names: [1 arm 45 degree cable rear fly, single arm 45 degree cable rear fly]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rear Delts]
   secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder blade retraction]
@@ -285,7 +285,7 @@
   other_names: [face pull, face pulls, cable face pull]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Rear Delts]
   secondary_muscles: [Mid Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder external rotation, shoulder blade retraction, elbow flexion]
@@ -298,7 +298,7 @@
   other_names: [arnold press, arnold dumbbell press, dumbbell arnold press, db arnold press]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, shoulder abduction, shoulder horizontal abduction, elbow extension, shoulder blade upward rotation]
@@ -311,7 +311,7 @@
   other_names: [landmine press, single arm landmine press, one arm landmine press]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Upper Chest, Triceps Lateral/Medial Heads, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation, shoulder blade protraction]
@@ -323,7 +323,7 @@
   other_names: [push press, barbell push press]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation, hip extension, knee extension, ankle plantarflexion]
@@ -334,7 +334,7 @@
   other_names: [handstand push up, handstand push ups, handstand push-up, handstand pushup, hspu, handstand push-ups]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts]
   secondary_muscles: [Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
   joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
@@ -347,7 +347,7 @@
   other_names: [cable external rotation, external rotation with cable]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rotator Cuff]
   secondary_muscles: [Rear Delts]
   joint_actions: [shoulder external rotation]
@@ -358,7 +358,7 @@
   other_names: [band external rotation, external rotation with band, banded external rotation]
   equipment: band
   measures: [reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rotator Cuff]
   secondary_muscles: [Rear Delts]
   joint_actions: [shoulder external rotation]
@@ -371,7 +371,7 @@
   other_names: [cable internal rotation]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rotator Cuff]
   secondary_muscles: []
   joint_actions: [shoulder internal rotation]
@@ -386,7 +386,7 @@
   other_names: [push up plus, push-up plus, pushup plus, push ups plus]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Serratus, Mid/Lower Chest]
   secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
   joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
@@ -396,7 +396,7 @@
   other_names: [cable serratus punch, serratus punch, cable punch]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Serratus]
   secondary_muscles: []
   joint_actions: [shoulder blade protraction]
@@ -409,7 +409,7 @@
   other_names: [wide grip lat pulldown, wide lat pulldown, wide-grip lat pulldown, lat pulldown]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Lower Traps, Rhomboids, Biceps, Brachialis]
   joint_actions: [shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -422,7 +422,7 @@
   other_names: [neutral grip lat pulldown, v bar lat pulldown]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -433,7 +433,7 @@
   other_names: [lean back lat pulldown, leaning lat pulldown]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade retraction]
@@ -443,7 +443,7 @@
   other_names: [pull ups, pull up, pullup, pullups, pull-ups, pull-up]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -454,7 +454,7 @@
   other_names: [wide grip pullup, wide grip pull up, wide grip pull-up, wide pull up]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Lower Traps, Rhomboids, Biceps, Brachialis]
   joint_actions: [shoulder adduction, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -464,7 +464,7 @@
   other_names: [weighted pull up, weighted pull ups, weighted pullup, weighted pull-up]
   equipment: other
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Lower Traps, Rhomboids, Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder adduction, shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -477,7 +477,7 @@
   other_names: [chinups, chin up, chin ups, chinup, chin-ups, chin-up]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Biceps, Brachialis, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -488,7 +488,7 @@
   other_names: [weighted chin up, weighted chin ups, weighted chinup, weighted chin-up]
   equipment: other
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Biceps, Brachialis, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade depression, shoulder blade downward rotation]
@@ -500,7 +500,7 @@
   other_names: [chest supported machine row, machine chest supported row]
   equipment: machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -510,7 +510,7 @@
   other_names: [neutral grip seated cable row, v bar cable row, seated cable rows, seated cable row]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -521,7 +521,7 @@
   other_names: [seated cable row wide grip, wide grip seated cable row, wide grip cable row]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
   secondary_muscles: [Biceps, Brachialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
@@ -531,7 +531,7 @@
   other_names: [dual handle elbows out cable row, elbows out cable row]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
   secondary_muscles: [Biceps, Brachialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
@@ -541,7 +541,7 @@
   other_names: [neutral grip seated cable row wide grip chest supported]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid Traps, Rhomboids, Rear Delts]
   secondary_muscles: [Biceps, Brachialis, Brachioradialis]
   joint_actions: [shoulder horizontal abduction, elbow flexion, shoulder blade retraction]
@@ -552,7 +552,7 @@
   other_names: [smith machine row, smith row, smith machine bent over row]
   equipment: smith machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -563,7 +563,7 @@
   other_names: [barbell row, bent over row, barbell bent over row, bb row, bent over barbell row]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -575,7 +575,7 @@
   other_names: [deficit pendlay row, pendlay row deficit]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -585,7 +585,7 @@
   other_names: [single arm db row, single arm dumbbell row, one arm dumbbell row, db row, dumbbell row, one-arm dumbbell row]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -599,7 +599,7 @@
   other_names: [cable paused shrug in, cable shrug, cable shrugs, paused cable shrug]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Upper Traps]
   secondary_muscles: [Forearm Flexors]
   joint_actions: [shoulder blade elevation]
@@ -612,7 +612,7 @@
   other_names: [front lever, front lever hold]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Abs, Triceps Long Head, Lower Traps, Rhomboids, Rear Delts]
   joint_actions: [shoulder extension, shoulder blade depression, shoulder blade retraction]
@@ -624,7 +624,7 @@
   other_names: [hyperextension, hyperextensions, back extension, back extensions, 45 degree back extension, hyperextensions (back extensions)]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Spinal Erectors]
   secondary_muscles: [Glute Max, Hamstrings]
   joint_actions: [trunk extension, hip extension]
@@ -636,7 +636,7 @@
   other_names: [straight arm pulldown, straight-arm pulldown, cable straight arm pulldown, straight arm lat pulldown]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Lats]
   secondary_muscles: [Triceps Long Head]
   joint_actions: [shoulder extension, shoulder blade depression]
@@ -648,7 +648,7 @@
   other_names: [dumbbell pullover, db pullover, straight arm dumbbell pullover, straight-arm dumbbell pullover]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Mid/Lower Chest, Lats]
   secondary_muscles: [Triceps Long Head]
   joint_actions: [shoulder extension]
@@ -659,7 +659,7 @@
   other_names: [inverted row, inverted rows, bodyweight row, australian pull up, australian pull-up]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -670,7 +670,7 @@
   other_names: [t-bar row, t bar row, tbar row, landmine row, t-bar row with handle]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Mid Traps, Rhomboids]
   secondary_muscles: [Rear Delts, Biceps, Brachialis, Spinal Erectors]
   joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
@@ -681,7 +681,7 @@
   other_names: [barbell shrug, barbell shrugs, bb shrug]
   equipment: barbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Upper Traps]
   secondary_muscles: [Forearm Flexors]
   joint_actions: [shoulder blade elevation]
@@ -692,7 +692,7 @@
   other_names: [dumbbell shrug, dumbbell shrugs, db shrug, db shrugs]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Upper Traps]
   secondary_muscles: [Forearm Flexors]
   joint_actions: [shoulder blade elevation]
@@ -704,7 +704,7 @@
   other_names: [scapular pull up, scapular pull ups, scapular pull-up, scap pull up, scap pull-up]
   equipment: bodyweight
   measures: [reps]
-  type: isolation
+  compound: false
   primary_muscles: [Lower Traps]
   secondary_muscles: [Lats, Forearm Flexors]
   joint_actions: [shoulder blade depression]
@@ -716,7 +716,7 @@
   other_names: [dead hang, dead hangs, bar hang, passive hang]
   equipment: bodyweight
   measures: [time]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Flexors]
   secondary_muscles: []
   joint_actions: []
@@ -727,7 +727,7 @@
   other_names: [muscle up, muscle ups, muscle-up, muscle-ups, bar muscle up, ring muscle up]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats]
   secondary_muscles: [Biceps, Brachialis, Lower Traps, Mid/Lower Chest, Triceps Lateral/Medial Heads, Front Delts]
   joint_actions: [shoulder extension, shoulder adduction, shoulder flexion, elbow flexion, elbow extension, shoulder blade depression]
@@ -742,7 +742,7 @@
   other_names: [dumbbell curl, dumbbell bicep curl, dumbbell biceps curl, db curl, db bicep curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
@@ -753,7 +753,7 @@
   other_names: [ez bar cable curl, cable ez bar curl, standing biceps cable curl]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
@@ -765,7 +765,7 @@
   other_names: [bayesian cable curl, bayesian curl, cable bayesian curl]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
@@ -776,7 +776,7 @@
   other_names: [bicep curl incline bench, incline dumbbell curl, incline db curl, incline curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
@@ -787,7 +787,7 @@
   other_names: [db concentration curl, dumbbell concentration curl, concentration curl, concentration curls]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion, forearm supination]
@@ -798,7 +798,7 @@
   other_names: [ez bar preacher curl, ez preacher curl, preacher curl]
   equipment: ez bar
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
@@ -811,7 +811,7 @@
   other_names: [cable rope hammer curl, rope hammer curl, cable hammer curl, cable hammer curls - rope attachment]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Brachialis, Brachioradialis]
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
@@ -824,7 +824,7 @@
   other_names: [pronated grip curl, dumbbell reverse curl, reverse dumbbell curl, standing dumbbell reverse curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Brachioradialis, Brachialis]
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
@@ -835,7 +835,7 @@
   other_names: [pronated grip ez bar curl, reverse ez bar curl, ez bar reverse curl]
   equipment: ez bar
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Brachioradialis, Brachialis]
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
@@ -846,7 +846,7 @@
   other_names: [barbell curl, barbell curls, barbell bicep curl, barbell biceps curl, bb curl]
   equipment: barbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Biceps]
   secondary_muscles: [Brachialis, Brachioradialis]
   joint_actions: [elbow flexion]
@@ -857,7 +857,7 @@
   other_names: [hammer curl, hammer curls, dumbbell hammer curl, db hammer curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Brachialis, Brachioradialis]
   secondary_muscles: [Biceps]
   joint_actions: [elbow flexion]
@@ -874,7 +874,7 @@
   other_names: [tricep pressdown bar, triceps pressdown, tricep pushdown, triceps pushdown, cable pushdown, straight bar pushdown]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -885,7 +885,7 @@
   other_names: [overhead cable tricep extension bar, overhead cable tricep extension, overhead tricep extension bar, cable overhead triceps extension]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -895,7 +895,7 @@
   other_names: [overhead tricep extension db, dumbbell overhead triceps extension, db overhead tricep extension, standing dumbbell triceps extension]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -906,7 +906,7 @@
   other_names: [ez bar skull crusher, skull crusher, skull crushers, ez bar skullcrusher, lying triceps extension, ez-bar skullcrusher]
   equipment: ez bar
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -917,7 +917,7 @@
   other_names: [cable tricep kickback upright, upright cable kickback]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -927,7 +927,7 @@
   other_names: [cable tricep kickback bent over, bent over cable kickback]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -937,7 +937,7 @@
   other_names: [tricep kickback db, dumbbell kickback, dumbbell tricep kickback, db kickback, tricep dumbbell kickback]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -948,7 +948,7 @@
   other_names: [rope pushdown, rope pressdown, tricep rope pushdown, triceps rope pushdown, rope tricep pushdown, cable rope pushdown, triceps pushdown - rope attachment]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
   secondary_muscles: []
   joint_actions: [elbow extension]
@@ -961,7 +961,7 @@
   other_names: [wrist flexion db curl, wrist flexion db, forearm preacher curl, forearm preacher curl db, dumbbell wrist curl, db wrist curl, seated dumbbell palms-up wrist curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Flexors]
   secondary_muscles: []
   joint_actions: [wrist flexion]
@@ -972,7 +972,7 @@
   other_names: [wrist extension db curl, wrist extension db, dumbbell reverse wrist curl, db reverse wrist curl, seated dumbbell palms-down wrist curl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Extensors]
   secondary_muscles: []
   joint_actions: [wrist extension]
@@ -983,7 +983,7 @@
   other_names: [wrist flexion cable curl single hand, single arm cable wrist curl]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Flexors]
   secondary_muscles: []
   joint_actions: [wrist flexion]
@@ -993,7 +993,7 @@
   other_names: [wrist extension cable curl single hand, wrist extension cable curl, single arm cable reverse wrist curl]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Extensors]
   secondary_muscles: []
   joint_actions: [wrist extension]
@@ -1005,7 +1005,7 @@
   other_names: [wrist abduction cable curl single hand, cable radial deviation, wrist abduction]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Flexors, Forearm Extensors]
   secondary_muscles: []
   joint_actions: [wrist radial deviation]
@@ -1015,7 +1015,7 @@
   other_names: [wrist adduction cable curl single hand, cable ulnar deviation, wrist adduction]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Forearm Flexors, Forearm Extensors]
   secondary_muscles: []
   joint_actions: [wrist ulnar deviation]
@@ -1028,7 +1028,7 @@
   other_names: [ab wheel rollout, ab wheel, ab rollout, ab wheel rollouts, ab roller]
   equipment: other
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Abs]
   secondary_muscles: [Obliques, Lats]
   joint_actions: [shoulder flexion, shoulder extension]
@@ -1039,7 +1039,7 @@
   other_names: [cable crunch, cable crunches, kneeling cable crunch]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: [trunk flexion]
@@ -1050,7 +1050,7 @@
   other_names: [decline weighted crunch, weighted decline crunch]
   equipment: other
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: [trunk flexion]
@@ -1062,7 +1062,7 @@
   other_names: [hanging leg raise, hanging leg raises]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Hip Flexors, Abs]
   secondary_muscles: [Rectus Femoris, Obliques, Forearm Flexors]
   joint_actions: [hip flexion, trunk flexion]
@@ -1073,7 +1073,7 @@
   other_names: [roman chair leg raise, hanging roman chair leg raise, captains chair leg raise, captain's chair leg raise]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Hip Flexors, Abs]
   secondary_muscles: [Rectus Femoris, Obliques]
   joint_actions: [hip flexion, trunk flexion]
@@ -1085,7 +1085,7 @@
   other_names: [plank, planks, front plank, forearm plank]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: []
@@ -1097,7 +1097,7 @@
   other_names: [side plank, side planks, side bridge]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Obliques]
   secondary_muscles: [Quadratus Lumborum, Abductors]
   joint_actions: []
@@ -1108,7 +1108,7 @@
   other_names: [pallof press, cable pallof press, pallof]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Obliques]
   secondary_muscles: []
   joint_actions: []
@@ -1119,7 +1119,7 @@
   other_names: [woodchop, wood chop, cable woodchop, cable wood chop, woodchopper, standing cable wood chop]
   equipment: cable
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Obliques]
   secondary_muscles: []
   joint_actions: [trunk rotation]
@@ -1130,7 +1130,7 @@
   other_names: [dead bug, dead bugs, deadbug]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: []
@@ -1141,7 +1141,7 @@
   other_names: [hollow body hold, hollow hold, hollow body]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Abs]
   secondary_muscles: [Obliques, Hip Flexors]
   joint_actions: [hip flexion]
@@ -1153,7 +1153,7 @@
   other_names: [l sit, l-sit, lsit, l sit hold]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Hip Flexors, Abs]
   secondary_muscles: [Rectus Femoris, Lower Traps]
   joint_actions: [hip flexion, trunk flexion, shoulder blade depression]
@@ -1163,7 +1163,7 @@
   other_names: [hanging knee raise, hanging knee raises, hanging knee tuck]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Hip Flexors, Abs]
   secondary_muscles: [Rectus Femoris, Obliques, Forearm Flexors]
   joint_actions: [hip flexion, trunk flexion]
@@ -1173,7 +1173,7 @@
   other_names: [crunch, crunches, ab crunch, floor crunch]
   equipment: bodyweight
   measures: [reps]
-  type: isolation
+  compound: false
   primary_muscles: [Abs]
   secondary_muscles: [Obliques]
   joint_actions: [trunk flexion]
@@ -1192,7 +1192,7 @@
   other_names: [squat, squats, back squat, barbell back squat, barbell squat, bb squat]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max, Adductors]
   secondary_muscles: [Spinal Erectors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1203,7 +1203,7 @@
   other_names: [smith machine squat, smith squat]
   equipment: smith machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max, Adductors]
   secondary_muscles: []
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1214,7 +1214,7 @@
   other_names: [hack squat, machine hack squat]
   equipment: machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1225,7 +1225,7 @@
   other_names: [leg press, machine leg press, 45 degree leg press]
   equipment: machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1237,7 +1237,7 @@
   other_names: [leg extension, leg extensions, machine leg extension]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Rectus Femoris, Vastus Muscles]
   secondary_muscles: []
   joint_actions: [knee extension]
@@ -1250,7 +1250,7 @@
   other_names: [seated leg curl, seated leg hamstring curl, seated hamstring curl]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Hamstrings]
   secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
@@ -1261,7 +1261,7 @@
   other_names: [lying leg curl, prone leg curl, lying hamstring curl, lying leg curls, leg curl]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Hamstrings]
   secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
@@ -1273,7 +1273,7 @@
   other_names: [barbell romanian deadlift, romanian deadlift, rdl, barbell rdl]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Hamstrings, Glute Max]
   secondary_muscles: [Spinal Erectors, Adductors, Forearm Flexors]
   joint_actions: [hip extension]
@@ -1286,7 +1286,7 @@
   other_names: [deadlift, deadlifts, barbell deadlift, conventional deadlift]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings]
   secondary_muscles: [Spinal Erectors, Vastus Muscles, Adductors, Upper Traps, Forearm Flexors]
   joint_actions: [hip extension, knee extension]
@@ -1298,7 +1298,7 @@
   other_names: [barbell clean, clean, squat clean]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
@@ -1309,7 +1309,7 @@
   other_names: [db bulgarian split squat, dumbbell bulgarian split squat, bulgarian split squat, bss, split squat with dumbbells]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1321,7 +1321,7 @@
   other_names: [smith machine static lunge with elevated front foot, smith machine split squat front foot elevated]
   equipment: smith machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1331,7 +1331,7 @@
   other_names: [dumbbell walking lunge, db walking lunge, walking lunge]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1341,7 +1341,7 @@
   other_names: [cable hip abduction, standing cable hip abduction]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Abductors]
   secondary_muscles: [Glute Max]
   joint_actions: [hip abduction]
@@ -1351,7 +1351,7 @@
   other_names: [machine hip abduction, hip abduction machine, abductor machine, seated hip abduction, thigh abductor]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Abductors]
   secondary_muscles: [Glute Max]
   joint_actions: [hip abduction]
@@ -1362,7 +1362,7 @@
   other_names: [cable hip adduction, standing cable hip adduction]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Adductors]
   secondary_muscles: []
   joint_actions: [hip adduction]
@@ -1373,7 +1373,7 @@
   other_names: [machine hip adduction, hip adduction machine, adductor machine, seated hip adduction, thigh adductor]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Adductors]
   secondary_muscles: []
   joint_actions: [hip adduction]
@@ -1386,7 +1386,7 @@
   other_names: [front squat, front squats, barbell front squat, front squat (clean grip)]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max, Adductors]
   secondary_muscles: [Spinal Erectors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1398,7 +1398,7 @@
   other_names: [goblet squat, goblet squats, dumbbell goblet squat, db goblet squat]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max, Adductors]
   secondary_muscles: []
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1408,7 +1408,7 @@
   other_names: [pistol squat, pistol squats, pistol, single leg squat]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1418,7 +1418,7 @@
   other_names: [step up, step ups, step-up, step-ups, dumbbell step up, dumbbell step ups, db step up]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1429,7 +1429,7 @@
   other_names: [reverse lunge, reverse lunges, dumbbell reverse lunge, db reverse lunge, rear lunge, dumbbell rear lunge]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Vastus Muscles, Glute Max]
   secondary_muscles: [Adductors]
   joint_actions: [hip extension, knee extension]
@@ -1442,7 +1442,7 @@
   other_names: [sumo deadlift, sumo deadlifts, sumo dl, barbell sumo deadlift]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Vastus Muscles, Adductors]
   secondary_muscles: [Hamstrings, Upper Traps, Forearm Flexors]
   joint_actions: [hip extension, knee extension]
@@ -1455,7 +1455,7 @@
   other_names: [trap bar deadlift, trap bar deadlifts, hex bar deadlift, hex bar deadlifts, trapbar deadlift]
   equipment: trap bar
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Vastus Muscles, Hamstrings]
   secondary_muscles: [Spinal Erectors, Adductors, Upper Traps, Forearm Flexors]
   joint_actions: [hip extension, knee extension]
@@ -1466,7 +1466,7 @@
   other_names: [dumbbell romanian deadlift, dumbbell rdl, db rdl, db romanian deadlift]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Hamstrings, Glute Max]
   secondary_muscles: [Spinal Erectors, Adductors]
   joint_actions: [hip extension]
@@ -1476,7 +1476,7 @@
   other_names: [single leg romanian deadlift, single leg rdl, single-leg rdl, single leg deadlift, one leg rdl, dumbbell single leg rdl]
   equipment: dumbbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Hamstrings, Glute Max]
   secondary_muscles: []
   joint_actions: [hip extension]
@@ -1486,7 +1486,7 @@
   other_names: [good morning, good mornings, barbell good morning]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Hamstrings, Glute Max]
   secondary_muscles: [Spinal Erectors, Adductors]
   joint_actions: [hip extension]
@@ -1499,7 +1499,7 @@
   other_names: [nordic curl, nordic curls, nordic hamstring curl, nordics, glute ham raise, floor glute ham raise, natural glute ham raise, floor glute-ham raise]
   equipment: bodyweight
   measures: [reps]
-  type: isolation
+  compound: false
   primary_muscles: [Hamstrings]
   secondary_muscles: [Gastrocnemius]
   joint_actions: [knee flexion]
@@ -1510,7 +1510,7 @@
   other_names: [hip thrust, hip thrusts, barbell hip thrust, barbell hip thrusts, bb hip thrust]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max]
   secondary_muscles: [Hamstrings]
   joint_actions: [hip extension]
@@ -1521,7 +1521,7 @@
   other_names: [machine hip thrust, hip thrust machine, glute drive]
   equipment: machine
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max]
   secondary_muscles: [Hamstrings]
   joint_actions: [hip extension]
@@ -1531,7 +1531,7 @@
   other_names: [single leg glute bridge, single-leg glute bridge, one leg glute bridge]
   equipment: bodyweight
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max]
   secondary_muscles: [Hamstrings]
   joint_actions: [hip extension]
@@ -1542,7 +1542,7 @@
   other_names: [cable kickback, cable kickbacks, cable glute kickback, glute kickback, one legged cable kickback, one-legged cable kickback]
   equipment: cable
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Glute Max]
   secondary_muscles: [Hamstrings]
   joint_actions: [hip extension]
@@ -1555,7 +1555,7 @@
   other_names: [copenhagen plank, copenhagen, copenhagen adduction, copenhagen side plank]
   equipment: bodyweight
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Adductors]
   secondary_muscles: [Obliques]
   joint_actions: [hip adduction]
@@ -1568,7 +1568,7 @@
   other_names: [standing calf raise, standing calf raises, machine standing calf raise]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Gastrocnemius, Soleus]
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
@@ -1579,7 +1579,7 @@
   other_names: [seated calf raise, calf raise seated, seated calf raises]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Soleus]
   secondary_muscles: [Gastrocnemius]
   joint_actions: [ankle plantarflexion]
@@ -1590,7 +1590,7 @@
   other_names: [smith machine calf raise, smith calf raise]
   equipment: smith machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Gastrocnemius, Soleus]
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
@@ -1601,7 +1601,7 @@
   other_names: [leg press calf raise, leg press calf press, calf press, calf press on the leg press machine]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Gastrocnemius, Soleus]
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
@@ -1612,7 +1612,7 @@
   other_names: [standing calf raise on hack squat, hack squat calf raise]
   equipment: machine
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Gastrocnemius, Soleus]
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
@@ -1622,7 +1622,7 @@
   other_names: [tibialis raise single leg, single leg tibialis raise, single leg tib raise]
   equipment: dumbbell
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Tibialis]
   secondary_muscles: []
   joint_actions: [ankle dorsiflexion]
@@ -1635,7 +1635,7 @@
   other_names: [farmer carry, farmers carry, farmer's carry, farmer walk, farmers walk, farmer's walk]
   equipment: dumbbell
   measures: [weight, distance]
-  type: compound
+  compound: true
   primary_muscles: [Forearm Flexors, Upper Traps]
   secondary_muscles: []
   joint_actions: []
@@ -1648,7 +1648,7 @@
   other_names: [suitcase carry, suitcase carries, suitcase walk, single arm farmer carry]
   equipment: dumbbell
   measures: [weight, distance]
-  type: compound
+  compound: true
   primary_muscles: [Obliques, Quadratus Lumborum]
   secondary_muscles: [Forearm Flexors, Upper Traps]
   joint_actions: []
@@ -1658,7 +1658,7 @@
   other_names: [overhead carry, kettlebell overhead carry, waiter carry, waiter walk]
   equipment: kettlebell
   measures: [weight, distance]
-  type: compound
+  compound: true
   primary_muscles: [Front Delts, Upper Traps]
   secondary_muscles: [Serratus]
   joint_actions: [shoulder flexion, shoulder blade upward rotation]
@@ -1670,7 +1670,7 @@
   other_names: [box jump, box jumps, front box jump]
   equipment: box
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Vastus Muscles]
   secondary_muscles: [Gastrocnemius, Soleus]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1681,7 +1681,7 @@
   other_names: [broad jump, broad jumps, standing long jump, standing broad jump]
   equipment: bodyweight
   measures: [reps, distance]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Vastus Muscles]
   secondary_muscles: [Hamstrings, Gastrocnemius, Soleus]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1693,7 +1693,7 @@
   other_names: [depth jump, depth jumps, drop jump, drop jumps, linear depth jump]
   equipment: box
   measures: [reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Vastus Muscles]
   secondary_muscles: [Gastrocnemius, Soleus]
   joint_actions: [hip extension, knee extension, ankle plantarflexion]
@@ -1704,7 +1704,7 @@
   other_names: [jump rope, skipping, skipping rope, rope jumping, skip rope]
   equipment: jump rope
   measures: [time]
-  type: compound
+  compound: true
   primary_muscles: [Gastrocnemius, Soleus]
   secondary_muscles: []
   joint_actions: [ankle plantarflexion]
@@ -1717,7 +1717,7 @@
   other_names: [medicine ball slam, medicine ball slams, ball slam, ball slams, med ball slam, overhead slam]
   equipment: medicine ball
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Lats, Abs]
   secondary_muscles: [Triceps Long Head]
   joint_actions: [shoulder extension, trunk flexion]
@@ -1728,7 +1728,7 @@
   other_names: [medicine ball chest pass, med ball chest pass, chest pass]
   equipment: medicine ball
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
   secondary_muscles: [Front Delts]
   joint_actions: [shoulder horizontal adduction, elbow extension]
@@ -1739,7 +1739,7 @@
   other_names: [rotational medicine ball throw, medicine ball rotational throw, rotational throw, med ball rotational throw, side toss]
   equipment: medicine ball
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Obliques]
   secondary_muscles: [Glute Max]
   joint_actions: [trunk rotation, hip internal rotation, hip external rotation]
@@ -1751,7 +1751,7 @@
   other_names: [overhead backward medicine ball throw, backward medicine ball throw, backward overhead throw, overhead back toss]
   equipment: medicine ball
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings]
   secondary_muscles: [Vastus Muscles, Front Delts]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder flexion]
@@ -1765,7 +1765,7 @@
   other_names: [power clean, power cleans, barbell power clean]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
@@ -1776,7 +1776,7 @@
   other_names: [hang clean, hang cleans, barbell hang clean]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
@@ -1787,7 +1787,7 @@
   other_names: [snatch, barbell snatch, squat snatch, full snatch]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
@@ -1798,7 +1798,7 @@
   other_names: [power snatch, barbell power snatch]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
@@ -1809,7 +1809,7 @@
   other_names: [clean and jerk, clean & jerk, c&j, barbell clean and jerk]
   equipment: barbell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
   secondary_muscles: [Upper Traps, Front Delts, Triceps Lateral/Medial Heads, Gastrocnemius, Soleus, Adductors]
   joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion, shoulder flexion, elbow extension]
@@ -1821,7 +1821,7 @@
   other_names: [kettlebell swing, kettlebell swings, kb swing, kb swings, russian swing]
   equipment: kettlebell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings]
   secondary_muscles: []
   joint_actions: [hip extension]
@@ -1831,7 +1831,7 @@
   other_names: [kettlebell snatch, kettlebell snatches, kb snatch, one arm kettlebell snatch, one-arm kettlebell snatch]
   equipment: kettlebell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Glute Max, Hamstrings]
   secondary_muscles: [Upper Traps, Front Delts]
   joint_actions: [hip extension, shoulder blade elevation, shoulder flexion, shoulder blade upward rotation]
@@ -1844,7 +1844,7 @@
   other_names: [turkish get up, turkish get-up, turkish getup, tgu, kettlebell turkish get up, kettlebell turkish get-up (lunge style)]
   equipment: kettlebell
   measures: [weight, reps]
-  type: compound
+  compound: true
   primary_muscles: [Obliques, Front Delts]
   secondary_muscles: [Abs, Glute Max, Vastus Muscles]
   joint_actions: [shoulder flexion, trunk flexion, trunk rotation, hip extension, knee extension]
@@ -1858,7 +1858,7 @@
   other_names: [neck curl, neck curls, plate neck curl, neck flexion, lying neck flexion, lying face up plate neck resistance]
   equipment: other
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Neck Flexors]
   secondary_muscles: []
   joint_actions: [neck flexion]
@@ -1870,7 +1870,7 @@
   other_names: [plate neck extension, lying neck extension, lying face down plate neck resistance]
   equipment: other
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Neck Extensors]
   secondary_muscles: [Upper Traps]
   joint_actions: [neck extension]
@@ -1883,7 +1883,7 @@
   other_names: [lateral neck flexion, side neck raise, side lying neck raise, plate lateral neck flexion]
   equipment: other
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Neck Flexors, Neck Extensors]
   secondary_muscles: [Upper Traps]
   joint_actions: [neck lateral flexion]
@@ -1893,7 +1893,7 @@
   other_names: [neck harness, neck harness extension, head harness, harness neck extension, seated head harness neck resistance]
   equipment: other
   measures: [weight, reps]
-  type: isolation
+  compound: false
   primary_muscles: [Neck Extensors]
   secondary_muscles: [Upper Traps]
   joint_actions: [neck extension]

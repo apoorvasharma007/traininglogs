@@ -58,7 +58,7 @@ STARTER_RENAMES = {
 }
 
 FIELDS = [
-    "equipment", "other_names", "measures", "type", "primary_muscles", "secondary_muscles",
+    "equipment", "other_names", "measures", "compound", "primary_muscles", "secondary_muscles",
     "joint_actions", "patterns", "free_exercise_db_id",
 ]
 ARRAYS = {"other_names", "measures", "primary_muscles", "secondary_muscles", "joint_actions", "patterns"}

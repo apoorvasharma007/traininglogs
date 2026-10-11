@@ -30,7 +30,7 @@ recovery tracking all read from the library instead of from typed names. With li
 | Other names | any number | no | how people write it: "bench", "bb bench"; search words only, never used to link (changed 2026-10-11) |
 | Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
-| Type | one | no | Compound, Isolation |
+| Compound | one | no | yes (moves two or more joints) or no (isolation); `compound` in the database, renamed from Type 2026-10-11 so it can't be mistaken for patterns |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
 | Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
 | Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
@@ -216,6 +216,39 @@ old app have updated:
 | none | `GET /exercises` (the library and your own, for the phone) |
 | none | `POST /exercises` (add your own) |
 | `GET /progress/lifts`, `PUT /me/key-lifts` | Key Lifts read and saved under one path |
+
+### 9. v1 scope (agreed 2026-10-11)
+
+Built and tried locally against the dev copy of prod before staging. On top of sections 5 to 8:
+
+- **My Exercises**, one screen: your own exercises and any names not linked to the library.
+  Each row offers "Link to a library exercise" or "Keep as my own" (which asks for primary
+  muscles, equipment and measures). Step 5's mapping becomes a pre-fill reviewed there. Needed
+  because names that arrive as text (notes, old app) keep arriving unlinked.
+- **Progress redesign**: an overview of tiles, each doing one job (strength, volume per muscle
+  group, what hasn't been trained, and others), each opening a sub-page. Metrics and visuals
+  come from a research pass (2026-10-11), then a mockup approved before building. Agreed so far:
+  - Volume per muscle group shows the counts only, no target bands.
+  - Strength against bodyweight for the key lifts (deadlift, squat, bench press, pull-up, row)
+    and bodyweight maxes such as most pull-ups: "squat 2.2x bodyweight".
+    The number is the estimated max (Epley with RPE, as Progress uses now) over the bodyweight
+    on that date, with "heaviest lifted 140 kg × 5" underneath. Pull-up (Bodyweight) shows best
+    reps only; Pull-up (Weighted) is its own exercise and its estimated max is the added weight
+    alone. Bodyweight is never added to a lift's load.
+  - A Skills tile: best hold time or best clean reps. Each person picks their skills in
+    Settings, like Key Lifts, starting from a default list.
+  - A front and back body map with `body-highlighter` (MIT).
+  - Left out: recovery percentages, tonnage across exercises, composite scores.
+  - Chart details are decided on mockups.
+- **Profile**: bodyweight (the person updates it when it changes; each update kept with its
+  date, so past ratios use the weight at the time), height, and date of birth (age is worked
+  out from it).
+- **Linking**: past names show the library name once linked (History, Progress, sessions); the
+  typed name shows on My Exercises. Linking an own exercise to a library one makes the library's
+  muscles, equipment and measures count, past sets included; the own version is kept, so
+  unlinking restores it; both show what changes and offer Undo.
+- Not in v1: the second tier. Later, "Link to a library exercise" on My Exercises also searches
+  `free_exercise_db` on the server.
 
 ## Blast radius
 
