@@ -294,9 +294,8 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   Equipment is optional for own exercises (no metric uses it). Approved on the mockup
   (2026-10-12, https://claude.ai/artifact/LzNyXSqvfHAXF7HDkW5cQ1):
   - A name box with the placeholder "Exercise Name", no label; the search text carries over.
-    Names are saved in Title Case (first letter of each word; "RDL" stays). The session's
-    exercise card relies on the phone keyboard for this today; the picker build fixes it there
-    too (changes how new names are saved, so confirm before building).
+    Names are saved as typed, with the phone keyboard capitalising each word, as the session's
+    exercise card does today (decided 2026-10-12; no forced Title Case).
   - Then rows that open on tap, one at a time, each showing its value on the right (green when
     set, "Add" or "Required" in grey): Primary Muscles (tag "+1 Per Set", open first) and Log
     in the first group; Equipment, Secondary Muscles (tag "+0.5 Per Set"), Compound, Joint
@@ -380,7 +379,8 @@ squashed into the base; the base merges into `dev` when every step is done and t
         names already link.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
 - [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
-      counted by group as in section 1; tests.
+      counted by group as in section 1; tests. Rename `LiftSummary.measure` to `metric` (server
+      and app), so it can't be confused with the library's `measures` (agreed 2026-10-12).
 - [ ] 7. Picker: mockup approved, then built, with history prefill on pick; tests, checked on
       the phone.
 - [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
@@ -498,11 +498,11 @@ unchanged (133 sessions, 1064 session exercises, 3419 sets, 99 names, 19 linked,
 The staging rehearsal confirms the five dropped columns are empty on the prod copy first.
 
 Next:
-1. Wait for Apoorva's yes, then build the picker on `exercises/library-7-picker` from
+1. Yes given 2026-10-12. Build the picker on `exercises/library-7-picker` from
    `exercises/library-4-own`, in this order, showing the diff before each commit:
    `lib/lists.ts` (lists, groups and joints head to toe, the 7 Log combinations), the search
-   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and
-   `WorkoutPlan`, then the Add Your Own sheet. Left for later in step 7: keeping the library on
+   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and the name
+   and Alternative boxes in `WorkoutPlan` (agreed 2026-10-12), then the Add Your Own sheet. Left for later in step 7: keeping the library on
    the phone (section 6) and the time and distance boxes in the set row.
 2. Then My Exercises, Profile, and the Progress redesign (needs step 6's reads by exercise).
 3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);

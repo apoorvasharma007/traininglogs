@@ -44,11 +44,11 @@ export type SessionDetail = Pick<SessionSummary, 'program_name' | 'workout_posit
   exercises: SessionExercise[]
 }
 
-export type Measure = 'estimated_max' | 'bodyweight_reps'
+export type LiftMetric = 'estimated_max' | 'bodyweight_reps'
 
 export type LiftSummary = {
   name: string
-  measure: Measure
+  measure: LiftMetric
   sessions: number
   latest: number | null
   best: number | null
