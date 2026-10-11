@@ -26,16 +26,16 @@ recovery tracking all read from the library instead of from typed names. With li
 
 | Field | How many | Required | Values |
 |---|---|---|---|
-| Name | one | yes | "Barbell Bench Press" |
+| Name | one | yes | "Bench Press (Barbell)" |
 | Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
-| Parent | one | no | the family it belongs to: "Neutral Grip Lat Pulldown" belongs to "Lat Pulldown" |
-| Equipment | one | yes | barbell, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
+| Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
 | Type | one | no | Compound, Isolation |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
 | Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
 | Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
 | Patterns | any number | no | from the pattern list; isolation exercises have none |
+| free-exercise-db id | one | no | the matching free-exercise-db exercise, "Barbell_Hip_Thrust"; empty when it has none (section 4) |
 
 Library exercises have every field filled; a person's own exercises may leave the optional ones
 empty.
@@ -49,8 +49,15 @@ the exact rule is decided in step 6.
 
 **Counting sets per muscle:** a set counts 1 for each primary muscle and 0.5 for each secondary
 muscle, worked out when read, never stored. 3 sets of bench press give the chest 3 and the
-triceps 1.5. This is the "fractional" method that fit best in Pelland et al. 2024 (meta-regression
-of 67 studies). Weekly sets per muscle and recovery tracking read these totals.
+triceps 1.5. This is the "fractional" method that fit best in Pelland et al. (Sports Medicine
+2026, meta-regression of 67 studies). Weekly sets per muscle and recovery tracking read these
+totals.
+
+**Counting by group (agreed 2026-10-11):** Pelland and Fitbod count chest or triceps as one
+muscle. Our groups split some (Upper Chest and Mid/Lower Chest, two triceps muscles), so adding
+them would count one set twice: a pressdown would give triceps 2. A group's count for a set is
+its highest muscle: 1 if any of its muscles is primary, 0.5 if only secondary, 0 otherwise. So
+a bench press set gives chest 1 and triceps 0.5. The per-muscle numbers stay for detail.
 
 ### 2. The fixed lists (approved 2026-10-11)
 
@@ -130,9 +137,16 @@ coaching consensus (Dan John, John Rusin) and the anti-movement model for core t
 
 ### 3. Variations (approved 2026-10-11)
 
-Grip, stance, arm and angle variations are their own exercises ("Neutral Grip Lat Pulldown"),
-linked to a parent ("Lat Pulldown"), as Hevy does. Each variation has its own muscles (incline
-press: Upper Chest primary), and Progress can show the family together or apart.
+Grip, stance, arm and angle variations are their own exercises ("Lat Pulldown (Cable, Neutral
+Grip)"), as Hevy does. Each variation has its own muscles (incline press: Upper Chest primary).
+The family is the name before the brackets, so Progress can show "Lat Pulldown" together or
+apart without a parent field (dropped 2026-10-11: it duplicated the name, and grouping
+differently named exercises like Preacher Curl and Bayesian Curl would mix loads that don't
+compare). It can be added later as one optional column.
+
+Range of motion and pauses are not variations: bottom-half reps are partial reps on the full
+exercise, and a pause is tempo. The app has no tempo input yet (`rep_tempo` is free text filled
+only by the old text extraction); adding one is a separate change.
 
 ### 4. Where the library comes from
 
@@ -141,16 +155,44 @@ equipment) as the starting data. A script maps it onto our lists; the result is 
 the repo, and only exercises worth keeping go in (about 150 to 200 to start). Apoorva reviews the
 list. Nothing is fetched at runtime.
 
+**Keeping their data apart from ours (approved 2026-10-11).** Their rows and our library are
+separate tables, linked by their id:
+
+```
+free_exercise_db                  exercises (our library)
+----------------                  -----------------------
+id  text  primary key   <------   free_exercise_db_id  text  null, references free_exercise_db(id)
+name                              name, equipment, muscles ... (ours, curated)
+primary_muscles, secondary_muscles
+equipment, mechanic, force, level
+instructions, images
+```
+
+- `free_exercise_db` holds their rows unchanged, with their column names; nobody edits it by
+  hand. It's loaded from one pinned commit of their repo (they have no releases), recorded in
+  the loader, so a reload gives the same ids and an update is a reviewed change.
+- `exercises.free_exercise_db_id` links our exercise to theirs; the foreign key makes a mistyped
+  id fail at load. Empty where they have no match.
+- Their data never fills our columns. Our muscles stay our 36; theirs are for cross-checking.
+  Their images and instructions are reachable through the link; only the paths are stored for
+  now (the images sit on GitHub). Showing them is a visual change and needs Apoorva's yes.
+- No generic sources table: there is one source. A second one would get its own table and column.
+
 ### 5. A person's own exercises
 
-Allowed, for anything the library lacks. Creating one asks for the primary muscles, equipment and
-measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
+Allowed, for anything the library lacks. They belong to the person who made them, live in
+`user_exercises`, and nobody else sees them; they never change the shared library. Creating one
+asks for the primary muscles, equipment and measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
 Names people create are reviewed from time to time and added to the library.
 
 ### 6. Logging
 
 The exercise name box becomes a search over the library and the person's own exercises, kept on
-the phone so it works offline (the plan from `db-redesign-plan.md`). Picking one fills last time's
+the phone so it works offline (the plan from `db-redesign-plan.md`). The library isn't part of the
+app build: once the app has loaded and gone idle, it fetches the library and the person's own
+exercises and saves them on the phone. Later opens ask the server whether the library has changed;
+the answer is "no change" unless we edited it. Searching never goes to the server. A new own
+exercise is saved on the phone and sent to the server. Picking one fills last time's
 sets in grey (history prefill). Not found: "Add Your Own". The picker's look is a visual change:
 mockup first, approved before it's built.
 
@@ -192,16 +234,31 @@ Base branch `exercises/library` from `dev`, a sub-branch per step (`exercises/li
 squashed into the base; the base merges into `dev` when every step is done and the suite is green.
 
 - [x] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
-- [ ] 2. Library data: script from free-exercise-db, reviewed list of 150 to 200.
-- [ ] 3. Schema and loading: new fields, the lists as checks, library loaded; tests.
+- [x] 2. Library data: `src/traininglogs/db/exercise_library.yaml`, built from the names people
+      log (batch 1: the 107 local names merged into exercises; batch 2: gaps up to 150 to 200,
+      found in free-exercise-db, which is also the cross-check for muscles). Names are movement
+      first, equipment in brackets: "Lateral Raise (Cable)". No abbreviations, Title Case.
+      Every exercise gets `free_exercise_db_id` where they have a match (batch 1 filled in
+      afterwards), reviewed by Apoorva.
+- [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
+      loaded from a pinned commit, then the library with its foreign key, unique (one of
+      theirs links to one of ours at most); tests.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
-- [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; tests.
+- [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
+      counted by group as in section 1; tests.
 - [ ] 7. Picker: mockup approved, then built, with history prefill on pick; tests, checked on
       the phone.
 - [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
 - [ ] 9. Release.
+- [ ] 10. Second tier (after the release): when nothing in the library or the person's own
+      exercises matches, search the `free_exercise_db` table (about 870) on the server, online
+      only. A result that a library exercise links to shows that library exercise instead
+      ("glute ham raise" finds `Floor_Glute-Ham_Raise`, which shows Nordic Curl). A pick is
+      copied into the person's own exercises with `user_exercises.free_exercise_db_id` set, its 17 muscles mapped
+      roughly onto ours; it never goes into the shared library directly. Picks are counted by
+      grouping on that column, and the most picked are reviewed for adding to the library.
 
 Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
@@ -209,13 +266,85 @@ Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
 2026-10-11: plan written and committed on `exercises/library` (from dev at `d5481a4`, local
 only, not pushed). Step 1 done: sections 1 to 3 approved (fields, 36 muscles in 17 groups, 44
-joint actions, 15 patterns, variations as their own exercises with a parent). Nothing built.
+joint actions, 15 patterns, variations as their own exercises, family from the name). Nothing built.
 
-Next: step 2, library data. Cut `exercises/library-2-data`, look at free-exercise-db's fields and
-muscle names, and propose how they map onto our lists before writing the script. Its 17 muscles
-are coarser than ours (no chest or trap split, no brachialis), so some mapping will be by hand.
+Step 2 in progress on `exercises/library-2-data`. Batch 1 done: Apoorva's 107 names merged into
+84 exercises in `src/traininglogs/db/exercise_library.yaml`, every field filled and checked
+against the approved lists; sources in `ACKNOWLEDGMENTS.md`. 100 of the 107 names link through
+other names; the 7 generic ones (walking lunge, shoulder press, calf raise, chest-supported row,
+incline press, bicep curl, tricep extension) are matched by hand in step 5's mapping file.
+
+Next: batch 2, the gaps up to 150 to 200 (dips, hip thrust, carries, jumps, throws, Olympic
+lifts, neck, serratus, rotator cuff, obliques), searched in free-exercise-db. Present them by
+region for review before writing, one exercise per row.
+
+2026-10-11 (later): batch 2 names approved: 77 in 14 regions (the proposed 82 minus
+conditioning, dropped because its sets would distort weekly muscle totals; a follow-up). Equipment
+gained trap bar, medicine ball, sled, box and jump rope. `free_exercise_db_id` approved (section
+4). Batch 2 written: all 77, 161 in the file, checked by script against the lists (names,
+other_names, ids, muscles, joint actions, patterns, equipment). Apoorva reviews the judgment
+calls. Second pass done (2026-10-11): every muscle must be moved by a listed joint action
+(anatomy references) or measured in a cited study; 56 exercises trimmed, Transverse Abdominis
+no longer listed on any exercise, rules written in the file header. The check scripts are not in
+the repo yet; step 3's loader tests should carry the list and joint-action checks. Batch 1 ids
+filled: 53 of 84 matched (110 of 161 overall), each checked against their instructions; the rest
+are variations they lack. Next: Apoorva reviews the matches, then step 2 is done and squashes
+into `exercises/library`; step 3 starts on `exercises/library-3-schema`. Each id links to one
+exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
+and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
+Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
+github.com/yuhonas/free-exercise-db. The approved names (free-exercise-db's own names go in other_names):
+- Chest: Bench Press (Dumbbell); Bench Press (Barbell, Close Grip); Incline Press (Barbell);
+  Chest Press (Machine); Push-up (Bodyweight); Push-up (Weighted); Dip (Bodyweight); Dip (Weighted)
+- Shoulders: Arnold Press (Dumbbell); Landmine Press (Barbell, Single Arm); Push Press (Barbell);
+  Handstand Push-up (Bodyweight)
+- Rotator cuff: External Rotation (Cable); External Rotation (Band); Internal Rotation (Cable)
+- Serratus: Push-up Plus (Bodyweight); Serratus Punch (Cable)
+- Back: Straight-Arm Pulldown (Cable); Pullover (Dumbbell); Inverted Row (Bodyweight); T-Bar Row
+  (Barbell); Shrug (Barbell); Shrug (Dumbbell); Scapular Pull-up (Bodyweight); Dead Hang
+  (Bodyweight); Muscle-up (Bodyweight)
+- Arms: Biceps Curl (Barbell); Hammer Curl (Dumbbell); Triceps Pressdown (Cable, Rope)
+- Core: Plank (Bodyweight); Side Plank (Bodyweight); Pallof Press (Cable); Woodchop (Cable); Dead
+  Bug (Bodyweight); Hollow Body Hold (Bodyweight); L-sit (Bodyweight); Hanging Knee Raise
+  (Bodyweight); Crunch (Bodyweight)
+- Hips and glutes: Hip Thrust (Barbell); Hip Thrust (Machine); Glute Bridge (Bodyweight, Single
+  Leg); Glute Kickback (Cable); Copenhagen Plank (Bodyweight)
+- Legs: Front Squat (Barbell); Goblet Squat (Dumbbell); Pistol Squat (Bodyweight); Step-up
+  (Dumbbell); Reverse Lunge (Dumbbell); Sumo Deadlift (Barbell); Deadlift (Trap Bar); Romanian
+  Deadlift (Dumbbell); Single-Leg Romanian Deadlift (Dumbbell); Good Morning (Barbell); Nordic
+  Curl (Bodyweight)
+- Carries: Farmer Carry (Dumbbell); Suitcase Carry (Dumbbell); Overhead Carry (Kettlebell)
+- Jumps: Box Jump; Broad Jump; Depth Jump; Jump Rope
+- Throws: Slam (Medicine Ball); Chest Pass (Medicine Ball); Rotational Throw (Medicine Ball);
+  Overhead Backward Throw (Medicine Ball)
+- Olympic and kettlebell: Power Clean (Barbell); Hang Clean (Barbell); Snatch (Barbell); Power
+  Snatch (Barbell); Clean and Jerk (Barbell); Swing (Kettlebell); Snatch (Kettlebell); Turkish
+  Get-up (Kettlebell)
+- Neck: Neck Curl (Plate); Neck Extension (Plate); Lateral Neck Flexion (Plate); Neck Extension
+  (Harness)
+
+Also agreed: section 5 (own
+exercises stay private) and section 6 (library fetched after load, kept on the phone), and step 10
+(second tier). Separate idea, not in this plan: optional AI during a session (button, speak or
+type, like the corrections card) with a per-person daily cap and a monthly spend cap; add it to
+`~/Projects/PLAN.md` once the library ships, Groq first.
+
+Rules settled while writing batch 1 (also in the file's header):
+- Other names only hold spellings that can mean just that exercise; generic names link only
+  where there's a clear convention (bench press, squat, deadlift, lateral raise).
+- Equipment is bodyweight only when nothing is added; weighted versions use other.
+- Forearm Flexors only where grip commonly limits the set.
+- Pauses are tempo, bottom-half reps are partial reps. Follow-up outside this plan: the app has
+  no tempo input.
 
 Context for the next session:
+- Work in the worktree `~/Projects/traininglogs-wave`, not `~/Projects/traininglogs` (that one is
+  on an unrelated `codebase-cleanup-...` branch).
+- The local database runs in the main checkout's container `traininglogs-db_test-1` (port 5433);
+  `docker compose up` from this worktree fails because the port is taken. Read it with
+  `docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_dev`.
+- This worktree has no `.venv`; `../traininglogs/.venv/bin/python` has PyYAML for checking the
+  library file.
 - Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
   107 exercise names for one person, 23 linked; prod has a few more people.
 - The Title Case change (program templates now "Bench Press", "Upper / Lower") is on `docs/guide`,
