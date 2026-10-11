@@ -273,8 +273,9 @@ region for review before writing, one exercise per row.
 2026-10-11 (later): batch 2 names approved: 77 in 14 regions (the proposed 82 minus
 conditioning, dropped because its sets would distort weekly muscle totals; a follow-up). Equipment
 gained trap bar, medicine ball, sled, box and jump rope. `free_exercise_db_id` approved (section
-4). Chest written (8, 92 in the file). Next: Shoulders, then the other regions in the order
-below, including `free_exercise_db_id`; then fill the id in for batch 1. Each id links to one
+4). Batch 2 written: all 77, 161 in the file, checked by script against the lists (names,
+other_names, ids, muscles, joint actions, patterns, equipment). Apoorva reviews the judgment
+calls. Next: fill `free_exercise_db_id` in for batch 1's 84. Each id links to one
 exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in

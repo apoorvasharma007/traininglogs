@@ -68,6 +68,26 @@ entry says what it decided in the library.
   Journal of Environmental Research and Public Health, 2022.
   [MDPI](https://www.mdpi.com/1660-4601/19/21/14390)
   Dips have the chest and triceps as primary.
+- Marchetti PH, Uchida MC. *Effects of the pullover exercise on the pectoralis major and
+  latissimus dorsi muscles as evaluated by EMG.* Journal of Applied Biomechanics, 2011.
+  The dumbbell pullover has the chest and lats as primary.
+- Serner A, Jakobsen MD, Andersen LL, Hölmich P, Sundstrup E, Thorborg K. *EMG evaluation of hip
+  adduction exercises for soccer players: implications for exercise selection in prevention and
+  treatment of groin injuries.* British Journal of Sports Medicine 48(14):1108, 2014.
+  [BJSM](https://bjsm.bmj.com/content/48/14/1108)
+  The Copenhagen plank has the adductors as primary.
+- Escamilla RF, et al. *An electromyographic analysis of sumo and conventional style deadlifts.*
+  Medicine and Science in Sports and Exercise 34(4):682-688, 2002.
+  [Duke Scholars](https://scholars.duke.edu/publication/670149)
+  The sumo deadlift has the quads as primary.
+- Swinton PA, Stewart A, Agouris I, Keogh JWL, Lloyd R. *A biomechanical analysis of straight and
+  hexagonal barbell deadlifts using submaximal loads.* Journal of Strength and Conditioning
+  Research, 2011. [PubMed](https://pubmed.ncbi.nlm.nih.gov/21659894/)
+  The trap bar deadlift has the quads as primary and the lower back as secondary.
+- McGill SM, McDermott A, Fenwick CM. *Comparison of different strongman events: trunk muscle
+  activation and lumbar spine motion, load, and stiffness.* Journal of Strength and Conditioning
+  Research, 2009. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19528856/)
+  The suitcase carry has the quadratus lumborum and obliques as primary.
 
 ## Anatomy references
 

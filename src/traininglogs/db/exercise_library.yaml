@@ -18,7 +18,9 @@
 #   patterns           empty for isolation exercises
 #   free_exercise_db_id  the matching free-exercise-db id, e.g. "Barbell_Hip_Thrust"; left out
 #                      when they have no match. Each id links to one exercise at most, so
-#                      variations they lack ("Push-up (Weighted)") have none.
+#                      variations they lack ("Push-up (Weighted)") have none. The equipment must
+#                      match too: their goblet squat is a kettlebell one, so Goblet Squat
+#                      (Dumbbell) has none. Their own name is one of the other_names.
 #
 # Range of motion and pauses are not variations. Bottom-half reps are logged on the full exercise
 # as partial reps; a pause is logged as tempo (see Shrug (Cable)).
@@ -120,7 +122,7 @@
 # Barbell incline benches are fixed at about 30 to 45 degrees; upper chest activity peaks at 30
 # (Rodríguez-Ridao 2020), so no angle in the name and only the upper chest is primary.
 - name: Incline Press (Barbell)
-  other_names: [incline bench press, incline barbell press, incline barbell bench press, incline bench, barbell incline bench press]
+  other_names: [incline bench press, incline barbell press, incline barbell bench press, incline bench, barbell incline bench press, barbell incline bench press - medium grip]
   equipment: barbell
   measures: [weight, reps]
   type: compound
@@ -270,6 +272,116 @@
   secondary_muscles: [Mid Traps, Lower Traps, Rhomboids, Rotator Cuff]
   joint_actions: [shoulder horizontal abduction, shoulder external rotation, shoulder blade retraction, elbow flexion]
   patterns: [Horizontal Pull]
+
+# Same muscles as Overhead Press (Barbell); no study measured the Arnold press on its own. The
+# elbows travel from in front out to the sides, which adds horizontal abduction.
+- name: Arnold Press (Dumbbell)
+  other_names: [arnold press, arnold dumbbell press, dumbbell arnold press, db arnold press]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Front Delts]
+  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  joint_actions: [shoulder flexion, shoulder abduction, shoulder horizontal abduction, elbow extension, shoulder blade upward rotation]
+  patterns: [Vertical Push]
+  free_exercise_db_id: Arnold_Dumbbell_Press
+
+# Pressing up and forward ends with the shoulder blade pushed forward, so Serratus is secondary.
+# free-exercise-db's Single-Arm Linear Jammer drives with the legs, a different exercise.
+- name: Landmine Press (Barbell, Single Arm)
+  other_names: [landmine press, single arm landmine press, one arm landmine press]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Front Delts]
+  secondary_muscles: [Upper Chest, Triceps Lateral/Medial Heads, Serratus]
+  joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation, shoulder blade protraction]
+  patterns: [Vertical Push]
+
+# The leg drive is a short dip that never limits the set, so the legs are joint actions only and
+# count no sets.
+- name: Push Press (Barbell)
+  other_names: [push press, barbell push press]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Front Delts]
+  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation, hip extension, knee extension, ankle plantarflexion]
+  patterns: [Vertical Push]
+  free_exercise_db_id: Push_Press
+
+- name: Handstand Push-up (Bodyweight)
+  other_names: [handstand push up, handstand push ups, handstand push-up, handstand pushup, hspu, handstand push-ups]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Front Delts]
+  secondary_muscles: [Side Delts, Triceps Lateral/Medial Heads, Upper Chest, Upper Traps, Serratus]
+  joint_actions: [shoulder flexion, elbow extension, shoulder blade upward rotation]
+  patterns: [Vertical Push]
+  free_exercise_db_id: Handstand_Push-Ups
+
+# Rotator cuff
+
+- name: External Rotation (Cable)
+  other_names: [cable external rotation, external rotation with cable]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Rotator Cuff]
+  secondary_muscles: [Rear Delts]
+  joint_actions: [shoulder external rotation]
+  patterns: []
+  free_exercise_db_id: External_Rotation_with_Cable
+
+- name: External Rotation (Band)
+  other_names: [band external rotation, external rotation with band, banded external rotation]
+  equipment: band
+  measures: [reps]
+  type: isolation
+  primary_muscles: [Rotator Cuff]
+  secondary_muscles: [Rear Delts]
+  joint_actions: [shoulder external rotation]
+  patterns: []
+  free_exercise_db_id: External_Rotation_with_Band
+
+# Subscapularis does the work at light loads; the chest and lats also rotate the arm inward but
+# aren't what this trains.
+- name: Internal Rotation (Cable)
+  other_names: [cable internal rotation]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Rotator Cuff]
+  secondary_muscles: []
+  joint_actions: [shoulder internal rotation]
+  patterns: []
+  free_exercise_db_id: Cable_Internal_Rotation
+
+# Serratus
+
+# The push-up plus had the highest serratus activity of the push-up variations tested (Ludewig
+# 2004).
+- name: Push-up Plus (Bodyweight)
+  other_names: [push up plus, push-up plus, pushup plus, push ups plus]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Serratus, Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
+  joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
+  patterns: [Horizontal Push]
+
+- name: Serratus Punch (Cable)
+  other_names: [cable serratus punch, serratus punch, cable punch]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Serratus]
+  secondary_muscles: [Front Delts]
+  joint_actions: [shoulder blade protraction]
+  patterns: []
 
 # Back
 
@@ -490,6 +602,109 @@
   joint_actions: [trunk extension, hip extension]
   patterns: [Hinge]
 
+# The straight arms are pulled down by the lats; the triceps long head also extends the shoulder.
+- name: Straight-Arm Pulldown (Cable)
+  other_names: [straight arm pulldown, straight-arm pulldown, cable straight arm pulldown, straight arm lat pulldown]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Lats]
+  secondary_muscles: [Triceps Long Head]
+  joint_actions: [shoulder extension, shoulder blade depression]
+  patterns: []
+  free_exercise_db_id: Straight-Arm_Pulldown
+
+# The chest worked harder than the lats in the pullover (Marchetti 2011), so both are primary.
+- name: Pullover (Dumbbell)
+  other_names: [dumbbell pullover, db pullover, straight arm dumbbell pullover, straight-arm dumbbell pullover]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Mid/Lower Chest, Lats]
+  secondary_muscles: [Triceps Long Head]
+  joint_actions: [shoulder extension]
+  patterns: []
+  free_exercise_db_id: Straight-Arm_Dumbbell_Pullover
+
+- name: Inverted Row (Bodyweight)
+  other_names: [inverted row, inverted rows, bodyweight row, australian pull up, australian pull-up]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Lats, Mid Traps, Rhomboids]
+  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis]
+  joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
+  patterns: [Horizontal Pull]
+  free_exercise_db_id: Inverted_Row
+
+- name: T-Bar Row (Barbell)
+  other_names: [t-bar row, t bar row, tbar row, landmine row, t-bar row with handle]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Lats, Mid Traps, Rhomboids]
+  secondary_muscles: [Rear Delts, Lower Traps, Biceps, Brachialis, Spinal Erectors]
+  joint_actions: [shoulder extension, elbow flexion, shoulder blade retraction]
+  patterns: [Horizontal Pull]
+  free_exercise_db_id: T-Bar_Row_with_Handle
+
+- name: Shrug (Barbell)
+  other_names: [barbell shrug, barbell shrugs, bb shrug]
+  equipment: barbell
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Upper Traps]
+  secondary_muscles: [Forearm Flexors]
+  joint_actions: [shoulder blade elevation]
+  patterns: []
+  free_exercise_db_id: Barbell_Shrug
+
+- name: Shrug (Dumbbell)
+  other_names: [dumbbell shrug, dumbbell shrugs, db shrug, db shrugs]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Upper Traps]
+  secondary_muscles: [Forearm Flexors]
+  joint_actions: [shoulder blade elevation]
+  patterns: []
+  free_exercise_db_id: Dumbbell_Shrug
+
+# Hanging with straight arms, pulling the shoulder blades down without bending the elbows.
+- name: Scapular Pull-up (Bodyweight)
+  other_names: [scapular pull up, scapular pull ups, scapular pull-up, scap pull up, scap pull-up]
+  equipment: bodyweight
+  measures: [reps]
+  type: isolation
+  primary_muscles: [Lower Traps]
+  secondary_muscles: [Lats, Forearm Flexors]
+  joint_actions: [shoulder blade depression]
+  patterns: []
+  free_exercise_db_id: Scapular_Pull-Up
+
+# A passive hang: grip is what gives out, and no joint moves.
+- name: Dead Hang (Bodyweight)
+  other_names: [dead hang, dead hangs, bar hang, passive hang]
+  equipment: bodyweight
+  measures: [time]
+  type: isolation
+  primary_muscles: [Forearm Flexors]
+  secondary_muscles: []
+  joint_actions: []
+  patterns: []
+
+# A pull-up into a dip in one rep.
+- name: Muscle-up (Bodyweight)
+  other_names: [muscle up, muscle ups, muscle-up, muscle-ups, bar muscle up, ring muscle up]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Lats]
+  secondary_muscles: [Biceps, Brachialis, Lower Traps, Mid/Lower Chest, Triceps Lateral/Medial Heads, Front Delts]
+  joint_actions: [shoulder extension, shoulder adduction, shoulder flexion, elbow flexion, elbow extension, shoulder blade depression]
+  patterns: [Vertical Pull, Vertical Push]
+  free_exercise_db_id: Muscle_Up
+
 # Biceps
 
 # Palms up: the biceps does most of the work, helped by the brachialis (the strongest elbow
@@ -590,6 +805,29 @@
   joint_actions: [elbow flexion]
   patterns: []
 
+# The bar fixes the palms up, so the forearm can't supinate during the rep.
+- name: Biceps Curl (Barbell)
+  other_names: [barbell curl, barbell curls, barbell bicep curl, barbell biceps curl, bb curl]
+  equipment: barbell
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Biceps]
+  secondary_muscles: [Brachialis, Brachioradialis]
+  joint_actions: [elbow flexion]
+  patterns: []
+  free_exercise_db_id: Barbell_Curl
+
+- name: Hammer Curl (Dumbbell)
+  other_names: [hammer curl, hammer curls, dumbbell hammer curl, db hammer curl]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Brachialis, Brachioradialis]
+  secondary_muscles: [Biceps]
+  joint_actions: [elbow flexion]
+  patterns: []
+  free_exercise_db_id: Hammer_Curls
+
 # Triceps
 #
 # Every triceps exercise grows all three heads, so both triceps muscles are primary on each. With
@@ -665,6 +903,17 @@
   secondary_muscles: []
   joint_actions: [elbow extension]
   patterns: []
+
+- name: Triceps Pressdown (Cable, Rope)
+  other_names: [rope pushdown, rope pressdown, tricep rope pushdown, triceps rope pushdown, rope tricep pushdown, cable rope pushdown, triceps pushdown - rope attachment]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Triceps Long Head, Triceps Lateral/Medial Heads]
+  secondary_muscles: []
+  joint_actions: [elbow extension]
+  patterns: []
+  free_exercise_db_id: Triceps_Pushdown_-_Rope_Attachment
 
 # Forearms
 
@@ -785,6 +1034,106 @@
   joint_actions: [hip flexion, trunk flexion]
   patterns: []
 
+# Holds: no joint moves, the trunk resists a force. Joint actions are empty and the pattern says
+# what's resisted.
+- name: Plank (Bodyweight)
+  other_names: [plank, planks, front plank, forearm plank]
+  equipment: bodyweight
+  measures: [time]
+  type: compound
+  primary_muscles: [Abs, Transverse Abdominis]
+  secondary_muscles: [Obliques]
+  joint_actions: []
+  patterns: [Anti-Extension]
+  free_exercise_db_id: Plank
+
+- name: Side Plank (Bodyweight)
+  other_names: [side plank, side planks, side bridge]
+  equipment: bodyweight
+  measures: [time]
+  type: compound
+  primary_muscles: [Obliques]
+  secondary_muscles: [Quadratus Lumborum, Transverse Abdominis, Abductors]
+  joint_actions: []
+  patterns: [Anti-Lateral Flexion]
+  free_exercise_db_id: Side_Bridge
+
+- name: Pallof Press (Cable)
+  other_names: [pallof press, cable pallof press, pallof]
+  equipment: cable
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Obliques, Transverse Abdominis]
+  secondary_muscles: [Abs]
+  joint_actions: []
+  patterns: [Anti-Rotation]
+  free_exercise_db_id: Pallof_Press
+
+- name: Woodchop (Cable)
+  other_names: [woodchop, wood chop, cable woodchop, cable wood chop, woodchopper, standing cable wood chop]
+  equipment: cable
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Obliques]
+  secondary_muscles: [Abs, Transverse Abdominis]
+  joint_actions: [trunk rotation]
+  patterns: [Rotation]
+  free_exercise_db_id: Standing_Cable_Wood_Chop
+
+- name: Dead Bug (Bodyweight)
+  other_names: [dead bug, dead bugs, deadbug]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Abs, Transverse Abdominis]
+  secondary_muscles: [Obliques, Hip Flexors]
+  joint_actions: []
+  patterns: [Anti-Extension]
+  free_exercise_db_id: Dead_Bug
+
+- name: Hollow Body Hold (Bodyweight)
+  other_names: [hollow body hold, hollow hold, hollow body]
+  equipment: bodyweight
+  measures: [time]
+  type: compound
+  primary_muscles: [Abs]
+  secondary_muscles: [Transverse Abdominis, Obliques, Hip Flexors]
+  joint_actions: []
+  patterns: [Anti-Extension]
+
+# Holding the legs up is the hip flexors and abs, as in the hanging leg raise; the arms press the
+# body up by pushing the shoulder blades down.
+- name: L-sit (Bodyweight)
+  other_names: [l sit, l-sit, lsit, l sit hold]
+  equipment: bodyweight
+  measures: [time]
+  type: compound
+  primary_muscles: [Hip Flexors, Abs]
+  secondary_muscles: [Rectus Femoris, Triceps Lateral/Medial Heads, Lower Traps]
+  joint_actions: [shoulder blade depression]
+  patterns: []
+
+- name: Hanging Knee Raise (Bodyweight)
+  other_names: [hanging knee raise, hanging knee raises, hanging knee tuck]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Hip Flexors, Abs]
+  secondary_muscles: [Obliques, Forearm Flexors]
+  joint_actions: [hip flexion, trunk flexion]
+  patterns: []
+
+- name: Crunch (Bodyweight)
+  other_names: [crunch, crunches, ab crunch, floor crunch]
+  equipment: bodyweight
+  measures: [reps]
+  type: isolation
+  primary_muscles: [Abs]
+  secondary_muscles: [Obliques]
+  joint_actions: [trunk flexion]
+  patterns: []
+  free_exercise_db_id: Crunches
+
 # Legs
 #
 # Squats and leg presses grow the vastus muscles, glute max and adductors, but not the rectus
@@ -886,7 +1235,7 @@
 
 # Pulled from the floor like a deadlift, caught on the shoulders in a squat.
 - name: Clean (Barbell)
-  other_names: [barbell clean, clean, power clean, squat clean]
+  other_names: [barbell clean, clean, squat clean]
   equipment: barbell
   measures: [weight, reps]
   type: compound
@@ -966,6 +1315,189 @@
   joint_actions: [hip adduction]
   patterns: []
 
+# Same muscles as the back squat: the bar position changes the torso angle, not which muscles
+# do the work.
+- name: Front Squat (Barbell)
+  other_names: [front squat, front squats, barbell front squat, front squat (clean grip)]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Vastus Muscles, Glute Max, Adductors]
+  secondary_muscles: [Spinal Erectors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Squat]
+  free_exercise_db_id: Front_Squat_Clean_Grip
+
+# free-exercise-db's goblet squat uses a kettlebell; ids link only when the equipment matches.
+- name: Goblet Squat (Dumbbell)
+  other_names: [goblet squat, goblet squats, dumbbell goblet squat, db goblet squat]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Vastus Muscles, Glute Max, Adductors]
+  secondary_muscles: []
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Squat]
+
+# On one leg the hip abductors keep the knee and pelvis level.
+- name: Pistol Squat (Bodyweight)
+  other_names: [pistol squat, pistol squats, pistol, single leg squat]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Vastus Muscles, Glute Max]
+  secondary_muscles: [Adductors, Abductors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Squat]
+
+- name: Step-up (Dumbbell)
+  other_names: [step up, step ups, step-up, step-ups, dumbbell step up, dumbbell step ups, db step up]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Vastus Muscles, Glute Max]
+  secondary_muscles: [Adductors]
+  joint_actions: [hip extension, knee extension]
+  patterns: [Lunge]
+  free_exercise_db_id: Dumbbell_Step_Ups
+
+- name: Reverse Lunge (Dumbbell)
+  other_names: [reverse lunge, reverse lunges, dumbbell reverse lunge, db reverse lunge, rear lunge, dumbbell rear lunge]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Vastus Muscles, Glute Max]
+  secondary_muscles: [Adductors]
+  joint_actions: [hip extension, knee extension]
+  patterns: [Lunge]
+  free_exercise_db_id: Dumbbell_Rear_Lunge
+
+# The wide stance works the quads more than the conventional deadlift (Escamilla 2002), and the
+# adductors pull the legs in against the stance, so both are primary.
+- name: Sumo Deadlift (Barbell)
+  other_names: [sumo deadlift, sumo deadlifts, sumo dl, barbell sumo deadlift]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Vastus Muscles, Adductors]
+  secondary_muscles: [Hamstrings, Spinal Erectors, Upper Traps, Forearm Flexors]
+  joint_actions: [hip extension, knee extension, hip adduction]
+  patterns: [Hinge]
+  free_exercise_db_id: Sumo_Deadlift
+
+# Standing inside the bar moves load from the lower back and hips to the knees (Swinton 2011), so
+# the quads are primary and the lower back secondary.
+- name: Deadlift (Trap Bar)
+  other_names: [trap bar deadlift, trap bar deadlifts, hex bar deadlift, hex bar deadlifts, trapbar deadlift]
+  equipment: trap bar
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Vastus Muscles, Hamstrings]
+  secondary_muscles: [Spinal Erectors, Adductors, Upper Traps, Forearm Flexors]
+  joint_actions: [hip extension, knee extension]
+  patterns: [Hinge]
+  free_exercise_db_id: Trap_Bar_Deadlift
+
+- name: Romanian Deadlift (Dumbbell)
+  other_names: [dumbbell romanian deadlift, dumbbell rdl, db rdl, db romanian deadlift]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Hamstrings, Glute Max]
+  secondary_muscles: [Spinal Erectors, Adductors]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+
+# On one leg the hip abductors keep the pelvis level.
+- name: Single-Leg Romanian Deadlift (Dumbbell)
+  other_names: [single leg romanian deadlift, single leg rdl, single-leg rdl, single leg deadlift, one leg rdl, dumbbell single leg rdl]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Hamstrings, Glute Max]
+  secondary_muscles: [Abductors, Spinal Erectors]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+
+- name: Good Morning (Barbell)
+  other_names: [good morning, good mornings, barbell good morning]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Hamstrings, Glute Max]
+  secondary_muscles: [Spinal Erectors, Adductors]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+  free_exercise_db_id: Good_Morning
+
+# free-exercise-db calls it Floor Glute-Ham Raise: kneeling, feet held, lowering by straightening
+# the knees with the hips kept straight.
+- name: Nordic Curl (Bodyweight)
+  other_names: [nordic curl, nordic curls, nordic hamstring curl, nordics, glute ham raise, floor glute ham raise, natural glute ham raise, floor glute-ham raise]
+  equipment: bodyweight
+  measures: [reps]
+  type: isolation
+  primary_muscles: [Hamstrings]
+  secondary_muscles: []
+  joint_actions: [knee flexion]
+  patterns: []
+  free_exercise_db_id: Floor_Glute-Ham_Raise
+
+- name: Hip Thrust (Barbell)
+  other_names: [hip thrust, hip thrusts, barbell hip thrust, barbell hip thrusts, bb hip thrust]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max]
+  secondary_muscles: [Hamstrings]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+  free_exercise_db_id: Barbell_Hip_Thrust
+
+- name: Hip Thrust (Machine)
+  other_names: [machine hip thrust, hip thrust machine, glute drive]
+  equipment: machine
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max]
+  secondary_muscles: [Hamstrings]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+
+- name: Glute Bridge (Bodyweight, Single Leg)
+  other_names: [single leg glute bridge, single-leg glute bridge, one leg glute bridge]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Glute Max]
+  secondary_muscles: [Hamstrings]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+  free_exercise_db_id: Single_Leg_Glute_Bridge
+
+- name: Glute Kickback (Cable)
+  other_names: [cable kickback, cable kickbacks, cable glute kickback, glute kickback, one legged cable kickback, one-legged cable kickback]
+  equipment: cable
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Glute Max]
+  secondary_muscles: [Hamstrings]
+  joint_actions: [hip extension]
+  patterns: []
+  free_exercise_db_id: One-Legged_Cable_Kickback
+
+# The Copenhagen adduction had among the highest adductor activity of the exercises tested
+# (Serner 2014); the body is held up sideways, so the obliques work too.
+- name: Copenhagen Plank (Bodyweight)
+  other_names: [copenhagen plank, copenhagen, copenhagen adduction, copenhagen side plank]
+  equipment: bodyweight
+  measures: [time]
+  type: compound
+  primary_muscles: [Adductors]
+  secondary_muscles: [Obliques]
+  joint_actions: [hip adduction]
+  patterns: [Anti-Lateral Flexion]
+
 # Calves: with the knee straight both calf muscles work; with the knee bent the gastrocnemius is
 # slack and the soleus does most of the work.
 
@@ -1028,3 +1560,275 @@
   secondary_muscles: []
   joint_actions: [ankle dorsiflexion]
   patterns: []
+
+# Carries
+
+# Grip and the upper traps hold the load; walking with it, the trunk and hips keep the body upright.
+- name: Farmer Carry (Dumbbell)
+  other_names: [farmer carry, farmers carry, farmer's carry, farmer walk, farmers walk, farmer's walk]
+  equipment: dumbbell
+  measures: [weight, distance]
+  type: compound
+  primary_muscles: [Forearm Flexors, Upper Traps]
+  secondary_muscles: [Obliques, Quadratus Lumborum]
+  joint_actions: []
+  patterns: [Carry]
+  free_exercise_db_id: Farmers_Walk
+
+# Load on one side: the quadratus lumborum and the obliques keep the trunk from bending toward it
+# (McGill 2009).
+- name: Suitcase Carry (Dumbbell)
+  other_names: [suitcase carry, suitcase carries, suitcase walk, single arm farmer carry]
+  equipment: dumbbell
+  measures: [weight, distance]
+  type: compound
+  primary_muscles: [Obliques, Quadratus Lumborum]
+  secondary_muscles: [Forearm Flexors, Upper Traps]
+  joint_actions: []
+  patterns: [Carry, Anti-Lateral Flexion]
+
+- name: Overhead Carry (Kettlebell)
+  other_names: [overhead carry, kettlebell overhead carry, waiter carry, waiter walk]
+  equipment: kettlebell
+  measures: [weight, distance]
+  type: compound
+  primary_muscles: [Front Delts, Upper Traps]
+  secondary_muscles: [Side Delts, Serratus, Triceps Lateral/Medial Heads, Obliques]
+  joint_actions: []
+  patterns: [Carry]
+
+# Jumps
+
+- name: Box Jump
+  other_names: [box jump, box jumps, front box jump]
+  equipment: box
+  measures: [reps]
+  type: compound
+  primary_muscles: [Glute Max, Vastus Muscles]
+  secondary_muscles: [Gastrocnemius, Soleus]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Jump]
+  free_exercise_db_id: Front_Box_Jump
+
+- name: Broad Jump
+  other_names: [broad jump, broad jumps, standing long jump, standing broad jump]
+  equipment: bodyweight
+  measures: [reps, distance]
+  type: compound
+  primary_muscles: [Glute Max, Vastus Muscles]
+  secondary_muscles: [Hamstrings, Gastrocnemius, Soleus]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Jump]
+  free_exercise_db_id: Standing_Long_Jump
+
+# Step off a box, land, and jump again at once.
+- name: Depth Jump
+  other_names: [depth jump, depth jumps, drop jump, drop jumps, linear depth jump]
+  equipment: box
+  measures: [reps]
+  type: compound
+  primary_muscles: [Glute Max, Vastus Muscles]
+  secondary_muscles: [Gastrocnemius, Soleus]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion]
+  patterns: [Jump]
+  free_exercise_db_id: Linear_Depth_Jump
+
+- name: Jump Rope
+  other_names: [jump rope, skipping, skipping rope, rope jumping, skip rope]
+  equipment: jump rope
+  measures: [time]
+  type: compound
+  primary_muscles: [Gastrocnemius, Soleus]
+  secondary_muscles: []
+  joint_actions: [ankle plantarflexion]
+  patterns: [Jump]
+  free_exercise_db_id: Rope_Jumping
+
+# Throws
+
+- name: Slam (Medicine Ball)
+  other_names: [medicine ball slam, medicine ball slams, ball slam, ball slams, med ball slam, overhead slam]
+  equipment: medicine ball
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Lats, Abs]
+  secondary_muscles: [Triceps Long Head]
+  joint_actions: [shoulder extension, trunk flexion]
+  patterns: [Throw]
+  free_exercise_db_id: Overhead_Slam
+
+- name: Chest Pass (Medicine Ball)
+  other_names: [medicine ball chest pass, med ball chest pass, chest pass]
+  equipment: medicine ball
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
+  secondary_muscles: [Front Delts]
+  joint_actions: [shoulder horizontal adduction, elbow extension]
+  patterns: [Throw]
+  free_exercise_db_id: Medicine_Ball_Chest_Pass
+
+- name: Rotational Throw (Medicine Ball)
+  other_names: [rotational medicine ball throw, medicine ball rotational throw, rotational throw, med ball rotational throw, side toss]
+  equipment: medicine ball
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Obliques]
+  secondary_muscles: [Abs, Glute Max]
+  joint_actions: [trunk rotation, hip internal rotation, hip external rotation]
+  patterns: [Throw, Rotation]
+
+# Swing the ball down between the legs and throw it backward over the head: a jump-like hip and
+# knee extension.
+- name: Overhead Backward Throw (Medicine Ball)
+  other_names: [overhead backward medicine ball throw, backward medicine ball throw, backward overhead throw, overhead back toss]
+  equipment: medicine ball
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings]
+  secondary_muscles: [Vastus Muscles, Spinal Erectors, Front Delts]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder flexion]
+  patterns: [Throw]
+  free_exercise_db_id: Backward_Medicine_Ball_Throw
+
+# Olympic lifts and kettlebell
+
+# Power versions are caught above a parallel squat, so they're Hinge only; full versions add Squat.
+- name: Power Clean (Barbell)
+  other_names: [power clean, power cleans, barbell power clean]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
+  secondary_muscles: [Upper Traps, Spinal Erectors, Gastrocnemius, Soleus, Adductors, Forearm Flexors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
+  patterns: [Hinge]
+  free_exercise_db_id: Power_Clean
+
+- name: Hang Clean (Barbell)
+  other_names: [hang clean, hang cleans, barbell hang clean]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
+  secondary_muscles: [Upper Traps, Spinal Erectors, Gastrocnemius, Soleus, Adductors, Forearm Flexors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion]
+  patterns: [Hinge, Squat]
+  free_exercise_db_id: Hang_Clean
+
+- name: Snatch (Barbell)
+  other_names: [snatch, barbell snatch, squat snatch, full snatch]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
+  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
+  patterns: [Hinge, Squat]
+  free_exercise_db_id: Snatch
+
+- name: Power Snatch (Barbell)
+  other_names: [power snatch, barbell power snatch]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
+  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Lower Traps, Gastrocnemius, Soleus, Adductors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, shoulder abduction, shoulder blade upward rotation]
+  patterns: [Hinge]
+  free_exercise_db_id: Power_Snatch
+
+- name: Clean and Jerk (Barbell)
+  other_names: [clean and jerk, clean & jerk, c&j, barbell clean and jerk]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings, Vastus Muscles]
+  secondary_muscles: [Upper Traps, Spinal Erectors, Front Delts, Triceps Lateral/Medial Heads, Gastrocnemius, Soleus, Adductors]
+  joint_actions: [hip extension, knee extension, ankle plantarflexion, shoulder blade elevation, elbow flexion, shoulder flexion, elbow extension]
+  patterns: [Hinge, Squat, Vertical Push]
+  free_exercise_db_id: Clean_and_Jerk
+
+# Two-handed. free-exercise-db only has the one-arm swing.
+- name: Swing (Kettlebell)
+  other_names: [kettlebell swing, kettlebell swings, kb swing, kb swings, russian swing]
+  equipment: kettlebell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings]
+  secondary_muscles: [Spinal Erectors, Forearm Flexors]
+  joint_actions: [hip extension]
+  patterns: [Hinge]
+
+- name: Snatch (Kettlebell)
+  other_names: [kettlebell snatch, kettlebell snatches, kb snatch, one arm kettlebell snatch, one-arm kettlebell snatch]
+  equipment: kettlebell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Glute Max, Hamstrings]
+  secondary_muscles: [Spinal Erectors, Upper Traps, Front Delts, Forearm Flexors]
+  joint_actions: [hip extension, shoulder blade elevation, shoulder flexion, shoulder blade upward rotation]
+  patterns: [Hinge]
+  free_exercise_db_id: One-Arm_Kettlebell_Snatch
+
+# Lying to standing with a weight held overhead; the obliques lift the trunk to the side and the
+# shoulder holds the weight the whole time.
+- name: Turkish Get-up (Kettlebell)
+  other_names: [turkish get up, turkish get-up, turkish getup, tgu, kettlebell turkish get up, kettlebell turkish get-up (lunge style)]
+  equipment: kettlebell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Obliques, Front Delts]
+  secondary_muscles: [Abs, Rotator Cuff, Serratus, Triceps Lateral/Medial Heads, Glute Max, Vastus Muscles]
+  joint_actions: [trunk flexion, trunk rotation, hip extension, knee extension]
+  patterns: [Lunge]
+  free_exercise_db_id: Kettlebell_Turkish_Get-Up_Lunge_style
+
+# Neck
+
+# Lying face up with a plate on the forehead.
+- name: Neck Curl (Plate)
+  other_names: [neck curl, neck curls, plate neck curl, neck flexion, lying neck flexion, lying face up plate neck resistance]
+  equipment: other
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Neck Flexors]
+  secondary_muscles: []
+  joint_actions: [neck flexion]
+  patterns: []
+  free_exercise_db_id: Lying_Face_Up_Plate_Neck_Resistance
+
+# Lying face down with a plate behind the head. Upper Traps also extend the neck.
+- name: Neck Extension (Plate)
+  other_names: [plate neck extension, lying neck extension, lying face down plate neck resistance]
+  equipment: other
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Neck Extensors]
+  secondary_muscles: [Upper Traps]
+  joint_actions: [neck extension]
+  patterns: []
+  free_exercise_db_id: Lying_Face_Down_Plate_Neck_Resistance
+
+# Lying on the side with a plate on the side of the head; the flexors and extensors on that side
+# bend the neck together.
+- name: Lateral Neck Flexion (Plate)
+  other_names: [lateral neck flexion, side neck raise, side lying neck raise, plate lateral neck flexion]
+  equipment: other
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Neck Flexors, Neck Extensors]
+  secondary_muscles: [Upper Traps]
+  joint_actions: [neck lateral flexion]
+  patterns: []
+
+- name: Neck Extension (Harness)
+  other_names: [neck harness, neck harness extension, head harness, harness neck extension, seated head harness neck resistance]
+  equipment: other
+  measures: [weight, reps]
+  type: isolation
+  primary_muscles: [Neck Extensors]
+  secondary_muscles: [Upper Traps]
+  joint_actions: [neck extension]
+  patterns: []
+  free_exercise_db_id: Seated_Head_Harness_Neck_Resistance
