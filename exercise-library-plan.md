@@ -26,10 +26,9 @@ recovery tracking all read from the library instead of from typed names. With li
 
 | Field | How many | Required | Values |
 |---|---|---|---|
-| Name | one | yes | "Barbell Bench Press" |
+| Name | one | yes | "Bench Press (Barbell)" |
 | Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
-| Parent | one | no | the family it belongs to: "Neutral Grip Lat Pulldown" belongs to "Lat Pulldown" |
-| Equipment | one | yes | barbell, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
+| Equipment | one | yes | barbell, ez bar, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
 | Type | one | no | Compound, Isolation |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
@@ -130,9 +129,16 @@ coaching consensus (Dan John, John Rusin) and the anti-movement model for core t
 
 ### 3. Variations (approved 2026-10-11)
 
-Grip, stance, arm and angle variations are their own exercises ("Neutral Grip Lat Pulldown"),
-linked to a parent ("Lat Pulldown"), as Hevy does. Each variation has its own muscles (incline
-press: Upper Chest primary), and Progress can show the family together or apart.
+Grip, stance, arm and angle variations are their own exercises ("Lat Pulldown (Cable, Neutral
+Grip)"), as Hevy does. Each variation has its own muscles (incline press: Upper Chest primary).
+The family is the name before the brackets, so Progress can show "Lat Pulldown" together or
+apart without a parent field (dropped 2026-10-11: it duplicated the name, and grouping
+differently named exercises like Preacher Curl and Bayesian Curl would mix loads that don't
+compare). It can be added later as one optional column.
+
+Range of motion and pauses are not variations: bottom-half reps are partial reps on the full
+exercise, and a pause is tempo. The app has no tempo input yet (`rep_tempo` is free text filled
+only by the old text extraction); adding one is a separate change.
 
 ### 4. Where the library comes from
 
@@ -192,7 +198,10 @@ Base branch `exercises/library` from `dev`, a sub-branch per step (`exercises/li
 squashed into the base; the base merges into `dev` when every step is done and the suite is green.
 
 - [x] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
-- [ ] 2. Library data: script from free-exercise-db, reviewed list of 150 to 200.
+- [ ] 2. Library data: `src/traininglogs/db/exercise_library.yaml`, built from the names people
+      log (batch 1: the 107 local names merged into exercises; batch 2: gaps up to 150 to 200,
+      found in free-exercise-db, which is also the cross-check for muscles). Names are movement
+      first, equipment in brackets: "Lateral Raise (Cable)". No abbreviations, Title Case.
 - [ ] 3. Schema and loading: new fields, the lists as checks, library loaded; tests.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
@@ -209,11 +218,25 @@ Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
 2026-10-11: plan written and committed on `exercises/library` (from dev at `d5481a4`, local
 only, not pushed). Step 1 done: sections 1 to 3 approved (fields, 36 muscles in 17 groups, 44
-joint actions, 15 patterns, variations as their own exercises with a parent). Nothing built.
+joint actions, 15 patterns, variations as their own exercises, family from the name). Nothing built.
 
-Next: step 2, library data. Cut `exercises/library-2-data`, look at free-exercise-db's fields and
-muscle names, and propose how they map onto our lists before writing the script. Its 17 muscles
-are coarser than ours (no chest or trap split, no brachialis), so some mapping will be by hand.
+Step 2 in progress on `exercises/library-2-data`. Batch 1 done: Apoorva's 107 names merged into
+84 exercises in `src/traininglogs/db/exercise_library.yaml`, every field filled and checked
+against the approved lists; sources in `ACKNOWLEDGMENTS.md`. 100 of the 107 names link through
+other names; the 7 generic ones (walking lunge, shoulder press, calf raise, chest-supported row,
+incline press, bicep curl, tricep extension) are matched by hand in step 5's mapping file.
+
+Next: batch 2, the gaps up to 150 to 200 (dips, hip thrust, carries, jumps, throws, Olympic
+lifts, neck, serratus, rotator cuff, obliques), searched in free-exercise-db. Present them by
+region for review before writing, one exercise per row.
+
+Rules settled while writing batch 1 (also in the file's header):
+- Other names only hold spellings that can mean just that exercise; generic names link only
+  where there's a clear convention (bench press, squat, deadlift, lateral raise).
+- Equipment is bodyweight only when nothing is added; weighted versions use other.
+- Forearm Flexors only where grip commonly limits the set.
+- Pauses are tempo, bottom-half reps are partial reps. Follow-up outside this plan: the app has
+  no tempo input.
 
 Context for the next session:
 - Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
