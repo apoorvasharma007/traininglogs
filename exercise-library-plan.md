@@ -234,7 +234,8 @@ squashed into the base; the base merges into `dev` when every step is done and t
       Every exercise gets `free_exercise_db_id` where they have a match (batch 1 filled in
       afterwards), reviewed by Apoorva.
 - [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
-      loaded from a pinned commit, then the library with its foreign key; tests.
+      loaded from a pinned commit, then the library with its foreign key, unique (one of
+      theirs links to one of ours at most); tests.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
@@ -272,8 +273,9 @@ region for review before writing, one exercise per row.
 2026-10-11 (later): batch 2 names approved: 77 in 14 regions (the proposed 82 minus
 conditioning, dropped because its sets would distort weekly muscle totals; a follow-up). Equipment
 gained trap bar, medicine ball, sled, box and jump rope. `free_exercise_db_id` approved (section
-4). Next: fields per region, including `free_exercise_db_id`, starting with Chest; then fill the
-id in for batch 1. Matching rule: search their names and instructions, read the description,
+4). Chest written (8, 92 in the file). Next: Shoulders, then the other regions in the order
+below, including `free_exercise_db_id`; then fill the id in for batch 1. Each id links to one
+exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
 and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
 Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
 github.com/yuhonas/free-exercise-db. The approved names (free-exercise-db's own names go in other_names):

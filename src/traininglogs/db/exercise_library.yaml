@@ -17,7 +17,8 @@
 #   joint_actions      "<joint> <action>", e.g. "shoulder horizontal adduction"
 #   patterns           empty for isolation exercises
 #   free_exercise_db_id  the matching free-exercise-db id, e.g. "Barbell_Hip_Thrust"; left out
-#                      when they have no match
+#                      when they have no match. Each id links to one exercise at most, so
+#                      variations they lack ("Push-up (Weighted)") have none.
 #
 # Range of motion and pauses are not variations. Bottom-half reps are logged on the full exercise
 # as partial reps; a pause is logged as tempo (see Shrug (Cable)).
@@ -91,6 +92,101 @@
   secondary_muscles: [Upper Chest, Front Delts]
   joint_actions: [shoulder horizontal adduction]
   patterns: []
+
+- name: Bench Press (Dumbbell)
+  other_names: [dumbbell bench press, db bench press, dumbbell bench, db bench, flat dumbbell press, flat db press]
+  equipment: dumbbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
+  joint_actions: [shoulder horizontal adduction, elbow extension]
+  patterns: [Horizontal Push]
+  free_exercise_db_id: Dumbbell_Bench_Press
+
+# Grip width barely changes chest activity; a narrow grip raises triceps activity
+# (Saeterbakken 2021), so the triceps are primary here.
+- name: Bench Press (Barbell, Close Grip)
+  other_names: [close grip bench press, close-grip bench press, close grip bench, close-grip barbell bench press, cgbp]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
+  secondary_muscles: [Upper Chest, Front Delts]
+  joint_actions: [shoulder horizontal adduction, shoulder flexion, elbow extension]
+  patterns: [Horizontal Push]
+  free_exercise_db_id: Close-Grip_Barbell_Bench_Press
+
+# Barbell incline benches are fixed at about 30 to 45 degrees; upper chest activity peaks at 30
+# (Rodríguez-Ridao 2020), so no angle in the name and only the upper chest is primary.
+- name: Incline Press (Barbell)
+  other_names: [incline bench press, incline barbell press, incline barbell bench press, incline bench, barbell incline bench press]
+  equipment: barbell
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Upper Chest]
+  secondary_muscles: [Mid/Lower Chest, Front Delts, Triceps Lateral/Medial Heads]
+  joint_actions: [shoulder flexion, shoulder horizontal adduction, elbow extension]
+  patterns: [Horizontal Push]
+  free_exercise_db_id: Barbell_Incline_Bench_Press_-_Medium_Grip
+
+- name: Chest Press (Machine)
+  other_names: [chest press, machine chest press, seated chest press, machine bench press]
+  equipment: machine
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads]
+  joint_actions: [shoulder horizontal adduction, elbow extension]
+  patterns: [Horizontal Push]
+  free_exercise_db_id: Machine_Bench_Press
+
+# Chest, front delt and triceps activity match the bench press at comparable loads (Calatayud
+# 2015). The shoulder blades protract, so Serratus is secondary; holding the body straight isn't
+# the trained motion, so the abs aren't listed.
+- name: Push-up (Bodyweight)
+  other_names: [push up, push ups, push-up, push-ups, pushup, pushups]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads, Serratus]
+  joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
+  patterns: [Horizontal Push]
+  free_exercise_db_id: Pushups
+
+- name: Push-up (Weighted)
+  other_names: [weighted push up, weighted push ups, weighted push-up, weighted push-ups, weighted pushup, weighted pushups]
+  equipment: other
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest]
+  secondary_muscles: [Upper Chest, Front Delts, Triceps Lateral/Medial Heads, Serratus]
+  joint_actions: [shoulder horizontal adduction, elbow extension, shoulder blade protraction]
+  patterns: [Horizontal Push]
+
+# The chest and triceps are the main muscles (McKenzie 2022). Pressing down along the body is a
+# Vertical Push.
+- name: Dip (Bodyweight)
+  other_names: [dip, dips, parallel bar dip, parallel bar dips, bar dip, bar dips]
+  equipment: bodyweight
+  measures: [reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
+  secondary_muscles: [Front Delts]
+  joint_actions: [shoulder flexion, elbow extension, shoulder blade depression]
+  patterns: [Vertical Push]
+  free_exercise_db_id: Parallel_Bar_Dip
+
+- name: Dip (Weighted)
+  other_names: [weighted dip, weighted dips, weighted bar dip, weighted parallel bar dip]
+  equipment: other
+  measures: [weight, reps]
+  type: compound
+  primary_muscles: [Mid/Lower Chest, Triceps Lateral/Medial Heads]
+  secondary_muscles: [Front Delts]
+  joint_actions: [shoulder flexion, elbow extension, shoulder blade depression]
+  patterns: [Vertical Push]
 
 # Shoulders
 

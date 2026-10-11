@@ -49,6 +49,25 @@ entry says what it decided in the library.
 - *Assessment of tibial rotation and meniscal movement using kinematic magnetic resonance
   imaging.* [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4237875/)
   Knee internal and external rotation are joint actions.
+- Saeterbakken AH, et al. *The effect of grip width on muscle strength and electromyographic
+  activity in bench press among novice- and resistance-trained men.* International Journal of
+  Environmental Research and Public Health, 2021.
+  [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC8296276/)
+  The close grip bench press has the triceps as primary alongside the chest.
+- Calatayud J, Borreani S, Colado JC, Martin F, Tella V, Andersen LL. *Bench press and push-up at
+  comparable levels of muscle activity results in similar strength gains.* Journal of Strength
+  and Conditioning Research 29(1):246-253, 2015.
+  [Universitat de València](https://producciocientifica.uv.es/documentos/5ef106d0299952068d595025)
+  Push-ups list the same muscles as the bench press.
+- Ludewig PM, Hoff MS, Osowski EE, Meschke SA, Rundquist PJ. *Relative balance of serratus
+  anterior and upper trapezius muscle activity during push-up exercises.* American Journal of
+  Sports Medicine, 2004. [PubMed](https://pubmed.ncbi.nlm.nih.gov/14977678/)
+  Push-ups list the serratus.
+- McKenzie A, Crowley-McHattan Z, Meir R, Whitting J, Volschenk W. *Fatigue increases muscle
+  activations but does not change maximal joint angles during the bar dip.* International
+  Journal of Environmental Research and Public Health, 2022.
+  [MDPI](https://www.mdpi.com/1660-4601/19/21/14390)
+  Dips have the chest and triceps as primary.
 
 ## Anatomy references
 
