@@ -22,46 +22,117 @@ recovery tracking all read from the library instead of from typed names. With li
 
 ## Design (each part needs Apoorva's approval before it's built)
 
-### 1. What an exercise records
+### 1. What an exercise records (approved 2026-10-11)
 
-| Field | Values |
+| Field | How many | Required | Values |
+|---|---|---|---|
+| Name | one | yes | "Barbell Bench Press" |
+| Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
+| Parent | one | no | the family it belongs to: "Neutral Grip Lat Pulldown" belongs to "Lat Pulldown" |
+| Equipment | one | yes | barbell, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
+| Measures | one or more | yes | weight, reps, time, distance |
+| Type | one | no | Compound, Isolation |
+| Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
+| Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
+| Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
+| Patterns | any number | no | from the pattern list; isolation exercises have none |
+
+Library exercises have every field filled; a person's own exercises may leave the optional ones
+empty.
+
+**Measures** are which of the set's existing columns (`weight_kg`, reps, `duration_seconds`,
+`distance_meters`) the exercise uses: bench press is weight and reps, a weighted plank weight and
+time, a farmer carry weight and distance, a run distance and time. The set row shows those boxes
+by default; any box can still be filled. Progress picks a headline number per combination
+(heaviest set or estimated 1RM, most reps, longest hold, heaviest load over the distance, pace);
+the exact rule is decided in step 6.
+
+**Counting sets per muscle:** a set counts 1 for each primary muscle and 0.5 for each secondary
+muscle, worked out when read, never stored. 3 sets of bench press give the chest 3 and the
+triceps 1.5. This is the "fractional" method that fit best in Pelland et al. 2024 (meta-regression
+of 67 studies). Weekly sets per muscle and recovery tracking read these totals.
+
+### 2. The fixed lists (approved 2026-10-11)
+
+**Muscles (approved 2026-10-11): 17 groups, 36 muscles.** An exercise's primary and secondary
+muscles are muscles; Progress and recovery total them by group. Checked against anatomy
+references (StatPearls, Kenhub, TeachMeAnatomy) and EMG studies.
+
+| Group | Muscles |
 |---|---|
-| name | "Barbell Bench Press" |
-| other names | how people write it: "bench", "bench press", "bb bench" |
-| equipment | barbell, dumbbell, kettlebell, cable, machine, smith machine, band, bodyweight, other |
-| primary muscle | exactly one, from the muscle list |
-| secondary muscles | any number, from the muscle list |
-| joint actions | from the joint action list, e.g. shoulder horizontal adduction, elbow extension |
-| pattern | from the pattern list, e.g. horizontal push |
-| measure | weight and reps, bodyweight reps, time, or distance (decides what Progress shows) |
+| Chest | Upper Chest, Mid/Lower Chest |
+| Shoulders | Front Delts, Side Delts, Rear Delts, Rotator Cuff |
+| Serratus | Serratus |
+| Lats | Lats |
+| Upper Back | Upper Traps, Mid Traps, Lower Traps, Rhomboids |
+| Lower Back | Spinal Erectors, Quadratus Lumborum |
+| Biceps | Biceps, Brachialis |
+| Triceps | Triceps Long Head, Triceps Lateral/Medial Heads |
+| Forearms | Brachioradialis, Forearm Flexors, Forearm Extensors |
+| Core | Abs, Obliques, Transverse Abdominis |
+| Glutes | Glute Max |
+| Hips | Abductors, Adductors, Hip Flexors |
+| Quads | Rectus Femoris, Vastus Muscles |
+| Hamstrings | Hamstrings |
+| Calves | Gastrocnemius, Soleus |
+| Shins | Tibialis |
+| Neck | Neck Flexors, Neck Extensors |
 
-### 2. The fixed lists (proposed, to approve item by item)
+What each one covers, where it isn't obvious:
+- Upper Chest is the clavicular head; Mid/Lower Chest is the sternocostal head (most of the
+  muscle) and the small abdominal part.
+- Lats include teres major. Rotator Cuff is supraspinatus, infraspinatus, teres minor and
+  subscapularis.
+- Upper Traps also extend the neck; they stay under Upper Back.
+- Brachialis isn't part of the biceps; the group keeps the name people search for.
+- Brachioradialis is a forearm muscle that bends the elbow (hammer and reverse curls).
+- Glute Max only; Abductors are glute med, glute min and TFL. Hip Flexors are iliopsoas and
+  sartorius; rectus femoris counts under Quads.
+- Triceps Long Head and Rectus Femoris are split out because they cross a second joint
+  (shoulder, hip).
+- Neck Flexors: sternocleidomastoid. Neck Extensors: splenius and the deep neck extensors.
 
-**Muscles (23):** chest; front delts, side delts, rear delts, rotator cuff; lats, upper back,
-traps, lower back; biceps, triceps, forearm flexors, forearm extensors; abs, obliques; glutes,
-hip flexors, adductors, abductors, quads, hamstrings, calves, tibialis; neck.
+**Joint actions (approved 2026-10-11): 11 joints, 44 actions.** Plain name, anatomical joint in
+brackets.
 
-**Joint actions (standard anatomy):**
-- shoulder: flexion, extension, abduction, adduction, horizontal abduction, horizontal adduction,
-  internal rotation, external rotation
-- shoulder blade: elevation, depression, protraction, retraction
-- elbow: flexion, extension; forearm: pronation, supination
-- wrist: flexion, extension, radial deviation, ulnar deviation
-- spine: flexion, extension, side bending, rotation
-- hip: flexion, extension, abduction, adduction, internal rotation, external rotation
-- knee: flexion, extension
-- ankle: dorsiflexion, plantarflexion; foot: inversion, eversion
-- neck: flexion, extension, side bending, rotation
+| Joint | Actions |
+|---|---|
+| Shoulder (glenohumeral) | flexion, extension, abduction, adduction, horizontal abduction, horizontal adduction, internal rotation, external rotation |
+| Shoulder blade (scapulothoracic) | elevation, depression, protraction, retraction, upward rotation, downward rotation |
+| Elbow | flexion, extension |
+| Forearm (radioulnar) | pronation, supination |
+| Wrist | flexion, extension, radial deviation, ulnar deviation |
+| Trunk (thoracic and lumbar spine) | flexion, extension, lateral flexion, rotation |
+| Neck (cervical spine) | flexion, extension, lateral flexion, rotation |
+| Hip | flexion, extension, abduction, adduction, internal rotation, external rotation |
+| Knee | flexion, extension, internal rotation, external rotation |
+| Ankle (talocrural) | dorsiflexion, plantarflexion |
+| Foot (subtalar) | inversion, eversion |
 
-**Patterns (10):** squat, hinge, lunge, horizontal push, vertical push, horizontal pull,
-vertical pull, carry, rotation and anti-rotation, isolation.
+Knee rotation happens only with the knee bent (about 20 to 30° inward, 30 to 40° outward); it's
+trained in mobility and knee rehab work, such as seated tibial rotations.
 
-### 3. Variations
+**Patterns (approved 2026-10-11): 15.** No single scientific standard exists; this follows
+coaching consensus (Dan John, John Rusin) and the anti-movement model for core training.
 
-Open decision. Either grip, stance, arm and angle variations are their own exercises ("Neutral
-Grip Lat Pulldown"), as Hevy does, or one exercise with a variation picked when logging. Proposal:
-own exercises, linked to a parent ("Lat Pulldown"), so Progress can show the family together or
-apart.
+| Kind | Patterns |
+|---|---|
+| Lower body | Squat, Hinge, Lunge |
+| Push | Horizontal Push, Vertical Push |
+| Pull | Horizontal Pull, Vertical Pull |
+| Whole body | Carry, Jump, Throw |
+| Trunk | Rotation, Anti-Rotation, Anti-Extension, Anti-Flexion, Anti-Lateral Flexion |
+
+- Compound or isolation is the Type field, not a pattern. Isolation exercises have no pattern;
+  their joint actions describe them (a crunch is trunk flexion).
+- An exercise can have more than one pattern: a thruster is Squat and Vertical Push.
+- No Locomotion pattern: sprints, crawls and sled pushes have no pattern.
+
+### 3. Variations (approved 2026-10-11)
+
+Grip, stance, arm and angle variations are their own exercises ("Neutral Grip Lat Pulldown"),
+linked to a parent ("Lat Pulldown"), as Hevy does. Each variation has its own muscles (incline
+press: Upper Chest primary), and Progress can show the family together or apart.
 
 ### 4. Where the library comes from
 
@@ -72,8 +143,8 @@ list. Nothing is fetched at runtime.
 
 ### 5. A person's own exercises
 
-Allowed, for anything the library lacks. Creating one asks for the primary muscle (required) and
-equipment; the rest is optional. Own exercises count in Progress and recovery like library ones.
+Allowed, for anything the library lacks. Creating one asks for the primary muscles, equipment and
+measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
 Names people create are reviewed from time to time and added to the library.
 
 ### 6. Logging
@@ -85,8 +156,8 @@ mockup first, approved before it's built.
 
 ### 7. Existing logs
 
-Every `user_exercises` entry gets linked to a library exercise (or becomes an own exercise with a
-primary muscle). A mapping file lists each name and its match; Apoorva reviews it. Stored names are
+Every `user_exercises` entry gets linked to a library exercise (or becomes an own exercise with its
+primary muscles). A mapping file lists each name and its match; Apoorva reviews it. Stored names are
 never changed, only links. Run as a dry run on a copy of prod first, then on prod in one
 transaction with a backup and same-session approval.
 
@@ -120,10 +191,11 @@ old app have updated:
 Base branch `exercises/library` from `dev`, a sub-branch per step (`exercises/library-N-<step>`),
 squashed into the base; the base merges into `dev` when every step is done and the suite is green.
 
-- [ ] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
+- [x] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
 - [ ] 2. Library data: script from free-exercise-db, reviewed list of 150 to 200.
 - [ ] 3. Schema and loading: new fields, the lists as checks, library loaded; tests.
-- [ ] 4. Own exercises: `POST /exercises` with a required primary muscle; tests.
+- [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
+      measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
 - [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; tests.
 - [ ] 7. Picker: mockup approved, then built, with history prefill on pick; tests, checked on
@@ -136,10 +208,12 @@ Then the guide (`guide-plan.md`): clips recorded on the new picker.
 ## ▶ Resume here
 
 2026-10-11: plan written and committed on `exercises/library` (from dev at `d5481a4`, local
-only, not pushed). Nothing built.
+only, not pushed). Step 1 done: sections 1 to 3 approved (fields, 36 muscles in 17 groups, 44
+joint actions, 15 patterns, variations as their own exercises with a parent). Nothing built.
 
-Next: Apoorva reviews sections 1 to 3 (fields, the three lists, variations), item by item; the
-muscle list first. Then step 2.
+Next: step 2, library data. Cut `exercises/library-2-data`, look at free-exercise-db's fields and
+muscle names, and propose how they map onto our lists before writing the script. Its 17 muscles
+are coarser than ours (no chest or trap split, no brachialis), so some mapping will be by hand.
 
 Context for the next session:
 - Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
