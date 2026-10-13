@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- One exercise with an impossible value (an RPE of 11, a negative weight) no longer aborts the
+  whole extraction: that exercise becomes a flagged placeholder and the others keep their data.
+  A model-service outage (timeout, dropped connection, 5xx) does the same for its one exercise.
 - A finished session the server refuses no longer holds back the ones behind it. It stays on the
   phone, set apart, and the rest send. A session left open for more than a day is saved as 24
   hours instead of being refused.
