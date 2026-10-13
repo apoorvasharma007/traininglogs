@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A fix, edit or confirm that sends an unreadable `extract` now gets a 422 saying so, not a 500.
 - Save Session now says so when the phone can't store the finished session (for example, storage
   is full), and the session stays open. Before, the button did nothing.
 - On the review screen, Confirm no longer stays stuck on "Saving…" when naming the session

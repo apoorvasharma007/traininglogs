@@ -10,11 +10,11 @@ Method: base branch `fix/audit-bugs` from `dev`; one sub-branch per step, squash
 - [x] 2 `fix/audit-bugs-2-assemble`: #4 and #6 `assemble()` turns ValidationError and provider errors into placeholders
 - [x] 3 `fix/audit-bugs-3-review-save`: #8 Confirm stuck on "Saving…", #10 double-blur loses a correction
 - [x] 4 `fix/audit-bugs-4-save-session`: #11 Save Session shows an error when the IndexedDB write fails
-- [ ] 5 `fix/audit-bugs-5-request-422`: #3 bad `extract` body returns 422, not 500
+- [x] 5 `fix/audit-bugs-5-request-422`: #3 bad `extract` body returns 422, not 500
 
 ## ▶ Resume here
 
-Steps 1 to 4 squashed into `fix/audit-bugs`. Suites green: 739 pytest, 143 vitest (a full vitest run occasionally times out one UI test under load; it passes on rerun). Next: step 5 on `fix/audit-bugs-5-request-422`.
+All 5 steps squashed into `fix/audit-bugs`. Suites green: 742 pytest, 143 vitest (a full vitest run occasionally times out one UI test under load; it passes on rerun). Next: Apoorva says yes, then merge `fix/audit-bugs` into `dev` (not done). Deferred: #1, #2, the unverified candidates in `audit-bugs.md`. Out of scope: scripts meant to be deleted (#5, #7, `eval_arms.py`).
 
 AuthenticationError is deliberately still raised raw: a bad key should be loud, not a placeholder on every exercise.
 

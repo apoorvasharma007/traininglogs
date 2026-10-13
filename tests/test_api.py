@@ -788,6 +788,21 @@ class TestEditExtraction:
         assert r.status_code == 422
 
 
+class TestUnreadableExtractSent:
+    """An `extract` the phone sends back that isn't a valid reading is the caller's mistake: 422, not 500."""
+
+    @pytest.mark.parametrize("path,body", [
+        ("confirm", {"extract": {}}),
+        ("correct", {"extract": {}, "instruction": "fix it"}),
+        ("edit", {"extract": {}, "edits": [{"path": "", "field": "focus", "value": "x"}]}),
+    ])
+    def test_is_refused_with_422(self, client, db_conn, path, body) -> None:
+        extraction_id = TestEditExtraction._insert_extraction(None, db_conn, f"unreadable extract {path}")
+        r = client.post(f"/extractions/{extraction_id}/{path}", json=body, headers=HEADERS)
+        assert r.status_code == 422
+        assert r.json()["detail"] == "The extract sent isn't a valid reading of a session."
+
+
 class TestWebUi:
     """The app (frontend/dist, built by `npm run build`) is served by the API itself (same origin,
     one deploy), and mounted after every API route so it can't shadow one. index.html is never
