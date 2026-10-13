@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On the review screen, Confirm no longer stays stuck on "Saving…" when naming the session
+  fails, and two quick edits in a row no longer lose the first one.
 - One exercise with an impossible value (an RPE of 11, a negative weight) no longer aborts the
   whole extraction: that exercise becomes a flagged placeholder and the others keep their data.
   A model-service outage (timeout, dropped connection, 5xx) does the same for its one exercise.
