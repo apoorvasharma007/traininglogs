@@ -483,8 +483,8 @@ const num = (text: string): number | null => {
 
 /** What Finish sends: only ticked sets, and only exercises with at least one. */
 export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
-  // At least a minute: a session's duration has to be positive.
-  const minutes = Math.max(1, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000))
+  // Between a minute and a day: the server refuses a duration outside that.
+  const minutes = Math.min(1440, Math.max(1, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000)))
   return {
     client_id: s.clientId,
     date: s.date,

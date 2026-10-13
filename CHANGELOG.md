@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A finished session the server refuses no longer holds back the ones behind it. It stays on the
+  phone, set apart, and the rest send. A session left open for more than a day is saved as 24
+  hours instead of being refused.
+
 ## [5.0.0] - 2026-10-11
 
 ### Added

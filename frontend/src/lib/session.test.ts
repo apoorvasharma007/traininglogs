@@ -172,6 +172,13 @@ describe('a movement amount the rule cannot read', () => {
   })
 })
 
+describe('session length', () => {
+  it('never sends more than a day, for a session left open', () => {
+    const s = startFromWorkout(workout, 't', 'p1', [], now)
+    expect(toRequest(s, new Date(2026, 9, 7, 10, 0)).duration_minutes).toBe(1440)
+  })
+})
+
 describe('warm-up nudge', () => {
   it('records the minutes since the timer started, within 1 and 5', () => {
     const s = { ...startFromWorkout(workout, 't', 'p1', [], now), cardioStartedAt: new Date(2026, 9, 4, 10, 0).toISOString() }
