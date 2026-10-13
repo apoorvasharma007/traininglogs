@@ -8,7 +8,7 @@ them instead of repeating them here.
 
 [`roadmap.md`](roadmap.md) is the forward plan. Start at its `▶ Resume here` section: it has the
 current state and what's safe to run. A task that spans sessions gets its own plan file in the
-repo root with a `▶ Resume here` section of its own, like `docs-overhaul-plan.md`. Finished and
+repo root with a `▶ Resume here` section of its own, like `exercise-library-plan.md`. Finished and
 superseded plans move to [`archived/plans/`](archived/plans/).
 
 ## Rules that cost money or data
