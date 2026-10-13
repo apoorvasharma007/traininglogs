@@ -194,7 +194,7 @@ app build: once the app has loaded and gone idle, it fetches the library and the
 exercises and saves them on the phone. Later opens ask the server whether the library has changed;
 the answer is "no change" unless we edited it. Searching never goes to the server. A new own
 exercise is saved on the phone and sent to the server. Picking one fills last time's
-sets in grey (history prefill). Not found: "Add Your Own". The picker's look is a visual change:
+sets in grey (history prefill). Not found: "+ Custom". The picker's look is a visual change:
 mockup first, approved before it's built.
 
 ### 7. Existing logs
@@ -215,7 +215,7 @@ old app have updated:
 | `GET /exercises/last?name=` | `GET /exercises/recent?id=` |
 | `GET /exercises/{name}/history` | `GET /exercises/{id}/history` |
 | none | `GET /exercises` (the library and your own, for the phone) |
-| none | `POST /exercises` (add your own) |
+| none | `POST /exercises` (a custom exercise) |
 | `GET /progress/lifts`, `PUT /me/key-lifts` | Key Lifts read and saved under one path |
 
 ### 9. v1 scope (agreed 2026-10-11)
@@ -284,13 +284,22 @@ Built and tried locally against the dev copy of prod before staging. On top of s
 - **Picker**: the exercise name box searches as you type, on the phone, with a list under it;
   nothing shows before typing. Picking a row is the link. Same box in sessions and workout
   plans. Agreed 2026-10-12:
-  - Results: library exercises, your custom exercises, and your unrecognized names (grey
-    "Unrecognized" tag; picking one logs under it, and the My Exercises pill nudges you later).
+  - Results: library exercises, your custom exercises (grey "Custom" tag, as on My Exercises),
+    and your unrecognized names (grey "Unrecognized" tag; picking one logs under it, and the My
+    Exercises pill nudges you later).
   - Search words: the name, the library's other names, and your aliases (your names linked to a
-    library exercise: "Barbell Clean" finds Clean (Barbell), shown with `Matches "Barbell Clean"`).
-  - "Add '…' as your own" is the last row only when nothing has exactly the typed name. The set row shows the exercise's measures (time and distance boxes are new; the
+    library exercise). `Matches "…"` shows only when the name itself didn't match: "Barbell
+    Clean" finds Clean (Barbell) through its name, so no line (decided 2026-10-12).
+  - Search (2026-10-12): MiniSearch index, closest match first, an exact name or search word on
+    top; a wider typo allowance only when the strict search finds nothing.
+  - Box and list (2026-10-12): placeholder "Exercise name" in all three boxes (session, plan
+    Exercise, plan Alternatives). The list opens as you type, shows every match, and scrolls
+    inside a fixed maximum height so nothing around it moves more than that.
+  - "+ Custom" is the last row only when nothing has exactly the typed name; it opens the Custom
+    Exercise sheet with the name filled. "Add your own" is retired for exercises (2026-10-12).
+    The set row shows the exercise's measures (time and distance boxes are new; the
   database already stores both).
-- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle.
+- **Custom Exercise sheet** (was "Add your own"): one sheet, simplest first. Required: name and at least one primary muscle.
   Equipment is optional for own exercises (no metric uses it). Approved on the mockup
   (2026-10-12, https://claude.ai/artifact/LzNyXSqvfHAXF7HDkW5cQ1):
   - A name box with the placeholder "Exercise Name", no label; the search text carries over.
@@ -457,7 +466,7 @@ in review; Apoorva refines it on the artifact. Agreed so far:
   count. Then they show in Progress."
 - Decided: unrecognized names count nowhere in Progress and get no chart of their own.
 - Unrecognized rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
-  count) or "Make It Custom". Every custom exercise uses the one approved Add Your Own sheet (all
+  count) or "Make It Custom". Every custom exercise uses the one approved Custom Exercise sheet (all
   fields, Primary Muscles open first): Make It Custom fills the name, "+ Add" in the Custom
   header opens it empty, tapping a custom exercise opens it filled to edit. Linked rows: Change Link (same search sheet) or Unlink (back to
   Unrecognized). Every change shows Undo for 5 seconds. No suggested matches.
@@ -502,7 +511,7 @@ Next:
    `exercises/library-4-own`, in this order, showing the diff before each commit:
    `lib/lists.ts` (lists, groups and joints head to toe, the 7 Log combinations), the search
    (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and the name
-   and Alternative boxes in `WorkoutPlan` (agreed 2026-10-12), then the Add Your Own sheet. Left for later in step 7: keeping the library on
+   and Alternative boxes in `WorkoutPlan` (agreed 2026-10-12), then the Custom Exercise sheet. Left for later in step 7: keeping the library on
    the phone (section 6) and the time and distance boxes in the set row.
 2. Then My Exercises, Profile, and the Progress redesign (needs step 6's reads by exercise).
 3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);

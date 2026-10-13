@@ -6,6 +6,7 @@ import { Chevron, Collapse } from '@/components/Collapse'
 import CountStepper from '@/components/CountStepper'
 import DragList from '@/components/DragList'
 import DraftBar from '@/components/DraftBar'
+import ExercisePicker from '@/components/ExercisePicker'
 import BottomBar from '@/components/BottomBar'
 import HeaderName, { EditButton } from '@/components/HeaderName'
 import { LoadError, Loading } from '@/components/QueryStatus'
@@ -245,7 +246,7 @@ function ExerciseForm(props: {
           <label htmlFor="exercise-name" className="text-[13px] font-semibold">
             Exercise
           </label>
-          <input id="exercise-name" autoCapitalize="words" value={e.name} placeholder="Squat"
+          <ExercisePicker id="exercise-name" value={e.name} onPick={(name) => set({ name })}
             onChange={(ev) => set({ name: ev.target.value })}
             className="h-12 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
         </div>
@@ -287,8 +288,7 @@ function ExerciseForm(props: {
 /** Other exercises that can take this one's place; the session can switch to them with one tap. */
 function Alternatives({ name, list, onChange }: { name: string; list: string[]; onChange: (list: string[]) => void }) {
   const [draft, setDraft] = useState('')
-  const add = () => {
-    const value = draft.trim()
+  const add = (value = draft.trim()) => {
     const taken = [name, ...list].some((x) => x.trim().toLowerCase() === value.toLowerCase())
     if (value && !taken) onChange([...list, value])
     setDraft('')
@@ -307,19 +307,21 @@ function Alternatives({ name, list, onChange }: { name: string; list: string[]; 
           </button>
         </div>
       ))}
-      <div className="flex gap-2">
+      <div className="flex items-start gap-2">
         <label htmlFor="alternative" className="sr-only">
           Alternative exercise
         </label>
-        <input id="alternative" autoCapitalize="words" value={draft} placeholder="Exercise name" onChange={(ev) => setDraft(ev.target.value)}
-          onKeyDown={(ev) => {
-            if (ev.key === 'Enter') {
-              ev.preventDefault()
-              add()
-            }
-          }}
-          className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
-        <button type="button" onClick={add} disabled={!draft.trim()}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <ExercisePicker id="alternative" value={draft} onPick={add} onChange={(ev) => setDraft(ev.target.value)}
+            onKeyDown={(ev) => {
+              if (ev.key === 'Enter') {
+                ev.preventDefault()
+                add()
+              }
+            }}
+            className="h-11 rounded-xl border border-border bg-background px-3.5 text-[15px]" />
+        </div>
+        <button type="button" onClick={() => add()} disabled={!draft.trim()}
           className={cn(BTN.smallSecondary, 'h-11')}>
           Add
         </button>

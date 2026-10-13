@@ -3,6 +3,7 @@ import { Chevron } from '@/components/Collapse'
 import { AnimatePresence, motion } from 'motion/react'
 import { type FocusEvent, useState } from 'react'
 import EffortBars from '@/components/EffortBars'
+import ExercisePicker from '@/components/ExercisePicker'
 import NoteBox from '@/components/NoteBox'
 import NumberBox from '@/components/NumberBox'
 import type { LiveExercise, LiveSet } from '@/lib/session'
@@ -69,9 +70,9 @@ export default function ExerciseCard({
         </button>
       ) : (
         <div className="flex items-start justify-between pt-2.5 pr-1 pb-1 pl-4">
-          <div className="flex min-w-0 flex-col gap-1 pt-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1 pt-1">
             {e.naming ? (
-              <NameField initial={e.name} choices={e.choices} onCommit={onRename} />
+              <NameField initial={e.name} onCommit={onRename} />
             ) : (
               <h2 className="flex items-center gap-1.5 text-base font-semibold">
                 {e.name}
@@ -183,20 +184,15 @@ export default function ExerciseCard({
   )
 }
 
-/** The exercise's name, typed; the plan line's other choices are offered while typing. */
-function NameField({ initial, choices, onCommit }: { initial: string; choices: string[]; onCommit: (name: string) => void }) {
+/** The exercise's name: typed, or picked from the list under the box. */
+function NameField({ initial, onCommit }: { initial: string; onCommit: (name: string) => void }) {
   const [name, setName] = useState(initial)
   return (
     <>
-      <datalist id="exercise-choices">
-        {choices.map((c) => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
       <label htmlFor="new-exercise-name" className="sr-only">
         Exercise name
       </label>
-      <input id="new-exercise-name" list="exercise-choices" autoFocus autoCapitalize="words" value={name} placeholder="Exercise name"
+      <ExercisePicker id="new-exercise-name" autoFocus value={name} onPick={onCommit}
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && onCommit(name.trim())}
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
