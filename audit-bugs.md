@@ -43,6 +43,4 @@ The per-step cap of 4 verified findings dropped these. Treat them as leads, not 
 
 ## ▶ Resume here
 
-Nothing has been fixed. Next action: decide whether to verify the unverified candidates (about 0.4 to 0.6M tokens), or start fixing in the order #9, #4 with #6, #8, then the rest.
-
-To fix: cut a base branch from `dev` (for example `fix/audit-bugs`), then one sub-branch per step named `fix/audit-bugs-N-<step>`. Squash each step into the base with the full suite green. Add a `[Unreleased]` line to `CHANGELOG.md` for each fix.
+2026-10-13: fixed and merged into `dev` (pushed): #3, #4, #6, #8, #9, #10, #11. The plan is `archived/plans/audit-bugs-plan.md`. Skipped on purpose: #5, #7 and the `eval_arms.py` candidate (scripts meant to be deleted). Still open: #1 (disabled users keep access, may be an unbuilt feature), #2 (pool of 10 connections), and every candidate in the unverified table above. Next action if wanted: verify the unverified table, starting with `store.ts:57` and `auth.ts:158`, against `dev`.

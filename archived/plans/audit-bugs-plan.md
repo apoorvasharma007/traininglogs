@@ -14,9 +14,4 @@ Method: base branch `fix/audit-bugs` from `dev`; one sub-branch per step, squash
 
 ## ▶ Resume here
 
-All 5 steps squashed into `fix/audit-bugs`. Suites green: 742 pytest, 143 vitest (a full vitest run occasionally times out one UI test under load; it passes on rerun). Next: Apoorva says yes, then merge `fix/audit-bugs` into `dev` (not done). Deferred: #1, #2, the unverified candidates in `audit-bugs.md`. Out of scope: scripts meant to be deleted (#5, #7, `eval_arms.py`).
-
-AuthenticationError is deliberately still raised raw: a bad key should be loud, not a placeholder on every exercise.
-
-Run pytest against a private database, because the shared test database on port 5433 carries the exercise-library branches' schema:
-`TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_fix .venv/bin/python -m pytest -q`
+Complete. All five steps merged into `dev` and pushed on 2026-10-13 (742 pytest and 143 vitest at the time). Open items live in `audit-bugs.md`.
