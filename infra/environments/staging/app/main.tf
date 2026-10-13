@@ -43,3 +43,8 @@ import {
   to = module.app.google_secret_manager_secret.supabase_publishable_key
   id = "projects/${local.project_id}/secrets/supabase-publishable-key"
 }
+
+import {
+  to = module.app.google_secret_manager_secret.discord_webhook_url
+  id = "projects/${local.project_id}/secrets/discord-webhook-url"
+}

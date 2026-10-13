@@ -53,3 +53,25 @@ export async function api<T>(
   if (!res.ok) throw new ApiError(res.status, detailOf(body), body)
   return body as T
 }
+
+/** Fetches a file from the API (signed in, like every request) and hands it to the phone to save,
+ * under the name the server gives it. */
+export async function download(path: string): Promise<void> {
+  const token = await accessToken()
+  let res: Response
+  try {
+    res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new ShownError('No connection. Check your internet and try again.')
+  }
+  if (res.status === 401) signedOutByServer()
+  if (!res.ok) throw new ShownError("Couldn't export your data. Try again in a minute.")
+  const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'traininglogs'
+  const url = URL.createObjectURL(await res.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  link.click()
+  // Safari reads the file after the click returns, so the link is freed a minute later.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}

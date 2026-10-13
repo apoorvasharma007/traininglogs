@@ -55,3 +55,34 @@ def test_refuses_an_empty_message_an_unknown_kind_or_one_too_long(client, body) 
 
 def test_requires_sign_in(client) -> None:
     assert client.post("/feedback", json={"kind": "other", "message": "hi"}).status_code == 401
+
+
+def test_posts_new_feedback_to_discord_with_mentions_off(client, monkeypatch) -> None:
+    import traininglogs.alerts as alerts
+
+    posted: list[dict] = []
+
+    class Ok:
+        def raise_for_status(self) -> None: ...
+
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+    monkeypatch.setenv("APP_ENVIRONMENT", "staging")
+    monkeypatch.setattr(alerts.httpx, "post", lambda url, json, timeout: posted.append(json) or Ok())
+    assert client.post("/feedback", headers=HEADERS, json={"kind": "bug", "message": "@everyone the timer froze"}).status_code == 201
+    [sent] = posted
+    assert sent["content"].startswith("[staging] **Problem** from ")
+    assert sent["content"].endswith("@everyone the timer froze")
+    assert sent["allowed_mentions"] == {"parse": []}
+
+
+def test_feedback_is_saved_even_when_discord_fails(client, monkeypatch) -> None:
+    import httpx
+
+    import traininglogs.alerts as alerts
+
+    def down(url, json, timeout):
+        raise httpx.ConnectError("discord is down")
+
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+    monkeypatch.setattr(alerts.httpx, "post", down)
+    assert client.post("/feedback", headers=HEADERS, json={"kind": "other", "message": "hello"}).status_code == 201

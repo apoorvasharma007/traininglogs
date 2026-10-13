@@ -51,6 +51,22 @@ resource "google_cloud_run_v2_service" "traininglogs" {
         }
       }
 
+      # Feedback sent from anywhere but prod is marked with this in Discord.
+      env {
+        name  = "APP_ENVIRONMENT"
+        value = var.environment
+      }
+
+      env {
+        name = "DISCORD_WEBHOOK_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.discord_webhook_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+
       env {
         name  = "SUPABASE_URL"
         value = var.supabase_url

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronRight, Download, X } from 'lucide-react'
 import { useState } from 'react'
 import ConfirmSheet from '@/components/ConfirmSheet'
 import DragList from '@/components/DragList'
@@ -7,7 +7,7 @@ import FeedbackSheet from '@/components/FeedbackSheet'
 import Sheet from '@/components/Sheet'
 import { errorText } from '@/lib/errors'
 import PageTitle from '@/components/PageTitle'
-import { api } from '@/lib/api'
+import { api, download } from '@/lib/api'
 import { config, signOut, useSignedIn } from '@/lib/auth'
 import { useOutbox } from '@/lib/store'
 import type { AiUsage, LiftsOut } from '@/lib/types'
@@ -31,6 +31,18 @@ export default function Settings() {
   })
   const [adding, setAdding] = useState(false)
   const [feedback, setFeedback] = useState(false)
+  const [exporting, setExporting] = useState<'csv' | 'json' | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
+  async function exportAs(format: 'csv' | 'json') {
+    setExporting(format)
+    setExportError(null)
+    try {
+      await download(`/me/export?format=${format}`)
+    } catch (e) {
+      setExportError(errorText(e))
+    }
+    setExporting(null)
+  }
   // The key lift whose × was tapped: removed only after the confirm.
   const [removing, setRemoving] = useState<string | null>(null)
   const keyNames = (lifts.data?.key_lifts ?? []).map((l) => l.name)
@@ -101,6 +113,17 @@ export default function Settings() {
           ))}
         </MenuGroup>
       </Sheet>
+
+      <SectionCard title="Export Your Data" aside="Everything you've logged">
+        {(['csv', 'json'] as const).map((format) => (
+          <button key={format} type="button" disabled={exporting != null} onClick={() => exportAs(format)}
+            className="flex min-h-13 w-full items-center justify-between gap-3 border-t border-border/60 px-4 text-left text-[15px] first:border-t-0 active:bg-muted disabled:opacity-50">
+            {exporting === format ? 'Exporting…' : format === 'csv' ? 'Export as CSV' : 'Export as JSON'}
+            <Download size={18} aria-hidden className="text-faint-foreground" />
+          </button>
+        ))}
+        {exportError && <p role="alert" className="px-4 pb-3 text-[15px] text-destructive">{exportError}</p>}
+      </SectionCard>
 
       <SectionCard title="Feedback" aside="Ideas and problems">
         <button type="button" onClick={() => setFeedback(true)}
