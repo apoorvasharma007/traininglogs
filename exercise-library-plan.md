@@ -406,6 +406,14 @@ Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
 ## ▶ Resume here
 
+**Latest (2026-10-13), start here.**
+- Branch `exercises/library-7-picker`, worktree `~/Projects/traininglogs-wave`. Last commit `3083ffd` is a WIP first draft of the picker (`ExercisePicker.tsx`, `CustomExerciseSheet.tsx`, `MovementPicker.tsx`, `Sheet.tsx`, `WorkoutPlan.tsx`, `ExerciseCard.tsx`, a test). Apoorva is not happy with the page. Do not build on it: redesign first, show a mockup, get his yes, then rebuild or reshape it. The two search commits under it (`6b30022`, `ccbe07a`) are fine.
+- These library branches were cut before `dev` gained the audit fixes (merged 2026-10-13, pushed) and the CSV export and Discord changes. Merge or rebase `dev` into `exercises/library` before step 7 goes further. Expect small conflicts in `CHANGELOG.md` and `app.py`.
+- Step state: steps 1 and 2 are squashed into `exercises/library`; steps 3 and 4 are built on `exercises/library-3-schema` and `exercises/library-4-own`, not yet squashed; step 7 is this branch. Step 8 (effort fix) can go any time.
+- The main checkout `~/Projects/traininglogs` is now on `dev`. Server tests need a database matching the branch's schema: the shared one on port 5433 carries the library schema, so for `dev` or `fix/*` work create a private one and set `TEST_DATABASE_URL`.
+
+Older notes follow.
+
 2026-10-11: plan written and committed on `exercises/library` (from dev at `d5481a4`, local
 only, not pushed). Step 1 done: sections 1 to 3 approved (fields, 36 muscles in 17 groups, 44
 joint actions, 15 patterns, variations as their own exercises, family from the name). Nothing built.
