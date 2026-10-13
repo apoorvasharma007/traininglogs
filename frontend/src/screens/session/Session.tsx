@@ -186,7 +186,7 @@ export default function Session() {
         if (s.programId) queryClient.invalidateQueries({ queryKey: ['program', s.programId] })
       })
       navigate('/session/done')
-    })
+    }).catch(() => setFinishError("Couldn't save this session on the phone. Try Save Session again."))
   }
 
   return (
