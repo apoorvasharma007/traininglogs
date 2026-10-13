@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import type { Card, CardEdit, CardOp, EditReply } from '@/lib/types'
 import { errorText } from '@/lib/errors'
@@ -28,6 +28,11 @@ export function useReviewDoc(extractionId: string) {
   const [errorFromFix, setErrorFromFix] = useState(false)
 
   const current: Doc | null = doc ?? (initial.data ? { extract: null, card: initial.data } : null)
+  // What the last finished change left behind, and the changes waiting their turn. A change
+  // starts from the former, so two quick ones (leaving one box, then the next) don't both
+  // start from the same old extract and lose the first.
+  const latest = useRef<{ doc: Doc | null; corrections: Record<string, unknown>[] }>({ doc: null, corrections: [] })
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
 
   /** One request on top of `base`. `instruction` goes to /correct (AI), the rest to /edit. */
   async function send(base: Doc, step: Step): Promise<{ doc: Doc; correction: Record<string, unknown>; created: string | null }> {
@@ -48,10 +53,21 @@ export function useReviewDoc(extractionId: string) {
    * Returns the new doc and the last created path, or undefined when something failed (the
    * error is then in `error`).
    */
-  async function run(
+  function run(
     steps: (Step | ((created: string | null, doc: Doc) => Step | null))[],
     options?: { undoable?: boolean },
   ): Promise<{ doc: Doc; created: string | null; corrections: Record<string, unknown>[] } | undefined> {
+    const turn = queue.current.then(() => runNow(steps, options))
+    queue.current = turn
+    return turn
+  }
+
+  async function runNow(
+    steps: (Step | ((created: string | null, doc: Doc) => Step | null))[],
+    options?: { undoable?: boolean },
+  ): Promise<{ doc: Doc; created: string | null; corrections: Record<string, unknown>[] } | undefined> {
+    const { doc: lastDoc, corrections } = latest.current
+    const current = lastDoc ?? (initial.data ? { extract: null, card: initial.data } : null)
     if (!current) return undefined
     setBusy(true)
     setError(null)
@@ -75,6 +91,7 @@ export function useReviewDoc(extractionId: string) {
     }
     const all = [...corrections, ...added]
     setUndoState(options?.undoable ? { doc: current, corrections } : null)
+    latest.current = { doc: working, corrections: all }
     setDoc(working)
     setCorrections(all)
     setBusy(false)
@@ -83,6 +100,7 @@ export function useReviewDoc(extractionId: string) {
 
   function undo() {
     if (!undoState) return
+    latest.current = undoState
     setDoc(undoState.doc)
     setCorrections(undoState.corrections)
     setUndoState(null)

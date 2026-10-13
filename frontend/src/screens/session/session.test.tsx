@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { clear, get, set } from 'idb-keyval'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveSession } from '@/lib/store'
 import { startBlank, startFromWorkout } from '@/lib/session'
 import { clearLastFinished, type Finished } from '@/screens/session/finished'
@@ -147,6 +147,26 @@ describe('Session', () => {
     await waitFor(() => expect(screen.getByText('Waiting to Send')).toBeInTheDocument())
     const queued = (await get('sessions-to-send:a@example.com')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
+  })
+
+  it('says so, and keeps the session, when the phone cannot store the finished session', async () => {
+    await seed()
+    fakeApi({ 'GET /programs': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await skipEffort()
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
+    const save = await screen.findByRole('button', { name: 'Save Session' })
+    const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
+      throw new DOMException('Storage is full.', 'QuotaExceededError')
+    })
+    try {
+      await userEvent.click(save)
+      expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't save this session on the phone.")
+    } finally {
+      put.mockRestore()
+    }
+    expect(await get('session-in-progress:a@example.com')).toBeTruthy()
   })
 
   it("one tap takes last time's weight; a second tap types over it, and it stays on the phone", async () => {
