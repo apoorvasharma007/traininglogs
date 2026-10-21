@@ -35,7 +35,8 @@ for something outside these rules, hand it off.
    - Dependency bump, dead code, CI-adjacent cleanup: the existing suite stays green.
    - Docs or CSS: show before and after in the PR.
    - Can't be tested: the PR says why.
-3. Add a line under `[Unreleased]` in `CHANGELOG.md` if behaviour changed.
+3. If behaviour changed, add `changelog.d/<issue>.<section>.md` (`changelog.d/README.md`). Don't
+   edit `CHANGELOG.md`.
 4. Open the PR into `dev`, or mark the draft ready. Title: `<type>: <what changed>`. Body:
    `Fixes #<issue>`, what was wrong, the test and its CI failure message, the fix, what you
    couldn't verify.

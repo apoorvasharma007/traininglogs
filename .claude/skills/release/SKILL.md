@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release what's on dev to production - bump the version, move the changelog entries, merge dev into main, and check the deploy. Use only when Apoorva asks for a release.
+description: Release what's on dev to production - bump the version, gather the changelog fragments, merge dev into main, and check the deploy. Use only when Apoorva asks for a release.
 disable-model-invocation: true
 ---
 
@@ -14,8 +14,9 @@ Every step that pushes or merges needs Apoorva's yes in this session.
    change to the API or stored data is major, a feature is minor, fixes only is patch.
 3. On that branch:
    - set `version` in `pyproject.toml`;
-   - in `CHANGELOG.md`, move the `[Unreleased]` entries under `## [<version>] - <YYYY-MM-DD>`,
-     leave an empty `## [Unreleased]`, and update the compare links at the bottom.
+   - run `.venv/bin/python scripts/changelog.py --release <version>`: it writes the fragments in
+     `changelog.d/` under `## [<version>] - <today>` in `CHANGELOG.md`, updates the compare links
+     and deletes the fragments. Read the new section before committing.
    Commit `chore: release <version>`, open a PR into `dev`, merge it with a merge commit.
 4. Open a PR from `dev` into `main` titled `Release <version>: <the main changes>`. Apoorva merges
    it with a merge commit, never a squash.

@@ -7,36 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
-- Ticking a working set that already has an RPE, picked from the set's menu, no longer asks how
-  hard it was.
-
-### Changed
-
-- A push to `dev` or `main` that changes only docs or other files outside the app and its
-  infrastructure no longer deploys. Tests and checks still run on every push and pull request.
-- The instructions coding agents read are rewritten: a shorter `CLAUDE.md`, rules in
-  `.claude/rules/` that load only for the files they cover, and skills for setup, checking a
-  change, releasing and unattended bug-fix runs. New: `docs/glossary.md` (one name per concept),
-  `docs/architecture.md` and `docs/risk-map.md`.
-
-### Fixed
-
-- A fix, edit or confirm that sends an unreadable `extract` now gets a 422 saying so, not a 500.
-- A phone too full to keep the Done screen's summary no longer raises an uncaught error when a
-  session is saved. The summary still shows; only a restart on that screen loses it.
-- Save Session now says so when the phone can't store the finished session (for example, storage
-  is full), and the session stays open. Before, the button did nothing.
-- On the review screen, Confirm no longer stays stuck on "Saving…" when naming the session
-  fails, and two quick edits in a row no longer lose the first one.
-- One exercise with an impossible value (an RPE of 11, a negative weight) no longer aborts the
-  whole extraction: that exercise becomes a flagged placeholder and the others keep their data.
-  A model-service outage (timeout, dropped connection, 5xx) does the same for its one exercise.
-- A finished session the server refuses no longer holds back the ones behind it. It stays on the
-  phone, set apart, and the rest send. A session left open for more than a day is saved as 24
-  hours instead of being refused.
+Unreleased changes are in [`changelog.d/`](changelog.d/), one file each.
 
 ## [5.0.0] - 2026-10-11
 
