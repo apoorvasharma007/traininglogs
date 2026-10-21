@@ -11,6 +11,7 @@ still load-bearing — but none of them describe outstanding work.
 | `refactor-data-model.md` | Complete. v3.0.0 flat `WorkingSet`, tags/modality/movement_pattern, warmup/cooldown tables. |
 | `movement-skill-plan.md` | Complete as written, but see the caveat below. |
 | `pre-online-plan.md` | Superseded by `roadmap.md`'s phases. |
+| `ai-workflow-plan.md` | Complete. Context engineering, rulesets and the `/traininglogs-agent` skill for unattended bug-fix runs. Its "Later" and "Open items" lists are still open. |
 | `research-brief-orchestration.md` | Research input, not a plan. |
 | `research-prompt-agentic-architecture.md` | Research input, not a plan. Its question was answered: pre-parsing was removed. |
 
