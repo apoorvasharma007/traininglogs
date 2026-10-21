@@ -329,6 +329,11 @@ class AnthropicProvider:
                         raise LLMParserError(f"{last_error} Full response: {exc}") from exc
                     time.sleep(wait)
                     continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
+                except (anthropic.APIConnectionError, anthropic.InternalServerError) as exc:
+                    # Timeouts, dropped connections and 5xx (overloaded included) are outages,
+                    # not bad answers. Fail this call as a parse error so assemble() can
+                    # placeholder the one exercise instead of losing the whole run.
+                    raise LLMParserError(f"The model service failed: {exc}") from exc
                 except anthropic.BadRequestError as exc:
                     # The API's own server-side schema check rejected the tool call before
                     # returning a response — there's nothing to inspect, only the error to reask
@@ -485,6 +490,11 @@ class GroqProvider:
                         raise LLMParserError(f"{last_error} Full response: {exc}") from exc
                     time.sleep(wait)
                     continue  # deliberately not `attempt += 1` — see _MAX_RATE_LIMIT_WAITS
+                except (groq.APIConnectionError, groq.InternalServerError) as exc:
+                    # Timeouts, dropped connections and 5xx (overloaded included) are outages,
+                    # not bad answers. Fail this call as a parse error so assemble() can
+                    # placeholder the one exercise instead of losing the whole run.
+                    raise LLMParserError(f"The model service failed: {exc}") from exc
                 except groq.BadRequestError as exc:
                     # The API's own server-side schema check rejected the tool call before
                     # returning a response — there's nothing to inspect, only the error to

@@ -982,6 +982,26 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
+### Session 2026-10-13: read this first
+
+- **Live:** 5.0.0 (released 2026-10-11). `dev` has the audit bug fixes on top (outbox no longer
+  blocked by a refused session, one bad exercise no longer aborts an extraction, Review screen
+  Confirm unsticks, Save Session shows storage errors, bad `extract` bodies return 422). Not yet
+  released to `main`.
+- **Active work:** the exercise library, plan in `exercise-library-plan.md` on the
+  `exercises/library*` branches (worktree `~/Projects/traininglogs-wave`, branch
+  `exercises/library-7-picker`). Start at that file's "Resume here". The picker draft is a WIP to
+  redesign from a mockup first. Merge `dev` into the library branches before going further.
+- **Open bugs:** `audit-bugs.md` ("Resume here" there): #1, #2 and the unverified candidates.
+- **Tests on `dev`:** the shared test database on port 5433 carries the library schema, so make a
+  private database and set `TEST_DATABASE_URL` for `dev` work. The `.env` and local-setup steps
+  are in the `/setup` skill (`.claude/skills/setup/SKILL.md`).
+- **Paused:** the user guide (`guide-plan.md` on `docs/guide`), behind the library.
+- Finished plans are in `archived/plans/`. `db-redesign-plan.md` and `react-plan.md` stay in the
+  root because the schema, the migration guide and `index.css` point to them.
+
+Older sessions below are history; their "next" items are mostly done.
+
 ### Session 2026-10-03 (evening) — read this first
 
 - **Phase 6 is done and live.** The app runs on Google Cloud Run (`us-east1`):

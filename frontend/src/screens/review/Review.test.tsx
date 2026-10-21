@@ -134,6 +134,22 @@ describe('Review', () => {
     })
   })
 
+  it('lets Confirm be tapped again when naming the session fails', async () => {
+    fakeApi({
+      'GET /extractions/x1': card(120),
+      'POST /extractions/x1/edit': new Response(JSON.stringify({ detail: 'Nope.' }), { status: 500 }),
+      'GET /programs': [{
+        id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null,
+        next_workout_id: 'w2',
+        workouts: [{ id: 'w2', position: 1, name: null, last_done: null, exercises: [] }],
+      }],
+    })
+    renderApp('/review/x1')
+    await screen.findByRole('button', { name: /Workout 1/ })
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Session' }))
+    expect(await screen.findByRole('button', { name: 'Confirm Session' })).toBeEnabled()
+  })
+
   it('confirming a note saved before says so and links to its session', async () => {
     const calls = fakeApi({
       'GET /extractions/x1': card(120),

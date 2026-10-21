@@ -16,7 +16,7 @@ environments/
 ```
 
 Staging is a practice copy in its own project (`project-ff63b6ae-c18e-4350-961`), with its own
-Supabase database. A push to `dev` deploys it with no approval; a merge to `main` deploys prod
+Supabase database. A push to `dev` that changes the app or its infrastructure deploys it with no approval; a merge to `main` deploys prod
 after approval. Each environment's variables live in its GitHub environment (`staging`), or for
 prod on the repository itself.
 

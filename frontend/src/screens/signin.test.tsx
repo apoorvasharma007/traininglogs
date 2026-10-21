@@ -90,7 +90,8 @@ describe('The pass', () => {
 describe('Signing out', () => {
   it('asks first, warns about sessions not sent yet, then shows the sign-in screen', async () => {
     const { enqueue } = await import('@/lib/store')
-    fakeApi({ ...CONFIG, 'GET /progress/lifts': { key_lifts: [], other_lifts: [] }, [`POST ${SUPABASE}/logout`]: {} })
+    fakeApi({ ...CONFIG, 'GET /progress/lifts': { key_lifts: [], other_lifts: [] }, [`POST ${SUPABASE}/logout`]: {},
+      'POST /sessions': () => new Response('{}', { status: 503 }) })
     await enqueue({ client_id: 'c'.repeat(32) } as never).catch(() => undefined)
     renderApp('/settings')
     expect(await screen.findByText('a@example.com')).toBeInTheDocument()

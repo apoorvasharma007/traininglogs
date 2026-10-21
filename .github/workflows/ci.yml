@@ -1,7 +1,8 @@
 name: CI
 
 # Runs on every pull request and every push to main or dev. Pull requests only check. A push, once
-# every check passes, deploys (deploy.yml): main to prod, dev to staging.
+# every check passes, deploys (deploy.yml): main to prod, dev to staging. A push that changes only
+# docs or other files outside the container and its infrastructure skips the deploy (see `changes`).
 on:
   push:
     branches: ["main", "dev"]
@@ -223,9 +224,35 @@ jobs:
           files: dist/*
           generate_release_notes: true
 
-  deploy:
-    needs: [test, frontend, terraform]
+  # Whether this push changed anything the deploy ships: the container (the same allowlist as
+  # .dockerignore), its infrastructure, or the workflows. If the diff can't be computed (a first
+  # push, a force push), it deploys.
+  changes:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if ! files=$(git diff --name-only "$BEFORE" "$GITHUB_SHA"); then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif grep -qE '^(Dockerfile|pyproject\.toml|requirements\.lock|src/|frontend/|infra/|\.github/workflows/)' <<< "$files"; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only files outside the app changed; skipping the deploy."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: [test, frontend, terraform, changes]
+    if: github.event_name == 'push' && needs.changes.outputs.deploy == 'true'
     permissions:
       contents: read
       id-token: write

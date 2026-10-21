@@ -4,7 +4,7 @@
 // them or sends them as their own.
 import { del, get, set } from 'idb-keyval'
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import { signedInEmail } from '@/lib/auth'
 import { errorText } from '@/lib/errors'
 import type { LiveSession, SessionRequest } from '@/lib/session'
@@ -12,6 +12,9 @@ import type { LiveSession, SessionRequest } from '@/lib/session'
 const CURRENT = 'session-in-progress'
 const SEND_TIMEOUT_MS = 20_000
 const OUTBOX = 'sessions-to-send'
+const REFUSED = 'sessions-refused'
+// 4xx that say "try again" or "sign in", not "this session is invalid".
+const RETRYABLE_4XX = [401, 408, 429]
 const mine = (key: string) => `${key}:${signedInEmail()}`
 
 export async function loadSession(): Promise<LiveSession | null> {
@@ -69,7 +72,14 @@ export async function flush(): Promise<void> {
   try {
     for (const request of [...outbox.pending]) {
       // A send that hangs counts as failed after 20 s, so later retries aren't blocked behind it.
-      await api('/sessions', { method: 'POST', body: request, timeoutMs: SEND_TIMEOUT_MS })
+      try {
+        await api('/sessions', { method: 'POST', body: request, timeoutMs: SEND_TIMEOUT_MS })
+      } catch (e) {
+        // The server read it and said no, so resending can't help. Keep it on the phone, apart,
+        // and carry on: it must not hold back the sessions behind it.
+        if (!(e instanceof ApiError) || e.status >= 500 || RETRYABLE_4XX.includes(e.status)) throw e
+        await set(mine(REFUSED), [...((await get<SessionRequest[]>(mine(REFUSED))) ?? []), request])
+      }
       const pending = (await readOutbox()).filter((r) => r.client_id !== request.client_id)
       await set(mine(OUTBOX), pending)
       publish({ pending, lastError: null })
