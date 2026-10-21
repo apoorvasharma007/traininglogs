@@ -30,7 +30,7 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 ## Steps
 
 - [x] 1. GitHub settings: rulesets on `dev` and `main` (2026-10-21; a direct push to `dev` was rejected). Token scoping skipped on purpose, see Open items.
-- [ ] 2. Context engineering, built together (reworked 2026-10-21). Docs and config only, sub-branch
+- [x] 2. Context engineering, built together (reworked 2026-10-21). Docs and config only, sub-branch
   `chore/ai-workflow-2-audit`, one commit per sub-step, then squash, ask before push, PR to `dev`, don't merge.
   Each sub-step: Claude explains and proposes, Apoorva decides, then Claude writes. Nothing inherited by default.
   - [x] 2a. How Claude reads context (see Notes), and the contradiction audit (see Findings).
@@ -44,7 +44,7 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
     Python 748 passed, 0 failed, 0 skipped, 96% coverage; frontend 144 tests, flaky locally.
     Found: CI on `dev` red since 2026-10-13 (unhandled `QuotaExceededError` from `session.test.tsx:161`), which
     blocks every merge into `dev` under the rulesets.
-  - [x] 2f. Changelog line, squashed into `chore/ai-workflow`. Push and PR wait for Apoorva's yes.
+  - [x] 2f. Changelog line, squashed into `chore/ai-workflow`. PR #46 into `dev`, open, not merged.
 - [ ] 3. Triage: file "CI on `dev` red: unhandled `QuotaExceededError` from `session.test.tsx:161`" (risk map #1)
   as the first `ready` issue; the step 2 PR merges after its fix.
   Close the 9 stale 2025 issues (#2 to #13), file the `audit-bugs.md` backlog as issues
@@ -128,7 +128,8 @@ Paste into the claude.ai project's instructions:
 
 ## ▶ Resume here
 
-2026-10-21: step 1 done. Step 2 squashed into `chore/ai-workflow` (one commit on `1a457b8`), not pushed.
-PR text drafted in the session. Blocker: CI on `dev` is red (risk map #1); the PR goes green only after that fix,
-which is the first `ready` issue in step 3.
-Next action: on Apoorva's yes, push `chore/ai-workflow` and open the PR into `dev` (don't merge). Then step 3.
+2026-10-21: steps 1 and 2 done. Step 2 is PR #46 (`chore/ai-workflow` into `dev`), open, red until CI on `dev` is
+fixed (risk map #1). Don't merge it before that fix lands.
+Before the first run: paste the "Runner setup" line into the claude.ai project's instructions (works once #46 is on `dev`).
+Next action: step 3. File the CI bug as the first `ready` issue, close #2 to #13, file the `audit-bugs.md` backlog.
+Expected: 30 minutes.
