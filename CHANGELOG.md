@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
+- In a live session, typing a set's weight or reps no longer changes later sets that show last
+  time's numbers or a ramp's: the value fills in only later sets of the same kind that are empty.
 
 ### Changed
 
