@@ -982,7 +982,24 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 
 ## ▶ Resume here
 
-### Session 2026-10-13: read this first
+### Session 2026-10-22: read this first
+
+- **Live:** 5.0.1 (released 2026-10-22): the audit fixes and four live-session fixes (#62 to #65),
+  tested on staging. `dev` and `main` match.
+- **Next: the exercise library.** Worktree `~/Projects/traininglogs-wave`, branch
+  `exercises/library-7-picker`. Start at the "Resume here" in `exercise-library-plan.md` on that
+  branch. Its first step still stands: redesign the picker as a mockup, get Apoorva's yes, then
+  rebuild. Before more work, merge `dev` into `exercises/library` (it's 54 commits behind). Their
+  `CHANGELOG.md` lines become `changelog.d/` fragments (see `changelog.d/README.md`).
+- **Changed since 2026-10-13:** `dev` is the default branch. Bug fixes run as one claude.ai project
+  thread per issue labelled `ready` (`/traininglogs-agent`). Changelog entries are fragments in
+  `changelog.d/`. A release is "say release": Claude prepares it, Apoorva merges and approves prod.
+- **Open:** #66 (pages load slowly, its own session, no paid fix). PR #36 is stale and waits on
+  Apoorva's yes to close. Issues #48 to #57 are older and need a re-check before any is `ready`.
+- **Later:** turn the triage recipe into a `/triage` skill; a bot that opens the release PR (needs
+  its own GitHub token); the runner's full GitHub access, which only the skill's rules restrict.
+
+### Session 2026-10-13
 
 - **Live:** 5.0.0 (released 2026-10-11). `dev` has the audit bug fixes on top (outbox no longer
   blocked by a refused session, one bad exercise no longer aborts an extraction, Review screen
