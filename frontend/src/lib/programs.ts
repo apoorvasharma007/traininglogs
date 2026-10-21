@@ -29,11 +29,13 @@ export function usePrograms() {
   return useQuery({ queryKey: ['programs'], queryFn: () => api<Program[]>('/programs') })
 }
 
-export function useProgram(id: string) {
+/** One program; with no id (a session not started from a program), nothing is loaded. */
+export function useProgram(id: string | null) {
   const queryClient = useQueryClient()
   return useQuery({
     queryKey: ['program', id],
     queryFn: () => api<Program>(`/programs/${id}`),
+    enabled: id != null,
     // Shown at once from the programs list Train already loaded, while the program itself loads.
     placeholderData: () => queryClient.getQueryData<Program[]>(['programs'])?.find((p) => p.id === id),
   })

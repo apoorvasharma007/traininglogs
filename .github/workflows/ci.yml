@@ -1,7 +1,8 @@
 name: CI
 
 # Runs on every pull request and every push to main or dev. Pull requests only check. A push, once
-# every check passes, deploys (deploy.yml): main to prod, dev to staging.
+# every check passes, deploys (deploy.yml): main to prod, dev to staging. A push that changes only
+# docs or other files outside the container and its infrastructure skips the deploy (see `changes`).
 on:
   push:
     branches: ["main", "dev"]
@@ -170,35 +171,6 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # Keep the app version stamped in docs/design.html in sync with
-      # pyproject.toml. The eyebrow contains a stable target span:
-      #   App v<span class="app-version">X.Y.Z</span>
-      # We rewrite the span's inner text to the current version. If nothing
-      # changed, sed is a no-op and we skip the commit. If it did change, we
-      # push a small docs-only commit back to main.
-      #
-      # Safe from loops: a commit pushed with the workflow's own GITHUB_TOKEN never starts new
-      # workflow runs, so this bot commit won't re-trigger CI (or CD). No [skip ci] needed.
-      - name: Sync app version into design.html
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          DOC=docs/design.html
-          if [ ! -f "$DOC" ]; then
-            echo "No $DOC found, skipping sync."
-            exit 0
-          fi
-          sed -i.bak -E "s|(<span class=\"app-version\">)[^<]+(</span>)|\1${VERSION}\2|" "$DOC"
-          rm -f "$DOC.bak"
-          if git diff --quiet "$DOC"; then
-            echo "design.html already at v${VERSION}, no sync needed."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$DOC"
-          git commit -m "chore(docs): sync design.html app version to v${VERSION}"
-          git push
-
       - name: Check if release already exists
         id: tag_check
         run: |
@@ -223,9 +195,35 @@ jobs:
           files: dist/*
           generate_release_notes: true
 
-  deploy:
-    needs: [test, frontend, terraform]
+  # Whether this push changed anything the deploy ships: the container (the same allowlist as
+  # .dockerignore), its infrastructure, or the workflows. If the diff can't be computed (a first
+  # push, a force push), it deploys.
+  changes:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if ! files=$(git diff --name-only "$BEFORE" "$GITHUB_SHA"); then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif grep -qE '^(Dockerfile|pyproject\.toml|requirements\.lock|src/|frontend/|infra/|\.github/workflows/)' <<< "$files"; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only files outside the app changed; skipping the deploy."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: [test, frontend, terraform, changes]
+    if: github.event_name == 'push' && needs.changes.outputs.deploy == 'true'
     permissions:
       contents: read
       id-token: write

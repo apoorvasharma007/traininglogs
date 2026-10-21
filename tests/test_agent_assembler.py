@@ -193,6 +193,31 @@ class TestAssembleIntegration:
         assert extract.exercises[2].sets is not None
 
 
+    def test_out_of_range_value_becomes_a_placeholder_and_keeps_the_other_exercises(self) -> None:
+        text = "Bench Press\nSets:\n1. 80kg x 8\n\nOverhead Press\nSets:\n1. 40kg x 8\n"
+        bad_set = {"number": 1, "source_line": "1. 40kg x 8", "weight_kg": 40.0, "reps": "8", "rpe": 11}
+        provider = ScriptedProvider(
+            split_raw={
+                "exercises": [
+                    {"position": 1, "name": "Bench Press", "anchor": "Bench Press"},
+                    {"position": 2, "name": "Overhead Press", "anchor": "Overhead Press"},
+                ]
+            },
+            shell_raw={"date": "2026-05-12"},
+            exercise_raw_by_position={
+                1: _exercise_raw(1, "Bench Press"),
+                2: _exercise_raw(2, "Overhead Press", sets=[bad_set]),
+            },
+        )
+
+        extract = assemble(text, provider=provider)
+
+        assert [e.name for e in extract.exercises] == ["Bench Press", "Overhead Press"]
+        assert extract.exercises[0].sets is not None
+        assert extract.exercises[1].sets is None
+        assert any("Exercise 2 (Overhead Press) failed to extract" in w for w in extract.warnings)
+
+
 class TestAssembleChunking:
     """Covers the deterministic pre-chunking added to fix the "lost in the middle"
     position-drift/missing-sets problem found during live E2E testing: each worker should get

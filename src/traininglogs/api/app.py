@@ -2,6 +2,7 @@ import os
 import time
 import sys
 from contextlib import asynccontextmanager
+from datetime import date
 from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
@@ -174,8 +175,8 @@ def public_config():
 def list_sessions(
     phase: int | None = Query(None),
     week: int | None = Query(None),
-    from_date: str | None = Query(None),
-    to_date: str | None = Query(None),
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
     limit: int | None = Query(None, ge=1, le=500),
     conn=Depends(_db),
     user: str = Depends(_user),
@@ -377,6 +378,21 @@ def get_extraction_card(extraction_id: str, conn=Depends(_db), user: str = Depen
     return jsonable_encoder(ValidationCardBuilder().build(TrainingLogLLMExtract.model_validate(card["extract"])))
 
 
+def _extract_to_work_on(sent: dict | None, card: dict):
+    """The extract an endpoint works on: the one the phone sent back, else the card's own. A sent
+    one that isn't a valid reading is the caller's mistake, so it is refused with 422."""
+    from pydantic import ValidationError
+
+    from traininglogs.agent.schemas import TrainingLogLLMExtract
+
+    if sent is None:
+        return TrainingLogLLMExtract.model_validate(card["extract"])
+    try:
+        return TrainingLogLLMExtract.model_validate(sent)
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="The extract sent isn't a valid reading of a session.")
+
+
 @app.post("/extractions/{extraction_id}/confirm", response_model=ConfirmOut)
 def confirm_extraction_endpoint(
     extraction_id: str,
@@ -387,12 +403,11 @@ def confirm_extraction_endpoint(
 ):
     """Save the card as a session. `body.extract` carries the result of any fixes; omitted, the
     card's own reading is saved as it is."""
-    from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.ingest.confirm import AlreadySaved, confirm
 
     card = _card_or_404(conn, user, extraction_id)
     _check_workout(conn, user, body.program_workout_id)
-    final_extract = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
+    final_extract = _extract_to_work_on(body.extract, card)
     try:
         session_id = confirm(
             conn, user, extraction_id, final_extract, corrections=body.corrections,
@@ -417,12 +432,12 @@ def correct_extraction(extraction_id: str, body: CorrectIn, conn=Depends(_db), u
     from traininglogs.agent.llm_extract_validator import CorrectionRejected, LLMExtractValidator
     from traininglogs.agent.patch import PatchError
     from traininglogs.agent.providers import AnthropicProvider
-    from traininglogs.agent.schemas import LLMParserError, TrainingLogLLMExtract
+    from traininglogs.agent.schemas import LLMParserError
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
     from traininglogs.db.insert import insert_ai_calls
 
     card = _card_or_404(conn, user, extraction_id)
-    current = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
+    current = _extract_to_work_on(body.extract, card)
     provider = AnthropicProvider()
     try:
         updated, edits = LLMExtractValidator(provider).apply_correction(current, body.instruction)
@@ -461,11 +476,10 @@ def edit_extraction(extraction_id: str, body: EditIn, conn=Depends(_db), user: s
     from fastapi.encoders import jsonable_encoder
 
     from traininglogs.agent.card_edits import CardEditError, apply_card_edits, apply_card_op
-    from traininglogs.agent.schemas import TrainingLogLLMExtract
     from traininglogs.agent.validation_card_builder import ValidationCardBuilder
 
     card = _card_or_404(conn, user, extraction_id)
-    current = TrainingLogLLMExtract.model_validate(body.extract if body.extract is not None else card["extract"])
+    current = _extract_to_work_on(body.extract, card)
     created_path = None
     try:
         if body.op is not None:
