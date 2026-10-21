@@ -30,7 +30,8 @@ export default function ExerciseCard({
 }: {
   exercise: LiveExercise
   onOpenSet: (set: LiveSet) => void
-  onValue: (set: LiveSet, field: 'weight' | 'reps', value: string) => void
+  /** `filled`: a tap took the grey number, so the keyboard never opened and leaving won't follow. */
+  onValue: (set: LiveSet, field: 'weight' | 'reps', value: string, filled?: boolean) => void
   onTick: (set: LiveSet) => void
   /** Weight or reps typed and the keyboard left the set's row. */
   onEntered: (set: LiveSet) => void
@@ -152,10 +153,10 @@ export default function ExerciseCard({
                     </button>
                     <NumberBox label={`Weight for set ${label}`} done={set.done}
                       value={grey(set, 'weight') ? '' : set.weight} placeholder={grey(set, 'weight') && set.weight ? set.weight : 'kg'} fillable={grey(set, 'weight') && !!set.weight}
-                      onChange={(v) => onValue(set, 'weight', v)} onBlur={leave} />
+                      onChange={(v, filled) => onValue(set, 'weight', v, filled)} onBlur={leave} />
                     <NumberBox label={`Reps for set ${label}`} inputMode="numeric" done={set.done}
                       value={grey(set, 'reps') ? '' : set.reps} placeholder={grey(set, 'reps') && set.reps ? set.reps : 'reps'} fillable={grey(set, 'reps') && !!set.reps}
-                      onChange={(v) => onValue(set, 'reps', v)} onBlur={leave} />
+                      onChange={(v, filled) => onValue(set, 'reps', v, filled)} onBlur={leave} />
                     <button type="button" onClick={() => onTick(set)} aria-label={`Set ${label} done`} aria-pressed={set.done}
                       className="flex size-12 items-center justify-center">
                       <motion.span key={String(set.done)} initial={{ scale: set.done ? 0.6 : 1 }} animate={{ scale: 1 }}

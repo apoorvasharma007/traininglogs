@@ -103,3 +103,5 @@ http://<laptop>:8010). Not released. Next: Apoorva tests on the phone; then, on 
 `phase-9/next` and `dev`, PR to `main`, apply the program_workouts columns to prod with approval,
 approve CD. Open questions: move the offline / installable app earlier; drag to reorder exercises
 in a session (needs a design).
+
+Archived 2026-10-13 at Apoorva's request. The resume section above is from 2026-10-04 and is out of date: accounts and the later steps shipped in 5.0.0.

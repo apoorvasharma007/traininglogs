@@ -172,6 +172,13 @@ describe('a movement amount the rule cannot read', () => {
   })
 })
 
+describe('session length', () => {
+  it('never sends more than a day, for a session left open', () => {
+    const s = startFromWorkout(workout, 't', 'p1', [], now)
+    expect(toRequest(s, new Date(2026, 9, 7, 10, 0)).duration_minutes).toBe(1440)
+  })
+})
+
 describe('warm-up nudge', () => {
   it('records the minutes since the timer started, within 1 and 5', () => {
     const s = { ...startFromWorkout(workout, 't', 'p1', [], now), cardioStartedAt: new Date(2026, 9, 4, 10, 0).toISOString() }
@@ -242,16 +249,41 @@ describe('effort', () => {
 })
 
 describe('cascade fill', () => {
-  it("a typed weight shows in grey in the later sets of the same kind nobody has touched", () => {
+  it("leaves the later sets' grey numbers from last time as they were", () => {
     const s = startFromWorkout(workout, 'Bench', 'p1', lasts, now)
     const squat = s.exercises[0]
     const after = setValue(s, squat.sets[1].key, 'weight', '130').exercises[0].sets
     expect(after.map((x) => [x.kind, x.weight, x.reps, x.ghost, x.own])).toEqual([
       ['warmup', '80', '', true, undefined], // a warm-up: another kind, left alone
       ['working', '130', '2', true, 'weight'], // typed: the weight is the person's own, the reps stay grey
-      ['working', '130', '2', true, undefined], // last time's 125 replaced, still grey
-      ['working', '130', '2', true, undefined],
+      ['working', '125', '2', true, undefined], // last time's 125 kept
+      ['working', '125', '2', true, undefined],
     ])
+  })
+
+  it("leaves a ramp's later warm-ups as they were", () => {
+    let s = startBlank(now)
+    s = addExercise(s).session
+    const ex = s.exercises[0].key
+    s = addRamp(s, ex, [{ kg: 20, reps: 5 }, { kg: 40, reps: 3 }, { kg: 60, reps: 2 }])
+    const first = s.exercises[0].sets[0]
+    s = setValue(s, first.key, 'weight', '30')
+    expect(s.exercises[0].sets.map((x) => [x.kind, x.weight, x.reps])).toEqual([
+      ['warmup', '30', '5'],
+      ['warmup', '40', '3'],
+      ['warmup', '60', '2'],
+      ['working', '', ''],
+    ])
+  })
+
+  it('fills the later empty sets of the same kind in grey, as the value is typed', () => {
+    let s = startBlank(now)
+    s = addExercise(s).session
+    s = addSet(s, s.exercises[0].key).session
+    const [a] = s.exercises[0].sets
+    s = setValue(s, a.key, 'weight', '6') // one key at a time
+    s = setValue(s, a.key, 'weight', '60')
+    expect(s.exercises[0].sets.map((x) => [x.weight, x.reps, x.ghost])).toEqual([['60', '', false], ['60', '', true]])
   })
 
   it("leaves ticked and typed-into sets alone, and doesn't spread a cleared box", () => {

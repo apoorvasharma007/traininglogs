@@ -2,6 +2,8 @@
 The shapes match what the API has always sent, so the app doesn't change."""
 from __future__ import annotations
 
+from datetime import date
+
 from psycopg2.extensions import connection as Connection
 
 from traininglogs.db.insert import MY_EXERCISE_COLUMNS, name_key
@@ -17,8 +19,8 @@ def get_sessions(
     user_id: str,
     phase: int | None = None,
     week: int | None = None,
-    from_date: str | None = None,
-    to_date: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
     limit: int | None = None,
 ) -> list[dict]:
     filters, params = ["s.user_id = %s"], [user_id]

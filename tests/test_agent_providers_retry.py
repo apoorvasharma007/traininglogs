@@ -333,6 +333,33 @@ class TestRateLimitsAreWaitedOutNotFailed:
 
             assert mock_client.messages.create.call_count == _MAX_RATE_LIMIT_WAITS + 1
 
+    def test_an_outage_becomes_a_parse_error_not_a_raw_sdk_exception(self) -> None:
+        import anthropic
+        import groq
+
+        from traininglogs.agent.providers import AnthropicProvider, GroqProvider
+
+        request = httpx.Request("POST", "https://example.com")
+        down = httpx.Response(status_code=529, request=request)
+        for provider_cls, client_path, errors in (
+            (AnthropicProvider, "traininglogs.agent.providers.anthropic.Anthropic", [
+                anthropic.InternalServerError("overloaded", response=down, body=None),
+                anthropic.APITimeoutError(request=request),
+            ]),
+            (GroqProvider, "groq.Groq", [
+                groq.InternalServerError("overloaded", response=down, body=None),
+                groq.APITimeoutError(request=request),
+            ]),
+        ):
+            for error in errors:
+                with patch(client_path) as mock_cls:
+                    client = MagicMock()
+                    client.messages.create.side_effect = error
+                    client.chat.completions.create.side_effect = error
+                    mock_cls.return_value = client
+                    with pytest.raises(LLMParserError, match="model service failed"):
+                        provider_cls().extract("chunk", {}, "sys", "tool", "desc")
+
     def test_groq_waits_too(self) -> None:
         import groq
 
