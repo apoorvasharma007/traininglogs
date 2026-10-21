@@ -71,9 +71,10 @@ it works: `docs/architecture.md` (one page) and `docs/design.html` (in full). Th
   today's code, flaws included, and must move with it, not ahead of it.
 - A new concept gets a glossary row in the same PR. A clash you notice goes in the PR description,
   not a silent rename.
-- A PR that changes behaviour adds a line under `[Unreleased]` in `CHANGELOG.md`: Added, Changed,
-  Fixed or Removed. Why: it's the record of each version; `/release` moves these entries under the
-  new version number.
+- A PR that changes behaviour adds a file `changelog.d/<issue>.<section>.md` (section `added`,
+  `changed`, `fixed` or `removed`; see `changelog.d/README.md`). Why: it's the record of each
+  version, and one file per PR means two PRs never conflict on it. `/release` gathers them into
+  `CHANGELOG.md`.
 - If the flow, the data model, the API or the hosting changes, update `docs/architecture.md` and
   `docs/design.html` in the same PR.
 - Run the `unslop` skill on prose before committing docs or opening a PR, and check each fact
