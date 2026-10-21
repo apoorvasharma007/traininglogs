@@ -24,7 +24,7 @@ sign-in pass on every request and never stores passwords.
 | `tests/` | pytest, against a real Postgres. `signed_in.py` makes test users A and B. |
 | `scripts/` | Evals (`eval_arms.py`, `eval_ab.py`), the accounts migration, copying prod to a dev database. |
 | `infra/` | Terraform for Google Cloud: a staging project and a prod project. |
-| `.github/workflows/` | `ci.yml` checks every PR and push; `deploy.yml` ships `dev` to staging and `main` to prod. |
+| `.github/workflows/` | `ci.yml` checks every PR and push; `deploy.yml` ships `dev` to staging and `main` to prod, only when a push changes the app or its infrastructure. |
 
 ## How a note becomes a session
 

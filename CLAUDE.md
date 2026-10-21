@@ -44,8 +44,9 @@ it works: `docs/architecture.md` (one page) and `docs/design.html` (in full). Th
   commits. Why: squashing into `dev` or `main` splits their history from the branches.
 - A step merges into its base only with the full suite green: 0 failed, 0 skipped. Why: CI checks
   PRs into `dev` and `main`, not a local squash into a base branch.
-- A push to `dev` deploys staging once CI passes, with no approval. Treat a push to `dev` as a
-  deploy.
+- A push to `dev` deploys staging once CI passes, with no approval, if it changes the app or its
+  infrastructure (`src/`, `frontend/`, `infra/`, `Dockerfile`, `pyproject.toml`,
+  `requirements.lock`, `.github/workflows/`). Docs-only pushes skip the deploy.
 - Merging `dev` into `main` is a release: its deploy waits for Apoorva's approval in the `prod`
   GitHub environment. Steps are in `/release`.
 - Commit messages: `<type>: <what changed>`, type one of `feat`, `fix`, `test`, `refactor`,
