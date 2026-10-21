@@ -45,8 +45,9 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
     Found: CI on `dev` red since 2026-10-13 (unhandled `QuotaExceededError` from `session.test.tsx:161`), which
     blocks every merge into `dev` under the rulesets.
   - [x] 2f. Changelog line, squashed into `chore/ai-workflow`. PR #46 into `dev`, open, not merged.
-- [ ] 3. Triage (the CI failure on `dev` was fixed by hand in PR #47, merged 2026-10-21). Close the 9 stale 2025 issues (#2 to #13), file the `audit-bugs.md` backlog as issues
-  (open: #1 disabled users, #2 pool of 10, 10 unverified candidates as "reproduce first"), label one `ready`.
+- [x] 3. Triage (2026-10-21). CI failure fixed by hand in PR #47. Closed #2 to #13 with notes. Filed the audit backlog
+  as #48 to #57 (#48 and #53 need Apoorva, not the agent). Labels `ready`, `needs-human`, `reproduce first` created.
+  #50 (bad date filter gives a 500) is `ready`.
 - [ ] 4. First supervised night on one issue. Measure subscription usage. Review the PR together.
 - [ ] 5. Raise the cap to 3 PRs a night once usage is known.
 
@@ -126,7 +127,8 @@ Paste into the claude.ai project's instructions:
 
 ## ▶ Resume here
 
-2026-10-21: steps 1 and 2 done. PR #47 (CI fix) merged into `dev`. Step 2 is PR #46, `dev` merged into it, waiting
-for green CI and Apoorva's merge.
-Before the first run: paste the "Runner setup" line into the claude.ai project's instructions (after #46 is on `dev`).
-Next action: step 3. Close #2 to #13 (on a yes), file the `audit-bugs.md` backlog, label one `ready`. About 30 minutes.
+2026-10-21: steps 1 to 3 done. `dev` is green and deployed to staging (staging's Supabase was paused and restored).
+#50 is the one `ready` issue.
+Before the run: paste the "Runner setup" line into the claude.ai project's instructions.
+Next action: step 4, a supervised run on #50 from the claude.ai project. Note subscription usage before and after,
+then review its PR together. Expected: about an hour.
