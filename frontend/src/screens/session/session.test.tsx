@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { clear, get, set } from 'idb-keyval'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveSession } from '@/lib/store'
-import { startBlank, startFromWorkout } from '@/lib/session'
+import { setEffort, startBlank, startFromWorkout } from '@/lib/session'
 import { clearLastFinished, type Finished } from '@/screens/session/finished'
 import { fakeApi, renderApp } from '@/test-utils'
 
@@ -93,6 +93,23 @@ describe('Session', () => {
     expect(sent.exercises[0].sets).toEqual([{ weight_kg: 125, reps: 2, rpe: 8.5, notes: null }])
     expect(await get('session-in-progress:a@example.com')).toBeUndefined()
     expect(await get('sessions-to-send:a@example.com')).toEqual([])
+  })
+
+  it('ticking a working set that already has an effort does not ask again', async () => {
+    const live = startFromWorkout(workout, '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0))
+    const [first] = live.exercises[0].sets.filter((x) => x.kind === 'working')
+    // Effort picked from the set's menu before ticking.
+    await saveSession(setEffort(live, first.key, 8))
+    fakeApi({})
+    renderApp('/session')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+    expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
+
+    // A set without an effort still asks.
+    await userEvent.click(screen.getByRole('button', { name: 'Set 2 done' }))
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
   })
 
   it("offers to save a session's changes to the program", async () => {
