@@ -1,3 +1,8 @@
+---
+name: setup
+description: Set up this repo on a machine, fill in .env, run the app locally, or add or upgrade a Python package. Use before running the app or changing requirements.
+---
+
 # Local development
 
 Python 3.12, the server's version (`.python-version`); on a Mac, `brew install python@3.12`.
@@ -45,11 +50,7 @@ DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_
     .venv/bin/uvicorn traininglogs.api.app:app --port 8010
 ```
 
-Run the tests:
-
-```bash
-.venv/bin/pytest tests/
-```
+To run the tests, use `/verify`: it sets up a private test database first.
 
 Package versions are locked. `requirements.lock` has the exact version of everything the server
 installs, and `requirements-dev.lock` adds the test tools; the server build, CI and your machine

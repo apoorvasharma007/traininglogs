@@ -30,18 +30,24 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 ## Steps
 
 - [x] 1. GitHub settings: rulesets on `dev` and `main` (2026-10-21; a direct push to `dev` was rejected). Token scoping skipped on purpose, see Open items.
-- [ ] 2. Context audit PR into `dev` from a `claude/` branch, docs only (sub-branch `chore/ai-workflow-2-audit`):
-  - Read `CLAUDE.md`, `docs/`, `db-redesign-plan.md`, `react-plan.md`, `audit-bugs.md`, `CHANGELOG.md`.
-    List contradictions with each other and with the code. Known: Python "3.12" vs "3.10 or newer" in `CLAUDE.md`.
-  - Keep `CLAUDE.md` under 200 lines (178 now). Cut what the code already says. Move partial-scope rules into
-    `.claude/rules/` with `paths:`. Turn `.claude/db-migration.md` and `.claude/testing-guide.md` into rules or skills.
-    No `@imports`. Write rules as checkable do-statements with a reason; at most one or two emphasised lines.
-  - Verify every file, path and command named exists. Ground each rule in a real past mistake (`audit-bugs.md`, git history).
-  - Write `docs/architecture.md` (one page: modules, data flow, where the schema lives) and `docs/risk-map.md` (weak or untested areas, fragile spots, ranked).
-  - Add the overnight rules from the Decisions table, and an `/overnight` skill and a `/verify` skill.
-  - Run the full suite once against a private test database and report the result as it is.
-  - Stop after opening the PR. Do not merge. The PR description lists what contradicted what and what could not be verified.
-- [ ] 3. Triage: close the 9 stale 2025 issues (#2 to #13), file the `audit-bugs.md` backlog as issues
+- [ ] 2. Context engineering, built together (reworked 2026-10-21). Docs and config only, sub-branch
+  `chore/ai-workflow-2-audit`, one commit per sub-step, then squash, ask before push, PR to `dev`, don't merge.
+  Each sub-step: Claude explains and proposes, Apoorva decides, then Claude writes. Nothing inherited by default.
+  - [x] 2a. How Claude reads context (see Notes), and the contradiction audit (see Findings).
+  - [x] 2b. Glossary (ubiquitous language): one word per concept, code name beside it. `docs/glossary.md`. No code renames.
+  - [x] 2c. `CLAUDE.md` from a blank page, one rule at a time: what it prevents, kept only on a yes. 20 rules
+    decided; `CLAUDE.md` 123 -> 74 lines. Until 2d lands, the path rules below exist only here.
+  - [x] 2d. Nine path rules in `.claude/rules/`; skills `/setup` (was `.claude/local-development.md`), `/verify`
+    (was `.claude/testing-guide.md`), `/release`, `/traininglogs-agent`. `.claude/db-migration.md` folded into
+    `rules/schema.md` and `CLAUDE.md`. Changelog reason in `CLAUDE.md` corrected (release notes come from PRs).
+  - [x] 2e. `docs/architecture.md` and `docs/risk-map.md` (12 risks, ranked). Suite baseline taken early for it:
+    Python 748 passed, 0 failed, 0 skipped, 96% coverage; frontend 144 tests, flaky locally.
+    Found: CI on `dev` red since 2026-10-13 (unhandled `QuotaExceededError` from `session.test.tsx:161`), which
+    blocks every merge into `dev` under the rulesets.
+  - [x] 2f. Changelog line, squashed into `chore/ai-workflow`. Push and PR wait for Apoorva's yes.
+- [ ] 3. Triage: file "CI on `dev` red: unhandled `QuotaExceededError` from `session.test.tsx:161`" (risk map #1)
+  as the first `ready` issue; the step 2 PR merges after its fix.
+  Close the 9 stale 2025 issues (#2 to #13), file the `audit-bugs.md` backlog as issues
   (open: #1 disabled users, #2 pool of 10, 10 unverified candidates as "reproduce first"), label one `ready`.
 - [ ] 4. First supervised night on one issue. Measure subscription usage. Review the PR together.
 - [ ] 5. Raise the cap to 3 PRs a night once usage is known.
@@ -50,6 +56,54 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 
 - Feature planning workflow (plans reviewed before building), hooks beyond GitHub rulesets, the picker redesign,
   a separate bot account or GitHub App for the runner.
+- Rethink the testing strategy and setup (built as the easiest next step for the POC). 2f only records a baseline.
+- A reusable ubiquitous-language skill in `~/.claude/skills`, from what worked in 2b.
+- When code is next refactored, bring its names in line with `docs/glossary.md` (tables, fields, routes,
+  components) and the app labels ("Key Lifts", "workout session"). Each rename needs its own approval.
+- Blog post on context engineering, from the Notes below.
+- Enforce instead of describe: ruff + mypy in CI (Python style), a CI check that fails on glossary "don't say"
+  words in docs, commit-message lint.
+
+## Step 2 notes (for the blog)
+
+How context loads, checked against code.claude.com/docs/en/memory and /skills on 2026-10-21:
+
+| Piece | When it enters context | Cost |
+|---|---|---|
+| `CLAUDE.md` (repo root and parents) | Every session, in full, at launch | Always. Docs: target under 200 lines; longer lowers adherence |
+| `CLAUDE.md` in a subdirectory | When Claude first reads or edits a file in that folder | Only there |
+| `.claude/rules/x.md` without `paths:` | At launch, like `CLAUDE.md` | Always |
+| `.claude/rules/x.md` with `paths:` globs | When Claude reads or edits a matching file | Only when relevant |
+| `@path` import | At launch, inlined | Same as pasting it in; organises, saves nothing |
+| Skill `.claude/skills/<n>/SKILL.md` | Name + description at launch; body when `/n` is typed or Claude judges it relevant | Small until used; body stays once loaded |
+| Auto memory `MEMORY.md` | First 200 lines / 25KB every session | Always |
+
+- Everything above is context, not enforcement. To block an action for certain, use a hook or a permission
+  rule (or, for the runner, GitHub rulesets).
+- Contradictions: "if two instructions contradict each other, Claude may pick one arbitrarily."
+- Write checkable instructions: "Run `npm test` before committing", not "Test your changes".
+- Built-in check: `/doctor prompt-audit` reports stale paths and contradictions across `CLAUDE.md`, rules and skills.
+- The claude.ai project sees none of this. Project skills don't load in "cloud threads in a project"; it reads
+  repo files only when told to, through the GitHub connection.
+
+## Step 2 findings (2a audit, 2026-10-21, on `dev` at `8c9b454`)
+
+| # | Where | Says | Truth |
+|---|---|---|---|
+| 1 | `CLAUDE.md:107` | Python 3.10 or newer | 3.12 in `.python-version`, Dockerfile, CI; `pyproject.toml` says `>=3.10` |
+| 2 | `CLAUDE.md` Testing, `testing-guide.md:26` | A request without the API key gets 401 | Auth is a Supabase sign-in pass (`api/auth.py`); no API key in `src/` |
+| 3 | `README.md:19-21`, `design.html` (lines 183, 185, 451, 510) | Single user, API key in Settings, `X-Api-Key` header, accounts later | Accounts shipped in 5.0.0. Also wrong on `origin/main` |
+| 4 | `design.html` | "Thirteen tables" | 16 in `schema.sql` |
+| 5 | `CLAUDE.md` money rules | `llm_calls` table | The table is `ai_call_logs` |
+| 6 | `CLAUDE.md:11` | `exercise-library-plan.md` as the example plan | Only on `exercises/library*` branches, not on `dev` |
+| 7 | `testing-guide.md:20-22` | `web/sample_inputs.md`, "Repeat a past session" | `web/` was replaced by `frontend/`; repeat call deleted |
+| 8 | `testing-guide.md:6` | Tests on the shared 5433 DB | roadmap 2026-10-13: shared DB has library schema, use a private DB on `dev` |
+| 9 | ci.yml:31, `infra/modules/app/cloud_run.tf:89` | `API_KEY` still set | Leftover; the tf comment says the next release removes it. Code, not docs: out of scope, note in risk map |
+| 10 | this plan | `CLAUDE.md` 178 lines | 123 |
+| 11 | local `main` | 4.1.0 | 39 commits behind `origin/main` (5.0.0). Local only, not a doc problem |
+
+Paths in `db-redesign-plan.md` and `react-plan.md` that no longer exist (`web/`, `ingest/repeat.py`) are
+history: those plans describe deleting them. Not contradictions.
 
 ## Open items
 
@@ -65,8 +119,16 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 - The exercise-library chain (`exercises/library`, `-2-data`, `-3-schema`, `-4-own`, `-7-picker`) is a separate
   thread. Its memory is `exercise-library-plan.md`. It waits until this plan is through step 2.
 
+## Runner setup (for Apoorva)
+
+Paste into the claude.ai project's instructions:
+
+> Before any work on apoorvasharma007/traininglogs, read `.claude/skills/traininglogs-agent/SKILL.md` on
+> `dev` through the GitHub connection and follow it.
+
 ## ▶ Resume here
 
-2026-10-21: step 1 done (rulesets on `dev` proven; `main` to confirm in settings). Plan is on `chore/ai-workflow`
-(`ca2d097` plus this update), cut from `dev` at `8c9b454`, not pushed. Nothing else built.
-Next action: start a fresh session in this repo and say "Read ai-workflow-plan.md and do step 2." Expected: one session.
+2026-10-21: step 1 done. Step 2 squashed into `chore/ai-workflow` (one commit on `1a457b8`), not pushed.
+PR text drafted in the session. Blocker: CI on `dev` is red (risk map #1); the PR goes green only after that fix,
+which is the first `ready` issue in step 3.
+Next action: on Apoorva's yes, push `chore/ai-workflow` and open the PR into `dev` (don't merge). Then step 3.
