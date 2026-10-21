@@ -33,6 +33,10 @@ connection, on `dev`:
    - Bug: write a test that reproduces it. Push it alone and open a draft PR into `dev`: CI runs
      on pull requests, not on branch pushes. Read CI's failure message. It must fail for the
      reason in the issue. Then push the fix and see CI pass.
+   - After every push, check the PR's CI yourself until every check has finished: every 30 to 60
+     seconds, for up to 20 minutes, through the check-runs API for the pushed commit. Don't end
+     your turn while a check is still running, and don't wait to be notified. If a check is still
+     running after 20 minutes, park the issue and say so.
    - Dependency bump, dead code, CI-adjacent cleanup: the existing suite stays green.
    - Docs or CSS: show before and after in the PR.
    - Can't be tested: the PR says why.
@@ -65,6 +69,9 @@ PR text and comments: active voice, plain words, no em dashes, no filler. Give t
 what it does. Check each claim against the code or CI output before writing it.
 
 ## Morning report
+
+The run ends only with the morning report. Until then, every turn ends with your next action under
+way, not with waiting.
 
 End the run with one message:
 
