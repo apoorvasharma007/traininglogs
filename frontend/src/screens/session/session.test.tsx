@@ -223,6 +223,21 @@ describe('Session', () => {
     expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
   })
 
+  it("ticks a set by itself when a tap fills its last grey box, the weight being typed", async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    const weight = await screen.findByLabelText('Weight for set 1')
+    // First tap fills 125, second opens the keypad: type over it.
+    await userEvent.click(weight)
+    await userEvent.click(weight)
+    await userEvent.keyboard('127.5')
+    // Tapping the grey reps fills last time's 2, and the set is done.
+    await userEvent.click(screen.getByLabelText('Reps for set 1'))
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+  })
+
   it('switches an exercise to an alternative from the swap icon', async () => {
     await saveSession(startFromWorkout(
       { ...workout, exercises: [{ name: 'Shoulder Press', warmup_sets: 0, working_sets: 1, target_reps: 5, amrap: false, alternatives: ['Bench press'] }] },
