@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
+- Ticking a working set that already has an RPE, picked from the set's menu, no longer asks how
+  hard it was.
 
 ### Changed
 
