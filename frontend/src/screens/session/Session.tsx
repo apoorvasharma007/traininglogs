@@ -12,6 +12,7 @@ import SetSheet, { type SetTarget } from '@/components/SetSheet'
 import EffortSheet, { type EffortTarget } from '@/components/EffortSheet'
 import Sheet from '@/components/Sheet'
 import { api } from '@/lib/api'
+import { useProgram } from '@/lib/programs'
 import { planChanges } from '@/lib/planChanges'
 import { COOLDOWN_PRESETS, WARMUP_PRESETS } from '@/lib/movements'
 import { WARMUPS, warmupSets } from '@/lib/warmup'
@@ -77,6 +78,9 @@ export default function Session() {
   const [discarding, setDiscarding] = useState(false)
   const [finishError, setFinishError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  // Kept loaded while the session is open, so Save finds the plan to compare against without
+  // waiting on the server, which may be starting up after a long workout.
+  useProgram(session?.programId ?? null)
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15_000)
