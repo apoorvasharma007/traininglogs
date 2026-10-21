@@ -59,4 +59,8 @@ Then check sign-in is still required: a request with no sign-in gets `401`.
 curl -s -o /dev/null -w "%{http_code}\n" <staging URL>/sessions
 ```
 
+If the staging deploy fails with "tenant/user ... not found" in the Cloud Run logs, Supabase has
+paused the staging database (its free plan does this after about a week unused). Ask Apoorva, then
+restore `traininglogs-staging` in Supabase and re-run the failed deploy job.
+
 After a release, do the same on production (https://traininglogs-875429444117.us-east1.run.app).
