@@ -1,123 +1,79 @@
 # traininglogs
 
-The working rules for this repo, for Apoorva and for any coding agent. What the app is lives in
-[`README.md`](README.md); how it works lives in [`docs/design.html`](docs/design.html). Link to
-them instead of repeating them here.
+Rules for working in this repo, for Apoorva and any coding agent. What the app is: `README.md`. How
+it works: `docs/architecture.md` (one page) and `docs/design.html` (in full). The words to use:
+`docs/glossary.md`. Where changes break things: `docs/risk-map.md`.
 
 ## Where to start
 
-[`roadmap.md`](roadmap.md) is the forward plan. Start at its `▶ Resume here` section: it has the
-current state and what's safe to run. A task that spans sessions gets its own plan file in the
-repo root with a `▶ Resume here` section of its own, like `exercise-library-plan.md`. Finished and
-superseded plans move to [`archived/plans/`](archived/plans/).
+- `roadmap.md` is the forward plan. Start at its `▶ Resume here` section.
+- A task that spans sessions gets its own plan file in the repo root with a `▶ Resume here`
+  section, like `ai-workflow-plan.md`. Finished plans move to `archived/plans/`.
+- Rules for one part of the code are in `.claude/rules/` and load when you open matching files.
+- Skills: `/setup` (machine setup, running the app), `/verify` (checking a change), `/release`,
+  `/traininglogs-agent` (unattended bug-fix runs).
 
-## Rules that cost money or data
+## Money
 
-Paid model calls:
+- Before any paid model run, run it with `--dry-run` (`scripts/eval_arms.py --dry-run`): it lists
+  every call and spends nothing. Why: a full regeneration once priced at $6.76 against $3.29 left.
+- Quote costs from a dry run or from the `ai_call_logs` table, never from memory.
 
-- Never start a paid run without a dry run first. `scripts/eval_arms.py --dry-run` lists every
-  call it would make and spends nothing.
-- A prompt or schema change re-keys the eval cache, so batch prompt changes into one
-  measurement.
-- Quote costs from a dry run or from `llm_calls`, never from memory.
+## Production data
 
-The production database (Supabase, `DATABASE_URL`):
+- `DATABASE_URL` in `.env` is production. For local runs use `DATABASE_URL="$TEST_DATABASE_URL"`.
+- **Never write to production without Apoorva's yes in this session.** Show the exact SQL first,
+  back up to `backups/`, run it in one transaction, compare row counts before and after, roll back
+  on any surprise. Why: a regeneration once ran against production without pausing for approval
+  (`archived/plans/pre-online-plan.md`).
+- Mark, don't delete: an AI extraction that shouldn't count becomes `status = 'rejected'`. Why:
+  deleting an input also deletes its `ai_call_logs` rows (ON DELETE CASCADE), and with them the
+  cost history.
 
-- Anything that writes to it needs Apoorva's approval in the same session. Approval from an
-  earlier session doesn't carry over.
-- Show the exact statements first. Run them in one transaction, in the foreground, check row
-  counts before and after, and roll back on any surprise.
-- Take a backup before changing many rows; `backups/` is git-ignored for this.
-- Prefer marking over deleting. An extraction that shouldn't count becomes `rejected`; deleting a
-  raw input also deletes its `llm_calls` cost history.
+## Secrets
 
-Secrets:
+- Secrets live in `.env` locally and in Secret Manager on Google Cloud. Never put one in a
+  committed file, a log, a command's printed output or Terraform state. Why: the repo is public.
+- Project IDs are fine to commit; billing account IDs and keys are not.
 
-- They live in `.env` locally and in Secret Manager on Google Cloud. Never in a committed file, a
-  log, a command's printed output or Terraform state.
-- The repo is public. Project IDs are fine to commit; billing account IDs and keys are not.
+## Branches and deploys
 
-## Local development
-
-The setup, the `.env` variables and how to run the app are in
-[`.claude/local-development.md`](.claude/local-development.md). One warning stays here:
-`DATABASE_URL` in `.env` points at production. When trying things out, point it at the test
-database (`DATABASE_URL="$TEST_DATABASE_URL"`), or the app reads and writes production.
-
-## Branching and releases
-
-```
-main   what's deployed; only dev merges into it
- └── dev   integration branch
-      └── <area>/<topic>                 a base branch per piece of work: phase-6/deploy, docs/overhaul
-           └── <area>/<topic>-N-<step>   one sub-branch per step
-```
-
-- Cut the base branch from `dev`, and one sub-branch per step. Name sub-branches with `-N-<step>`,
-  not `/<step>`: git refuses a branch named like a directory under another branch.
-- Squash each finished step into its base. Merge the base into `dev`, and `dev` into `main`,
-  with merge commits. Never squash into `dev` or `main`; that splits their history.
-- A step merges only with the full suite green: 0 failed, 0 skipped.
-- A push to `dev` deploys staging once CI's checks pass, with no approval. A release is merging
-  `dev` into `main`: CI runs, then its deploy waits for Apoorva's approval in the `prod` GitHub
-  environment, applies the app's Terraform and deploys. To publish a version, bump
-  `pyproject.toml`'s `version` and move the changelog's `[Unreleased]` entries under the new
-  version first; CI then tags it and creates the GitHub release.
-- Commit messages: `<type>: <what changed>`, with types `feat`, `fix`, `test`, `refactor`,
+- Cut a base branch from `dev` per piece of work (`<area>/<topic>`), and one sub-branch per step
+  (`<area>/<topic>-N-<step>`). Why: git refuses `a/b` when `a` is already a branch.
+- Squash a step into its base. Merge the base into `dev`, and `dev` into `main`, with merge
+  commits. Why: squashing into `dev` or `main` splits their history from the branches.
+- A step merges into its base only with the full suite green: 0 failed, 0 skipped. Why: CI checks
+  PRs into `dev` and `main`, not a local squash into a base branch.
+- A push to `dev` deploys staging once CI passes, with no approval. Treat a push to `dev` as a
+  deploy.
+- Merging `dev` into `main` is a release: its deploy waits for Apoorva's approval in the `prod`
+  GitHub environment. Steps are in `/release`.
+- Commit messages: `<type>: <what changed>`, type one of `feat`, `fix`, `test`, `refactor`,
   `chore`, `docs`.
 
-## Testing
+## Tests
 
-- Tests that touch the database use the real test database in Docker, never mocks.
-- A change that breaks tests gets its tests fixed or rewritten in the same step. Don't skip or
-  delete a test to get green.
-- New models get tests for valid construction, each validator's accept and reject cases, and a
-  `model_dump(mode="json")` round trip.
-- An app change gets checked in a browser against the local app before it merges.
-- After a deploy, open the live app and check that the page loads and a request without the API
-  key gets `401`.
+- **`TEST_DATABASE_URL` must point at a local test database, never staging or production.** Why:
+  the tests TRUNCATE every table of people's data (`clean_test_data` in `tests/signed_in.py`).
+- On `dev`, use a private database, not the shared one on port 5433 (it carries another branch's
+  schema). Setup is in `/verify`.
+- A change that breaks a test fixes or rewrites that test in the same step. Never skip, delete or
+  loosen a test to get green. Why: CI is the only witness for unattended work.
+- Before a step merges, check the change on the real thing: the suite, and for an app change the
+  local app in a browser. After the merge into `dev`, try the change on staging. Steps: `/verify`.
 
-## Docs
+## Words and docs
 
-- Every pull request that changes behaviour adds a line under `[Unreleased]` in
-  `CHANGELOG.md`: Added, Changed, Fixed or Removed.
-- If the flow, the data model, the API or how it's hosted changes, update `docs/design.html` in
-  the same pull request and its date at the top and bottom. Never edit the version inside
-  `<span class="app-version">`; CI sets it on merge to `main`.
-- Write every document in plain language. No em dashes, no filler, active voice, sentence-case
-  headings. Say what something does or give the number, not how it feels. Check facts against the
-  code before writing them down.
-- `docs/index.html` is the old static dashboard, frozen since the command-line flow that rebuilt it
-  was deleted (2026-10-05).
-  Don't edit it by hand.
-
-## Working conventions
-
-- The app's look is locked (since 2026-10-04): the fonts, the colours in `frontend/src/index.css`,
-  type sizes, spacing, icons, and the layout of existing screens. New screens reuse those pieces.
-  Propose any visual change and wait for Apoorva's yes before making it.
-- Anything that changes saved data (programs, following, deleting) asks first or offers Undo.
-- Every person's data is theirs alone. A function that reads or writes it takes the owner and
-  filters by it; the database refuses a row whose owner differs from its parent's. A new endpoint
-  that names a thing by id goes into `tests/test_isolation.py`, whose guard fails otherwise.
-- A screen's main action goes in `BottomBar` (fixed at the bottom; `aboveTabs` on screens with
-  tabs). Secondary and destructive actions stay as small text at the end of the content. Sheets
-  use `Sheet`, which grows with its content up to the visible screen.
-
-- Python 3.10 or newer, PEP 8, type hints on every function.
-- Solve the problem in front of you. No abstractions for futures that haven't arrived, and no ORM.
-- Don't rename database columns or Pydantic fields without being asked; the API, the UI and the
-  stored data depend on them.
-- Infrastructure changes go through Terraform in `infra/`, never by hand in the console. See
-  [`infra/README.md`](infra/README.md).
-
-## Guides
-
-| Guide | Read it before |
-|---|---|
-| [`infra/README.md`](infra/README.md) | Changing anything on Google Cloud |
-| [`.claude/local-development.md`](.claude/local-development.md) | Setting up the app or running it locally |
-| [`.claude/db-migration.md`](.claude/db-migration.md) | Changing what the database stores |
-| [`.claude/testing-guide.md`](.claude/testing-guide.md) | Testing a change, locally or after a deploy |
-
-Guides for finished work and retired tools are in [`archived/guides/`](archived/guides/).
+- Use the terms in `docs/glossary.md` in docs, plans, issues, commits, PRs and new code. Why: one
+  concept had up to five names, and an agent copies the last one it saw.
+- A PR that makes a rule, skill or doc wrong fixes it in the same PR. Why: the context describes
+  today's code, flaws included, and must move with it, not ahead of it.
+- A new concept gets a glossary row in the same PR. A clash you notice goes in the PR description,
+  not a silent rename.
+- A PR that changes behaviour adds a line under `[Unreleased]` in `CHANGELOG.md`: Added, Changed,
+  Fixed or Removed. Why: it's the record of each version; `/release` moves these entries under the
+  new version number.
+- If the flow, the data model, the API or the hosting changes, update `docs/architecture.md` and
+  `docs/design.html` in the same PR.
+- Run the `unslop` skill on prose before committing docs or opening a PR, and check each fact
+  against the code before writing it.

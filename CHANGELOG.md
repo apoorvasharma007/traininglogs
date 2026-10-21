@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The instructions coding agents read are rewritten: a shorter `CLAUDE.md`, rules in
+  `.claude/rules/` that load only for the files they cover, and skills for setup, checking a
+  change, releasing and unattended bug-fix runs. New: `docs/glossary.md` (one name per concept),
+  `docs/architecture.md` and `docs/risk-map.md`.
+
 ### Fixed
 
 - A fix, edit or confirm that sends an unreadable `extract` now gets a 422 saying so, not a 500.

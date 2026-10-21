@@ -995,7 +995,7 @@ merges to `dev` only when the phase is complete and the suite is green (0 failed
 - **Open bugs:** `audit-bugs.md` ("Resume here" there): #1, #2 and the unverified candidates.
 - **Tests on `dev`:** the shared test database on port 5433 carries the library schema, so make a
   private database and set `TEST_DATABASE_URL` for `dev` work. The `.env` and local-setup steps
-  are in `.claude/local-development.md`.
+  are in the `/setup` skill (`.claude/skills/setup/SKILL.md`).
 - **Paused:** the user guide (`guide-plan.md` on `docs/guide`), behind the library.
 - Finished plans are in `archived/plans/`. `db-redesign-plan.md` and `react-plan.md` stay in the
   root because the schema, the migration guide and `index.css` point to them.
