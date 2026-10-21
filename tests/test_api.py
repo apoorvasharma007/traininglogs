@@ -133,6 +133,12 @@ def test_list_sessions_filter_by_date_range(client):
     assert test_results[0]["session_id"] == IDS["a"]
 
 
+@pytest.mark.parametrize("param", ["from_date", "to_date"])
+def test_list_sessions_rejects_a_date_that_isnt_one(client, param):
+    r = client.get("/sessions", params={param: "notadate"}, headers=HEADERS)
+    assert r.status_code == 422
+
+
 def test_session_list_has_exercise_names_and_a_limit(client):
     first = client.get("/sessions", headers=HEADERS).json()[0]
     assert first["exercises"] == ["Bench Press"]
