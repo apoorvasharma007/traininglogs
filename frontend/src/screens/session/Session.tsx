@@ -131,7 +131,8 @@ export default function Session() {
     if (!set.done) {
       setReopened((r) => { const n = new Set(r); n.delete(ex.key); return n })
       scrollToNext(next, ex.key)
-      if (set.kind === 'working') askEffort(ex, set)
+      // Already given from the set's menu: don't ask again.
+      if (set.kind === 'working' && set.rpe == null) askEffort(ex, set)
     }
   }
 
