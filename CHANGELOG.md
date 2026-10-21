@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
+
 ### Changed
 
 - A push to `dev` or `main` that changes only docs or other files outside the app and its

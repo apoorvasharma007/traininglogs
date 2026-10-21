@@ -2,6 +2,7 @@ import os
 import time
 import sys
 from contextlib import asynccontextmanager
+from datetime import date
 from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
@@ -174,8 +175,8 @@ def public_config():
 def list_sessions(
     phase: int | None = Query(None),
     week: int | None = Query(None),
-    from_date: str | None = Query(None),
-    to_date: str | None = Query(None),
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
     limit: int | None = Query(None, ge=1, le=500),
     conn=Depends(_db),
     user: str = Depends(_user),
