@@ -5,9 +5,6 @@ description: Check that a change works before it merges or after it deploys. Run
 
 # Verify a change
 
-This is how changes are checked today. It was built as the quickest way to a working app, and its
-redesign is parked in `ai-workflow-plan.md`.
-
 ## 1. A private test database
 
 The tests empty every table of people's data, so they run only on a database of their own. The
@@ -47,8 +44,9 @@ DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/uvicorn traininglogs.api.app:app --r
 ```
 
 Open `http://localhost:8000/` and sign in. Your first request adds your user to the test database.
-Live sessions and programs cost nothing. A confirmation card needs one AI extraction, a paid call of
-a few cents: paste a note from `tests/fixtures/valid/`.
+Live sessions and programs cost nothing. A confirmation card needs one paid AI extraction: ask
+Apoorva first. Its cost is in the `ai_call_logs` table. Then paste a note from
+`tests/fixtures/valid/`.
 
 ## 5. On staging, after the merge into `dev`
 

@@ -30,14 +30,16 @@ connection, on `dev`:
 
 1. Cut `claude/<issue>-<slug>` from `dev`.
 2. By kind of task:
-   - Bug: write a test that reproduces it. Push it alone and read CI's failure message. It must
-     fail for the reason in the issue. Then push the fix and see CI pass.
+   - Bug: write a test that reproduces it. Push it alone and open a draft PR into `dev`: CI runs
+     on pull requests, not on branch pushes. Read CI's failure message. It must fail for the
+     reason in the issue. Then push the fix and see CI pass.
    - Dependency bump, dead code, CI-adjacent cleanup: the existing suite stays green.
    - Docs or CSS: show before and after in the PR.
    - Can't be tested: the PR says why.
 3. Add a line under `[Unreleased]` in `CHANGELOG.md` if behaviour changed.
-4. Open a PR into `dev`. Title: `<type>: <what changed>`. Body: `Fixes #<issue>`, what was wrong,
-   the test and its CI failure message, the fix, what you couldn't verify.
+4. Open the PR into `dev`, or mark the draft ready. Title: `<type>: <what changed>`. Body:
+   `Fixes #<issue>`, what was wrong, the test and its CI failure message, the fix, what you
+   couldn't verify.
 
 ## Park the issue instead
 
@@ -48,7 +50,7 @@ when:
 - you can't write a test that reproduces the bug;
 - the issue is ambiguous;
 - the fix touches the database schema, the app's look, `infra/`, `.github/workflows/`, the AI
-  prompts (`src/traininglogs/agent/prompts.py`), the production database or secrets.
+  prompts or output schema (`src/traininglogs/agent/prompts.py`, `src/traininglogs/agent/schemas.py`), the production database or secrets.
 
 ## Never
 

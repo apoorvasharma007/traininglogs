@@ -73,7 +73,7 @@ it works: `docs/architecture.md` (one page) and `docs/design.html` (in full). Th
 - A PR that changes behaviour adds a line under `[Unreleased]` in `CHANGELOG.md`: Added, Changed,
   Fixed or Removed. Why: it's the record of each version; `/release` moves these entries under the
   new version number.
-- If the flow, the data model, the API or the hosting changes, update `docs/design.html` in the
-  same PR.
+- If the flow, the data model, the API or the hosting changes, update `docs/architecture.md` and
+  `docs/design.html` in the same PR.
 - Run the `unslop` skill on prose before committing docs or opening a PR, and check each fact
   against the code before writing it.

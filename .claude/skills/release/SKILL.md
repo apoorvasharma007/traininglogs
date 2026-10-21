@@ -6,8 +6,7 @@ disable-model-invocation: true
 
 # Release
 
-Every step that pushes or merges needs Apoorva's yes in this session. 5.0.0 went out this way
-(PRs #41 and #40).
+Every step that pushes or merges needs Apoorva's yes in this session.
 
 1. On `dev`, CI is green and staging works (`/verify`, step 5 against staging).
    Run `/doctor prompt-audit` and fix any stale or contradicting instruction it reports.
