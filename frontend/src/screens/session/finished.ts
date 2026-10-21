@@ -24,7 +24,9 @@ let lastFinished: Finished | null = null
 
 export function setLastFinished(f: Finished): Promise<void> {
   lastFinished = f
-  return set(KEY, f)
+  // The copy in memory is enough for this run of the app; a phone too full to keep this one only
+  // loses the summary after a restart.
+  return set(KEY, f).catch(() => {})
 }
 
 /** The summary in memory, if this run of the app finished the session. */
