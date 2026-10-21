@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
+- Save Session opens the Done screen at once instead of pausing while the program reloads from
+  the server. The live session now keeps its program loaded.
 
 ### Changed
 
