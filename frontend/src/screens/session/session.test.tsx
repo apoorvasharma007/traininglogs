@@ -209,7 +209,7 @@ describe('Session', () => {
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
   })
 
-  it('fills one box per tap, and filling both by tapping never ticks the set', async () => {
+  it('fills one box per tap; the tap that fills the second ticks the set', async () => {
     await seed()
     fakeApi({})
     renderApp('/session')
@@ -217,10 +217,13 @@ describe('Session', () => {
     const reps = screen.getByLabelText('Reps for set 1')
     await userEvent.click(weight)
     expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', ''])
-    await userEvent.click(reps)
-    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', '2'])
+    // The reps are still grey: not done yet.
     expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
+    await userEvent.click(reps)
+    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', '2'])
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
   })
 
   it("ticks a set by itself when a tap fills its last grey box, the weight being typed", async () => {

@@ -120,9 +120,9 @@ export default function Session() {
     setUndo({ text, before: s, at: Date.now() })
   }
 
-  function tick(ex: LiveExercise, set: LiveSet) {
+  function tick(ex: LiveExercise, set: LiveSet, base: LiveSession = s) {
     if (!set.done) navigator.vibrate?.(10)
-    const next = toggleDone(s, set.key)
+    const next = toggleDone(base, set.key)
     change(next)
     if (!set.done) {
       setReopened((r) => { const n = new Set(r); n.delete(ex.key); return n })
@@ -130,6 +130,9 @@ export default function Session() {
       if (set.kind === 'working') askEffort(ex, set)
     }
   }
+
+  /** Both numbers are the person's own: the set is done once they move on. */
+  const entered = (set: LiveSet) => !set.done && !set.ghost && Boolean(set.weight && set.reps)
 
   function askEffort(ex: LiveExercise, set: LiveSet) {
     const number = ex.sets.filter((x) => x.kind === 'working').findIndex((x) => x.key === set.key) + 1
@@ -219,11 +222,17 @@ export default function Session() {
               key={ex.key}
               exercise={ex}
               onOpenSet={(set) => open(ex.key, set.key)}
-              onValue={(set, field, value) => change(setValue(s, set.key, field, value))}
+              onValue={(set, field, value, filled) => {
+                const next = setValue(s, set.key, field, value)
+                // A tap that fills the last grey number finishes the set, as typing it and leaving would.
+                const after = next.exercises.find((e) => e.key === ex.key)?.sets.find((x) => x.key === set.key)
+                if (filled && after && entered(after)) tick(ex, after, next)
+                else change(next)
+              }}
               onTick={(set) => tick(ex, set)}
               onEntered={(set) => {
                 // Both numbers typed and the keyboard gone: the set is done, no tick needed.
-                if (!set.done && !set.ghost && set.weight && set.reps) tick(ex, set)
+                if (entered(set)) tick(ex, set)
               }}
               collapsed={isCollapsed(ex)}
               onToggleCollapsed={() => {

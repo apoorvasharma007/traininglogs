@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A tap that fills a set's last grey number ticks the set and asks how hard it was, as typing the
+  number does. Before, the set stayed unticked.
 - `GET /sessions` with a `from_date` or `to_date` that isn't a date answers 422 instead of 500.
 
 ### Changed
