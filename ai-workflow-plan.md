@@ -29,7 +29,7 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 
 ## Steps
 
-- [ ] 1. GitHub settings: rulesets on `dev` and `main`, scope the token (about 15 min, no repo change).
+- [x] 1. GitHub settings: rulesets on `dev` and `main` (2026-10-21; a direct push to `dev` was rejected). Token scoping skipped on purpose, see Open items.
 - [ ] 2. Context audit PR into `dev` from a `claude/` branch, docs only (sub-branch `chore/ai-workflow-2-audit`):
   - Read `CLAUDE.md`, `docs/`, `db-redesign-plan.md`, `react-plan.md`, `audit-bugs.md`, `CHANGELOG.md`.
     List contradictions with each other and with the code. Known: Python "3.12" vs "3.10 or newer" in `CLAUDE.md`.
@@ -53,6 +53,11 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 
 ## Open items
 
+- Known gap, accepted for now: the claude.ai GitHub connection has full access. The runner could merge its own
+  PRs or edit the rulesets. Only the prompt rule "never merge, never touch settings" stops it. Fix later with a
+  separate bot account or a GitHub App with narrow permissions. Check every PR the runner opens for a self-merge.
+  Also confirm `protect-main` shows Active.
+
 - Confirm the GitHub MCP exposes check-run results (and `workflow_dispatch` if wanted).
 - PR #36 (`codebase-cleanup-2-3-4-comments-walkthrough`, 2026-10-08, targets `main`, conflicting, none of its
   3 commits in `dev`): treated as stale. Check `ux-audit.md` once for findings worth keeping, then close it with
@@ -62,6 +67,6 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 
 ## ▶ Resume here
 
-2026-10-21: plan written on `chore/ai-workflow` (cut from `dev` at `8c9b454`), not pushed. Nothing built.
-Next action: step 1, set the rulesets on `dev` and `main` in GitHub settings (about 15 minutes), then start a fresh
-session and ask it to do step 2 from this file.
+2026-10-21: step 1 done (rulesets on `dev` proven; `main` to confirm in settings). Plan is on `chore/ai-workflow`
+(`ca2d097` plus this update), cut from `dev` at `8c9b454`, not pushed. Nothing else built.
+Next action: start a fresh session in this repo and say "Read ai-workflow-plan.md and do step 2." Expected: one session.
