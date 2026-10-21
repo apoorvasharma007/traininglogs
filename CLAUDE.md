@@ -8,7 +8,7 @@ it works: `docs/architecture.md` (one page) and `docs/design.html` (in full). Th
 
 - `roadmap.md` is the forward plan. Start at its `▶ Resume here` section.
 - A task that spans sessions gets its own plan file in the repo root with a `▶ Resume here`
-  section, like `ai-workflow-plan.md`. Finished plans move to `archived/plans/`.
+  section. Finished plans move to `archived/plans/`.
 - Rules for one part of the code are in `.claude/rules/` and load when you open matching files.
 - Skills: `/setup` (machine setup, running the app), `/verify` (checking a change), `/release`,
   `/traininglogs-agent` (unattended bug-fix runs).

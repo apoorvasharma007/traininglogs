@@ -48,8 +48,10 @@ Docs and settings only: `CLAUDE.md`, `.claude/`, `docs/architecture.md`, `docs/r
 - [x] 3. Triage (2026-10-21). CI failure fixed by hand in PR #47. Closed #2 to #13 with notes. Filed the audit backlog
   as #48 to #57 (#48 and #53 need Apoorva, not the agent). Labels `ready`, `needs-human`, `reproduce first` created.
   #50 (bad date filter gives a 500) is `ready`.
-- [ ] 4. First supervised night on one issue. Measure subscription usage. Review the PR together.
-- [ ] 5. Raise the cap to 3 PRs a night once usage is known.
+- [x] 4. First supervised run on one issue: #50, PR #60, merged 2026-10-21. The run stopped after opening the draft PR
+  and waited for a GitHub notification that came 14 minutes late. Fixed in the skill by PR #61.
+- [x] 5. Cap removed instead (PR #61): a run takes every `ready` issue. Runs are started by hand after labelling,
+  not overnight; a stuck issue is handed off with a comment and `needs-human`.
 
 ## Later (parked)
 
@@ -127,8 +129,5 @@ Paste into the claude.ai project's instructions:
 
 ## ▶ Resume here
 
-2026-10-21: steps 1 to 3 done. `dev` is green and deployed to staging (staging's Supabase was paused and restored).
-#50 is the one `ready` issue.
-Before the run: paste the "Runner setup" line into the claude.ai project's instructions.
-Next action: step 4, a supervised run on #50 from the claude.ai project. Note subscription usage before and after,
-then review its PR together. Expected: about an hour.
+2026-10-21: complete, archived. Steps 1 to 5 done. The "Later" list and "Open items" above are still open and not
+tracked elsewhere; the runner's full GitHub access (it could merge its own PRs) is the one that matters.
