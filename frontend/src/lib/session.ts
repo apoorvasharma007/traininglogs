@@ -17,6 +17,8 @@ export type LiveSet = {
   ghost: boolean
   // While the set is still grey: the one box already filled in or typed into, shown as the person's own.
   own?: 'weight' | 'reps'
+  // While the set is still grey: the set whose typed value it shows, filled in while it was empty.
+  filledFrom?: string
   last: string | null // "120 × 2", what this set was last time
   planned?: boolean // one of the sets the workout's plan asked for, not one added today
 }
@@ -226,7 +228,7 @@ export function toggleDone(s: LiveSession, setKey: string): LiveSession {
     ...s,
     exercises: s.exercises.map((e) => ({
       ...e,
-      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false, own: undefined } : x)),
+      sets: e.sets.map((x) => (x.key === setKey ? { ...x, done: !x.done, ghost: false, own: undefined, filledFrom: undefined } : x)),
     })),
   }
 }
@@ -248,12 +250,16 @@ export function setValue(s: LiveSession, setKey: string, field: 'weight' | 'reps
             // filled in too, or the set is ticked.
             const other = field === 'weight' ? 'reps' : 'weight'
             const stillGrey = x.ghost && x.own !== other && x[other] !== ''
-            return { ...x, [field]: value, ghost: stillGrey, own: stillGrey ? field : undefined }
+            return { ...x, [field]: value, ghost: stillGrey, own: stillGrey ? field : undefined, filledFrom: undefined }
           }
-          // Cascade: the value shows in grey in the later sets of the same kind that nobody has
-          // typed into or ticked yet, so typing a weight once covers every set.
-          const untouched = (x.ghost && !x.own) || (x.weight === '' && x.reps === '')
-          if (i > at && value && x.kind === kind && !x.done && untouched) return { ...x, [field]: value, ghost: true }
+          // Cascade: the value shows in grey in the later empty sets of the same kind, so typing a
+          // weight once covers every set. Sets showing last time's or a ramp's numbers keep them;
+          // a set this one filled keeps following it, one key at a time.
+          const empty = x.weight === '' && x.reps === ''
+          const following = x.filledFrom === setKey && x.ghost && !x.own
+          if (i > at && value && x.kind === kind && !x.done && (empty || following)) {
+            return { ...x, [field]: value, ghost: true, filledFrom: setKey }
+          }
           return x
         }),
       }
@@ -483,8 +489,8 @@ const num = (text: string): number | null => {
 
 /** What Finish sends: only ticked sets, and only exercises with at least one. */
 export function toRequest(s: LiveSession, finishedAt: Date): SessionRequest {
-  // At least a minute: a session's duration has to be positive.
-  const minutes = Math.max(1, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000))
+  // Between a minute and a day: the server refuses a duration outside that.
+  const minutes = Math.min(1440, Math.max(1, Math.round((finishedAt.getTime() - new Date(s.startedAt).getTime()) / 60000)))
   return {
     client_id: s.clientId,
     date: s.date,

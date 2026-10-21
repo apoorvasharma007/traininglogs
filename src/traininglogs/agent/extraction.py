@@ -395,7 +395,7 @@ def assemble(text: str, provider: ExtractionProvider | None = None) -> TrainingL
             for w in projection_warnings:
                 warnings.append(f"Exercise {entry.position} ({entry.name}): {w}")
             exercise_uncertain = worker_result.uncertain_fields
-        except LLMParserError as exc:
+        except (LLMParserError, ValidationError) as exc:
             exercises.append(_placeholder_exercise(entry.position, entry.name, str(exc)))
             warnings.append(
                 f"Exercise {entry.position} ({entry.name}) failed to extract: {exc}"
