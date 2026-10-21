@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { clear, get, set } from 'idb-keyval'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveSession } from '@/lib/store'
-import { startBlank, startFromWorkout } from '@/lib/session'
+import { setEffort, startBlank, startFromWorkout } from '@/lib/session'
 import { clearLastFinished, type Finished } from '@/screens/session/finished'
 import { fakeApi, renderApp } from '@/test-utils'
 
@@ -95,6 +95,23 @@ describe('Session', () => {
     expect(await get('sessions-to-send:a@example.com')).toEqual([])
   })
 
+  it('ticking a working set that already has an effort does not ask again', async () => {
+    const live = startFromWorkout(workout, '1 · Bench', 'p1', lasts, new Date(2026, 9, 4, 10, 0))
+    const [first] = live.exercises[0].sets.filter((x) => x.kind === 'working')
+    // Effort picked from the set's menu before ticking.
+    await saveSession(setEffort(live, first.key, 8))
+    fakeApi({})
+    renderApp('/session')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+    expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
+
+    // A set without an effort still asks.
+    await userEvent.click(screen.getByRole('button', { name: 'Set 2 done' }))
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
+  })
+
   it("offers to save a session's changes to the program", async () => {
     await seed()
     const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
@@ -127,6 +144,45 @@ describe('Session', () => {
     expect(saved.exercises[0].working_sets).toBe(3)
   })
 
+  it('opens Done without waiting on the network for the program loaded at the start', async () => {
+    await seed()
+    const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
+      deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
+    fakeApi({
+      'GET /programs': [program], 'GET /programs/p1': program,
+      'POST /sessions': { session_id: 's1', created: true },
+    })
+    // A cold start: once the server is asleep, the program never arrives.
+    let serverAsleep = false
+    const awake = globalThis.fetch
+    globalThis.fetch = ((url: string, init?: RequestInit) =>
+      serverAsleep && url === '/programs/p1' ? new Promise(() => {}) : awake(url, init)) as typeof fetch
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp('/session')
+      await user.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+      await screen.findByRole('dialog', { name: 'How Hard Was It?' })
+      await user.keyboard('{Escape}')
+      await user.click(screen.getByRole('button', { name: '+ Set' }))
+      const sets = screen.getAllByRole('button', { name: /^Set \d done$/ })
+      await user.click(sets[sets.length - 1])
+      await screen.findByRole('dialog', { name: 'How Hard Was It?' })
+      await user.keyboard('{Escape}')
+      // Longer than React Query keeps a query nothing is using.
+      await vi.advanceTimersByTimeAsync(6 * 60_000)
+      serverAsleep = true
+      await user.click(screen.getByRole('button', { name: 'Finish' }))
+      await user.click(await screen.findByRole('button', { name: 'Save Session' }))
+
+      // Save didn't wait for the program, and plan changes still show on Done.
+      expect(await screen.findByText('Update the Program?')).toBeInTheDocument()
+      expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps a finished session on the phone when it cannot be sent', async () => {
     await seed()
     fakeApi({ 'GET /programs': [] })
@@ -147,6 +203,26 @@ describe('Session', () => {
     await waitFor(() => expect(screen.getByText('Waiting to Send')).toBeInTheDocument())
     const queued = (await get('sessions-to-send:a@example.com')) as { client_id: string }[]
     expect(queued).toHaveLength(1)
+  })
+
+  it('says so, and keeps the session, when the phone cannot store the finished session', async () => {
+    await seed()
+    fakeApi({ 'GET /programs': [] })
+    renderApp('/session')
+    await userEvent.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+    await skipEffort()
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }))
+    const save = await screen.findByRole('button', { name: 'Save Session' })
+    const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
+      throw new DOMException('Storage is full.', 'QuotaExceededError')
+    })
+    try {
+      await userEvent.click(save)
+      expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't save this session on the phone.")
+    } finally {
+      put.mockRestore()
+    }
+    expect(await get('session-in-progress:a@example.com')).toBeTruthy()
   })
 
   it("one tap takes last time's weight; a second tap types over it, and it stays on the phone", async () => {
@@ -189,7 +265,7 @@ describe('Session', () => {
     await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
   })
 
-  it('fills one box per tap, and filling both by tapping never ticks the set', async () => {
+  it('fills one box per tap; the tap that fills the second ticks the set', async () => {
     await seed()
     fakeApi({})
     renderApp('/session')
@@ -197,10 +273,28 @@ describe('Session', () => {
     const reps = screen.getByLabelText('Reps for set 1')
     await userEvent.click(weight)
     expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', ''])
-    await userEvent.click(reps)
-    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', '2'])
+    // The reps are still grey: not done yet.
     expect(screen.getByRole('button', { name: 'Set 1 done' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.queryByRole('dialog', { name: 'How Hard Was It?' })).not.toBeInTheDocument()
+    await userEvent.click(reps)
+    expect([(weight as HTMLInputElement).value, (reps as HTMLInputElement).value]).toEqual(['125', '2'])
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
+  })
+
+  it("ticks a set by itself when a tap fills its last grey box, the weight being typed", async () => {
+    await seed()
+    fakeApi({})
+    renderApp('/session')
+    const weight = await screen.findByLabelText('Weight for set 1')
+    // First tap fills 125, second opens the keypad: type over it.
+    await userEvent.click(weight)
+    await userEvent.click(weight)
+    await userEvent.keyboard('127.5')
+    // Tapping the grey reps fills last time's 2, and the set is done.
+    await userEvent.click(screen.getByLabelText('Reps for set 1'))
+    expect(await screen.findByRole('dialog', { name: 'How Hard Was It?' })).toBeInTheDocument()
+    await waitFor(async () => expect((await get('session-in-progress:a@example.com'))?.exercises[0].sets[0].done).toBe(true))
   })
 
   it('switches an exercise to an alternative from the swap icon', async () => {

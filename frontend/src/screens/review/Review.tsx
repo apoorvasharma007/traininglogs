@@ -152,8 +152,9 @@ export default function Review({ params }: { params: { id: string } }) {
     } catch (e) {
       setConfirmError(errorText(e))
       if (e instanceof ApiError && e.status === 409) setSavedAs((e.body as { session_id: string | null }).session_id)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   /** Scrolls to, and focuses, the next value marked amber. */

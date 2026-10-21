@@ -131,6 +131,12 @@ def test_list_sessions_filter_by_date_range(client):
     assert test_results[0]["session_id"] == IDS["a"]
 
 
+@pytest.mark.parametrize("param", ["from_date", "to_date"])
+def test_list_sessions_rejects_a_date_that_isnt_one(client, param):
+    r = client.get("/sessions", params={param: "notadate"}, headers=HEADERS)
+    assert r.status_code == 422
+
+
 def test_session_list_has_exercise_names_and_a_limit(client):
     first = client.get("/sessions", headers=HEADERS).json()[0]
     assert first["exercises"] == ["Bench Press"]
@@ -784,6 +790,21 @@ class TestEditExtraction:
             "op": {"op": "add_set", "path": "exercises.0"},
         })
         assert r.status_code == 422
+
+
+class TestUnreadableExtractSent:
+    """An `extract` the phone sends back that isn't a valid reading is the caller's mistake: 422, not 500."""
+
+    @pytest.mark.parametrize("path,body", [
+        ("confirm", {"extract": {}}),
+        ("correct", {"extract": {}, "instruction": "fix it"}),
+        ("edit", {"extract": {}, "edits": [{"path": "", "field": "focus", "value": "x"}]}),
+    ])
+    def test_is_refused_with_422(self, client, db_conn, path, body) -> None:
+        extraction_id = TestEditExtraction._insert_extraction(None, db_conn, f"unreadable extract {path}")
+        r = client.post(f"/extractions/{extraction_id}/{path}", json=body, headers=HEADERS)
+        assert r.status_code == 422
+        assert r.json()["detail"] == "The extract sent isn't a valid reading of a session."
 
 
 class TestWebUi:

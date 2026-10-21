@@ -28,7 +28,8 @@ export default function NumberBox({
   /** The placeholder is a value worth taking as it is. */
   fillable?: boolean
   className?: string
-  onChange: (value: string) => void
+  /** `filled` is true when a tap took the grey number as it is. */
+  onChange: (value: string, filled?: boolean) => void
   /** Typing is over: the box lost focus (not counting a tap-to-fill). */
   onBlur?: (e: FocusEvent<HTMLInputElement>) => void
 }) {
@@ -48,7 +49,7 @@ export default function NumberBox({
       readOnly={fill}
       onClick={fill ? (e) => {
         filling.current = true
-        onChange(placeholder)
+        onChange(placeholder, true)
         e.currentTarget.blur()
         filling.current = false
       } : undefined}
