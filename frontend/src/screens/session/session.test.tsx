@@ -127,6 +127,45 @@ describe('Session', () => {
     expect(saved.exercises[0].working_sets).toBe(3)
   })
 
+  it('opens Done without waiting on the network for the program loaded at the start', async () => {
+    await seed()
+    const program = { id: 'p1', name: 'Strength', deload_after_days: 28, following: true, following_since: null, next_workout_id: 'w1',
+      deload: { days_since: 0, due: false, in_progress: 0 }, workouts: [workout] }
+    fakeApi({
+      'GET /programs': [program], 'GET /programs/p1': program,
+      'POST /sessions': { session_id: 's1', created: true },
+    })
+    // A cold start: once the server is asleep, the program never arrives.
+    let serverAsleep = false
+    const awake = globalThis.fetch
+    globalThis.fetch = ((url: string, init?: RequestInit) =>
+      serverAsleep && url === '/programs/p1' ? new Promise(() => {}) : awake(url, init)) as typeof fetch
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp('/session')
+      await user.click(await screen.findByRole('button', { name: 'Set 1 done' }))
+      await screen.findByRole('dialog', { name: 'How Hard Was It?' })
+      await user.keyboard('{Escape}')
+      await user.click(screen.getByRole('button', { name: '+ Set' }))
+      const sets = screen.getAllByRole('button', { name: /^Set \d done$/ })
+      await user.click(sets[sets.length - 1])
+      await screen.findByRole('dialog', { name: 'How Hard Was It?' })
+      await user.keyboard('{Escape}')
+      // Longer than React Query keeps a query nothing is using.
+      await vi.advanceTimersByTimeAsync(6 * 60_000)
+      serverAsleep = true
+      await user.click(screen.getByRole('button', { name: 'Finish' }))
+      await user.click(await screen.findByRole('button', { name: 'Save Session' }))
+
+      // Save didn't wait for the program, and plan changes still show on Done.
+      expect(await screen.findByText('Update the Program?')).toBeInTheDocument()
+      expect(screen.getByLabelText('Squat: 3 working sets (was 2)')).toBeChecked()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps a finished session on the phone when it cannot be sent', async () => {
     await seed()
     fakeApi({ 'GET /programs': [] })
