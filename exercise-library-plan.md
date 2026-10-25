@@ -774,21 +774,29 @@ Picker work is on `exercises/library-f2-picker` (cut from `exercises/library-7-p
   Transverse Abdominis, Hip Flexors, Abductors, Neck Extensors) are reached only in their
   group's bubble. Log becomes Measure with the time and distance design.
 
-**Picker design locked (2026-10-26, Apoorva: "I love this, lock this").** Branch
-`exercises/library-f2-picker`, last code commit `39f8840`, not pushed. The decisions above
+**Picker design locked (2026-10-26, Apoorva: "I love this, lock this").** Squashed into
+`exercises/library` as `91ffcce`. The decisions above
 (name box and keyboard, body figure, whole groups, pills, bubble on MenuGroup/MenuItem, joint
 grid, compound derived) are approved; change them only with Apoorva's yes. Frontend: typecheck,
 lint, 176 tests and the build pass. The Python suite last ran green (810) before the picker work;
 it touches only the frontend, but the step gate needs a fresh run.
 
-**Next action: ship the picker to staging.**
-1. Run the full Python suite on a private database (0 failed, 0 skipped) and the frontend checks.
-2. Squash `exercises/library-f2-picker` into `exercises/library` (its WIP commits become one).
-3. With Apoorva's yes: on staging, `scripts/migrate.py` dry run then `--apply` (`0002`), then
-   `scripts/load_exercise_library.py` dry run then `--apply`. Staging is test data.
-4. With Apoorva's yes: PR `exercises/library` into `dev`; CI green; merge, and staging deploys.
-5. Try it on staging on the phone (`/verify` section 5).
-Production waits for F1 (the tables) and M1. No prod write without a yes in the session.
+**Shipped to staging (2026-10-26).** PR #77 merged into `dev` (`ab418cd`); staging deployed. On
+staging, in this order: `0002_exercise_library.sql` (adds only) before the deploy, the library load
+(161 exercises, 876 free-exercise-db rows), then `0003_drop_replaced_columns.sql` after the deploy.
+Staging records 0001 to 0003; production records only 0001. The schema split came from checking
+staging's running code: it still wrote columns the first 0002 dropped (`.claude/rules/schema.md`
+now says add first, drop after; the loader changes rows only and requires 0002).
+
+**Next action: Apoorva tries the picker on staging on the phone** (`/verify` section 5). Then F1,
+the tables: the one-exercise-table question (custom exercises as `exercises` rows with an owner,
+instead of `user_exercises`), designed with Apoorva before code; then M1. Production gets, in
+order: backup, `0002`, the library load, the deploy of `main`, `0003`. No prod write without a
+yes in the session.
+
+For Progress (Release B): the muscle-to-group list lives only in `frontend/src/lib/lists.ts`, and
+the muscle names are in it and in `0002`'s checks. When the server counts sets by group, both read
+one source (for example a `muscle_groups` table), not a third copy.
 
 Left to clean up, each with Apoorva's yes: the helper branches `exercises/library-f2-body` and
 `exercises/library-f2-save` and their worktrees `~/Projects/tl-f2-body`, `~/Projects/tl-f2-save`
