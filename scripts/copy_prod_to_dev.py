@@ -1,7 +1,7 @@
 """Copy production into the local dev database or staging, to try the app on real data.
 
-Reads production (DATABASE_URL) in a read-only transaction and never writes to it. Applies
-schema.sql to the target, empties every table, and copies them all in. The target is
+Reads production (DATABASE_URL) in a read-only transaction and never writes to it. Brings the
+target's schema up to date, empties every table, and copies them all in. The target is
 DEV_DATABASE_URL: the `traininglogs_dev` database in the local Docker Postgres by default, or
 staging's (DATABASE_URL_STAGING); anything else is refused. Run it again any time to start fresh.
 
@@ -60,7 +60,7 @@ def main() -> int:
     with prod.cursor() as p, target.cursor() as t:
         t.execute(f"TRUNCATE {', '.join(TABLES)} CASCADE")
         for table in TABLES:
-            # Columns both sides have: a column added to schema.sql but not yet to production
+            # Columns both sides have: a column whose schema change file hasn't run on production
             # (a release in progress) stays empty in the copy.
             cols = ", ".join(f'"{c}"' for c in _columns(t, table) if c in _columns(p, table))
             buf = io.StringIO()

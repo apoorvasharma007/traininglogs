@@ -16,7 +16,9 @@ docker compose exec db_test createdb -U traininglogs traininglogs_<branch>   # o
 export TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_<branch>
 ```
 
-The tests apply `src/traininglogs/db/schema.sql` themselves, so a new database needs nothing else.
+The tests run the schema change files (`src/traininglogs/db/migrations/`) themselves, so a new
+database needs nothing else. A test database that ran an earlier version of a file you're still
+editing refuses it; drop and recreate that database.
 
 ## 2. The Python suite
 
