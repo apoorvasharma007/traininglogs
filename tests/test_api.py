@@ -43,8 +43,6 @@ SESSION_A = {
             "notes": None,
             "warmup_notes": None,
             "form_cues": ["brace core"],
-            "target_muscle_groups": None,
-            "rep_tempo": None,
             "current_goal": {
                 "weight_kg": 80.0,
                 "sets": 3,

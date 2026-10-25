@@ -13,6 +13,10 @@ paths:
   numbered one past the highest: `0002_add_library_exercise_id.sql`. Never edit a file that has
   run on staging or production; `db.py` refuses one whose text changed after it ran. Why: each
   database runs each file once, so an edit reaches only databases that haven't run it yet.
+- Add first, drop after: a file that drops or renames something the deployed code still reads goes
+  in a file of its own, run after the deploy (`0003_drop_replaced_columns.sql`). The adding file
+  runs before it. Why: staging and production run `dev`'s and `main`'s code while their schema
+  changes by hand, so a drop that runs first breaks the live app until the deploy lands.
 - A rename, a removal or a restructure is planned with Apoorva first. Changing stored rows (a data
   migration) is a script of its own: one transaction, dry run by default, counts compared old
   against new, like `scripts/migrate_to_accounts.py`.

@@ -180,10 +180,9 @@ class TestProjectionToExercise:
         assert exercise.sets[0].rep_count is None
         assert any("a few" in w for w in warnings)
 
-    def test_classification_fields_are_left_unset_not_invented(self) -> None:
+    def test_form_cues_are_left_unset_not_invented(self) -> None:
         exercise, _ = _extract().to_exercise(1)
-        for field in ("tags", "modality", "movement_pattern", "form_cues"):
-            assert getattr(exercise, field) is None
+        assert exercise.form_cues is None
 
     def test_source_lines_do_not_reach_the_production_model(self) -> None:
         exercise, _ = _extract().to_exercise(1)

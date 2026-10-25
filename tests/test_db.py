@@ -60,9 +60,6 @@ def make_session(session_id: str = "test-session-v3-001") -> TrainingSession:
             Exercise(
                 number=1,
                 name="Lat Pulldown",
-                tags=["compound", "pull"],
-                modality="strength",
-                movement_pattern=["vertical_pull"],
                 notes="felt strong",
                 warmup_notes="Pyramid",
                 form_cues=["lean back 15 degrees", "squeeze lats"],
@@ -160,7 +157,6 @@ def make_session_with_activity(session_id: str = "test-session-activity-001") ->
             Exercise(
                 number=1,
                 name="Incline Walk",
-                modality="cardio",
                 current_goal=Goal(distance_meters=1000.0, target_duration_seconds=600),
                 sets=[
                     WorkingSet(
@@ -342,8 +338,7 @@ def test_insert_exercise_with_goal(conn):
     with conn.cursor() as cur:
         cur.execute(
             "SELECT goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, "
-            "goal_rest_min, goal_rest_seconds, tags, modality, movement_pattern, "
-            "form_cues "
+            "goal_rest_min, goal_rest_seconds, form_cues "
             "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 1"
         )
         row = cur.fetchone()
@@ -354,10 +349,7 @@ def test_insert_exercise_with_goal(conn):
     assert row[3] == 12
     assert row[4] == 2       # rest.minutes
     assert row[5] is None    # rest.seconds
-    assert sorted(row[6]) == ["compound", "pull"]
-    assert row[7] == "strength"
-    assert row[8] == ["vertical_pull"]
-    assert row[9] == ["lean back 15 degrees", "squeeze lats"]
+    assert row[6] == ["lean back 15 degrees", "squeeze lats"]
 
 
 def test_insert_exercise_without_goal(conn):
@@ -365,7 +357,7 @@ def test_insert_exercise_without_goal(conn):
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT goal_weight_kg, goal_sets, goal_rep_min, tags, modality "
+            "SELECT goal_weight_kg, goal_sets, goal_rep_min "
             "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-v3-001') AND position = 3"
         )
         row = cur.fetchone()
@@ -373,8 +365,6 @@ def test_insert_exercise_without_goal(conn):
     assert row[0] is None
     assert row[1] is None
     assert row[2] is None
-    assert row[3] is None   # no tags
-    assert row[4] is None   # no modality
 
 
 def test_insert_exercise_activity_goal(conn):
@@ -382,14 +372,13 @@ def test_insert_exercise_activity_goal(conn):
 
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT modality, goal_distance_meters, goal_target_duration_sec "
+            "SELECT goal_distance_meters, goal_target_duration_sec "
             "FROM workout_session_exercises WHERE session_id = (SELECT id FROM workout_sessions WHERE dedup_key = 'test-session-activity-001') AND position = 1"
         )
         row = cur.fetchone()
 
-    assert row[0] == "cardio"
-    assert float(row[1]) == 1000.0
-    assert row[2] == 600
+    assert float(row[0]) == 1000.0
+    assert row[1] == 600
 
 
 def test_insert_working_set_partial_reps(conn):

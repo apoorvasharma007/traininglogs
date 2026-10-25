@@ -26,7 +26,7 @@ export default function MovementPicker({ open, title, presets, onPreset, onOwn, 
         ))}
       </MenuGroup>
       <MenuGroup>
-        <MenuItem icon={Plus} label="Add Your Own" onClick={() => { onOwn(); onClose() }} />
+        <MenuItem icon={Plus} label="Custom" onClick={() => { onOwn(); onClose() }} />
       </MenuGroup>
     </Sheet>
   )
