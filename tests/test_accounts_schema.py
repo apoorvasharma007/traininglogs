@@ -134,7 +134,7 @@ def test_every_table_but_the_shared_ones_has_a_required_owner(cur) -> None:
         FROM information_schema.tables t
         LEFT JOIN information_schema.columns c
           ON c.table_name = t.table_name AND c.column_name = 'user_id' AND c.table_schema = 'public'
-        WHERE t.table_schema = 'public' AND t.table_name NOT IN ('users', 'exercises', 'free_exercise_db')
+        WHERE t.table_schema = 'public' AND t.table_name NOT IN ('users', 'exercises', 'free_exercise_db', 'schema_migrations')
         """
     )
     assert {t: nullable for t, nullable in cur.fetchall()} == {t: "NO" for t in (

@@ -1,5 +1,5 @@
 """Writing people's data. Every function takes the owner (users.id) and every row it writes carries
-it; the database refuses a row whose owner differs from its parent's (schema.sql)."""
+it; the database refuses a row whose owner differs from its parent's (db/migrations/)."""
 from __future__ import annotations
 
 import hashlib

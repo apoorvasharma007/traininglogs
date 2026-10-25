@@ -17,7 +17,7 @@ sign-in pass on every request and never stores passwords.
 | `src/traininglogs/api/` | `app.py` has every endpoint. `auth.py` checks the sign-in pass and maps it to a user. `schemas.py` has request and response shapes. |
 | `src/traininglogs/ingest/` | The three ways a session is made: `extract.py` (note to confirmation card), `confirm.py` (card to session), `manual.py` (live session to session). |
 | `src/traininglogs/agent/` | The AI extraction: prompts, model providers (Anthropic; Groq for free evals), the checks, AI fixes (`patch.py`) and manual edits (`card_edits.py`). |
-| `src/traininglogs/db/` | `schema.sql` (all 16 tables), `insert.py` and `fetch.py` (every function takes the owner), `programs.py`, `ids.py` (UUID v7). |
+| `src/traininglogs/db/` | `migrations/` (the schema change files; `db.py` runs them), `insert.py` and `fetch.py` (every function takes the owner), `programs.py`, `ids.py` (UUID v7). |
 | `src/traininglogs/models/` | Pydantic models of a session as stored. |
 | `src/traininglogs/analytics/` | Estimated max, personal records, the Progress view's data. |
 | `src/traininglogs/export/`, `alerts.py` | Export as CSV or JSON; feedback posted to Discord. |
@@ -57,9 +57,10 @@ Progress reads sessions through `analytics/` (`/progress/lifts`).
 
 ## Where data lives and who sees it
 
-- The schema is `src/traininglogs/db/schema.sql`. The tests apply it to the test database on every
-  run. The server doesn't apply it: a change reaches staging and production only when someone runs
-  it there by hand, following the production data rules in `CLAUDE.md`.
+- The schema is the numbered schema change files in `src/traininglogs/db/migrations/`. Each runs
+  once per database, in order, and `schema_migrations` records which have run. The tests run them
+  on the test database. The server doesn't: a change reaches staging and production when someone
+  runs `scripts/migrate.py --apply` there, following the production data rules in `CLAUDE.md`.
 - Every table of people's data has `user_id`. A child row must have its parent's owner, which the
   database enforces with composite foreign keys. Row-level security is on, with no policies, so
   only the server's connection reads data.

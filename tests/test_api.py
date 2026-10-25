@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 import uuid
 
 import pytest
@@ -865,3 +866,37 @@ class TestDeadConnections:
         killer.close()
         for _ in range(3):
             assert client.get("/sessions?limit=1", headers=headers).status_code == 200
+
+
+class TestBusyPool:
+    """With every connection in use, a request waits for one to come free instead of failing."""
+
+    @staticmethod
+    def _hold_every_connection() -> list:
+        import traininglogs.api.app as api_app
+
+        held = [api_app._db() for _ in range(api_app.MAX_CONNECTIONS)]
+        for request in held:
+            next(request)
+        return held
+
+    def test_a_request_waits_for_a_free_connection(self, client) -> None:
+        held = self._hold_every_connection()
+        threading.Timer(0.5, held.pop().close).start()
+        try:
+            assert client.get("/sessions?limit=1", headers=HEADERS).status_code == 200
+        finally:
+            for request in held:
+                request.close()
+
+    def test_a_request_gives_up_when_none_comes_free(self, client, monkeypatch) -> None:
+        import traininglogs.api.app as api_app
+
+        monkeypatch.setattr(api_app, "POOL_WAIT_SECONDS", 0.2)
+        held = self._hold_every_connection()
+        try:
+            r = client.get("/sessions?limit=1", headers=HEADERS)
+            assert (r.status_code, r.json()["detail"]) == (503, "The server is busy. Try again in a minute.")
+        finally:
+            for request in held:
+                request.close()

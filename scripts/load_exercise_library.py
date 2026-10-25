@@ -1,8 +1,8 @@
 """Load the exercise library into a database: free-exercise-db's exercises, then ours.
 
-Everything runs in one transaction, starting with schema.sql (the new columns, the lists). Without
---apply it rolls back at the end: a dry run that the database itself has checked, which changes
-nothing. It prints what it added, renamed and updated, and the rows in the database that the files
+Everything runs in one transaction, starting with any schema change file the database hasn't run
+(0002_exercise_library.sql adds the library's columns and lists). Without --apply it rolls back at
+the end: a dry run that the database itself has checked, which changes nothing. It prints what it added, renamed and updated, and the rows in the database that the files
 don't have (never deleted). The target is the local dev database unless --database-url names
 another; it's printed before anything runs.
 

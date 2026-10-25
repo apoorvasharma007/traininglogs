@@ -2,7 +2,8 @@
 
 Run by scripts/load_exercise_library.py, never by the server. Matches our exercises by exact
 name, renames the 32 starter rows once (STARTER_RENAMES), and never deletes. The database checks
-every value against the approved lists (schema.sql); this checks what it can't.
+every value against the approved lists (migrations/0002_exercise_library.sql); this checks what
+it can't.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ LIBRARY_FILE = Path(__file__).parent / "exercise_library.yaml"
 FREE_EXERCISE_DB_COMMIT = "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
 FREE_EXERCISE_DB_FILE = Path(__file__).parents[3] / "scripts" / "data" / "free_exercise_db.json"
 
-# The starter rows schema.sql used to add, and the library exercise each becomes. The row keeps
+# The starter rows 0001_baseline.sql adds, and the library exercise each becomes. The row keeps
 # its id, so every link to it holds; the old name is one of the new exercise's other names.
 STARTER_RENAMES = {
     "Barbell Back Squat": "Squat (Barbell)",
