@@ -225,7 +225,7 @@ Built and tried locally against the dev copy of prod before staging. On top of s
 - **My Exercises**, one screen: your own exercises and any names not linked to the library.
   Each row offers "Link to a library exercise" or "Keep as my own" (which asks for primary
   muscles, equipment and measures). Step 5's mapping becomes a pre-fill reviewed there. Needed
-  because names that arrive as text (notes, old app) keep arriving unlinked.
+  because names that arrive as text (notes, old app) keep arriving unrecognized.
 - **Progress redesign**: an overview of tiles, each doing one job (strength, volume per muscle
   group, what hasn't been trained, and others), each opening a sub-page. Metrics and visuals
   come from a research pass (2026-10-11), then a mockup approved before building. Agreed so far:
@@ -281,10 +281,14 @@ Built and tried locally against the dev copy of prod before staging. On top of s
   typed name shows on My Exercises. Linking an own exercise to a library one makes the library's
   muscles, equipment and measures count, past sets included; the own version is kept, so
   unlinking restores it; both show what changes and offer Undo.
-- **Picker**: the exercise name box searches as you type (names and other names, library and
-  your own, on the phone), with a list under it; nothing shows before typing. Picking a row is
-  the link. The last row is always "Add '…' as your own". Same box in sessions and workout
-  plans. The set row shows the exercise's measures (time and distance boxes are new; the
+- **Picker**: the exercise name box searches as you type, on the phone, with a list under it;
+  nothing shows before typing. Picking a row is the link. Same box in sessions and workout
+  plans. Agreed 2026-10-12:
+  - Results: library exercises, your custom exercises, and your unrecognized names (grey
+    "Unrecognized" tag; picking one logs under it, and the My Exercises pill nudges you later).
+  - Search words: the name, the library's other names, and your aliases (your names linked to a
+    library exercise: "Barbell Clean" finds Clean (Barbell), shown with `Matches "Barbell Clean"`).
+  - "Add '…' as your own" is the last row only when nothing has exactly the typed name. The set row shows the exercise's measures (time and distance boxes are new; the
   database already stores both).
 - **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle.
   Equipment is optional for own exercises (no metric uses it). Approved on the mockup
@@ -361,8 +365,19 @@ squashed into the base; the base merges into `dev` when every step is done and t
         person to pick the exercise for each name.
       - For step 4: own exercises pick equipment from the list; "other" asks what it is and
         stores the text in `equipment_other`.
-- [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
-      measures; tests.
+- [ ] 4. Own exercises (server): `GET /exercises` (the library and your own),
+      `POST /exercises` and `PUT /exercises/{user_exercise_id}`; tests. Agreed 2026-10-12:
+      - Own exercises are `user_exercises` rows with the library's fields as columns (same
+        names); custom means it has a primary muscle. Equipment becomes one `equipment_name`
+        domain for both tables.
+      - Required: a name and a primary muscle, unless linked to a library exercise. Measures
+        default to weight and reps; equipment is optional (section 9 overrides section 5).
+      - Names are saved as typed; the name box asks the phone keyboard for capital words, as
+        the session's does.
+      - PUT edits, renames, links and unlinks. A name that is a library exercise's name must
+        link to that exercise; a clash with the library or your own names is 409.
+      - Saving a session needs no change: a pick puts the exact name in the box, and exact
+        names already link.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
 - [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
       counted by group as in section 1; tests.
@@ -433,24 +448,25 @@ was in the session scratchpad (not kept); its conclusions are in section 9.
 
 2026-10-12 (later): My Exercises mockup, version 4 (https://claude.ai/artifact/84eR4cUKKa8EkYsJfmvHi1),
 in review; Apoorva refines it on the artifact. Agreed so far:
-- Settings row "My Exercises", subtitle "Your custom exercise collection", pill "2 unlinked"
-  only when something is unlinked. It opens a page with Unlinked, Custom, and a Linked row that
+- Settings row "My Exercises", subtitle "Your custom exercise collection", pill "2 unrecognized"
+  only when something is unrecognized (renamed from unlinked 2026-10-12, everywhere). It opens a
+  page with Unrecognized, Custom, and a Linked row that
   opens its own screen (filter, two-line rows: typed name, library name).
-- Unlinked note, word for word: "These don't count toward your weekly muscle volume. Link each
+- Unrecognized note, word for word: "These don't count toward your weekly muscle volume. Link each
   one to a library exercise, or make it custom and pick its muscles, to make all logged sets
   count. Then they show in Progress."
-- Decided: unlinked names count nowhere in Progress and get no chart of their own.
-- Unlinked rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
+- Decided: unrecognized names count nowhere in Progress and get no chart of their own.
+- Unrecognized rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
   count) or "Make It Custom". Every custom exercise uses the one approved Add Your Own sheet (all
   fields, Primary Muscles open first): Make It Custom fills the name, "+ Add" in the Custom
   header opens it empty, tapping a custom exercise opens it filled to edit. Linked rows: Change Link (same search sheet) or Unlink (back to
-  Unlinked). Every change shows Undo for 5 seconds. No suggested matches.
+  Unrecognized). Every change shows Undo for 5 seconds. No suggested matches.
 - Search results that matched an other name show `Matches "rdl"` (replaces "Also called", in the
   session picker too). Other names are ours, from step 2; users never add to them.
 - Link searches the 161 library exercises only; free-exercise-db stays second tier.
-On the dev copy, exact-name linking leaves 2 of Apoorva's 99 names unlinked (Shoulder Press,
-Calf raise) and moves Barbell Clean to Clean (Barbell). Open for step 7: should the picker also
-find a person's linked names?
+On the dev copy, exact-name linking leaves 2 of Apoorva's 99 names unrecognized (Shoulder Press,
+Calf raise) and moves Barbell Clean to Clean (Barbell). The picker finds a person's linked names
+as aliases (decided 2026-10-12, section 9).
 Mockup design approved; its layout is rough (hand-copied CSS). The build uses the app's own
 pieces; new layout (Settings row with subtitle and pill, Custom header with count and + Add,
 two-line Linked rows) gets shown before it's written. `SectionCard` puts the description to the
@@ -462,17 +478,35 @@ rule. Key Lifts and Skills editing move onto their Progress pages. Profile mocku
 never extras copied from a mockup; reuse existing components, and every new line has to earn
 its place.
 
+2026-10-12 (end of session): step 4 built and committed on `exercises/library-4-own`
+(`e657700`, suite green 785 passed): `GET /exercises`, `POST /exercises`,
+`PUT /exercises/{user_exercise_id}`, own-exercise columns on `user_exercises`, one
+`equipment_name` domain. Before it, on `exercises/library-3-schema`: `patterns` became
+`movement_patterns` (`e4d5fe8`) and five empty session-exercise columns (`tags`, `modality`,
+`movement_pattern`, `target_muscle_groups`, `rep_tempo`) were dropped from the database, the
+model and the API (`da037a8`). "Unlinked" is now "Unrecognized" everywhere (`864ad3c`). Picker
+search design agreed (section 9). Neither branch is squashed, since `exercises/library` is
+checked out in the main checkout.
+
+Local demo: `~/Projects/traininglogs-wave/.env` (git-ignored) points at the local dev copy and
+the prod Supabase project (publishable key from Secret Manager). From the worktree:
+`cd frontend && npm run build`, then
+`PYTHONPATH=src ../traininglogs/.venv/bin/uvicorn traininglogs.api.app:app --port 8010`, then
+sign in with an email code as on prod.
+`schema.sql` is applied by hand (`.claude/db-migration.md`); the dev copy has it, counts
+unchanged (133 sessions, 1064 session exercises, 3419 sets, 99 names, 19 linked, 161 library).
+The staging rehearsal confirms the five dropped columns are empty on the prod copy first.
+
 Next:
-1. Build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
-   `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
-   the base branch is checked out in the main checkout).
-2. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
+1. Wait for Apoorva's yes, then build the picker on `exercises/library-7-picker` from
+   `exercises/library-4-own`, in this order, showing the diff before each commit:
+   `lib/lists.ts` (lists, groups and joints head to toe, the 7 Log combinations), the search
+   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and
+   `WorkoutPlan`, then the Add Your Own sheet. Left for later in step 7: keeping the library on
+   the phone (section 6) and the time and distance boxes in the set row.
+2. Then My Exercises, Profile, and the Progress redesign (needs step 6's reads by exercise).
+3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
    which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
-2026-10-12: `patterns` renamed `movement_patterns`; five empty session-exercise columns (`tags`,
-`modality`, `movement_pattern`, `target_muscle_groups`, `rep_tempo`) dropped from the database,
-the model and the API. `schema.sql` drops them on startup, so the staging rehearsal must confirm
-they are empty on the prod copy before the release. Local dev still has them until the app next
-starts against it.
 Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
 `DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
 

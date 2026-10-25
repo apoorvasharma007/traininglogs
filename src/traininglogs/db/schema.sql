@@ -55,6 +55,7 @@ DO $$ BEGIN CREATE DOMAIN muscle_list           AS TEXT[]; EXCEPTION WHEN duplic
 DO $$ BEGIN CREATE DOMAIN joint_action_list     AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE DOMAIN movement_pattern_list AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE DOMAIN measure_list          AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN equipment_name        AS TEXT;   EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 ALTER DOMAIN muscle_list DROP CONSTRAINT IF EXISTS muscle_list_check;
 ALTER DOMAIN muscle_list ADD CONSTRAINT muscle_list_check CHECK (VALUE <@ ARRAY[
         'Upper Chest', 'Mid/Lower Chest', 'Front Delts', 'Side Delts', 'Rear Delts',
@@ -90,6 +91,12 @@ ALTER DOMAIN measure_list DROP CONSTRAINT IF EXISTS measure_list_check;
 ALTER DOMAIN measure_list ADD CONSTRAINT measure_list_check CHECK (VALUE <@ ARRAY[
         'weight', 'reps', 'time', 'distance'
     ]::text[]);
+ALTER DOMAIN equipment_name DROP CONSTRAINT IF EXISTS equipment_name_check;
+ALTER DOMAIN equipment_name ADD CONSTRAINT equipment_name_check CHECK (VALUE IN (
+        'barbell', 'ez bar', 'trap bar', 'dumbbell', 'kettlebell', 'cable', 'machine',
+        'smith machine', 'band', 'medicine ball', 'sled', 'box', 'jump rope', 'bodyweight',
+        'other'
+    ));
 
 -- free-exercise-db's exercises, unchanged, loaded by scripts/load_exercise_library.py from the
 -- copy in scripts/data/. Nobody edits it by hand.
@@ -108,11 +115,11 @@ CREATE TABLE IF NOT EXISTS free_exercise_db (
 );
 
 -- The shared, curated library, loaded by scripts/load_exercise_library.py from
--- db/exercise_library.yaml. Equipment and muscles live here, never on people's own names.
+-- db/exercise_library.yaml. People's own exercises never change it.
 CREATE TABLE IF NOT EXISTS exercises (
     id          UUID PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
-    equipment   TEXT NOT NULL,
+    equipment   equipment_name NOT NULL,
     -- Other ways people write it, lower case, for linking automatically ("back squat", "squats").
     other_names TEXT[] NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -127,12 +134,9 @@ ALTER TABLE exercises ADD COLUMN IF NOT EXISTS joint_actions       joint_action_
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS movement_patterns   movement_pattern_list NOT NULL DEFAULT '{}';
 -- One of theirs links to one of ours at most.
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS free_exercise_db_id TEXT UNIQUE REFERENCES free_exercise_db(id);
+-- The equipment list moved to its domain, shared with user_exercises (2026-10-12).
 ALTER TABLE exercises DROP CONSTRAINT IF EXISTS exercises_equipment_check;
-ALTER TABLE exercises ADD CONSTRAINT exercises_equipment_check CHECK (equipment IN (
-        'barbell', 'ez bar', 'trap bar', 'dumbbell', 'kettlebell', 'cable', 'machine',
-        'smith machine', 'band', 'medicine ball', 'sled', 'box', 'jump rope', 'bodyweight',
-        'other'
-    ));
+ALTER TABLE exercises ALTER COLUMN equipment TYPE equipment_name;
 -- Replaced by the columns above; nothing read them (dropped 2026-10-11).
 ALTER TABLE exercises DROP COLUMN IF EXISTS movement;
 ALTER TABLE exercises DROP COLUMN IF EXISTS muscles;
@@ -150,6 +154,17 @@ CREATE TABLE IF NOT EXISTS user_exercises (
     UNIQUE (user_id, id),
     UNIQUE (user_id, name_key)
 );
+-- What it records, with the library's column names. A custom exercise has a primary muscle; a name
+-- that has none and no link is unrecognized. A linked one keeps these, so unlinking restores them.
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS equipment         equipment_name;
+-- What "other" equipment is, in the person's words.
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS equipment_other   TEXT;
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS measures          measure_list          NOT NULL DEFAULT '{}';
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS compound          BOOLEAN;
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS primary_muscles   muscle_list           NOT NULL DEFAULT '{}';
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS secondary_muscles muscle_list           NOT NULL DEFAULT '{}';
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS joint_actions     joint_action_list     NOT NULL DEFAULT '{}';
+ALTER TABLE user_exercises ADD COLUMN IF NOT EXISTS movement_patterns movement_pattern_list NOT NULL DEFAULT '{}';
 
 -- What people wrote or entered ------------------------------------------------
 
