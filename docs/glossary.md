@@ -57,6 +57,13 @@ term to them. Where the app shows a different label, that's noted too. Agreed wi
 | AI call log | One row per paid model call: model, step, tokens, cost. | `ai_call_logs` | `llm_calls`, LLM call |
 | AI usage | Your AI call count and cost for the month. | `GET /me/ai-usage`; `AiUsage` | AI spend, AI cost |
 
+## The database
+
+| Term | Meaning | In code | Don't say |
+|---|---|---|---|
+| schema change file | A numbered SQL file that changes the shape of the tables: a new column, a new table, a rename. Each runs once per database, in number order, and is never edited after it has run. | `src/traininglogs/db/migrations/NNNN_*.sql`; `schema_migrations`; `scripts/migrate.py` | migration (alone), `schema.sql` |
+| data migration | A one-off script that changes stored rows, not the tables' shape. It runs once per database, then is deleted. | `scripts/migrate_to_accounts.py` | migration (alone) |
+
 ## Where the app's labels differ
 
 The app still says "Key Lifts" (pinned lifts) and "This workout session is empty" (session). Changing
