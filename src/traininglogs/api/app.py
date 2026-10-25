@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 import sys
 from contextlib import asynccontextmanager
@@ -14,7 +15,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import psycopg2
-from psycopg2.pool import SimpleConnectionPool
+from psycopg2.pool import ThreadedConnectionPool
 
 from traininglogs.api.auth import bearer, user_for, verify
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
@@ -51,19 +52,26 @@ load_dotenv()
 
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "").split(",")
 
-_pool: SimpleConnectionPool | None = None
+# FastAPI runs each plain `def` endpoint on a thread of its own, so the pool is shared between
+# threads. A request waits up to POOL_WAIT_SECONDS for a free connection rather than failing.
+MAX_CONNECTIONS = 10
+POOL_WAIT_SECONDS = 10.0
+_pool: ThreadedConnectionPool | None = None
+_pool_lock = threading.Lock()
+_free_connections = threading.BoundedSemaphore(MAX_CONNECTIONS)
 
 
-def _get_pool() -> SimpleConnectionPool:
+def _get_pool() -> ThreadedConnectionPool:
     global _pool
-    if _pool is None:
-        db_url = os.environ["DATABASE_URL"]
-        # Keepalives stop an idle connection from being dropped along the way; the name lets the
-        # tests find this pool's connections in pg_stat_activity.
-        _pool = SimpleConnectionPool(
-            minconn=1, maxconn=10, dsn=db_url, application_name="traininglogs-api",
-            keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
-        )
+    with _pool_lock:
+        if _pool is None:
+            db_url = os.environ["DATABASE_URL"]
+            # Keepalives stop an idle connection from being dropped along the way; the name lets
+            # the tests find this pool's connections in pg_stat_activity.
+            _pool = ThreadedConnectionPool(
+                minconn=1, maxconn=MAX_CONNECTIONS, dsn=db_url, application_name="traininglogs-api",
+                keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
+            )
     return _pool
 
 
@@ -72,7 +80,7 @@ IDLE_CHECK_SECONDS = 60.0
 _last_used: dict[int, float] = {}
 
 
-def _live_connection(pool: SimpleConnectionPool):
+def _live_connection(pool: ThreadedConnectionPool):
     """A connection from the pool that the server hasn't closed. Reusing a closed one made every
     request fail until a restart. One that sat idle gets a `SELECT 1` first; a failure replaces
     it. Connections in steady use skip the check."""
@@ -94,29 +102,34 @@ def _live_connection(pool: SimpleConnectionPool):
 
 
 def _db():
-    pool = _get_pool()
-    conn = _live_connection(pool)
+    if not _free_connections.acquire(timeout=POOL_WAIT_SECONDS):
+        raise HTTPException(status_code=503, detail="The server is busy. Try again in a minute.")
     try:
-        yield conn
-    finally:
-        # A connection pool reuses the same physical connection across unrelated requests.
-        # Without this, a request that opens a transaction and never explicitly commits or
-        # rolls back (every GET endpoint; the early "already exists" return in
-        # insert_session()) hands the connection back to the pool mid-transaction. The next
-        # request to get that connection then runs inside that leftover transaction and sees
-        # its uncommitted writes as if they were its own -- invisible to every other
-        # connection, including a test's own, but very visible to itself. Rollback is a safe
-        # no-op when everything was already committed.
-        if conn.closed:
-            # Lost mid-request: don't hand a dead connection to the next one.
-            pool.putconn(conn, close=True)
-        else:
-            try:
-                conn.rollback()
-                _last_used[id(conn)] = time.monotonic()
-                pool.putconn(conn)
-            except psycopg2.Error:
+        pool = _get_pool()
+        conn = _live_connection(pool)
+        try:
+            yield conn
+        finally:
+            # A connection pool reuses the same physical connection across unrelated requests.
+            # Without this, a request that opens a transaction and never explicitly commits or
+            # rolls back (every GET endpoint; the early "already exists" return in
+            # insert_session()) hands the connection back to the pool mid-transaction. The next
+            # request to get that connection then runs inside that leftover transaction and sees
+            # its uncommitted writes as if they were its own -- invisible to every other
+            # connection, including a test's own, but very visible to itself. Rollback is a safe
+            # no-op when everything was already committed.
+            if conn.closed:
+                # Lost mid-request: don't hand a dead connection to the next one.
                 pool.putconn(conn, close=True)
+            else:
+                try:
+                    conn.rollback()
+                    _last_used[id(conn)] = time.monotonic()
+                    pool.putconn(conn)
+                except psycopg2.Error:
+                    pool.putconn(conn, close=True)
+    finally:
+        _free_connections.release()
 
 
 def _user(conn=Depends(_db), token: str = Depends(bearer)) -> str:
