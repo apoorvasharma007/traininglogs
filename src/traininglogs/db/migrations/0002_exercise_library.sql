@@ -1,6 +1,7 @@
 -- The exercise library (exercise-library-plan.md, steps 3 and 4): the approved lists, the
--- free-exercise-db table, the library's columns on exercises and user_exercises, and the columns
--- they replace. scripts/load_exercise_library.py fills the tables afterwards.
+-- free-exercise-db table, and the library's columns on exercises and user_exercises. It only adds,
+-- so it runs before the code that uses it deploys; 0003 drops the columns these replace, after.
+-- scripts/load_exercise_library.py fills the tables afterwards.
 
 -- The approved lists (exercise-library-plan.md, section 2). The database refuses a value that
 -- isn't on them, whoever writes it. To change a list, a new file drops the check and adds it again;
@@ -78,8 +79,6 @@ ALTER TABLE exercises ADD COLUMN free_exercise_db_id TEXT UNIQUE REFERENCES free
 -- The equipment list moves to its domain, shared with user_exercises.
 ALTER TABLE exercises DROP CONSTRAINT exercises_equipment_check;
 ALTER TABLE exercises ALTER COLUMN equipment TYPE equipment_name;
--- Replaced by the columns above; nothing reads them.
-ALTER TABLE exercises DROP COLUMN movement, DROP COLUMN muscles;
 
 -- What a person's own exercise records, with the library's column names. A custom exercise has a
 -- primary muscle; a name that has none and no link is unrecognized. A linked one keeps these, so
@@ -93,9 +92,3 @@ ALTER TABLE user_exercises ADD COLUMN primary_muscles   muscle_list           NO
 ALTER TABLE user_exercises ADD COLUMN secondary_muscles muscle_list           NOT NULL DEFAULT '{}';
 ALTER TABLE user_exercises ADD COLUMN joint_actions     joint_action_list     NOT NULL DEFAULT '{}';
 ALTER TABLE user_exercises ADD COLUMN movement_patterns movement_pattern_list NOT NULL DEFAULT '{}';
-
--- Classifications the AI stopped filling, empty in every row; the library's muscles and movement
--- patterns replace them.
-ALTER TABLE workout_session_exercises
-    DROP COLUMN tags, DROP COLUMN modality, DROP COLUMN movement_pattern,
-    DROP COLUMN target_muscle_groups, DROP COLUMN rep_tempo;

@@ -1,9 +1,10 @@
 """Load the exercise library into a database: free-exercise-db's exercises, then ours.
 
-Everything runs in one transaction, starting with any schema change file the database hasn't run
-(0002_exercise_library.sql adds the library's columns and lists). Without --apply it rolls back at
-the end: a dry run that the database itself has checked, which changes nothing. It prints what it added, renamed and updated, and the rows in the database that the files
-don't have (never deleted). The target is the local dev database unless --database-url names
+It changes rows only, never the tables: the database must have run 0002_exercise_library.sql
+(`scripts/migrate.py`), or it stops. Everything runs in one transaction; without --apply it rolls
+back at the end: a dry run that the database itself has checked, which changes nothing. It prints
+what it added, renamed and updated, and the rows in the database that the files don't have (never
+deleted). The target is the local dev database unless --database-url names
 another; it's printed before anything runs.
 
     .venv/bin/python scripts/load_exercise_library.py
@@ -20,7 +21,6 @@ from urllib.parse import urlparse
 
 import psycopg2
 
-from traininglogs.db.db import apply_schema
 from traininglogs.db.library import (
     FREE_EXERCISE_DB_COMMIT, LibraryError, load_free_exercise_db, load_library, read_free_exercise_db,
     read_library,
@@ -46,8 +46,12 @@ def main() -> int:
     print(f"free-exercise-db at commit {FREE_EXERCISE_DB_COMMIT[:7]}\n")
 
     conn = psycopg2.connect(args.database_url)
+    with conn.cursor() as cur:
+        cur.execute("SELECT to_regclass('free_exercise_db') IS NOT NULL")
+        if not cur.fetchone()[0]:
+            print("This database hasn't run 0002_exercise_library.sql. Run scripts/migrate.py first.")
+            return 1
     try:
-        apply_schema(conn, commit=False)
         with conn.cursor() as cur:
             theirs = load_free_exercise_db(cur, read_free_exercise_db())
             ours = load_library(cur, read_library())
