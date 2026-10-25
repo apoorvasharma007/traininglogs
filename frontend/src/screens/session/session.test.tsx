@@ -248,7 +248,7 @@ describe('Session', () => {
 
   it('ticks a set by itself once its weight and reps are typed and the keyboard leaves it', async () => {
     await saveSession(startBlank(new Date(2026, 9, 4, 10, 0)))
-    fakeApi({})
+    fakeApi({ 'GET /exercises': { library: [{ id: '1', name: 'Squat', other_names: [] }], mine: [] } })
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
     await userEvent.type(screen.getByRole('combobox', { name: 'Exercise name' }), 'Squat{Enter}')
@@ -448,7 +448,7 @@ describe('Session', () => {
 
   it('adds an exercise as a blank card with a name field', async () => {
     await seed()
-    fakeApi({})
+    fakeApi({ 'GET /exercises': { library: [{ id: '1', name: 'Deadlift', other_names: [] }], mine: [] } })
     renderApp('/session')
     await userEvent.click(await screen.findByRole('button', { name: '+ Exercise' }))
     const name = await screen.findByLabelText('Exercise name')

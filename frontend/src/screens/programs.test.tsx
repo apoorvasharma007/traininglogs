@@ -106,7 +106,10 @@ describe('Programs', () => {
   it('adds alternatives that take turns', async () => {
     const after = program()
     after.workouts[1].exercises = [{ name: 'Shoulder Press', warmup_sets: 0, working_sets: 3, target_reps: 5, amrap: false, alternatives: ['Bench press'] }]
-    const calls = fakeApi({ 'GET /programs/p1': program(), 'PUT /workouts/w2/exercises': after, 'GET /programs': [after] })
+    const calls = fakeApi({
+      'GET /programs/p1': program(), 'PUT /workouts/w2/exercises': after, 'GET /programs': [after],
+      'GET /exercises': { library: [{ id: '1', name: 'Shoulder Press', other_names: [] }, { id: '2', name: 'Bench press', other_names: [] }], mine: [] },
+    })
     renderApp('/programs/p1/workouts/w2')
     // An empty workout offers to add exercises, which starts editing.
     expect(await screen.findByText('No exercises yet')).toBeInTheDocument()

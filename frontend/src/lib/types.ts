@@ -44,11 +44,11 @@ export type SessionDetail = Pick<SessionSummary, 'program_name' | 'workout_posit
   exercises: SessionExercise[]
 }
 
-export type Measure = 'estimated_max' | 'bodyweight_reps'
+export type LiftMetric = 'estimated_max' | 'bodyweight_reps'
 
 export type LiftSummary = {
   name: string
-  measure: Measure
+  measure: LiftMetric
   sessions: number
   latest: number | null
   best: number | null
@@ -164,4 +164,11 @@ export type ProgramTemplate = {
   name: string
   days: string // "3 days a week"
   workouts: { name: string; exercises: PlanExercise[] }[]
+}
+
+/** `GET /exercises`: the shared library and the person's own exercises. */
+export type ExercisesOut = {
+  library: { id: string; name: string; other_names: string[] }[]
+  // Linked when exercise_id is set, custom when it has a primary muscle, otherwise unrecognized.
+  mine: { id: string; name: string; exercise_id: string | null; primary_muscles: string[] }[]
 }

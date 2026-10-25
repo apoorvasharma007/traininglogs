@@ -59,18 +59,14 @@ before F1 of the exercise library, which restructures tables and needs ordered m
     second dry run lists nothing. Staging and production now record `0001`.
   - Later: staging's `users.timezone` default (`'Asia/Kolkata'`) differs from the file and
     production (`'UTC'`). A one-off fix on staging, or leave it; staging is test data.
-- [ ] 4. Merge `db/foundation` into `dev` (needs Apoorva's yes), then merge `dev` into
+- [x] 4. Merge `db/foundation` into `dev` (needs Apoorva's yes), then merge `dev` into
   `exercises/library`, where the library's own `schema.sql` changes (its step 3) become
   `0002_exercise_library.sql`.
+  Merged into `dev` as PR #76 (`f7f9f6e`). `dev` merged into `exercises/library` as `0bc8cb6`,
+  with `0002_exercise_library.sql`; the rehearsal is in `exercise-library-plan.md`, Resume here.
+  Local dev gets its record from a fresh production copy when F1 needs it.
 
 ## ▶ Resume here
 
-**2026-10-25.** Steps 1 and 2 done on `db/foundation` (worktree `~/Projects/traininglogs-db`,
-private test database `traininglogs_db_foundation`, not pushed). Step 3 tried on local dev: it
-refused cleanly (see step 3). Staging and production read, and the rehearsal on today's
-production copy passed; staging and production both record `0001` (see step 3). Local dev gets
-its record in step 4. Next: with Apoorva's yes, merge `db/foundation` into `dev` (step 4).
-
-Running the suite here: `export
-TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_db_foundation`,
-then `PYTHONPATH=src ~/Projects/traininglogs/.venv/bin/pytest tests/`.
+**2026-10-25.** F0 is done (steps 1 to 4). Next work is F1 in `exercise-library-plan.md`. Later:
+staging's `users.timezone` default (step 3).

@@ -184,7 +184,8 @@ instructions, images
 Allowed, for anything the library lacks. They belong to the person who made them, live in
 `user_exercises`, and nobody else sees them; they never change the shared library. Creating one
 asks for the primary muscles, equipment and measures (all required); the rest is optional. Own exercises count in Progress and recovery like library ones.
-Names people create are reviewed from time to time and added to the library.
+Names people create are reviewed from time to time and added to the library. Migrated custom
+exercises may have no primary muscle (see "Migration of existing logs").
 
 ### 6. Logging
 
@@ -194,38 +195,42 @@ app build: once the app has loaded and gone idle, it fetches the library and the
 exercises and saves them on the phone. Later opens ask the server whether the library has changed;
 the answer is "no change" unless we edited it. Searching never goes to the server. A new own
 exercise is saved on the phone and sent to the server. Picking one fills last time's
-sets in grey (history prefill). Not found: "Add Your Own". The picker's look is a visual change:
+sets in grey (history prefill). Not found: "+ Custom". The save sends the picked exercise's
+id, never its name (F1). The picker's look is a visual change:
 mockup first, approved before it's built.
 
-### 7. Existing logs
+### 7. Existing logs (changed 2026-10-25)
 
-Every `user_exercises` entry gets linked to a library exercise (or becomes an own exercise with its
-primary muscles). A mapping file lists each name and its match; Apoorva reviews it. Stored names are
-never changed, only links. Run as a dry run on a copy of prod first, then on prod in one
-transaction with a backup and same-session approval.
+A one-off script, separate from the feature, migrates them (see "Migration of existing logs").
+Every existing name ends up linked to a library exercise or as its owner's custom exercise.
+Stored names and sets never change, only links.
 
 ### 8. Reading by exercise, not by name
 
-Progress, Key Lifts, History and the prefill read through the link. Key Lifts become library
-exercises. The exercise endpoints move to ids, and the old ones stay working until phones with the
-old app have updated:
+Progress, Key Lifts, History and the prefill match by exercise id, never by typed text (F1). A
+custom exercise linked to a library one counts as that library exercise. Key Lifts become
+library exercises. The exercise endpoints move to ids; whether the old ones stay is settled in
+F1 (recommendation: no):
 
 | Today | New |
 |---|---|
 | `GET /exercises/last?name=` | `GET /exercises/recent?id=` |
 | `GET /exercises/{name}/history` | `GET /exercises/{id}/history` |
 | none | `GET /exercises` (the library and your own, for the phone) |
-| none | `POST /exercises` (add your own) |
+| none | `POST /exercises` (a custom exercise) |
 | `GET /progress/lifts`, `PUT /me/key-lifts` | Key Lifts read and saved under one path |
 
 ### 9. v1 scope (agreed 2026-10-11)
 
+Split into three releases on 2026-10-25 (see Releases below). What each item is stays as written
+here; which release ships it moved.
+
 Built and tried locally against the dev copy of prod before staging. On top of sections 5 to 8:
 
-- **My Exercises**, one screen: your own exercises and any names not linked to the library.
-  Each row offers "Link to a library exercise" or "Keep as my own" (which asks for primary
-  muscles, equipment and measures). Step 5's mapping becomes a pre-fill reviewed there. Needed
-  because names that arrive as text (notes, old app) keep arriving unrecognized.
+- **My Exercises**, one screen: your custom exercises, each with "Link to a library exercise".
+  Changed 2026-10-25: after the migration no name is unrecognized, and names from notes are
+  resolved on the review card, so the Unrecognized section becomes migrated custom exercises
+  with no muscles (F3).
 - **Progress redesign**: an overview of tiles, each doing one job (strength, volume per muscle
   group, what hasn't been trained, and others), each opening a sub-page. Metrics and visuals
   come from a research pass (2026-10-11), then a mockup approved before building. Agreed so far:
@@ -284,19 +289,26 @@ Built and tried locally against the dev copy of prod before staging. On top of s
 - **Picker**: the exercise name box searches as you type, on the phone, with a list under it;
   nothing shows before typing. Picking a row is the link. Same box in sessions and workout
   plans. Agreed 2026-10-12:
-  - Results: library exercises, your custom exercises, and your unrecognized names (grey
-    "Unrecognized" tag; picking one logs under it, and the My Exercises pill nudges you later).
+  - Results: library exercises and your custom exercises (grey "Custom" tag, as on My
+    Exercises). Unrecognized names dropped 2026-10-25: none are left after the migration.
   - Search words: the name, the library's other names, and your aliases (your names linked to a
-    library exercise: "Barbell Clean" finds Clean (Barbell), shown with `Matches "Barbell Clean"`).
-  - "Add '…' as your own" is the last row only when nothing has exactly the typed name. The set row shows the exercise's measures (time and distance boxes are new; the
+    library exercise). `Matches "…"` shows only when the name itself didn't match: "Barbell
+    Clean" finds Clean (Barbell) through its name, so no line (decided 2026-10-12).
+  - Search (2026-10-12): MiniSearch index, closest match first, an exact name or search word on
+    top; a wider typo allowance only when the strict search finds nothing.
+  - Box and list (2026-10-12): placeholder "Exercise name" in all three boxes (session, plan
+    Exercise, plan Alternatives). The list opens as you type, shows every match, and scrolls
+    inside a fixed maximum height so nothing around it moves more than that.
+  - "+ Custom" is the last row only when nothing has exactly the typed name; it opens the Custom
+    Exercise sheet with the name filled. "Add your own" is retired for exercises (2026-10-12).
+    The set row shows the exercise's measures (time and distance boxes are new; the
   database already stores both).
-- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle.
+- **Custom Exercise sheet** (was "Add your own"): one sheet, simplest first. Required: name and at least one primary muscle.
   Equipment is optional for own exercises (no metric uses it). Approved on the mockup
   (2026-10-12, https://claude.ai/artifact/LzNyXSqvfHAXF7HDkW5cQ1):
   - A name box with the placeholder "Exercise Name", no label; the search text carries over.
-    Names are saved in Title Case (first letter of each word; "RDL" stays). The session's
-    exercise card relies on the phone keyboard for this today; the picker build fixes it there
-    too (changes how new names are saved, so confirm before building).
+    Names are saved as typed, with the phone keyboard capitalising each word, as the session's
+    exercise card does today (decided 2026-10-12; no forced Title Case).
   - Then rows that open on tap, one at a time, each showing its value on the right (green when
     set, "Add" or "Required" in grey): Primary Muscles (tag "+1 Per Set", open first) and Log
     in the first group; Equipment, Secondary Muscles (tag "+0.5 Per Set"), Compound, Joint
@@ -331,7 +343,8 @@ Built and tried locally against the dev copy of prod before staging. On top of s
 ## Steps
 
 Base branch `exercises/library` from `dev`, a sub-branch per step (`exercises/library-N-<step>`),
-squashed into the base; the base merges into `dev` when every step is done and the suite is green.
+squashed into the base; the base merges into `dev` when Release A's steps are done and the suite
+is green. Step numbers are history; the order of work is the Releases section below.
 
 - [x] 1. Design approval: fields, the three lists, variations (sections 1 to 3).
 - [x] 2. Library data: `src/traininglogs/db/exercise_library.yaml`, built from the names people
@@ -340,7 +353,7 @@ squashed into the base; the base merges into `dev` when every step is done and t
       first, equipment in brackets: "Lateral Raise (Cable)". No abbreviations, Title Case.
       Every exercise gets `free_exercise_db_id` where they have a match (batch 1 filled in
       afterwards), reviewed by Apoorva.
-- [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
+- [x] 3. Schema and loading (squashed into `exercises/library` 2026-10-25 as `2e02975`): new fields, the lists as checks; the `free_exercise_db` table
       loaded from a pinned commit, then the library with its foreign key, unique (one of
       theirs links to one of ours at most); tests. Agreed 2026-10-11:
       - `schema.sql` holds the lists as domains and the equipment check; the database refuses
@@ -365,7 +378,7 @@ squashed into the base; the base merges into `dev` when every step is done and t
         person to pick the exercise for each name.
       - For step 4: own exercises pick equipment from the list; "other" asks what it is and
         stores the text in `equipment_other`.
-- [ ] 4. Own exercises (server): `GET /exercises` (the library and your own),
+- [x] 4. Own exercises (server; squashed 2026-10-25 as `ac4c021`): `GET /exercises` (the library and your own),
       `POST /exercises` and `PUT /exercises/{user_exercise_id}`; tests. Agreed 2026-10-12:
       - Own exercises are `user_exercises` rows with the library's fields as columns (same
         names); custom means it has a primary muscle. Equipment becomes one `equipment_name`
@@ -377,14 +390,14 @@ squashed into the base; the base merges into `dev` when every step is done and t
       - PUT edits, renames, links and unlinks. A name that is a library exercise's name must
         link to that exercise; a clash with the library or your own names is 409.
       - Saving a session needs no change: a pick puts the exact name in the box, and exact
-        names already link.
-- [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
-- [ ] 6. Reads by exercise: Progress, Key Lifts, History, new endpoints, old ones kept; sets
-      counted by group as in section 1; tests.
-- [ ] 7. Picker: mockup approved, then built, with history prefill on pick; tests, checked on
-      the phone.
-- [ ] 8. Effort fix (can go any time): checking a set doesn't ask for effort when it has one.
-- [ ] 9. Release.
+        names already link. Superseded 2026-10-25: the save sends an id (F1).
+- [ ] 5. Replaced 2026-10-25 by M1 (Release A), which migrates everyone's existing names, not
+      only Apoorva's.
+- [ ] 6. Replaced by F1 (Release A). Counting sets by group (section 1) moves to Release B.
+- [ ] 7. Replaced by F2 and F3 (Release A).
+- [x] 8. Effort fix: checking a set doesn't ask for effort when it has one. Already on `dev`
+      (`81a24ce`, tests `553d371`).
+- [ ] 9. Release A (A4 below; B and C get their own).
 - [ ] 10. Second tier (after the release): when nothing in the library or the person's own
       exercises matches, search the `free_exercise_db` table (about 870) on the server, online
       only. A result that a library exercise links to shows that library exercise instead
@@ -395,7 +408,152 @@ squashed into the base; the base merges into `dev` when every step is done and t
 
 Then the guide (`guide-plan.md`): clips recorded on the new picker.
 
-## ▶ Resume here
+## Releases (agreed 2026-10-25)
+
+Section 9 bundled everything into one v1. Three releases instead, each ending with the suite green,
+a staging rehearsal and, for prod, a same-session yes. Release B and C cut their own base branches
+from `dev` (`progress/overview`, `recovery/joints`).
+
+**Release A, one exercise library for everyone (re-cut 2026-10-25).** What every person gets:
+type, find the exercise in the library, or add a custom one when nothing matches; link a custom
+exercise to the library later. Built in the order below and released together: F1 makes the API
+refuse free-text names, so it can't ship without the picker.
+
+**The foundation rule (agreed 2026-10-25).** Every exercise in a session, a workout plan, an
+alternative, a program template and a Key Lift points at an exercise by id: a library exercise or
+one of the person's custom exercises. There is no third kind, and the database refuses one. A
+name is what the app shows, never what it matches on.
+
+- **F1. Foundation** (`exercises/library-f1-foundation`). It changes the schema, so Apoorva
+  approves its design before any code.
+  - Write path: session and plan saves send the exercise's id, and the API refuses a name it
+    can't resolve. `user_exercise_ids` (`db/insert.py`) and its use in `db/programs.py` go.
+  - `user_exercises` gets a CHECK: linked to a library exercise, or custom with a name.
+  - Reads by exercise: History, last time's sets, Progress, Key Lifts and the app's prefill
+    (`lib/session.ts`, `lib/planChanges.ts`) match by id, not lowercased text. A custom exercise
+    linked to a library one counts as that library exercise (F3); otherwise it counts as itself.
+  - Program templates (`program_templates.py`) point at library exercises. None of their 19
+    names is a library name (checked 2026-10-25), so today every new user who starts a template
+    gets exercises the library doesn't know.
+  - `KEY_LIFTS` (`analytics/key_lifts.py`, lists of Apoorva's spellings) becomes a default list
+    of library exercises. `users.key_lifts` and plan `alternatives` store ids, not names.
+  - The AI review card (`screens/review/Review.tsx`) resolves each name with the picker before
+    saving.
+  - Rename `LiftSummary.measure` to `metric` (server and app), so it can't be confused with the
+    library's `measures` (agreed 2026-10-12).
+  - Approved 2026-10-25: a session or plan exercise points at a library exercise or a custom
+    exercise, exactly one, enforced by a CHECK; `user_exercises` holds custom exercises only, and
+    saving never creates one. This settles (a). Column names wait for the database audit. Whether
+    M1 links old names or repoints old rows is decided in M1.
+  - Open, settled in F1's design: (a) one row per person per library exercise, or several
+    (Apoorva's Squat and Squats both link to Squat (Barbell)); recommendation: several, reads
+    group by library exercise, so nothing has to be merged. (b) How plan alternatives store ids:
+    an array or a child table. (c) Phones on the old app send names and would be refused;
+    recommendation: no second code path, the app reloads to the new version. (d) The default Key
+    Lifts (the code has Squat, Bench Press, Shoulder Press, Deadlift, Barbell Clean and Pull-up;
+    section 9 lists deadlift, squat, bench press, pull-up and row) and the library exercise for
+    each of the 19 template names, both reviewed by Apoorva.
+- **M1. Migration** (`exercises/library-m1-migrate`): a one-off script, not feature code (see
+  "Migration of existing logs"). It runs in the same deploy as F1, after F1's new columns and
+  before its CHECK.
+- **F2. Picker** (`exercises/library-f2-picker`): the search box and list, "+ Custom" and the
+  Custom Exercise sheet; a pick sends the exercise's id. The same picker in sessions, workout
+  plans (exercise and alternatives) and the AI review card. Reuses the search commits
+  (`6b30022`, `ccbe07a`), `lib/lists.ts` and the Custom Exercise sheet from the 2026-10-13 draft
+  (`3083ffd`), reshaped to the approved mockup (section 9). If the look goes past two rounds,
+  ship the plain list and polish later.
+- **F3. My Exercises and link later** (`exercises/library-f3-mine`): your custom exercises, each
+  editable and linkable to a library exercise, and unlinkable. Migrated custom exercises with no
+  muscles show here to add them. The approved mockup's Unrecognized section becomes this; its
+  wording and look are approved again before it's built.
+- **A4. Release** (step 9): on staging with a fresh prod copy, M1's dry run, then M1 applied,
+  then every History and Progress response compared before and after; only differences listed in
+  advance are allowed. Then prod with a same-session yes.
+- Left out of A: the library kept on the phone, and the time and distance boxes in the set row.
+
+**Release B, Progress.** The Muscle Volume, Strength, Skills and Not Trained tiles, Profile with
+bodyweight entries, and the library kept on the phone with offline search.
+
+**Release C, Recovery.** Rules are in `~/Projects/training/RECOVERY.md`: three tiers, joint
+recovery hours, weekly tests. Nothing is built; C0 is design only and needs Apoorva's yes.
+- C0. Decide three things. (a) How an exercise records the joints it loads. The library's joint
+  actions are prime movers only, so a deadlift does not list wrists or elbows, and a handstand
+  hold lists no movement. Proposal: default to the joint actions, plus one optional field for
+  support and grip loads. (b) What counts as a hard hit on a joint; proposal: a working set at
+  RPE 7 or above, or no RPE logged. (c) Where recovery hours live; proposal: per person, seeded
+  from the RECOVERY.md table (elbows and knees 96h; wrists, shoulders, hips 72h; the rest 48h).
+- Library gaps the program needs: German hang, skin the cat, false grip hang, chest-to-wall
+  handstand hold, back bridge. Dead Hang, L-sit and Front Lever are already in.
+- C1. A read-only tile: hours since each joint was last hit hard, against its window. Computed
+  from logs, no new input.
+- C2. Morning check-in, exceptions only, for the three tiers; gives the "same joint bad two days
+  running, add 24h" rule.
+- C3. Weekly tests reuse Strength (weighted pull-ups), Skills (dead hang) and Profile bodyweight;
+  only the "10% below best means deload" flag is new.
+- C4. The week 1 measurement becomes a query over C1 and C2 data.
+- C5. Wearables: parked. The career track moved to cloud (2026-10-09).
+
+Order of work: A, then B, then C. Recovery stays out of A and B beyond the library fields they
+already carry.
+
+## Migration of existing logs (agreed 2026-10-25)
+
+The migration is a one-off script in `scripts/`, separate from the feature. It runs once per
+database (local dev, staging, prod), dry run by default, in one transaction, with counts compared
+before and after. It sets links and custom exercises' fields, and never changes a stored name or
+a set. Delete it after the prod run.
+
+After it, every `user_exercises` row is linked to a library exercise or is a custom exercise:
+- Apoorva's names: linked by a reviewed mapping file (answers below). Whatever stays unlinked
+  becomes one of Apoorva's custom exercises.
+- Everyone else's names: a name that is exactly a library name links; every other name becomes
+  that person's custom exercise. Nobody's names are judged by Apoorva's habits. That was the
+  loophole in the old step 5, which keyed its mapping on the name alone: "Calf raise" is the
+  seated machine for Apoorva, and nothing says so for anyone else.
+- Migrated custom exercises may have no primary muscle (agreed 2026-10-25). They count nowhere
+  in Muscle Volume until the owner adds muscles in My Exercises. New custom exercises from the
+  picker still need a primary muscle; that rule lives in the Custom Exercise sheet and the API,
+  not the database.
+- `STARTER_RENAMES` (`db/library.py`) is the same kind of one-off and hasn't run on prod. It moves
+  out of the loader into this script.
+- Apoorva's spellings in the shared `other_names` (batch 1, such as "bottom half db flye") get
+  trimmed in a later library review; they don't block Release A.
+- Dry run on a fresh prod copy first (ask before copying), then prod with a same-session yes.
+
+Mapping answers already given (2026-10-25), for Apoorva's mapping file:
+- Calf raise is Calf Raise (Machine, Seated); Shoulder Press stays Overhead Press (Barbell); both
+  Forearm Preacher Curl names are Wrist Curl (Dumbbell); Lateral Raise Leaning is Lateral Raise
+  (Dumbbell); Bicep Curl Incline Bench is Incline Curl (Dumbbell); Hanging Roman Chair Leg Raise
+  is Hanging Leg Raise (Bodyweight); Cable Paused Shrug In is Shrug (Cable); Tibialis Raise Single
+  Leg is Tibialis Raise (Dumbbell, Single Leg); Wrist Extension Cable Curl is Reverse Wrist Curl
+  (Cable, Single Arm); both Overhead tricep extension bar names are Overhead Triceps Extension
+  (Cable, Bar); High Cable Lateral Raise is Lateral Raise (Cable, High Pulley); Dual Handle Elbows
+  Out Cable Row is Row (Cable, Seated, Elbows Out); Wrist Abduction and Adduction Cable Curl
+  Single Hand are Radial and Ulnar Deviation (Cable, Single Arm); Bhh is corrupt data and stays
+  out.
+- Three old links are wrong or unchecked: Seated Leg Curl -> Leg Curl (Machine, Lying) is wrong;
+  Shoulder Press -> Overhead Press (Barbell) is confirmed above; Calf raise -> Calf Raise
+  (Machine, Standing) should be Seated.
+- Still open, asked before the mapping file is written: Pronated Grip Curl (a wrist curl with an EZ bar;
+  the library has none), Back extension and Back extensions (Back Extension (Machine), not in the
+  library), whether Hyperextension (13 sessions) is a back extension, and whether Leg Press Calf
+  Press is Leg Press Calf Raise.
+- Library additions these suggest: Back Extension (Machine), an EZ bar wrist curl.
+- Rule from Apoorva: option A, the library is ours and grown by hand; free-exercise-db stays a
+  reference linked by id. No forced matches.
+
+Parked, not in Release A: the full list of ways the library grows (Apoorva's additions, logged
+names, custom exercises reviewed from time to time, second tier picks).
+
+## Log (older notes)
+
+**2026-10-13 and 2026-10-22, before the release split.**
+- Branch `exercises/library-7-picker`, worktree `~/Projects/traininglogs-wave`. Last commit `3083ffd` is a WIP first draft of the picker (`ExercisePicker.tsx`, `CustomExerciseSheet.tsx`, `MovementPicker.tsx`, `Sheet.tsx`, `WorkoutPlan.tsx`, `ExerciseCard.tsx`, a test). Apoorva is not happy with the page. Do not build on it: redesign first, show a mockup, get his yes, then rebuild or reshape it. The two search commits under it (`6b30022`, `ccbe07a`) are fine.
+- 2026-10-22: `dev` (5.0.1) is merged into `exercises/library` and down the chain (`-3-schema`, `-4-own`, `-7-picker`), all local merge commits. Their changelog lines are now fragments in `changelog.d/` (`exercise-library.*.md`, `own-exercises.added.md`, `equipment-one-list.changed.md`); new entries go there too, not in `CHANGELOG.md`. On `-7-picker`: Python 798 passed, 0 failed, 0 skipped (private database `traininglogs_library_picker`); frontend typecheck, lint and 104 core tests pass. The branches exist only on this machine.
+- Step state: steps 1 and 2 are squashed into `exercises/library`; steps 3 and 4 are built on `exercises/library-3-schema` and `exercises/library-4-own`, not yet squashed; step 7 is this branch. Step 8 (effort fix) can go any time.
+- The main checkout `~/Projects/traininglogs` is now on `dev`. Server tests need a database matching the branch's schema: the shared one on port 5433 carries the library schema, so for `dev` or `fix/*` work create a private one and set `TEST_DATABASE_URL`.
+
+Older notes follow.
 
 2026-10-11: plan written and committed on `exercises/library` (from dev at `d5481a4`, local
 only, not pushed). Step 1 done: sections 1 to 3 approved (fields, 36 muscles in 17 groups, 44
@@ -457,7 +615,7 @@ in review; Apoorva refines it on the artifact. Agreed so far:
   count. Then they show in Progress."
 - Decided: unrecognized names count nowhere in Progress and get no chart of their own.
 - Unrecognized rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
-  count) or "Make It Custom". Every custom exercise uses the one approved Add Your Own sheet (all
+  count) or "Make It Custom". Every custom exercise uses the one approved Custom Exercise sheet (all
   fields, Primary Muscles open first): Make It Custom fills the name, "+ Add" in the Custom
   header opens it empty, tapping a custom exercise opens it filled to edit. Linked rows: Change Link (same search sheet) or Unlink (back to
   Unrecognized). Every change shows Undo for 5 seconds. No suggested matches.
@@ -498,11 +656,11 @@ unchanged (133 sessions, 1064 session exercises, 3419 sets, 99 names, 19 linked,
 The staging rehearsal confirms the five dropped columns are empty on the prod copy first.
 
 Next:
-1. Wait for Apoorva's yes, then build the picker on `exercises/library-7-picker` from
+1. Yes given 2026-10-12. Build the picker on `exercises/library-7-picker` from
    `exercises/library-4-own`, in this order, showing the diff before each commit:
    `lib/lists.ts` (lists, groups and joints head to toe, the 7 Log combinations), the search
-   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and
-   `WorkoutPlan`, then the Add Your Own sheet. Left for later in step 7: keeping the library on
+   (section 9 rules), `ExercisePicker` replacing the datalist in `ExerciseCard` and the name
+   and Alternative boxes in `WorkoutPlan` (agreed 2026-10-12), then the Custom Exercise sheet. Left for later in step 7: keeping the library on
    the phone (section 6) and the time and distance boxes in the set row.
 2. Then My Exercises, Profile, and the Progress redesign (needs step 6's reads by exercise).
 3. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
@@ -550,3 +708,98 @@ Context for the next session:
 - The effort fix (step 8) is a one-line change in `screens/session/Session.tsx` `tick()`: ask
   for effort only when `set.rpe == null`, plus a test.
 - The guide waits for this plan (`guide-plan.md`).
+
+## ▶ Resume here
+
+**2026-10-25.** Release split approved (Releases section). Done today: step 8 ticked (already on
+`dev`); steps 3 and 4 squashed into `exercises/library` as `2e02975` and `ac4c021`, suite 798
+passed, 0 failed, 0 skipped, private database, locally only (not pushed); that base merged into
+this branch with no file changes. This branch is `exercises/library-7-picker`, worktree
+`~/Projects/traininglogs-wave`.
+
+Later on 2026-10-25: Release A re-cut around the foundation rule (Release A). The feature and
+the migration are separate: F1, F2, F3 for every user; M1 a one-off script. Old steps 5, 6, 7
+are replaced; `exercises/library-5-link` and its worktree were removed with Apoorva's yes. F1
+option 2 approved (see F1). The database audit led to F0, `db-foundation-plan.md` on `dev`: a
+thread-safe pool and numbered schema change files (`src/traininglogs/db/migrations/`), merged
+into `dev` as PR #76 (`f7f9f6e`). Staging and production both record `0001_baseline.sql`.
+
+Later still on 2026-10-25: F0 step 4 done. `origin/dev` merged into `exercises/library` on the
+sub-branch `exercises/library-f0-schema-file` (`0bc8cb6`), and the base fast-forwarded to it (not
+squashed, so the merge from `dev` keeps its history). The library's `schema.sql` changes are now
+`src/traininglogs/db/migrations/0002_exercise_library.sql`; `0001` is byte for byte `dev`'s. An
+empty database built from `0001` and `0002` has the layout the library's old `schema.sql` built,
+apart from `schema_migrations`. Suite 810 passed, 0 failed, 0 skipped, on a new and an existing
+database. Rehearsal on a production copy taken the same evening (`traininglogs_prod_copy_0002`):
+the five dropped session exercise columns are empty in all 1,077 rows; `0002` ran, every count
+stayed the same apart from the new empty `free_exercise_db` and a second `schema_migrations` row;
+a second dry run found nothing. The loader's dry run on that copy adds 876 free-exercise-db rows,
+renames and updates the 32 starter exercises, adds 129, deletes nothing. `exercises/library` then
+merged into this branch, suite 810 passed. Nothing pushed; staging and production don't run `0002`
+until Release A ships (A4).
+
+Night of 2026-10-25: order changed with Apoorva. **Picker first, the tables (F1) after.** The
+picker ships on today's save path: picking a library exercise fills its exact name, which
+`user_exercise_ids` (`db/insert.py`) already links to the library. No F1, no M1 needed to ship it.
+A schema review found that `exercises` and `user_exercises` split one concept; whether to make one
+exercise table (custom ones marked by owner) is F1's open question, taken on its own later, after
+Apoorva has used the picker. Isolation itself is standard and covered (`tests/test_isolation.py`).
+
+Picker work is on `exercises/library-f2-picker` (cut from `exercises/library-7-picker`; WIP
+`f83ca26`). Decided on Apoorva's phone (2026-10-25, night):
+- Name box: tapping it moves it to the top of the screen and the list fills the room above the
+  keyboard (`useListRoom` in `ExercisePicker.tsx`). The keyboard's Enter picks the shaded top row,
+  or opens Custom when nothing matches; leaving the box without picking saves nothing.
+- Custom Exercise sheet, muscles on a body figure (outlines from react-body-highlighter, MIT,
+  `lib/bodyOutline.ts`): one figure about half the screen tall with Front / Back under it; tap a
+  part, or near it, and a bubble over it lists the group's muscles (one-muscle groups mark
+  directly; Serratus is in Core's bubble). Every tap marks primary; after the first primary a
+  quiet link "Add secondary muscles" switches taps to secondary ("Done adding secondary" returns).
+  Unpicked parts in a light grey that reads on dark. One quiet line of picked names, only when
+  something is picked. No permanent "Choose a primary muscle" line: Save focuses the name box when
+  the name is missing, or shakes the figure with "Tap a body part" when no muscle is picked.
+- Revised on the phone the same night (2026-10-26): the figure is react-native-body-highlighter
+  3.2's male body (MIT), the most used body-diagram package and its current drawing, instead of
+  the web port's old polygons (`lib/bodyOutline.ts`, generated from the package's data). Front
+  and back sit side by side, no switch. A tap on a group whose muscles share a job (Chest,
+  Biceps, Triceps, Quads, Calves, Glutes, Lower Back) marks the whole group and opens it ticked;
+  mixed groups (Shoulders, Hips, Neck, Core, Upper Back, Forearms) open for the person to pick
+  (`tapGroup` in `lib/muscleMarks.ts`). No zoom control: the phone's own pinch zoom works.
+  Secondary Muscles is its own row under Optional, on the same body. Picked muscles show as pills
+  that come off with one tap. The bubble uses the app's MenuGroup/MenuItem rows. Joint Movements
+  is a two-column grid shaped like a body (the arm on the left; neck, trunk, hip, knee, ankle,
+  foot on the right). Compound is no longer asked: `lib/compound.ts` works it out from the joint
+  movements on save (two or more joints; shoulder blade counts with shoulder, forearm with elbow).
+- Open, for after use: muscles with no shape of their own (Side Delts, Rotator Cuff, Serratus,
+  Transverse Abdominis, Hip Flexors, Abductors, Neck Extensors) are reached only in their
+  group's bubble. Log becomes Measure with the time and distance design.
+
+**Picker design locked (2026-10-26, Apoorva: "I love this, lock this").** Branch
+`exercises/library-f2-picker`, last code commit `39f8840`, not pushed. The decisions above
+(name box and keyboard, body figure, whole groups, pills, bubble on MenuGroup/MenuItem, joint
+grid, compound derived) are approved; change them only with Apoorva's yes. Frontend: typecheck,
+lint, 176 tests and the build pass. The Python suite last ran green (810) before the picker work;
+it touches only the frontend, but the step gate needs a fresh run.
+
+**Next action: ship the picker to staging.**
+1. Run the full Python suite on a private database (0 failed, 0 skipped) and the frontend checks.
+2. Squash `exercises/library-f2-picker` into `exercises/library` (its WIP commits become one).
+3. With Apoorva's yes: on staging, `scripts/migrate.py` dry run then `--apply` (`0002`), then
+   `scripts/load_exercise_library.py` dry run then `--apply`. Staging is test data.
+4. With Apoorva's yes: PR `exercises/library` into `dev`; CI green; merge, and staging deploys.
+5. Try it on staging on the phone (`/verify` section 5).
+Production waits for F1 (the tables) and M1. No prod write without a yes in the session.
+
+Left to clean up, each with Apoorva's yes: the helper branches `exercises/library-f2-body` and
+`exercises/library-f2-save` and their worktrees `~/Projects/tl-f2-body`, `~/Projects/tl-f2-save`
+(merged); the local production copies `traininglogs_prod_copy` and `traininglogs_prod_copy_0002`
+and the dumps in the session scratchpad; `db/schema-file-guard` (the guard test, to PR into `dev`).
+
+Notes:
+- Running the suite needs a built frontend (`cd frontend && npm ci && npm run build`) and a
+  private database; the main checkout's venv lacks PyYAML, so use a venv from
+  `requirements-dev.lock` (`python3.12 -m venv`, `pip install -r requirements-dev.lock`).
+- Running the app for Apoorva's phone: the local copy `traininglogs_prod_copy_0002` (library
+  loaded), the env file `local_app.env` in the session scratchpad (Supabase URL and publishable
+  key read from production's Cloud Run, no AI or Discord keys), `uvicorn ... --host 0.0.0.0`, then
+  `http://<Mac's Wi-Fi address>:8000` on the phone.
