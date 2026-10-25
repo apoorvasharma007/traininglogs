@@ -2,11 +2,10 @@
 -- traininglogs' database. Design and reasons: db-redesign-plan.md (2026-10-06).
 --
 -- Every row's `id` is a time-ordered UUID (version 7) made by the code (db/ids.py); no id is
--- built from data or chosen by the phone. The one exception is the shared exercise list below,
--- which this file seeds with random ids (gen_random_uuid), since SQL here can't make version 7. Every owned table has `user_id`, and each child points
+-- built from data or chosen by the phone. Every owned table has `user_id`, and each child points
 -- at its parent by (user_id, parent id), so the database itself refuses a child owned by someone
 -- other than its parent's owner, and any link to another person's row. Indexes on owned data lead
--- with user_id. Shared reference data (`exercises`) has no owner.
+-- with user_id. Shared reference data (`exercises`, `free_exercise_db`) has no owner.
 --
 -- Row-level security is on everywhere with no policies (end of file): Supabase's automatic web
 -- API can't reach any row. The server connects as the tables' owner, which Postgres exempts.
@@ -49,60 +48,94 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- Exercises ------------------------------------------------------------------
 
--- The shared, curated list. Equipment and muscles live here, never on people's own names.
+-- The approved lists (exercise-library-plan.md, section 2). The database refuses a value that
+-- isn't on them, whoever writes it. To change a list, edit it here: each startup re-adds the
+-- check, and fails if a stored value is no longer on the list.
+DO $$ BEGIN CREATE DOMAIN muscle_list           AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN joint_action_list     AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN movement_pattern_list AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE DOMAIN measure_list          AS TEXT[]; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+ALTER DOMAIN muscle_list DROP CONSTRAINT IF EXISTS muscle_list_check;
+ALTER DOMAIN muscle_list ADD CONSTRAINT muscle_list_check CHECK (VALUE <@ ARRAY[
+        'Upper Chest', 'Mid/Lower Chest', 'Front Delts', 'Side Delts', 'Rear Delts',
+        'Rotator Cuff', 'Serratus', 'Lats', 'Upper Traps', 'Mid Traps', 'Lower Traps', 'Rhomboids',
+        'Spinal Erectors', 'Quadratus Lumborum', 'Biceps', 'Brachialis', 'Triceps Long Head',
+        'Triceps Lateral/Medial Heads', 'Brachioradialis', 'Forearm Flexors', 'Forearm Extensors',
+        'Abs', 'Obliques', 'Transverse Abdominis', 'Glute Max', 'Glute Med', 'Abductors', 'Adductors',
+        'Hip Flexors', 'Rectus Femoris', 'Vastus Muscles', 'Hamstrings', 'Gastrocnemius', 'Soleus',
+        'Tibialis', 'Neck Flexors', 'Neck Extensors'
+    ]::text[]);
+ALTER DOMAIN joint_action_list DROP CONSTRAINT IF EXISTS joint_action_list_check;
+ALTER DOMAIN joint_action_list ADD CONSTRAINT joint_action_list_check CHECK (VALUE <@ ARRAY[
+        'shoulder flexion', 'shoulder extension', 'shoulder abduction', 'shoulder adduction',
+        'shoulder horizontal abduction', 'shoulder horizontal adduction',
+        'shoulder internal rotation', 'shoulder external rotation', 'shoulder blade elevation',
+        'shoulder blade depression', 'shoulder blade protraction', 'shoulder blade retraction',
+        'shoulder blade upward rotation', 'shoulder blade downward rotation', 'elbow flexion',
+        'elbow extension', 'forearm pronation', 'forearm supination', 'wrist flexion',
+        'wrist extension', 'wrist radial deviation', 'wrist ulnar deviation', 'trunk flexion',
+        'trunk extension', 'trunk lateral flexion', 'trunk rotation', 'neck flexion',
+        'neck extension', 'neck lateral flexion', 'neck rotation', 'hip flexion', 'hip extension',
+        'hip abduction', 'hip adduction', 'hip internal rotation', 'hip external rotation',
+        'knee flexion', 'knee extension', 'knee internal rotation', 'knee external rotation',
+        'ankle dorsiflexion', 'ankle plantarflexion', 'foot inversion', 'foot eversion'
+    ]::text[]);
+ALTER DOMAIN movement_pattern_list DROP CONSTRAINT IF EXISTS movement_pattern_list_check;
+ALTER DOMAIN movement_pattern_list ADD CONSTRAINT movement_pattern_list_check CHECK (VALUE <@ ARRAY[
+        'Squat', 'Hinge', 'Lunge', 'Horizontal Push', 'Vertical Push', 'Horizontal Pull',
+        'Vertical Pull', 'Carry', 'Jump', 'Throw', 'Rotation', 'Anti-Rotation', 'Anti-Extension',
+        'Anti-Flexion', 'Anti-Lateral Flexion'
+    ]::text[]);
+ALTER DOMAIN measure_list DROP CONSTRAINT IF EXISTS measure_list_check;
+ALTER DOMAIN measure_list ADD CONSTRAINT measure_list_check CHECK (VALUE <@ ARRAY[
+        'weight', 'reps', 'time', 'distance'
+    ]::text[]);
+
+-- free-exercise-db's exercises, unchanged, loaded by scripts/load_exercise_library.py from the
+-- copy in scripts/data/. Nobody edits it by hand.
+CREATE TABLE IF NOT EXISTS free_exercise_db (
+    id                TEXT PRIMARY KEY,
+    name              TEXT NOT NULL,
+    force             TEXT,
+    level             TEXT,
+    mechanic          TEXT,
+    equipment         TEXT,
+    category          TEXT,
+    primary_muscles   TEXT[] NOT NULL,
+    secondary_muscles TEXT[] NOT NULL,
+    instructions      TEXT[] NOT NULL,
+    images            TEXT[] NOT NULL
+);
+
+-- The shared, curated library, loaded by scripts/load_exercise_library.py from
+-- db/exercise_library.yaml. Equipment and muscles live here, never on people's own names.
 CREATE TABLE IF NOT EXISTS exercises (
     id          UUID PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
-    equipment   TEXT NOT NULL CHECK (equipment IN
-                    ('barbell', 'dumbbell', 'kettlebell', 'band', 'cable', 'machine', 'bodyweight', 'other')),
-    movement    TEXT,
-    muscles     TEXT[] NOT NULL DEFAULT '{}',
+    equipment   TEXT NOT NULL,
     -- Other ways people write it, lower case, for linking automatically ("back squat", "squats").
     other_names TEXT[] NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- The starter shared list: basic lifts, and the ways people commonly write them (lower case, each
--- name used once, so linking is never ambiguous). Grows from the names people create that don't
--- link to anything (db-redesign-plan.md).
-INSERT INTO exercises (id, name, equipment, movement, muscles, other_names)
-SELECT gen_random_uuid(), v.name, v.equipment, v.movement, v.muscles, v.other_names
-FROM (VALUES
-    ('Barbell Back Squat', 'barbell', 'squat', ARRAY['quads', 'glutes']::text[], ARRAY['squat', 'squats', 'back squat', 'bb squat', 'barbell squat']::text[]),
-    ('Barbell Front Squat', 'barbell', 'squat', ARRAY['quads']::text[], ARRAY['front squat', 'front squats']::text[]),
-    ('Barbell Bench Press', 'barbell', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['bench press', 'bench', 'bb bench', 'flat bench press', 'barbell bench']::text[]),
-    ('Incline Barbell Bench Press', 'barbell', 'push', ARRAY['chest', 'shoulders']::text[], ARRAY['incline bench press', 'incline bench']::text[]),
-    ('Dumbbell Bench Press', 'dumbbell', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['db bench press', 'db bench', 'dumbbell bench']::text[]),
-    ('Incline Dumbbell Press', 'dumbbell', 'push', ARRAY['chest', 'shoulders']::text[], ARRAY['incline db press', 'incline dumbbell bench press']::text[]),
-    ('Barbell Overhead Press', 'barbell', 'push', ARRAY['shoulders', 'triceps']::text[], ARRAY['overhead press', 'ohp', 'shoulder press', 'military press']::text[]),
-    ('Dumbbell Shoulder Press', 'dumbbell', 'push', ARRAY['shoulders', 'triceps']::text[], ARRAY['db shoulder press', 'seated db shoulder press']::text[]),
-    ('Barbell Deadlift', 'barbell', 'hinge', ARRAY['hamstrings', 'glutes', 'back']::text[], ARRAY['deadlift', 'deadlifts', 'conventional deadlift']::text[]),
-    ('Romanian Deadlift', 'barbell', 'hinge', ARRAY['hamstrings', 'glutes']::text[], ARRAY['rdl', 'romanian deadlifts']::text[]),
-    ('Barbell Row', 'barbell', 'pull', ARRAY['back', 'lats']::text[], ARRAY['bent over row', 'bb row']::text[]),
-    ('Dumbbell Row', 'dumbbell', 'pull', ARRAY['back', 'lats']::text[], ARRAY['db row', 'single-arm row', 'one arm dumbbell row']::text[]),
-    ('Pull-up', 'bodyweight', 'pull', ARRAY['lats', 'biceps']::text[], ARRAY['pull up', 'pull ups', 'pullups', 'pull-ups']::text[]),
-    ('Chin-up', 'bodyweight', 'pull', ARRAY['lats', 'biceps']::text[], ARRAY['chin up', 'chin ups', 'chinups', 'chin-ups']::text[]),
-    ('Lat Pulldown', 'cable', 'pull', ARRAY['lats']::text[], ARRAY['lat pull down', 'pulldown']::text[]),
-    ('Seated Cable Row', 'cable', 'pull', ARRAY['back']::text[], ARRAY['cable row']::text[]),
-    ('Dip', 'bodyweight', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['dips', 'parallel bar dip']::text[]),
-    ('Push-up', 'bodyweight', 'push', ARRAY['chest', 'triceps']::text[], ARRAY['push up', 'push ups', 'pushups']::text[]),
-    ('Leg Press', 'machine', 'squat', ARRAY['quads', 'glutes']::text[], '{}'::text[]),
-    ('Leg Extension', 'machine', 'isolation', ARRAY['quads']::text[], ARRAY['leg extensions']::text[]),
-    ('Leg Curl', 'machine', 'isolation', ARRAY['hamstrings']::text[], ARRAY['lying leg curl', 'seated leg curl', 'hamstring curl']::text[]),
-    ('Standing Calf Raise', 'machine', 'isolation', ARRAY['calves']::text[], ARRAY['calf raise', 'calf raises']::text[]),
-    ('Walking Lunge', 'dumbbell', 'lunge', ARRAY['quads', 'glutes']::text[], ARRAY['lunges', 'walking lunges', 'lunge']::text[]),
-    ('Hip Thrust', 'barbell', 'hinge', ARRAY['glutes']::text[], ARRAY['barbell hip thrust', 'hip thrusts']::text[]),
-    ('Barbell Curl', 'barbell', 'isolation', ARRAY['biceps']::text[], ARRAY['bb curl']::text[]),
-    ('Dumbbell Curl', 'dumbbell', 'isolation', ARRAY['biceps']::text[], ARRAY['db curl', 'bicep curl', 'biceps curl']::text[]),
-    ('Triceps Pushdown', 'cable', 'isolation', ARRAY['triceps']::text[], ARRAY['tricep pushdown', 'cable pushdown']::text[]),
-    ('Lateral Raise', 'dumbbell', 'isolation', ARRAY['shoulders']::text[], ARRAY['lateral raises', 'side raise', 'db lateral raise']::text[]),
-    ('Face Pull', 'cable', 'pull', ARRAY['rear delts']::text[], ARRAY['face pulls']::text[]),
-    ('Power Clean', 'barbell', 'olympic', ARRAY['full body']::text[], ARRAY['barbell clean', 'clean']::text[]),
-    ('Kettlebell Swing', 'kettlebell', 'hinge', ARRAY['glutes', 'hamstrings']::text[], ARRAY['kb swing', 'kettlebell swings']::text[]),
-    ('Plank', 'bodyweight', 'core', ARRAY['core']::text[], ARRAY['planks']::text[])
-) AS v (name, equipment, movement, muscles, other_names)
-ON CONFLICT (name) DO NOTHING;
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS measures            measure_list      NOT NULL DEFAULT '{}';
+-- Moves two or more joints (compound) or one (isolation); NULL when not set.
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS compound            BOOLEAN;
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS primary_muscles     muscle_list       NOT NULL DEFAULT '{}';
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS secondary_muscles   muscle_list       NOT NULL DEFAULT '{}';
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS joint_actions       joint_action_list NOT NULL DEFAULT '{}';
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS movement_patterns   movement_pattern_list NOT NULL DEFAULT '{}';
+-- One of theirs links to one of ours at most.
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS free_exercise_db_id TEXT UNIQUE REFERENCES free_exercise_db(id);
+ALTER TABLE exercises DROP CONSTRAINT IF EXISTS exercises_equipment_check;
+ALTER TABLE exercises ADD CONSTRAINT exercises_equipment_check CHECK (equipment IN (
+        'barbell', 'ez bar', 'trap bar', 'dumbbell', 'kettlebell', 'cable', 'machine',
+        'smith machine', 'band', 'medicine ball', 'sled', 'box', 'jump rope', 'bodyweight',
+        'other'
+    ));
+-- Replaced by the columns above; nothing read them (dropped 2026-10-11).
+ALTER TABLE exercises DROP COLUMN IF EXISTS movement;
+ALTER TABLE exercises DROP COLUMN IF EXISTS muscles;
 
 -- A person's own exercise, in their words; made the first time they use a name. name_key is the
 -- name ignoring case and extra spaces, so "Bench press" and "bench  Press" are one exercise.
@@ -315,12 +348,7 @@ CREATE TABLE IF NOT EXISTS workout_session_exercises (
     name                     TEXT NOT NULL,
     notes                    TEXT,
     warmup_notes             TEXT,
-    tags                     TEXT[],
-    modality                 TEXT,
-    movement_pattern         TEXT[],
     form_cues                TEXT[],
-    target_muscle_groups     TEXT[],
-    rep_tempo                TEXT,
     goal_weight_kg           NUMERIC,
     goal_sets                INT,
     goal_rep_min             INT,
@@ -334,6 +362,11 @@ CREATE TABLE IF NOT EXISTS workout_session_exercises (
     FOREIGN KEY (user_id, session_id) REFERENCES workout_sessions(user_id, id) ON DELETE CASCADE,
     FOREIGN KEY (user_id, user_exercise_id) REFERENCES user_exercises(user_id, id)
 );
+-- Classifications the AI stopped filling, empty in every row; the library's muscles and movement
+-- patterns replace them (dropped 2026-10-12).
+ALTER TABLE workout_session_exercises
+    DROP COLUMN IF EXISTS tags, DROP COLUMN IF EXISTS modality, DROP COLUMN IF EXISTS movement_pattern,
+    DROP COLUMN IF EXISTS target_muscle_groups, DROP COLUMN IF EXISTS rep_tempo;
 
 -- Warm-up and working sets in one table. Drop sets, myo-reps and the like stay as detail on their
 -- set (failure_technique).
@@ -384,6 +417,7 @@ CREATE INDEX IF NOT EXISTS idx_feedback                       ON feedback (user_
 -- Row-level security on, no policies (see the top of this file) ---------------
 ALTER TABLE users                         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE free_exercise_db              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE exercises                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_exercises                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE input_text                    ENABLE ROW LEVEL SECURITY;

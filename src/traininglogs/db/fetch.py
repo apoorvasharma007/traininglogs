@@ -87,10 +87,9 @@ def get_session(conn: Connection, user_id: str, session_id: str) -> dict | None:
             session[key] = _rows(cur)
         cur.execute(
             """
-            SELECT id, position AS number, name, tags, modality, movement_pattern, notes, warmup_notes,
-                   form_cues, goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min,
-                   goal_rest_seconds, goal_distance_meters, goal_target_duration_sec,
-                   target_muscle_groups, rep_tempo
+            SELECT id, position AS number, name, notes, warmup_notes, form_cues, goal_weight_kg, goal_sets,
+                   goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds, goal_distance_meters,
+                   goal_target_duration_sec
             FROM workout_session_exercises WHERE user_id = %s AND session_id = %s ORDER BY position
             """,
             (user_id, session_id),

@@ -128,8 +128,9 @@ def name_key(name: str) -> str:
 
 def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
     """The person's exercise id for each name, by name_key, making the ones they haven't used yet.
-    A new one links to a shared exercise when the name is that exercise's name or one of its other
-    names. Two queries for the whole session, however many exercises it has."""
+    A new one links to a library exercise only when the name is exactly that exercise's name;
+    other names are search words, never a link. Two queries for the whole session, however many
+    exercises it has."""
     wanted = {name_key(n): n.strip() for n in names if n.strip()}
     if not wanted:
         return {}
@@ -145,7 +146,7 @@ def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
             """
             INSERT INTO user_exercises (id, user_id, name, exercise_id)
             SELECT v.id::uuid, v.user_id::uuid, v.name,
-                   (SELECT e.id FROM exercises e WHERE lower(e.name) = v.key OR v.key = ANY(e.other_names) LIMIT 1)
+                   (SELECT e.id FROM exercises e WHERE lower(e.name) = v.key)
             FROM (VALUES %s) AS v (id, user_id, name, key)
             ON CONFLICT (user_id, name_key) DO NOTHING
             """,
@@ -222,8 +223,7 @@ def insert_session(
             rep_range = goal.rep_range if goal else None
             exercise_rows.append((
                 row_id, user_id, session_id, exercise.number, exercise_ids[name_key(exercise.name)],
-                exercise.name, exercise.notes, exercise.warmup_notes, exercise.tags, exercise.modality,
-                exercise.movement_pattern, exercise.form_cues, exercise.target_muscle_groups, exercise.rep_tempo,
+                exercise.name, exercise.notes, exercise.warmup_notes, exercise.form_cues,
                 goal.weight_kg if goal else None, goal.sets if goal else None,
                 rep_range.min if rep_range else None, rep_range.max if rep_range else None,
                 _rest_minutes(goal.rest if goal else None), _rest_seconds(goal.rest if goal else None),
@@ -250,9 +250,8 @@ def insert_session(
             cur,
             """
             INSERT INTO workout_session_exercises (
-                id, user_id, session_id, position, user_exercise_id, name, notes, warmup_notes, tags,
-                modality, movement_pattern, form_cues, target_muscle_groups, rep_tempo, goal_weight_kg,
-                goal_sets, goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds,
+                id, user_id, session_id, position, user_exercise_id, name, notes, warmup_notes, form_cues,
+                goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds,
                 goal_distance_meters, goal_target_duration_sec
             ) VALUES %s
             """,

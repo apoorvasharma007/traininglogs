@@ -27,14 +27,14 @@ recovery tracking all read from the library instead of from typed names. With li
 | Field | How many | Required | Values |
 |---|---|---|---|
 | Name | one | yes | "Bench Press (Barbell)" |
-| Other names | any number | no | how people write it: "bench", "bb bench"; used for automatic linking only |
+| Other names | any number | no | how people write it: "bench", "bb bench"; search words only, never used to link (changed 2026-10-11) |
 | Equipment | one | yes | barbell, ez bar, trap bar, dumbbell, kettlebell, cable, machine, smith machine, band, medicine ball, sled, box, jump rope, bodyweight, other |
 | Measures | one or more | yes | weight, reps, time, distance |
-| Type | one | no | Compound, Isolation |
+| Compound | one | no | yes (moves two or more joints) or no (isolation); `compound` in the database, renamed from Type 2026-10-11 so it can't be mistaken for movement patterns |
 | Primary muscles | one or more | yes | from the muscle list; each counts 1 set |
 | Secondary muscles | any number | no | from the muscle list; each counts 0.5 sets |
 | Joint actions | any number | no | from the joint action list, e.g. hip extension, knee extension |
-| Patterns | any number | no | from the pattern list; isolation exercises have none |
+| Movement patterns | any number | no | from the movement pattern list (`movement_patterns`, renamed from patterns 2026-10-12); isolation exercises have none |
 | free-exercise-db id | one | no | the matching free-exercise-db exercise, "Barbell_Hip_Thrust"; empty when it has none (section 4) |
 
 Library exercises have every field filled; a person's own exercises may leave the optional ones
@@ -61,7 +61,7 @@ a bench press set gives chest 1 and triceps 0.5. The per-muscle numbers stay for
 
 ### 2. The fixed lists (approved 2026-10-11)
 
-**Muscles (approved 2026-10-11): 17 groups, 36 muscles.** An exercise's primary and secondary
+**Muscles (approved 2026-10-11, Glute Med added the same day): 17 groups, 37 muscles.** An exercise's primary and secondary
 muscles are muscles; Progress and recovery total them by group. Checked against anatomy
 references (StatPearls, Kenhub, TeachMeAnatomy) and EMG studies.
 
@@ -77,7 +77,7 @@ references (StatPearls, Kenhub, TeachMeAnatomy) and EMG studies.
 | Triceps | Triceps Long Head, Triceps Lateral/Medial Heads |
 | Forearms | Brachioradialis, Forearm Flexors, Forearm Extensors |
 | Core | Abs, Obliques, Transverse Abdominis |
-| Glutes | Glute Max |
+| Glutes | Glute Max, Glute Med |
 | Hips | Abductors, Adductors, Hip Flexors |
 | Quads | Rectus Femoris, Vastus Muscles |
 | Hamstrings | Hamstrings |
@@ -93,7 +93,8 @@ What each one covers, where it isn't obvious:
 - Upper Traps also extend the neck; they stay under Upper Back.
 - Brachialis isn't part of the biceps; the group keeps the name people search for.
 - Brachioradialis is a forearm muscle that bends the elbow (hammer and reverse curls).
-- Glute Max only; Abductors are glute med, glute min and TFL. Hip Flexors are iliopsoas and
+- Glute Max and Glute Med (split out 2026-10-11, since people train the side glute on its own);
+  Abductors are what's left of the hip abductors, glute min and TFL. Hip Flexors are iliopsoas and
   sartorius; rectus femoris counts under Quads.
 - Triceps Long Head and Rectus Femoris are split out because they cross a second joint
   (shoulder, hip).
@@ -119,10 +120,10 @@ brackets.
 Knee rotation happens only with the knee bent (about 20 to 30° inward, 30 to 40° outward); it's
 trained in mobility and knee rehab work, such as seated tibial rotations.
 
-**Patterns (approved 2026-10-11): 15.** No single scientific standard exists; this follows
+**Movement patterns (approved 2026-10-11): 15.** No single scientific standard exists; this follows
 coaching consensus (Dan John, John Rusin) and the anti-movement model for core training.
 
-| Kind | Patterns |
+| Kind | Movement patterns |
 |---|---|
 | Lower body | Squat, Hinge, Lunge |
 | Push | Horizontal Push, Vertical Push |
@@ -173,7 +174,7 @@ instructions, images
   the loader, so a reload gives the same ids and an update is a reviewed change.
 - `exercises.free_exercise_db_id` links our exercise to theirs; the foreign key makes a mistyped
   id fail at load. Empty where they have no match.
-- Their data never fills our columns. Our muscles stay our 36; theirs are for cross-checking.
+- Their data never fills our columns. Our muscles stay our 37; theirs are for cross-checking.
   Their images and instructions are reachable through the link; only the paths are stored for
   now (the images sit on GitHub). Showing them is a visual change and needs Apoorva's yes.
 - No generic sources table: there is one source. A second one would get its own table and column.
@@ -217,6 +218,101 @@ old app have updated:
 | none | `POST /exercises` (add your own) |
 | `GET /progress/lifts`, `PUT /me/key-lifts` | Key Lifts read and saved under one path |
 
+### 9. v1 scope (agreed 2026-10-11)
+
+Built and tried locally against the dev copy of prod before staging. On top of sections 5 to 8:
+
+- **My Exercises**, one screen: your own exercises and any names not linked to the library.
+  Each row offers "Link to a library exercise" or "Keep as my own" (which asks for primary
+  muscles, equipment and measures). Step 5's mapping becomes a pre-fill reviewed there. Needed
+  because names that arrive as text (notes, old app) keep arriving unlinked.
+- **Progress redesign**: an overview of tiles, each doing one job (strength, volume per muscle
+  group, what hasn't been trained, and others), each opening a sub-page. Metrics and visuals
+  come from a research pass (2026-10-11), then a mockup approved before building. Agreed so far:
+  - Volume per muscle group shows the counts only, no target bands.
+  - Strength against bodyweight for the key lifts (deadlift, squat, bench press, pull-up, row)
+    and bodyweight maxes such as most pull-ups: "squat 2.2x bodyweight".
+    The number is the estimated max (Epley with RPE, as Progress uses now) over the bodyweight
+    on that date, with "heaviest lifted 140 kg × 5" underneath. Pull-up (Bodyweight) shows best
+    reps only; Pull-up (Weighted) is its own exercise and its estimated max is the added weight
+    alone. Bodyweight is never added to a lift's load.
+  - A Skills tile: best hold time or best clean reps. Each person picks their skills in
+    Settings, like Key Lifts, starting from a default list.
+  - A front and back body map with `body-highlighter` (MIT).
+  - Left out: recovery percentages, tonnage across exercises, composite scores.
+  - Chart details are decided on mockups.
+  - Approved on the mockup (2026-10-12, https://claude.ai/artifact/Gv916fCpkybdLy8e9JtPwf;
+    its bugs get fixed in the build):
+    - Overview, in order: Muscle Volume (full width: total sets this week, one small bar per
+      group from Neck to Shins, "Sets per muscle group."), Strength and Skills side by side
+      (first three each, then "+N more"), and Not Trained as a small row. No subtitle.
+    - Muscle Volume page: week picker at the top (Monday to Sunday, arrows back through earlier
+      weeks), the body map follows it. Each group opens to its muscles and an 8-week bar chart
+      captioned with its date range; tapping a bar picks that week. Footer: "A set counts 1 for
+      its primary muscle group and 0.5 for each secondary one. One set of bench press counts 1
+      for Chest and 0.5 each for Triceps and Shoulders."
+    - Group rule: a set counts once per group, 1 if any primary muscle is in it, else 0.5 if
+      any secondary one is. Muscle rows count per muscle.
+    - Not Trained: groups with no sets in the last 20 weeks, with the last date or "Never".
+    - Strength page: Key Lifts with an Edit button (reorder, remove, add; moves out of
+      Settings), each opening today's lift page. All Exercises is a collapsible list with
+      search inside; each row opens the lift page. Other Lifts is gone.
+    - Skills page: Edit in the header, same edit list; skills editing lives here, not Settings.
+- **Profile**: bodyweight (the person updates it when it changes; each update kept with its
+  date, so past ratios use the weight at the time), height, and date of birth (age is worked
+  out from it). Approved on the mockup (2026-10-12,
+  https://claude.ai/artifact/P6y4a98aj3y6Pir7qDaC5Q); only these parts get built:
+  - A Profile row in Settings under Account, subtitle "Bodyweight, height, date of birth",
+    current weight on the right. It opens its own page.
+  - Bodyweight: current weight large, with the date it was logged. "Update" opens a sheet with
+    a kg box and a date (today by default); Save is off until a weight is typed. Entries listed
+    newest first; tapping one opens the same sheet to change or delete it. Every change offers
+    Undo. No chart.
+  - Height (cm) and Date of Birth (shown with the age, "14 Mar 1997 (29)") are rows that open a
+    sheet; empty ones show "Add".
+  - Units are kg and cm only.
+  - A set's ratio uses the latest entry on or before its date; sets older than the first entry
+    use the first entry.
+  - Strength with no bodyweight logged shows estimated max in kg, plus one row linking to
+    Profile: "Add your bodyweight in Profile to see these as ratios."
+  - Not decided by the mockup: whether Profile and My Exercises share a card or each get a
+    SectionCard. Ask before building.
+- **Linking**: past names show the library name once linked (History, Progress, sessions); the
+  typed name shows on My Exercises. Linking an own exercise to a library one makes the library's
+  muscles, equipment and measures count, past sets included; the own version is kept, so
+  unlinking restores it; both show what changes and offer Undo.
+- **Picker**: the exercise name box searches as you type (names and other names, library and
+  your own, on the phone), with a list under it; nothing shows before typing. Picking a row is
+  the link. The last row is always "Add '…' as your own". Same box in sessions and workout
+  plans. The set row shows the exercise's measures (time and distance boxes are new; the
+  database already stores both).
+- **Add your own**: one sheet, simplest first. Required: name and at least one primary muscle.
+  Equipment is optional for own exercises (no metric uses it). Approved on the mockup
+  (2026-10-12, https://claude.ai/artifact/LzNyXSqvfHAXF7HDkW5cQ1):
+  - A name box with the placeholder "Exercise Name", no label; the search text carries over.
+    Names are saved in Title Case (first letter of each word; "RDL" stays). The session's
+    exercise card relies on the phone keyboard for this today; the picker build fixes it there
+    too (changes how new names are saved, so confirm before building).
+  - Then rows that open on tap, one at a time, each showing its value on the right (green when
+    set, "Add" or "Required" in grey): Primary Muscles (tag "+1 Per Set", open first) and Log
+    in the first group; Equipment, Secondary Muscles (tag "+0.5 Per Set"), Compound, Joint
+    Movements and Movement Patterns under "Optional".
+  - Big lists open in two steps: a 3-column grid of groups, then the group's options. A group
+    tile that opens further shows an arrow and its count beside the name ("Shoulders 4", then
+    "Shoulders 1/4" once something inside is picked). Picking an option goes back to the grid.
+    Groups with one option (Lats) select directly.
+  - Order: muscle groups, the muscles in them, and joints run head to toe; everything else
+    (joint movements within a joint, equipment, movement patterns, Log) is alphabetical.
+  - Single choices close their row on pick: Log (one of seven real combinations, Weight and
+    Reps by default), Equipment ("Other" asks what it is). Compound is a two-part switch,
+    "Compound" and "Isolation", neither picked at first.
+  - Names on screen: Primary Muscles and Secondary Muscles; Joint Movements (the column stays
+    `joint_actions`); no "Type" label anywhere.
+  - Save is pinned at the bottom; until it can save, one line says why ("Add a name to save",
+    "Choose a primary muscle to save").
+- Not in v1: the second tier. Later, "Link to a library exercise" on My Exercises also searches
+  `free_exercise_db` on the server.
+
 ## Blast radius
 
 - Server: `db/schema.sql` (exercise fields, the lists), `db/insert.py`, `db/fetch.py`,
@@ -242,7 +338,29 @@ squashed into the base; the base merges into `dev` when every step is done and t
       afterwards), reviewed by Apoorva.
 - [ ] 3. Schema and loading: new fields, the lists as checks; the `free_exercise_db` table
       loaded from a pinned commit, then the library with its foreign key, unique (one of
-      theirs links to one of ours at most); tests.
+      theirs links to one of ours at most); tests. Agreed 2026-10-11:
+      - `schema.sql` holds the lists as domains and the equipment check; the database refuses
+        a value not on them, whoever writes it. Adding to a list is a `schema.sql` change.
+      - `movement` and `muscles` are dropped (nothing reads them; Apoorva's one-off exception
+        to never dropping in place). The starter insert comes out of `schema.sql`.
+      - `scripts/load_exercise_library.py`, run by hand. It does everything in one transaction
+        and rolls back unless given `--apply`, printing what it added, renamed and updated.
+        Matches by exact name; never deletes (lists rows not in the file).
+      - The 32 starter rows are renamed from an explicit list of pairs Apoorva reviews, keeping
+        their ids; each old name goes into the new row's other names.
+      - free-exercise-db: their `dist/exercises.json` at commit `f00c92c` kept as plain text in
+        `scripts/data/`, loaded by the same script, never edited.
+      - Rollout: tests, then local dev (a prod copy), then staging (a fresh prod copy), checking
+        every link points at the same row id and no counts moved. Prod at the release (step 9).
+      - Hard linking only: other names are search words, never used to link, and can repeat
+        across exercises. The server links a typed name only when it is exactly a library name
+        (`db/insert.py`); anything else becomes the person's own exercise until they pick one
+        (step 7) or step 5's reviewed mapping links it. Already-linked names stay linked.
+      - Names that arrive as text (notes read by the AI, phones on the old app) become own
+        exercises for now. Follow-up after the picker: the AI's confirmation card asks the
+        person to pick the exercise for each name.
+      - For step 4: own exercises pick equipment from the list; "other" asks what it is and
+        stores the text in `equipment_other`.
 - [ ] 4. Own exercises: `POST /exercises` with required primary muscles, equipment and
       measures; tests.
 - [ ] 5. Linking existing logs: mapping file reviewed, dry run on a prod copy, prod run approved.
@@ -288,40 +406,75 @@ calls. Second pass done (2026-10-11): every muscle must be moved by a listed joi
 no longer listed on any exercise, rules written in the file header. The check scripts are not in
 the repo yet; step 3's loader tests should carry the list and joint-action checks. Batch 1 ids
 filled: 53 of 84 matched (110 of 161 overall), each checked against their instructions; the rest
-are variations they lack. Next: Apoorva reviews the matches, then step 2 is done and squashes
-into `exercises/library`; step 3 starts on `exercises/library-3-schema`. Each id links to one
-exercise at most (weighted push-ups and dips have none). Matching rule: search their names and instructions, read the description,
-and say "no match" only after both (their names differ: Nordic Curl is `Floor_Glute-Ham_Raise`).
-Their name goes into other_names too. The free-exercise-db file for checking: `dist/exercises.json` in
-github.com/yuhonas/free-exercise-db. The approved names (free-exercise-db's own names go in other_names):
-- Chest: Bench Press (Dumbbell); Bench Press (Barbell, Close Grip); Incline Press (Barbell);
-  Chest Press (Machine); Push-up (Bodyweight); Push-up (Weighted); Dip (Bodyweight); Dip (Weighted)
-- Shoulders: Arnold Press (Dumbbell); Landmine Press (Barbell, Single Arm); Push Press (Barbell);
-  Handstand Push-up (Bodyweight)
-- Rotator cuff: External Rotation (Cable); External Rotation (Band); Internal Rotation (Cable)
-- Serratus: Push-up Plus (Bodyweight); Serratus Punch (Cable)
-- Back: Straight-Arm Pulldown (Cable); Pullover (Dumbbell); Inverted Row (Bodyweight); T-Bar Row
-  (Barbell); Shrug (Barbell); Shrug (Dumbbell); Scapular Pull-up (Bodyweight); Dead Hang
-  (Bodyweight); Muscle-up (Bodyweight)
-- Arms: Biceps Curl (Barbell); Hammer Curl (Dumbbell); Triceps Pressdown (Cable, Rope)
-- Core: Plank (Bodyweight); Side Plank (Bodyweight); Pallof Press (Cable); Woodchop (Cable); Dead
-  Bug (Bodyweight); Hollow Body Hold (Bodyweight); L-sit (Bodyweight); Hanging Knee Raise
-  (Bodyweight); Crunch (Bodyweight)
-- Hips and glutes: Hip Thrust (Barbell); Hip Thrust (Machine); Glute Bridge (Bodyweight, Single
-  Leg); Glute Kickback (Cable); Copenhagen Plank (Bodyweight)
-- Legs: Front Squat (Barbell); Goblet Squat (Dumbbell); Pistol Squat (Bodyweight); Step-up
-  (Dumbbell); Reverse Lunge (Dumbbell); Sumo Deadlift (Barbell); Deadlift (Trap Bar); Romanian
-  Deadlift (Dumbbell); Single-Leg Romanian Deadlift (Dumbbell); Good Morning (Barbell); Nordic
-  Curl (Bodyweight)
-- Carries: Farmer Carry (Dumbbell); Suitcase Carry (Dumbbell); Overhead Carry (Kettlebell)
-- Jumps: Box Jump; Broad Jump; Depth Jump; Jump Rope
-- Throws: Slam (Medicine Ball); Chest Pass (Medicine Ball); Rotational Throw (Medicine Ball);
-  Overhead Backward Throw (Medicine Ball)
-- Olympic and kettlebell: Power Clean (Barbell); Hang Clean (Barbell); Snatch (Barbell); Power
-  Snatch (Barbell); Clean and Jerk (Barbell); Swing (Kettlebell); Snatch (Kettlebell); Turkish
-  Get-up (Kettlebell)
-- Neck: Neck Curl (Plate); Neck Extension (Plate); Lateral Neck Flexion (Plate); Neck Extension
-  (Harness)
+are variations they lack; Apoorva approved them. Step 2 squashed into `exercises/library` as
+`c8fb8a6` (suite green, 743 passed).
+
+2026-10-11 (step 3): design agreed (see step 3 in Steps) and written on
+`exercises/library-3-schema`: `schema.sql` (lists as domains, `free_exercise_db`, new columns,
+`movement` and `muscles` dropped, starter insert removed), `db/library.py`,
+`scripts/load_exercise_library.py`, `scripts/data/free_exercise_db.json`, exact-name linking in
+`db/insert.py`, `tests/test_exercise_library.py`, pyyaml in the dev lock (hand-inserted: no Python
+3.12 on this Mac, and pip-compile on 3.13 rewrites other lines). Suite green: 767 passed, on the
+existing test database and on a fresh one. Dry run on local dev: 32 renamed, 129 added, 32
+updated, 0 left alone; the 19 links point at the same row ids. Applied to local dev: everything the app reads (sessions,
+history, last values, Progress, export) byte-identical before and after, counts unchanged. Step 5
+must fix three old guessed links: Seated Leg Curl -> Leg Curl (Machine, Lying) is wrong; Shoulder
+Press -> Overhead Press (Barbell) and Calf raise -> Calf Raise (Machine, Standing) need checking.
+Apoorva wants the server and app side built and tried locally before staging. Run scripts with
+`PYTHONPATH=src ../traininglogs/.venv/bin/python`; it has PyYAML. `docs/design.html` predates
+the accounts redesign; update it at the release.
+
+2026-10-12: v1 scope agreed (section 9). Since step 3's first commit: `type` became `compound`
+(yes/no), Glute Med added under Glutes (37 muscles; Abductors now glute min and TFL; checked
+against Wikipedia's anatomy pages), both applied to local dev with history still byte-identical.
+The picker and Add Your Own mockup is approved (section 9, link there). Agreed but not yet
+written into the code: muscle groups and joints head to toe. Research report on Progress metrics
+was in the session scratchpad (not kept); its conclusions are in section 9.
+
+2026-10-12 (later): My Exercises mockup, version 4 (https://claude.ai/artifact/84eR4cUKKa8EkYsJfmvHi1),
+in review; Apoorva refines it on the artifact. Agreed so far:
+- Settings row "My Exercises", subtitle "Your custom exercise collection", pill "2 unlinked"
+  only when something is unlinked. It opens a page with Unlinked, Custom, and a Linked row that
+  opens its own screen (filter, two-line rows: typed name, library name).
+- Unlinked note, word for word: "These don't count toward your weekly muscle volume. Link each
+  one to a library exercise, or make it custom and pick its muscles, to make all logged sets
+  count. Then they show in Progress."
+- Decided: unlinked names count nowhere in Progress and get no chart of their own.
+- Unlinked rows: "Link to a Library Exercise" (full-height search sheet, confirm with the session
+  count) or "Make It Custom". Every custom exercise uses the one approved Add Your Own sheet (all
+  fields, Primary Muscles open first): Make It Custom fills the name, "+ Add" in the Custom
+  header opens it empty, tapping a custom exercise opens it filled to edit. Linked rows: Change Link (same search sheet) or Unlink (back to
+  Unlinked). Every change shows Undo for 5 seconds. No suggested matches.
+- Search results that matched an other name show `Matches "rdl"` (replaces "Also called", in the
+  session picker too). Other names are ours, from step 2; users never add to them.
+- Link searches the 161 library exercises only; free-exercise-db stays second tier.
+On the dev copy, exact-name linking leaves 2 of Apoorva's 99 names unlinked (Shoulder Press,
+Calf raise) and moves Barbell Clean to Clean (Barbell). Open for step 7: should the picker also
+find a person's linked names?
+Mockup design approved; its layout is rough (hand-copied CSS). The build uses the app's own
+pieces; new layout (Settings row with subtitle and pill, Custom header with count and + Add,
+two-line Linked rows) gets shown before it's written. `SectionCard` puts the description to the
+right of the title; follow that unless Apoorva wants it underneath.
+
+2026-10-12 (later): Progress mockup approved (section 9, link there), with the group counting
+rule. Key Lifts and Skills editing move onto their Progress pages. Profile mockup approved too
+(section 9). Build rule from Apoorva: only what section 9 records as approved goes into code,
+never extras copied from a mockup; reuse existing components, and every new line has to earn
+its place.
+
+Next:
+1. Build step 4 (server: `GET /exercises`, `POST /exercises`, sessions save a pick) on
+   `exercises/library-4-own`, cut from `exercises/library-3-schema` (step 3 isn't squashed yet:
+   the base branch is checked out in the main checkout).
+2. Open: the glute med review pass on single-leg exercises (EMG sources, shown before writing);
+   which mockup tags stay ("+1 Per Set", "+0.5 Per Set" approved).
+2026-10-12: `patterns` renamed `movement_patterns`; five empty session-exercise columns (`tags`,
+`modality`, `movement_pattern`, `target_muscle_groups`, `rep_tempo`) dropped from the database,
+the model and the API. `schema.sql` drops them on startup, so the staging rehearsal must confirm
+they are empty on the prod copy before the release. Local dev still has them until the app next
+starts against it.
+Staging comes after the app is tried locally: fresh prod copy (`copy_prod_to_dev.py` with
+`DEV_DATABASE_URL="$DATABASE_URL_STAGING"`), then the script with `--database-url`.
 
 Also agreed: section 5 (own
 exercises stay private) and section 6 (library fetched after load, kept on the phone), and step 10
@@ -331,7 +484,8 @@ type, like the corrections card) with a per-person daily cap and a monthly spend
 
 Rules settled while writing batch 1 (also in the file's header):
 - Other names only hold spellings that can mean just that exercise; generic names link only
-  where there's a clear convention (bench press, squat, deadlift, lateral raise).
+  where there's a clear convention (bench press, squat, deadlift, lateral raise). Replaced
+  2026-10-11: other names are search words only and can repeat across exercises.
 - Equipment is bodyweight only when nothing is added; weighted versions use other.
 - Forearm Flexors only where grip commonly limits the set.
 - Pauses are tempo, bottom-half reps are partial reps. Follow-up outside this plan: the app has
@@ -345,8 +499,17 @@ Context for the next session:
   `docker exec traininglogs-db_test-1 psql -U traininglogs -d traininglogs_dev`.
 - This worktree has no `.venv`; `../traininglogs/.venv/bin/python` has PyYAML for checking the
   library file.
-- Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) has
-  107 exercise names for one person, 23 linked; prod has a few more people.
+- Prod runs 5.0.0 (released 2026-10-11). The local data copy (`traininglogs_dev`, port 5433) was
+  re-copied from prod on 2026-10-11 (the old one had test data): 2 people, 99 exercise names, 19
+  linked, 133 sessions, 3419 sets, the same counts as prod. The prod connection string is the
+  `database-url` secret in Secret Manager; `.env` has it commented out on purpose.
+- Step 3 decision (2026-10-11): the 32 starter rows in `exercises` are renamed in place to their
+  library names, keeping their ids so every link holds, and each old name goes into the new
+  row's other names. Leg Curl becomes Leg Curl (Machine, Lying); Pull-up, Lat Pulldown, Seated
+  Cable Row and Walking Lunge go to Pull-up (Bodyweight), Lat Pulldown (Cable, Wide Grip), Row
+  (Cable, Seated, Neutral Grip) and Walking Lunge (Dumbbell). Rollout: tests, then a prod copy in
+  staging, checked (every link points at the same row id before and after, counts unchanged),
+  then prod.
 - The Title Case change (program templates now "Bench Press", "Upper / Lower") is on `docs/guide`,
   not on dev yet. If this branch touches `program_templates.py`, merge `docs/guide` first or
   expect a conflict.

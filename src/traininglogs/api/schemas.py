@@ -64,9 +64,6 @@ class WorkingSetOut(BaseModel):
 class ExerciseOut(BaseModel):
     number: int
     name: str
-    tags: Optional[list[str]]
-    modality: Optional[str]
-    movement_pattern: Optional[list[str]]
     notes: Optional[str]
     warmup_notes: Optional[str]
     form_cues: Optional[list[str]]
@@ -78,8 +75,6 @@ class ExerciseOut(BaseModel):
     goal_rest_seconds: Optional[int]
     goal_distance_meters: Optional[float]
     goal_target_duration_sec: Optional[int]
-    target_muscle_groups: Optional[list[str]]
-    rep_tempo: Optional[str]
     sets: list[WorkingSetOut] = []
     warmup_sets: list[WarmupSetOut] = []
 
