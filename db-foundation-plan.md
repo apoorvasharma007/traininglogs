@@ -25,11 +25,40 @@ before F1 of the exercise library, which restructures tables and needs ordered m
   runner (`db.py`), no new library; staging and production are run by hand with
   `scripts/migrate.py` (agreed 2026-10-25). `schema.sql` became `migrations/0001_baseline.sql`.
   Suite 768 passed, 0 failed, 0 skipped, on an existing database and on a brand-new one.
-- [ ] 3. Record the baseline on the existing databases: local dev, then staging, then production
+- [x] 3. Record the baseline on the existing databases: local dev, then staging, then production
   with a yes in the session. `0001_baseline.sql` is the old `schema.sql`, which only creates what's
   missing, so `scripts/migrate.py --apply` runs it and records it. Before each: the dry run, and a
   `pg_dump --schema-only` compared before and after, which must show only `schema_migrations` as
   new. Production also gets a backup to `backups/` first.
+  - Local dev (2026-10-25): refused and rolled back, nothing changed (schema dump and counts
+    identical: 134 sessions, 3,420 sets, 101 custom exercises). It carries the exercise library
+    branch's schema (`exercises.movement` dropped), which the baseline's starter insert needs. It
+    gets its record after step 4, when `0002_exercise_library.sql` exists, or from a fresh copy.
+  - Reference: `traininglogs_baseline_ref` in the local Docker Postgres, built from `0001` alone.
+    Compare with `pg_dump` 17 (`docker run postgres:17`), `--schema-only --schema=public
+    --no-owner --no-privileges`, since staging and production run Postgres 17.
+  - Staging (2026-10-25, read only): the dry run lists `0001` only. The layout matches the
+    reference except `users.timezone`, which defaults to `'Asia/Kolkata'` there and `'UTC'` in the
+    file (changed in `d5230f2`; the file only creates what's missing, so staging kept the old
+    default). Fixing it is a new file, waiting on Apoorva. Staging holds test data, so the real
+    rehearsal is a copy of production taken the same day.
+  - Production (2026-10-25): was paused (Supabase `INACTIVE`); restored with Apoorva's yes. Read
+    only: the dry run lists `0001` only, and the layout matches the reference exactly (it already
+    defaults `users.timezone` to `'UTC'`, so only staging drifted).
+  - Rehearsal (2026-10-25): production copied into local `traininglogs_prod_copy` (`pg_dump
+    --schema=public`, restored without `SET transaction_timeout` and `CREATE SCHEMA public`, which
+    the local Postgres 16 refuses). Row counts matched in all 16 tables. `migrate.py --apply` ran
+    `0001`: the layout gained only `schema_migrations`, every count stayed the same (the starter
+    insert is `ON CONFLICT (name) DO NOTHING`), and a second run did nothing.
+  - Staging applied (2026-10-25, Apoorva's yes): counts unchanged but for one `schema_migrations`
+    row; a second dry run lists nothing.
+  - Production backup (2026-10-25):
+    `~/Projects/traininglogs/backups/prod-before-schema-files-20261025-2128.sql`, all 16 tables.
+    The apply was blocked by Claude Code's permission check, so Apoorva ran it.
+  - Production applied (2026-10-25): counts unchanged but for one `schema_migrations` row; a
+    second dry run lists nothing. Staging and production now record `0001`.
+  - Later: staging's `users.timezone` default (`'Asia/Kolkata'`) differs from the file and
+    production (`'UTC'`). A one-off fix on staging, or leave it; staging is test data.
 - [ ] 4. Merge `db/foundation` into `dev` (needs Apoorva's yes), then merge `dev` into
   `exercises/library`, where the library's own `schema.sql` changes (its step 3) become
   `0002_exercise_library.sql`.
@@ -37,8 +66,10 @@ before F1 of the exercise library, which restructures tables and needs ordered m
 ## ▶ Resume here
 
 **2026-10-25.** Steps 1 and 2 done on `db/foundation` (worktree `~/Projects/traininglogs-db`,
-private test database `traininglogs_db_foundation`, not pushed). Next: step 3 on the local dev
-database (`traininglogs_dev`, port 5433), then staging, then production with a yes.
+private test database `traininglogs_db_foundation`, not pushed). Step 3 tried on local dev: it
+refused cleanly (see step 3). Staging and production read, and the rehearsal on today's
+production copy passed; staging and production both record `0001` (see step 3). Local dev gets
+its record in step 4. Next: with Apoorva's yes, merge `db/foundation` into `dev` (step 4).
 
 Running the suite here: `export
 TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_db_foundation`,
