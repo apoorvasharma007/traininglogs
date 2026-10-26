@@ -809,7 +809,25 @@ the `(user_id, id)` foreign key to its plan exercise, and the same `library_exer
 `custom_exercise_id` pair and CHECK; the `alternatives TEXT[]` column goes. Apoorva expects
 mostly one alternative, sometimes two, rarely three. Circuits (`group_number`,
 `db-redesign-plan.md` Later) are not built and not part of F1; they come after Release A, with
-their own design pass. Still open: (c) and (d).
+their own design pass. (c) settled: no second save path; sessions still waiting on a phone
+in the old format are dropped (Apoorva: only he uses the app, on staging). Parked for when there
+are real users: a refused session moves to `sessions-refused` on the phone (`store.ts:81`) and
+nothing shows it. (d) settled 2026-10-27, kept small because Progress gets redesigned later
+(Apoorva: pinning is niche, don't overengineer). People still pin; `users.key_lifts` stores
+exercise ids instead of names, one array (library and custom ids are both UUIDs, so they never
+collide). No table: a pin is a display choice, and a stale id only hides a tile. With no pins,
+the defaults are Squat (Barbell), Bench Press (Barbell), Overhead Press (Barbell), Deadlift
+(Barbell), Clean (Barbell), Pull-up (Bodyweight). `KEY_LIFTS`' name lists go. Template mapping
+(Apoorva: "just map it"): Bench press → Bench Press (Barbell); Overhead press → Overhead Press
+(Barbell); Incline dumbbell press → Incline Press (Dumbbell, 45 Degree); Lateral raise → Lateral
+Raise (Dumbbell); Triceps pushdown → Triceps Pressdown (Cable, Rope); Deadlift → Deadlift
+(Barbell); Pull-up → Pull-up (Bodyweight); Lat pulldown → Lat Pulldown (Cable, Wide Grip); Barbell
+row → Row (Barbell); Face pull → Face Pull (Cable); Biceps curl → Biceps Curl (Dumbbell); Squat →
+Squat (Barbell); Romanian deadlift → Romanian Deadlift (Barbell); Leg press → Leg Press (Machine);
+Leg curl → Leg Curl (Machine, Seated); Calf raise → Calf Raise (Machine, Standing); Cable row →
+Row (Cable, Seated, Neutral Grip); Front squat → Front Squat (Barbell); Walking lunge → Walking
+Lunge (Dumbbell). All F1 open questions are settled. Production's saved sessions are Apoorva's whole training
+history and must be kept (2026-10-27); M1 stays, rehearsed on a production copy first.
 
 Parked, not F1 (found 2026-10-27, its own small change later): "workout" leaks into session
 naming. The ad-hoc session's title is "Ad-hoc Workout" (`frontend/src/lib/session.ts:194`), the
