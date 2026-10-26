@@ -834,11 +834,27 @@ naming. The ad-hoc session's title is "Ad-hoc Workout" (`frontend/src/lib/sessio
 app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the sessions tables are
 `workout_sessions*`. The glossary has no row for an ad-hoc session.
 
-**Next action: F1 design with Apoorva.** Then F1,
-the tables: the one-exercise-table question (custom exercises as `exercises` rows with an owner,
-instead of `user_exercises`), designed with Apoorva before code; then M1. Production gets, in
-order: backup, `0002`, the library load, the deploy of `main`, `0003`. No prod write without a
-yes in the session.
+**F1 build started (2026-10-27)** on `exercises/library-f1-foundation`, private database
+`traininglogs_f1` (port 5433). Steps:
+- [x] F1.1 `0004_library_and_custom_exercises.sql` (`de7685c`): renames, the two columns and
+  CHECK on session and plan exercises, `custom_exercise_id` nullable, `library_exercise_id`
+  added, `program_workout_exercises` gets `UNIQUE (user_id, id)`, the alternatives table with
+  `position`. Every existing row keeps its old link as `custom_exercise_id`, so the CHECK holds
+  before M1. Probed on the private database: neither and both refused, a cross-user custom
+  exercise and a cross-user alternative refused, alternatives go with their plan exercise.
+  Renames break pre-F1 code, so 0004 runs at the F1 deploy (brief break, only Apoorva uses it).
+- [ ] F1.2 Server save path: sessions, plans, alternatives and the AI confirm take ids;
+  `user_exercise_ids` goes. API shape waits for Apoorva's yes.
+- [ ] F1.3 Server reads by id: History, last time, Progress, Key Lifts (ids in `users.key_lifts`,
+  the six defaults), templates mapped, `LiftSummary.measure` → `metric`.
+- [ ] F1.4 App: picks send ids, prefill by id, the AI review card resolves names with the picker,
+  `metric`.
+- [ ] F1.5 Docs (glossary, architecture, design.html), changelog, suite and app checks.
+- Then M1 (repoints rows, moves `alternatives` names into the table, key lift names to ids), then
+  `0005` (drops `alternatives`, `key_lifts` to `UUID[]`).
+
+Production gets, in order: backup, `0002`, the library load, the deploy of `main`, `0003`. No
+prod write without a yes in the session.
 
 For Progress (Release B): the muscle-to-group list lives only in `frontend/src/lib/lists.ts`, and
 the muscle names are in it and in `0002`'s checks. When the server counts sets by group, both read
