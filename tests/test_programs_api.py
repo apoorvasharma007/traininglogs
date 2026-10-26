@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from traininglogs.db.db import apply_schema, get_connection
 from traininglogs.db.programs import utc_today
 
-from signed_in import clean_test_data, USER_A, USER_B_AUTH, auth
+from signed_in import clean_test_data, USER_A, USER_B, USER_B_AUTH, auth, exercise_ref
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -44,6 +44,10 @@ def _program(client, name="Strength", workouts=("Bench", None, "Bench & pull-ups
     return p
 
 
+def _program_id(client) -> str:
+    return client.get("/programs", headers=HEADERS).json()[0]["id"]
+
+
 def _session_from(conn, sid: str, day: str, workout_id: str, deload: bool = False) -> None:
     """A session of `workout_id` on `day`, for user A; `sid` only keeps each one's text different."""
     from traininglogs.db.insert import insert_input, insert_session
@@ -52,7 +56,7 @@ def _session_from(conn, sid: str, day: str, workout_id: str, deload: bool = Fals
 
     extract = TrainingLogLLMExtract.model_validate({
         "date": day, "is_deload_week": deload or None,
-        "exercises": [{"number": 1, "name": "Squat", "sets": [{"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
+        "exercises": [{"number": 1, "name": "Squat", **exercise_ref(conn, "Squat (Barbell)"), "sets": [{"number": 1, "weight_kg": 100.0, "rep_count": {"full": 5, "partial": 0}}]}],
     })
     input_id = insert_input(conn, USER_A, sid, kind="manual")
     insert_session(conn, USER_A, build_session_from_extract(extract, sid), input_id, program_workout_id=workout_id)
@@ -112,33 +116,63 @@ class TestPrograms:
 
 
 class TestWorkouts:
-    def test_plan_is_replaced_in_order(self, client) -> None:
+    def test_plan_is_replaced_in_order(self, client, conn) -> None:
         p = _program(client)
         w = p["workouts"][0]["id"]
+        squat, chin_up = exercise_ref(conn, "Squat (Barbell)"), exercise_ref(conn, "My Chinups")
         plan = [
-            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2},
-            {"name": "Chinups", "working_sets": 1, "amrap": True},
+            {**squat, "warmup_sets": 2, "working_sets": 3, "target_reps": 2},
+            {**chin_up, "working_sets": 1, "amrap": True},
         ]
         p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
         assert p["workouts"][0]["exercises"] == [
-            {"name": "Squat", "warmup_sets": 2, "working_sets": 3, "target_reps": 2, "amrap": False, "alternatives": []},
-            {"name": "Chinups", "warmup_sets": 0, "working_sets": 1, "target_reps": None, "amrap": True, "alternatives": []},
+            {"library_exercise_id": squat["library_exercise_id"], "custom_exercise_id": None,
+             "name": "Squat (Barbell)", "warmup_sets": 2, "working_sets": 3, "target_reps": 2, "amrap": False,
+             "alternatives": []},
+            {"library_exercise_id": None, "custom_exercise_id": chin_up["custom_exercise_id"],
+             "name": "My Chinups", "warmup_sets": 0, "working_sets": 1, "target_reps": None, "amrap": True,
+             "alternatives": []},
         ]
         p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan[1:]}, headers=HEADERS).json()
-        assert [e["name"] for e in p["workouts"][0]["exercises"]] == ["Chinups"]
+        assert [e["name"] for e in p["workouts"][0]["exercises"]] == ["My Chinups"]
         assert p["workouts"][1]["exercises"] == []
 
-    def test_alternatives_are_kept_cleaned(self, client) -> None:
+    def test_a_plan_shows_a_custom_exercises_name_now(self, client, conn) -> None:
         w = _program(client)["workouts"][0]["id"]
-        plan = [{"name": "Shoulder Press", "alternatives": [" Bench press ", "", "bench PRESS", "shoulder press", "Dips"]}]
-        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
-        assert p["workouts"][0]["exercises"][0]["alternatives"] == ["Bench press", "Dips"]
+        mine = exercise_ref(conn, "Chinups")
+        client.put(f"/workouts/{w}/exercises", json={"exercises": [mine]}, headers=HEADERS)
+        with conn.cursor() as cur:
+            cur.execute("UPDATE custom_exercises SET name = 'Chin-ups' WHERE id = %s", (mine["custom_exercise_id"],))
+        conn.commit()
+        p = client.get(f"/programs/{_program_id(client)}", headers=HEADERS).json()
+        assert p["workouts"][0]["exercises"][0]["name"] == "Chin-ups"
 
-    def test_bad_plan_is_rejected(self, client) -> None:
+    def test_alternatives_are_kept_in_order_without_repeats(self, client, conn) -> None:
         w = _program(client)["workouts"][0]["id"]
-        for bad in ({"name": "  "}, {"name": "Squat", "working_sets": -1}, {"name": "Squat", "target_reps": 0}):
+        press, bench = exercise_ref(conn, "Overhead Press (Barbell)"), exercise_ref(conn, "Bench Press (Barbell)")
+        dips = exercise_ref(conn, "My Dips")
+        plan = [{**press, "alternatives": [bench, bench, press, dips]}]
+        p = client.put(f"/workouts/{w}/exercises", json={"exercises": plan}, headers=HEADERS).json()
+        assert p["workouts"][0]["exercises"][0]["alternatives"] == [
+            {"library_exercise_id": bench["library_exercise_id"], "custom_exercise_id": None, "name": "Bench Press (Barbell)"},
+            {"library_exercise_id": None, "custom_exercise_id": dips["custom_exercise_id"], "name": "My Dips"},
+        ]
+
+    def test_bad_plan_is_rejected(self, client, conn) -> None:
+        w = _program(client)["workouts"][0]["id"]
+        squat = exercise_ref(conn, "Squat (Barbell)")
+        theirs = exercise_ref(conn, "Their Curl", USER_B)
+        for bad in (
+            {"working_sets": 3},
+            {**squat, "working_sets": -1},
+            {**squat, "target_reps": 0},
+            theirs,
+            {**squat, "alternatives": [theirs]},
+            {**squat, "alternatives": [{}]},
+        ):
             r = client.put(f"/workouts/{w}/exercises", json={"exercises": [bad]}, headers=HEADERS)
             assert r.status_code == 422, bad
+        assert client.get(f"/programs/{_program_id(client)}", headers=HEADERS).json()["workouts"][0]["exercises"] == []
 
     def test_warmup_and_cooldown_are_kept(self, client) -> None:
         w = _program(client)["workouts"][0]["id"]
@@ -209,12 +243,14 @@ class TestTemplates:
         assert names == ["5×5 strength", "Push / pull / legs", "Upper / lower", "Upper / lower / PPL"]
         five = r.json()[0]
         assert five["days"] == "3 days a week"
-        assert [e["name"] for e in five["workouts"][1]["exercises"]] == ["Squat", "Overhead press", "Deadlift"]
+        assert [e["name"] for e in five["workouts"][1]["exercises"]] == [
+            "Squat (Barbell)", "Overhead Press (Barbell)", "Deadlift (Barbell)"]
+        assert all(e["library_exercise_id"] for t in r.json() for w in t["workouts"] for e in w["exercises"])
 
     def test_needs_the_api_key(self, client) -> None:
         assert client.get("/templates").status_code == 401
 
-    def test_copy_makes_a_program_with_every_workout_and_exercise(self, client) -> None:
+    def test_copy_makes_a_program_with_every_workout_and_exercise(self, client, conn) -> None:
         r = client.post("/templates/push-pull-legs/copy", headers=HEADERS)
         assert r.status_code == 201
         p = r.json()
@@ -223,8 +259,10 @@ class TestTemplates:
         assert [w["name"] for w in p["workouts"]] == ["Push", "Pull", "Legs"]
         pull_up = p["workouts"][1]["exercises"][1]
         assert pull_up == {
-            "name": "Pull-up", "warmup_sets": 0, "working_sets": 3, "target_reps": None, "amrap": True,
-            "alternatives": ["Lat pulldown"],
+            **exercise_ref(conn, "Pull-up (Bodyweight)"), "custom_exercise_id": None, "name": "Pull-up (Bodyweight)",
+            "warmup_sets": 0, "working_sets": 3, "target_reps": None, "amrap": True,
+            "alternatives": [{**exercise_ref(conn, "Lat Pulldown (Cable, Wide Grip)"), "custom_exercise_id": None,
+                              "name": "Lat Pulldown (Cable, Wide Grip)"}],
         }
 
     def test_copying_twice_gives_two_programs(self, client) -> None:
@@ -241,8 +279,9 @@ class TestTemplates:
     def test_a_failed_copy_leaves_nothing_behind(self, client, conn) -> None:
         from traininglogs.db.programs import create_program
 
-        bad = [{"name": "A", "exercises": [{"name": "Squat", "warmup_sets": -1, "working_sets": 3,
-                                           "target_reps": 5, "amrap": False}]}]
+        bad = [{"name": "A", "exercises": [{**exercise_ref(conn, "Squat (Barbell)"), "custom_exercise_id": None,
+                                           "warmup_sets": -1, "working_sets": 3, "target_reps": 5, "amrap": False,
+                                           "alternatives": []}]}]
         with pytest.raises(Exception):
             create_program(conn, USER_A, "Broken", bad)
         assert client.get("/programs", headers=HEADERS).json() == []
