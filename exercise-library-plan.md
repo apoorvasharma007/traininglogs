@@ -830,7 +830,9 @@ Lunge (Dumbbell). All F1 open questions are settled. Production's saved sessions
 history and must be kept (2026-10-27); M1 stays, rehearsed on a production copy first.
 
 Parked, not F1 (found 2026-10-27, its own small change later): "workout" leaks into session
-naming. The ad-hoc session's title is "Ad-hoc Workout" (`frontend/src/lib/session.ts:194`), the
+naming. Also parked (2026-10-27, Apoorva: yes): `warmup_sets` is a count on a plan exercise and
+a list of sets on a session exercise; rename the plan's to `planned_warmup_sets` and
+`planned_working_sets` or similar. The ad-hoc session's title is "Ad-hoc Workout" (`frontend/src/lib/session.ts:194`), the
 app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the sessions tables are
 `workout_sessions*`. The glossary has no row for an ad-hoc session.
 
@@ -844,7 +846,10 @@ app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the s
   exercise and a cross-user alternative refused, alternatives go with their plan exercise.
   Renames break pre-F1 code, so 0004 runs at the F1 deploy (brief break, only Apoorva uses it).
 - [ ] F1.2 Server save path: sessions, plans, alternatives and the AI confirm take ids;
-  `user_exercise_ids` goes. API shape waits for Apoorva's yes.
+  `user_exercise_ids` goes. API shape approved (2026-10-27): each session exercise, plan
+  exercise and alternative sends `library_exercise_id` or `custom_exercise_id`, exactly one, and
+  no name; the server copies the exercise's name onto the session row; an unknown or other
+  person's id is refused.
 - [ ] F1.3 Server reads by id: History, last time, Progress, Key Lifts (ids in `users.key_lifts`,
   the six defaults), templates mapped, `LiftSummary.measure` → `metric`.
 - [ ] F1.4 App: picks send ids, prefill by id, the AI review card resolves names with the picker,
