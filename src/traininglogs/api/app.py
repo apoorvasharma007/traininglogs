@@ -7,6 +7,7 @@ from datetime import date
 from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
+from uuid import UUID
 
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
@@ -18,7 +19,7 @@ import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 
 from traininglogs.api.auth import bearer, user_for, verify
-from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
+from traininglogs.db.fetch import get_session, get_sessions
 from traininglogs.db.insert import UnknownExercise
 from traininglogs.api.schemas import (
     AiUsage,
@@ -29,7 +30,6 @@ from traininglogs.api.schemas import (
     CorrectIn,
     CorrectOut,
     EditIn,
-    ExerciseHistoryRow,
     ExercisesOut,
     LastExercise,
     LiftDetail,
@@ -236,11 +236,18 @@ def save_session(body: ManualSessionIn, response: Response, conn=Depends(_db), u
 
 
 @app.get("/exercises/last", response_model=list[LastExercise])
-def last_exercises(name: list[str] = Query(default=[]), conn=Depends(_db), user: str = Depends(_user)):
-    """Last time for each named exercise: the latest session that had it, from any program."""
+def last_exercises(
+    library_exercise_id: list[UUID] = Query(default=[]),
+    custom_exercise_id: list[UUID] = Query(default=[]),
+    conn=Depends(_db),
+    user: str = Depends(_user),
+):
+    """Last time for each exercise asked for: the latest session that had it, from any program."""
     from traininglogs.db.fetch import get_last_exercises
 
-    return get_last_exercises(conn, user, name)
+    refs = [{"library_exercise_id": str(i)} for i in library_exercise_id]
+    refs += [{"custom_exercise_id": str(i)} for i in custom_exercise_id]
+    return get_last_exercises(conn, user, refs)
 
 
 NO_LIBRARY_EXERCISE = "No library exercise with that id."
@@ -309,10 +316,8 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
     """Key lifts, then other lifts trained in 3 or more sessions: each with its latest and best
     estimated max (or best reps at bodyweight), and the trend over the last 4 weeks."""
     from traininglogs.analytics.progress import lift_summaries
-    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.fetch import get_key_lifts, get_working_set_rows
     from traininglogs.db.programs import utc_today
-
-    from traininglogs.db.fetch import get_key_lifts
 
     return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
 
@@ -321,25 +326,38 @@ def progress_lifts(conn=Depends(_db), user: str = Depends(_user)):
 def put_key_lifts(body: KeyLiftsIn, conn=Depends(_db), user: str = Depends(_user)):
     """Saves which lifts Progress shows first, in this order, and returns Progress's lifts."""
     from traininglogs.analytics.progress import lift_summaries
-    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.fetch import get_key_lifts, get_working_set_rows
     from traininglogs.db.insert import set_key_lifts
     from traininglogs.db.programs import utc_today
 
-    set_key_lifts(conn, user, body.names)
-    return lift_summaries(get_working_set_rows(conn, user), utc_today(), body.names)
+    set_key_lifts(conn, user, [str(lift.library_exercise_id or lift.custom_exercise_id) for lift in body.lifts])
+    return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
 
 
-@app.get("/progress/lifts/{name}", response_model=LiftDetail)
-def progress_lift(name: str, conn=Depends(_db), user: str = Depends(_user)):
-    """One lift's sessions, oldest first: the value, the set behind it, records and goal."""
+@app.get("/progress/lift", response_model=LiftDetail)
+def progress_lift(
+    library_exercise_id: UUID | None = None,
+    custom_exercise_id: UUID | None = None,
+    conn=Depends(_db),
+    user: str = Depends(_user),
+):
+    """One lift's sessions, oldest first: the value, the set behind it, records and goal. The lift
+    is the exercise a LiftSummary names."""
     from traininglogs.analytics.progress import lift_detail
-    from traininglogs.db.fetch import get_working_set_rows
+    from traininglogs.db.fetch import get_key_lifts, get_working_set_rows
     from traininglogs.db.programs import utc_today
 
-    detail = lift_detail(get_working_set_rows(conn, user), name, utc_today())
+    ref = (_text(library_exercise_id), _text(custom_exercise_id))
+    detail = None
+    if (ref[0] is None) != (ref[1] is None):
+        detail = lift_detail(get_working_set_rows(conn, user), ref, utc_today(), get_key_lifts(conn, user))
     if detail is None:
-        raise HTTPException(status_code=404, detail="No lift with that name")
+        raise HTTPException(status_code=404, detail="No lift for that exercise")
     return detail
+
+
+def _text(value: UUID | None) -> str | None:
+    return str(value) if value is not None else None
 
 
 @app.post("/feedback", status_code=201)
@@ -382,14 +400,6 @@ def ai_usage(conn=Depends(_db), user: str = Depends(_user)):
     from traininglogs.db.fetch import get_ai_total_usd
 
     return AiUsage(total_usd=get_ai_total_usd(conn, user))
-
-
-@app.get("/exercises/{name}/history", response_model=list[ExerciseHistoryRow])
-def exercise_history(name: str, conn=Depends(_db), user: str = Depends(_user)):
-    rows = get_exercise_history(conn, user, name)
-    if not rows:
-        raise HTTPException(status_code=404, detail="No sessions with this exercise yet.")
-    return rows
 
 
 @app.post("/inputs", response_model=CaptureOut)

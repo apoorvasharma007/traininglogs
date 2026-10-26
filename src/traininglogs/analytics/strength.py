@@ -27,7 +27,8 @@ Trend = Literal["up", "flat", "down"]
 
 @dataclass(frozen=True)
 class SetRow:
-    """One working set, as stored."""
+    """One working set, as stored. `exercise` is the name of the exercise it counts as, which
+    library_exercise_id or custom_exercise_id names (db.fetch.get_working_set_rows)."""
 
     session_id: str
     date: date
@@ -39,6 +40,10 @@ class SetRow:
     right_reps_full: int | None = None
     rpe: float | None = None
     goal_weight_kg: float | None = None
+    library_exercise_id: str | None = None
+    custom_exercise_id: str | None = None
+    # Done at bodyweight: no weight to estimate a max from, so Progress shows best reps.
+    bodyweight: bool = False
 
 
 def set_reps(row: SetRow) -> int | None:

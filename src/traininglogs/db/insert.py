@@ -272,10 +272,11 @@ def insert_session(
     return session_id
 
 
-def set_key_lifts(conn: Connection, user_id: str, names: list[str]) -> None:
-    """Saves the lifts the person wants first in Progress, in their order."""
+def set_key_lifts(conn: Connection, user_id: str, exercise_ids: list[str]) -> None:
+    """Saves the lifts the person wants first in Progress, in their order: library and custom
+    exercise ids in one list, since the two never share an id."""
     with conn.cursor() as cur:
-        cur.execute("UPDATE users SET key_lifts = %s, updated_at = now() WHERE id = %s", (names, user_id))
+        cur.execute("UPDATE users SET key_lifts = %s, updated_at = now() WHERE id = %s", (exercise_ids, user_id))
     conn.commit()
 
 

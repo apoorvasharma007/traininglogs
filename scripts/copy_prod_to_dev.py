@@ -28,8 +28,9 @@ DEFAULT_DEV_URL = "postgresql://traininglogs:traininglogs@localhost:5433/trainin
 
 # Parents before children, so links hold while copying.
 TABLES = [
-    "users", "profiles", "exercises", "user_exercises", "input_text", "input_text_confirmation_cards",
-    "ai_call_logs", "programs", "program_workouts", "program_workout_exercises", "workout_sessions",
+    "users", "profiles", "library_exercises", "custom_exercises", "input_text", "input_text_confirmation_cards",
+    "ai_call_logs", "programs", "program_workouts", "program_workout_exercises",
+    "program_workout_exercise_alternatives", "workout_sessions",
     "workout_session_warmups", "workout_session_cooldowns", "workout_session_exercises", "workout_session_sets",
 ]
 

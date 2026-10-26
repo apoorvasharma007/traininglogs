@@ -145,18 +145,18 @@ def load_library(cur: Cursor, library: list[dict]) -> dict[str, list[str]]:
         raise LibraryError("\n".join(problems))
 
     report: dict[str, list[str]] = {"renamed": [], "added": [], "updated": [], "not_in_file": []}
-    cur.execute("SELECT name FROM exercises")
+    cur.execute("SELECT name FROM library_exercises")
     stored_names = {r[0] for r in cur.fetchall()}
     for old, new in STARTER_RENAMES.items():
         if old not in stored_names:
             continue
         if new in stored_names:
             raise LibraryError(f"Can't rename {old!r}: {new!r} is already a separate row")
-        cur.execute("UPDATE exercises SET name = %s, updated_at = now() WHERE name = %s", (new, old))
+        cur.execute("UPDATE library_exercises SET name = %s, updated_at = now() WHERE name = %s", (new, old))
         report["renamed"].append(f"{old} -> {new}")
 
     # The list columns are domains psycopg2 doesn't know; cast them so they read as lists.
-    cur.execute(f"SELECT name, {', '.join(f + '::text[]' if f in ARRAYS else f for f in FIELDS)} FROM exercises")
+    cur.execute(f"SELECT name, {', '.join(f + '::text[]' if f in ARRAYS else f for f in FIELDS)} FROM library_exercises")
     stored = {r[0]: dict(zip(FIELDS, r[1:])) for r in cur.fetchall()}
     for e in library:
         values = {f: e.get(f) for f in FIELDS}
@@ -173,7 +173,7 @@ def load_library(cur: Cursor, library: list[dict]) -> dict[str, list[str]]:
 def _write(cur: Cursor, name: str, values: dict, stored: dict | None, report: dict[str, list[str]]) -> None:
     if stored is None:
         cur.execute(
-            f"INSERT INTO exercises (id, name, {', '.join(FIELDS)})"
+            f"INSERT INTO library_exercises (id, name, {', '.join(FIELDS)})"
             f" VALUES (%s, %s, {', '.join(['%s'] * len(FIELDS))})",
             [new_id(), name] + [values[f] for f in FIELDS],
         )
@@ -182,7 +182,7 @@ def _write(cur: Cursor, name: str, values: dict, stored: dict | None, report: di
     changed = [f for f in FIELDS if stored[f] != values[f]]
     if changed:
         cur.execute(
-            f"UPDATE exercises SET {', '.join(f'{f} = %s' for f in FIELDS)}, updated_at = now()"
+            f"UPDATE library_exercises SET {', '.join(f'{f} = %s' for f in FIELDS)}, updated_at = now()"
             " WHERE name = %s",
             [values[f] for f in FIELDS] + [name],
         )

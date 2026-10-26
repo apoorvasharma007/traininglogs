@@ -9,6 +9,23 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from traininglogs.agent.card_edits import CardEdit, CardOp
 
 
+class ExerciseRef(BaseModel):
+    """Which exercise: a library exercise or one of the person's custom exercises, exactly one."""
+
+    library_exercise_id: Optional[UUID] = None
+    custom_exercise_id: Optional[UUID] = None
+
+    @model_validator(mode="after")
+    def exactly_one(self) -> ExerciseRef:
+        if (self.library_exercise_id is None) == (self.custom_exercise_id is None):
+            raise ValueError("pick an exercise: send library_exercise_id or custom_exercise_id, exactly one")
+        return self
+
+
+class NamedExercise(ExerciseRef):
+    name: str = Field(description="The exercise's name now, for showing.")
+
+
 class SessionSummary(BaseModel):
     session_id: str
     date: date
@@ -64,7 +81,9 @@ class WorkingSetOut(BaseModel):
 
 class ExerciseOut(BaseModel):
     number: int
-    name: str
+    library_exercise_id: Optional[str]
+    custom_exercise_id: Optional[str]
+    name: str = Field(description="The exercise's name on the day of the session.")
     notes: Optional[str]
     warmup_notes: Optional[str]
     form_cues: Optional[list[str]]
@@ -204,19 +223,16 @@ class EditIn(BaseModel):
 
 
 class KeyLiftsIn(BaseModel):
-    """The lifts to show first in Progress, in order: up to 12 names, each said once."""
+    """The lifts to show first in Progress, in order: up to 12, each once."""
 
-    names: list[str] = Field(max_length=12)
+    lifts: list[ExerciseRef] = Field(max_length=12)
 
-    @field_validator("names")
+    @field_validator("lifts")
     @classmethod
-    def _clean(cls, names: list[str]) -> list[str]:
-        cleaned = [n.strip() for n in names]
-        if any(not n or len(n) > 80 for n in cleaned):
-            raise ValueError("each lift needs a name of up to 80 characters")
-        if len({n.casefold() for n in cleaned}) != len(cleaned):
+    def _once_each(cls, lifts: list[ExerciseRef]) -> list[ExerciseRef]:
+        if len({(lift.library_exercise_id, lift.custom_exercise_id) for lift in lifts}) != len(lifts):
             raise ValueError("a lift is listed twice")
-        return cleaned
+        return lifts
 
 
 class FeedbackIn(BaseModel):
@@ -237,23 +253,14 @@ class AiUsage(BaseModel):
     total_usd: float  # every AI call so far: reading notes and AI fixes
 
 
-class ExerciseHistoryRow(BaseModel):
-    date: date
-    phase: Optional[int]
-    week: Optional[int]
-    session_id: str
-    number: int
-    weight_kg: Optional[float]
-    reps_full: Optional[int]
-    reps_partial: Optional[int]
-    rpe: Optional[float]
-    rep_quality: Optional[str]
-    failure_technique: Optional[Any]
+class LiftSummary(NamedExercise):
+    """A lift: the exercise its sets count as. A custom exercise linked to a library exercise counts
+    as that one."""
 
-
-class LiftSummary(BaseModel):
-    name: str
-    measure: Literal["estimated_max", "bodyweight_reps"]
+    metric: Literal["estimated_max", "bodyweight_reps"] = Field(
+        description="What latest and best are: an estimated max in kg, or best reps for a lift done "
+        "at bodyweight."
+    )
     sessions: int
     latest: Optional[float]
     best: Optional[float]
@@ -299,23 +306,6 @@ class LiftPoint(BaseModel):
 
 class LiftDetail(LiftSummary):
     points: list[LiftPoint]
-
-
-class ExerciseRef(BaseModel):
-    """Which exercise: a library exercise or one of the person's custom exercises, exactly one."""
-
-    library_exercise_id: Optional[UUID] = None
-    custom_exercise_id: Optional[UUID] = None
-
-    @model_validator(mode="after")
-    def exactly_one(self) -> ExerciseRef:
-        if (self.library_exercise_id is None) == (self.custom_exercise_id is None):
-            raise ValueError("pick an exercise: send library_exercise_id or custom_exercise_id, exactly one")
-        return self
-
-
-class NamedExercise(ExerciseRef):
-    name: str = Field(description="The exercise's name now, for showing.")
 
 
 class PlanTargets(BaseModel):
@@ -504,8 +494,11 @@ class LastSet(BaseModel):
 
 
 class LastExercise(BaseModel):
-    """The most recent session that had this exercise, whatever program it was in."""
+    """The most recent session that had this exercise, whatever program it was in, under the
+    exercise it was asked for."""
 
+    library_exercise_id: Optional[str]
+    custom_exercise_id: Optional[str]
     name: str
     date: date
     session_id: str
