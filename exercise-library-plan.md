@@ -788,7 +788,35 @@ Staging records 0001 to 0003; production records only 0001. The schema split cam
 staging's running code: it still wrote columns the first 0002 dropped (`.claude/rules/schema.md`
 now says add first, drop after; the loader changes rows only and requires 0002).
 
-**Next action: Apoorva tries the picker on staging on the phone** (`/verify` section 5). Then F1,
+**Picker checked on staging (2026-10-26, Apoorva: "i like the picker for now, lets move ahead").**
+Staging answers 200, and `/sessions` with no sign-in gets 401. F1 design started the same day.
+
+**F1 table shape approved (2026-10-26, Apoorva: "I approve A").** Two tables stay: `exercises`
+(library, written only by the loader) and `user_exercises` (custom exercises). A session or plan
+exercise has two columns, one per table, with `CHECK (num_nonnulls(...) = 1)`; the custom one
+keeps the `(user_id, id)` foreign key. Tested on a scratch database the same day: one table with
+owner NULL let user 2's session point at user 1's custom exercise; one table with a "library"
+owner row blocked that, but a loader UPDATE without an owner filter renamed a person's exercise.
+Names approved (2026-10-27): tables `exercises` → `library_exercises`, `user_exercises` →
+`custom_exercises`. Columns: session and plan exercises get `library_exercise_id` and
+`custom_exercise_id` (was `user_exercise_id`); `custom_exercises.linked_library_exercise_id` (was
+`exercise_id`); `workout_session_sets.session_exercise_id` (was `exercise_id`, which clashed).
+
+Open questions settled (2026-10-27): (a) is gone with A, since a session points straight at the
+library exercise and a person has no row of their own for it. (b) approved: plan alternatives
+become a table `program_workout_exercise_alternatives`, one row per alternative, with `user_id`,
+the `(user_id, id)` foreign key to its plan exercise, and the same `library_exercise_id` /
+`custom_exercise_id` pair and CHECK; the `alternatives TEXT[]` column goes. Apoorva expects
+mostly one alternative, sometimes two, rarely three. Circuits (`group_number`,
+`db-redesign-plan.md` Later) are not built and not part of F1; they come after Release A, with
+their own design pass. Still open: (c) and (d).
+
+Parked, not F1 (found 2026-10-27, its own small change later): "workout" leaks into session
+naming. The ad-hoc session's title is "Ad-hoc Workout" (`frontend/src/lib/session.ts:194`), the
+app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the sessions tables are
+`workout_sessions*`. The glossary has no row for an ad-hoc session.
+
+**Next action: F1 design with Apoorva.** Then F1,
 the tables: the one-exercise-table question (custom exercises as `exercises` rows with an owner,
 instead of `user_exercises`), designed with Apoorva before code; then M1. Production gets, in
 order: backup, `0002`, the library load, the deploy of `main`, `0003`. No prod write without a
