@@ -47,17 +47,43 @@ def auth(sub: str = USER_A_AUTH) -> dict:
     return {"Authorization": f"Bearer {token(sub)}"}
 
 
+def exercise_ref(conn, name: str, user: str = USER_A) -> dict:
+    """The library exercise with exactly this name, else `user`'s custom exercise of that name,
+    made the first time: how a test names an exercise, where the app sends the id of the one
+    picked."""
+    from traininglogs.db.ids import new_id
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT id::text FROM library_exercises WHERE name = %s", (name,))
+        row = cur.fetchone()
+        if row:
+            return {"library_exercise_id": row[0]}
+        cur.execute(
+            "INSERT INTO custom_exercises (id, user_id, name) VALUES (%s, %s, %s)"
+            " ON CONFLICT (user_id, name_key) DO UPDATE SET name = custom_exercises.name RETURNING id::text",
+            (new_id(), user, name),
+        )
+        ref = {"custom_exercise_id": cur.fetchone()[0]}
+    conn.commit()
+    return ref
+
+
 def save_session(conn, session: dict, user: str = USER_A, text: str | None = None) -> str:
     """Save a session (a TrainingSession as a dict) for `user` the way the app does: its input,
-    then the session. Returns the new session id."""
+    then the session. An exercise without an id is named by exercise_ref. Returns the new session
+    id."""
     from traininglogs.db.insert import insert_input, insert_session
     from traininglogs.ingest.confirm import dedup_key
     from traininglogs.models.models import TrainingSession
 
     text = text or repr(session)
+    exercises = [
+        e if e.get("library_exercise_id") or e.get("custom_exercise_id") else {**e, **exercise_ref(conn, e["name"], user)}
+        for e in session.get("exercises", [])
+    ]
     model = TrainingSession.model_validate({
         "data_model_version": "0.0.1", "data_model_type": "TrainingSession", "user_id": "-",
-        "user_name": "-", **session, "session_id": dedup_key(text, str(session["date"])),
+        "user_name": "-", **session, "exercises": exercises, "session_id": dedup_key(text, str(session["date"])),
     })
     input_id = insert_input(conn, user, text, kind="manual")
     session_id = insert_session(conn, user, model, input_id)
@@ -72,6 +98,7 @@ def clean_test_data(conn) -> None:
         cur.execute(
             "TRUNCATE input_text, input_text_confirmation_cards, ai_call_logs, workout_sessions,"
             " workout_session_warmups, workout_session_cooldowns, workout_session_exercises,"
-            " workout_session_sets, programs, program_workouts, program_workout_exercises, user_exercises, feedback"
+            " workout_session_sets, programs, program_workouts, program_workout_exercises,"
+            " program_workout_exercise_alternatives, custom_exercises, feedback"
         )
     conn.commit()

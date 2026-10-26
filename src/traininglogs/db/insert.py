@@ -181,6 +181,9 @@ def insert_session(
     caller's transaction, and on None the caller decides what to undo."""
     session_id = new_id()
     with conn.cursor() as cur:
+        # Checked before anything is written. The session keeps each exercise's name as it was that
+        # day, whatever the library calls it later.
+        names = exercise_names(cur, user_id, [e.model_dump() for e in session.exercises])
         cur.execute(
             """
             INSERT INTO workout_sessions (
@@ -210,8 +213,6 @@ def insert_session(
                     [(new_id(), user_id, session_id, m.number, m.name, m.reps, m.duration_seconds, m.notes) for m in items],
                 )
 
-        # The session keeps the exercise's name as it was that day, whatever the library calls it later.
-        names = exercise_names(cur, user_id, [e.model_dump() for e in session.exercises])
         exercise_rows, set_rows = [], []
         for exercise, name in zip(session.exercises, names):
             row_id = new_id()

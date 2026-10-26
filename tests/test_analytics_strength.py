@@ -1,4 +1,4 @@
-"""analytics.strength and analytics.key_lifts: estimated max, sessions, records, trend, key lifts.
+"""analytics.strength and analytics.key_lifts: estimated max, sessions, records, trend, default key lifts.
 Pure, no database."""
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from traininglogs.analytics.key_lifts import KEY_LIFTS, key_lift_for, key_lift_named
+from traininglogs.analytics.key_lifts import DEFAULT_KEY_LIFTS
 from traininglogs.analytics.strength import (
     SetRow,
     bodyweight_points,
@@ -135,18 +135,9 @@ class TestTrend:
 
 
 class TestKeyLifts:
-    def test_variants_match_ignoring_case_and_spaces(self) -> None:
-        assert key_lift_for("  Squats ").name == "Squat"
-        assert key_lift_for("Bench press").name == "Bench Press"
-        assert key_lift_for("Weighted Pull ups").name == "Pull-up"
+    def test_defaults_are_library_exercises_each_once(self) -> None:
+        from traininglogs.db import library
 
-    def test_no_fuzzy_merges(self) -> None:
-        assert key_lift_for("Seated DB Shoulder Press") is None
-        assert key_lift_for("Chinups") is None
-
-    def test_lookup_by_display_name(self) -> None:
-        assert key_lift_named("pull-up").measure == "bodyweight_reps"
-
-    def test_no_name_claimed_twice(self) -> None:
-        names = [n for lift in KEY_LIFTS for n in lift.names]
-        assert len(names) == len(set(names))
+        names = {e["name"] for e in library.read_library()}
+        assert set(DEFAULT_KEY_LIFTS) <= names
+        assert len(set(DEFAULT_KEY_LIFTS)) == len(DEFAULT_KEY_LIFTS)
