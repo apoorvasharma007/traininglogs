@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import datetime
+from uuid import UUID
 
 from psycopg2.extensions import connection as Connection
 from psycopg2.extras import execute_values
@@ -122,42 +123,36 @@ def confirm_card(conn: Connection, user_id: str, card_id: str, corrections: list
 
 
 def name_key(name: str) -> str:
-    """An exercise name ignoring case and extra spaces; matches user_exercises.name_key."""
+    """An exercise name ignoring case and extra spaces; matches custom_exercises.name_key."""
     return " ".join(name.split()).lower()
 
 
-def user_exercise_ids(cur, user_id: str, names: list[str]) -> dict[str, str]:
-    """The person's exercise id for each name, by name_key, making the ones they haven't used yet.
-    A new one links to a library exercise only when the name is exactly that exercise's name;
-    other names are search words, never a link. Two queries for the whole session, however many
-    exercises it has."""
-    wanted = {name_key(n): n.strip() for n in names if n.strip()}
-    if not wanted:
-        return {}
+class UnknownExercise(Exception):
+    """An exercise that isn't a library exercise or one of the person's custom exercises."""
+
+
+def exercise_names(cur, user_id: str, refs: list[dict]) -> list[str]:
+    """The name of the exercise each ref points at, in order. A ref names a library exercise
+    (`library_exercise_id`) or one of the person's custom exercises (`custom_exercise_id`), exactly
+    one; anything else raises UnknownExercise."""
+    if any((r.get("library_exercise_id") is None) == (r.get("custom_exercise_id") is None) for r in refs):
+        raise UnknownExercise("Pick each exercise from the library or your custom exercises.")
+    library = [str(r["library_exercise_id"]) for r in refs if r.get("library_exercise_id")]
+    custom = [str(r["custom_exercise_id"]) for r in refs if r.get("custom_exercise_id")]
+    cur.execute("SELECT id::text, name FROM library_exercises WHERE id = ANY(%s::uuid[])", (library,))
+    names = dict(cur.fetchall())
     cur.execute(
-        "SELECT name_key, id FROM user_exercises WHERE user_id = %s AND name_key = ANY(%s)",
-        (user_id, list(wanted)),
+        "SELECT id::text, name FROM custom_exercises WHERE user_id = %s AND id = ANY(%s::uuid[])",
+        (user_id, custom),
     )
-    found = {key: str(i) for key, i in cur.fetchall()}
-    missing = [(new_id(), user_id, wanted[key], key) for key in wanted if key not in found]
-    if missing:
-        execute_values(
-            cur,
-            """
-            INSERT INTO user_exercises (id, user_id, name, exercise_id)
-            SELECT v.id::uuid, v.user_id::uuid, v.name,
-                   (SELECT e.id FROM exercises e WHERE lower(e.name) = v.key)
-            FROM (VALUES %s) AS v (id, user_id, name, key)
-            ON CONFLICT (user_id, name_key) DO NOTHING
-            """,
-            missing,
-        )
-        cur.execute(
-            "SELECT name_key, id FROM user_exercises WHERE user_id = %s AND name_key = ANY(%s)",
-            (user_id, list(wanted)),
-        )
-        found = {key: str(i) for key, i in cur.fetchall()}
-    return found
+    names.update(cur.fetchall())
+    if not set(library + custom) <= names.keys():
+        raise UnknownExercise("That exercise isn't in the library or your custom exercises.")
+    return [names[str(r.get("library_exercise_id") or r["custom_exercise_id"])] for r in refs]
+
+
+def _id(value: UUID | None) -> str | None:
+    return str(value) if value is not None else None
 
 
 def _rest_minutes(rest: Rest | None) -> float | None:
@@ -215,15 +210,16 @@ def insert_session(
                     [(new_id(), user_id, session_id, m.number, m.name, m.reps, m.duration_seconds, m.notes) for m in items],
                 )
 
-        exercise_ids = user_exercise_ids(cur, user_id, [e.name for e in session.exercises])
+        # The session keeps the exercise's name as it was that day, whatever the library calls it later.
+        names = exercise_names(cur, user_id, [e.model_dump() for e in session.exercises])
         exercise_rows, set_rows = [], []
-        for exercise in session.exercises:
+        for exercise, name in zip(session.exercises, names):
             row_id = new_id()
             goal = exercise.current_goal
             rep_range = goal.rep_range if goal else None
             exercise_rows.append((
-                row_id, user_id, session_id, exercise.number, exercise_ids[name_key(exercise.name)],
-                exercise.name, exercise.notes, exercise.warmup_notes, exercise.form_cues,
+                row_id, user_id, session_id, exercise.number, _id(exercise.library_exercise_id),
+                _id(exercise.custom_exercise_id), name, exercise.notes, exercise.warmup_notes, exercise.form_cues,
                 goal.weight_kg if goal else None, goal.sets if goal else None,
                 rep_range.min if rep_range else None, rep_range.max if rep_range else None,
                 _rest_minutes(goal.rest if goal else None), _rest_seconds(goal.rest if goal else None),
@@ -250,7 +246,8 @@ def insert_session(
             cur,
             """
             INSERT INTO workout_session_exercises (
-                id, user_id, session_id, position, user_exercise_id, name, notes, warmup_notes, form_cues,
+                id, user_id, session_id, position, library_exercise_id, custom_exercise_id, name, notes,
+                warmup_notes, form_cues,
                 goal_weight_kg, goal_sets, goal_rep_min, goal_rep_max, goal_rest_min, goal_rest_seconds,
                 goal_distance_meters, goal_target_duration_sec
             ) VALUES %s
@@ -262,7 +259,7 @@ def insert_session(
                 cur,
                 """
                 INSERT INTO workout_session_sets (
-                    id, user_id, exercise_id, position, kind, weight_kg, reps_full, reps_partial,
+                    id, user_id, session_exercise_id, position, kind, weight_kg, reps_full, reps_partial,
                     left_reps_full, left_reps_partial, right_reps_full, right_reps_partial, rpe,
                     rep_quality, rest_minutes, rest_seconds, duration_seconds, distance_meters,
                     heart_rate_bpm, notes, failure_technique
@@ -284,11 +281,11 @@ def set_key_lifts(conn: Connection, user_id: str, names: list[str]) -> None:
 
 # A person's own exercise as the API sends it; casting keeps each column's name.
 MY_EXERCISE_COLUMNS = (
-    "id::text, name, exercise_id::text, equipment, equipment_other, measures, compound, primary_muscles,"
+    "id::text, name, linked_library_exercise_id::text, equipment, equipment_other, measures, compound, primary_muscles,"
     " secondary_muscles, joint_actions, movement_patterns"
 )
 _WRITTEN = (
-    "name", "exercise_id", "equipment", "equipment_other", "measures", "compound", "primary_muscles",
+    "name", "linked_library_exercise_id", "equipment", "equipment_other", "measures", "compound", "primary_muscles",
     "secondary_muscles", "joint_actions", "movement_patterns",
 )
 
@@ -297,7 +294,7 @@ class NameTaken(Exception):
     """The name is a library exercise the row doesn't link to, or another of the person's own."""
 
 
-def save_my_exercise(conn: Connection, user_id: str, fields: dict, user_exercise_id: str | None = None) -> dict | None:
+def save_my_exercise(conn: Connection, user_id: str, fields: dict, custom_exercise_id: str | None = None) -> dict | None:
     """Adds one of the person's own exercises, or changes the one with this id; returns the saved
     row, or None when the id isn't theirs. A name that is a library exercise's name must link to
     it. The database refuses a value off the approved lists or an unknown library id."""
@@ -307,22 +304,22 @@ def save_my_exercise(conn: Connection, user_id: str, fields: dict, user_exercise
     params = ", ".join(["%s"] * len(_WRITTEN))
     values = [fields[f] for f in _WRITTEN]
     with conn.cursor() as cur:
-        cur.execute("SELECT id::text FROM exercises WHERE lower(name) = %s", (name_key(fields["name"]),))
+        cur.execute("SELECT id::text FROM library_exercises WHERE lower(name) = %s", (name_key(fields["name"]),))
         library = cur.fetchone()
-        if library and library[0] != fields["exercise_id"]:
+        if library and library[0] != fields["linked_library_exercise_id"]:
             raise NameTaken("That's a library exercise. Pick it from the list.")
         try:
-            if user_exercise_id is None:
+            if custom_exercise_id is None:
                 cur.execute(
-                    f"INSERT INTO user_exercises (id, user_id, {columns}) VALUES (%s, %s, {params})"
+                    f"INSERT INTO custom_exercises (id, user_id, {columns}) VALUES (%s, %s, {params})"
                     f" RETURNING {MY_EXERCISE_COLUMNS}",
                     (new_id(), user_id, *values),
                 )
             else:
                 cur.execute(
-                    f"UPDATE user_exercises SET ({columns}, updated_at) = ({params}, now())"
+                    f"UPDATE custom_exercises SET ({columns}, updated_at) = ({params}, now())"
                     f" WHERE user_id = %s AND id = %s RETURNING {MY_EXERCISE_COLUMNS}",
-                    (*values, user_id, user_exercise_id),
+                    (*values, user_id, custom_exercise_id),
                 )
         except psycopg2.errors.UniqueViolation:
             raise NameTaken("You already have an exercise with this name.")

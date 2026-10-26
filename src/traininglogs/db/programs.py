@@ -15,7 +15,7 @@ from psycopg2.extensions import connection as Connection
 
 from traininglogs.db.fetch import _rows
 from traininglogs.db.ids import new_id
-from traininglogs.db.insert import name_key, user_exercise_ids
+from traininglogs.db.insert import exercise_names
 
 
 def utc_today() -> date:
@@ -23,6 +23,16 @@ def utc_today() -> date:
     doesn't matter. Dates that are the person's data, like a session's, come from their phone."""
     return datetime.now(timezone.utc).date()
 
+
+# The exercise a row `e` points at, with its name; used with _EXERCISE_NAME_JOINS.
+_EXERCISE_REF = (
+    "e.library_exercise_id::text AS library_exercise_id, e.custom_exercise_id::text AS custom_exercise_id,"
+    " coalesce(l.name, c.name) AS name"
+)
+_EXERCISE_NAME_JOINS = """
+    LEFT JOIN library_exercises l ON l.id = e.library_exercise_id
+    LEFT JOIN custom_exercises c ON c.user_id = e.user_id AND c.id = e.custom_exercise_id
+"""
 
 _PROGRAM = "SELECT id::text AS id, name, deload_after_days, following, following_since FROM programs"
 
@@ -58,20 +68,41 @@ def _attach_workouts(conn: Connection, user_id: str, program: dict[str, Any], to
             (user_id, program["id"]),
         )
         workouts = _rows(cur)
+        # A plan shows each exercise's current name, so renaming a custom exercise renames it here.
         cur.execute(
-            """
-            SELECT e.workout_id::text AS workout_id, e.name, e.warmup_sets, e.working_sets, e.target_reps,
-                   e.amrap, e.alternatives
+            f"""
+            SELECT e.id::text AS id, e.workout_id::text AS workout_id, {_EXERCISE_REF}, e.warmup_sets,
+                   e.working_sets, e.target_reps, e.amrap
             FROM program_workout_exercises e
             JOIN program_workouts w ON w.user_id = e.user_id AND w.id = e.workout_id
+            {_EXERCISE_NAME_JOINS}
             WHERE e.user_id = %s AND w.program_id = %s
             ORDER BY e.position
             """,
             (user_id, program["id"]),
         )
         exercises = _rows(cur)
+        cur.execute(
+            f"""
+            SELECT e.program_workout_exercise_id::text AS plan_exercise_id, {_EXERCISE_REF}
+            FROM program_workout_exercise_alternatives e
+            JOIN program_workout_exercises p ON p.user_id = e.user_id AND p.id = e.program_workout_exercise_id
+            JOIN program_workouts w ON w.user_id = p.user_id AND w.id = p.workout_id
+            {_EXERCISE_NAME_JOINS}
+            WHERE e.user_id = %s AND w.program_id = %s
+            ORDER BY e.position
+            """,
+            (user_id, program["id"]),
+        )
+        alternatives = _rows(cur)
+    for e in exercises:
+        e["alternatives"] = [
+            {k: v for k, v in a.items() if k != "plan_exercise_id"} for a in alternatives if a["plan_exercise_id"] == e["id"]
+        ]
     for w in workouts:
-        w["exercises"] = [{k: v for k, v in e.items() if k != "workout_id"} for e in exercises if e["workout_id"] == w["id"]]
+        w["exercises"] = [
+            {k: v for k, v in e.items() if k not in ("id", "workout_id")} for e in exercises if e["workout_id"] == w["id"]
+        ]
     program["workouts"] = workouts
     program["next_workout_id"] = _next_workout_id(conn, user_id, program["id"], workouts)
     program["deload"] = deload_status(conn, user_id, program, today)
@@ -157,19 +188,32 @@ def _next_workout_id(conn: Connection, user_id: str, program_id: str, workouts: 
 
 
 def _insert_exercises(cur, user_id: str, workout_id: str, exercises: list[dict[str, Any]]) -> None:
-    ids = user_exercise_ids(cur, user_id, [e["name"] for e in exercises])
-    for position, e in enumerate(exercises, start=1):
+    """Each exercise and alternative names a library or custom exercise (ExerciseRef); an unknown
+    one raises UnknownExercise and nothing is saved."""
+    names = exercise_names(cur, user_id, exercises)
+    exercise_names(cur, user_id, [a for e in exercises for a in e["alternatives"]])
+    for position, (e, name) in enumerate(zip(exercises, names), start=1):
+        plan_exercise_id = new_id()
         cur.execute(
             """
-            INSERT INTO program_workout_exercises (id, user_id, workout_id, position, user_exercise_id, name,
-                warmup_sets, working_sets, target_reps, amrap, alternatives)
+            INSERT INTO program_workout_exercises (id, user_id, workout_id, position, library_exercise_id,
+                custom_exercise_id, name, warmup_sets, working_sets, target_reps, amrap)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
-                new_id(), user_id, workout_id, position, ids[name_key(e["name"])], e["name"], e["warmup_sets"],
-                e["working_sets"], e["target_reps"], e["amrap"], list(e.get("alternatives") or []),
+                plan_exercise_id, user_id, workout_id, position, e["library_exercise_id"], e["custom_exercise_id"],
+                name, e["warmup_sets"], e["working_sets"], e["target_reps"], e["amrap"],
             ),
         )
+        for alt_position, a in enumerate(e["alternatives"], start=1):
+            cur.execute(
+                """
+                INSERT INTO program_workout_exercise_alternatives (id, user_id, program_workout_exercise_id,
+                    position, library_exercise_id, custom_exercise_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (new_id(), user_id, plan_exercise_id, alt_position, a["library_exercise_id"], a["custom_exercise_id"]),
+            )
 
 
 def create_program(conn: Connection, user_id: str, name: str, workouts: list[dict[str, Any]] = ()) -> str:

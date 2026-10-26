@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from typing import Any, Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -300,34 +301,59 @@ class LiftDetail(LiftSummary):
     points: list[LiftPoint]
 
 
-class PlanExercise(BaseModel):
-    """One exercise in a workout's plan: how many sets and the target reps. No weights."""
+class ExerciseRef(BaseModel):
+    """Which exercise: a library exercise or one of the person's custom exercises, exactly one."""
 
-    name: str = Field(min_length=1)
+    library_exercise_id: Optional[UUID] = None
+    custom_exercise_id: Optional[UUID] = None
+
+    @model_validator(mode="after")
+    def exactly_one(self) -> ExerciseRef:
+        if (self.library_exercise_id is None) == (self.custom_exercise_id is None):
+            raise ValueError("pick an exercise: send library_exercise_id or custom_exercise_id, exactly one")
+        return self
+
+
+class NamedExercise(ExerciseRef):
+    name: str = Field(description="The exercise's name now, for showing.")
+
+
+class PlanTargets(BaseModel):
+    """How many sets and the target reps of one exercise in a workout's plan. No weights."""
+
     warmup_sets: int = Field(default=0, ge=0, le=20)
     working_sets: int = Field(default=1, ge=0, le=20)
     target_reps: Optional[int] = Field(default=None, gt=0, le=100)
     amrap: bool = Field(default=False, description="As many reps as you can.")
-    alternatives: list[str] = Field(
+
+
+class PlanExercise(PlanTargets, ExerciseRef):
+    """One exercise in a workout's plan, as the app sends it."""
+
+    alternatives: list[ExerciseRef] = Field(
         default_factory=list,
         description="Other exercises that can take this one's place. A workout starts with the "
         "first; the session can switch to an alternative.",
     )
 
     @model_validator(mode="after")
-    def strip_name(self) -> PlanExercise:
-        self.name = self.name.strip()
-        if not self.name:
-            raise ValueError("name can't be blank")
-        # Blank, repeated, or the same as the name (ignoring case): dropped.
-        seen = {self.name.lower()}
+    def drop_repeated_alternatives(self) -> PlanExercise:
+        # Repeated, or the same as the exercise itself: dropped.
+        seen = {(self.library_exercise_id, self.custom_exercise_id)}
         kept = []
-        for alt in (a.strip() for a in self.alternatives):
-            if alt and alt.lower() not in seen:
-                seen.add(alt.lower())
+        for alt in self.alternatives:
+            key = (alt.library_exercise_id, alt.custom_exercise_id)
+            if key not in seen:
+                seen.add(key)
                 kept.append(alt)
         self.alternatives = kept
         return self
+
+
+class PlanExerciseOut(PlanTargets, NamedExercise):
+    """One exercise in a workout's plan, with its name and its alternatives' names."""
+
+    alternatives: list[NamedExercise] = []
 
 
 class Movement(BaseModel):
@@ -350,14 +376,14 @@ class WorkoutOut(BaseModel):
     position: int
     name: Optional[str]
     last_done: Optional[date]
-    exercises: list[PlanExercise]
+    exercises: list[PlanExerciseOut]
     warmup: list[Movement] = []
     cooldown: list[Movement] = []
 
 
 class TemplateWorkout(BaseModel):
     name: str
-    exercises: list[PlanExercise]
+    exercises: list[PlanExerciseOut]
 
 
 class ProgramTemplate(BaseModel):
@@ -428,19 +454,15 @@ class ManualSet(BaseModel):
     notes: Optional[str] = None
 
 
-class ManualExercise(BaseModel):
-    name: str = Field(min_length=1)
+class ManualExercise(ExerciseRef):
     notes: Optional[str] = None
     warmup_sets: list[ManualWarmupSet] = []
     sets: list[ManualSet] = []
 
     @model_validator(mode="after")
     def has_a_set(self) -> ManualExercise:
-        self.name = self.name.strip()
-        if not self.name:
-            raise ValueError("an exercise needs a name")
         if not self.warmup_sets and not self.sets:
-            raise ValueError(f"{self.name} has no sets")
+            raise ValueError("each exercise needs at least one set")
         return self
 
 
@@ -512,12 +534,12 @@ class LibraryExercise(ExerciseFields):
 
 
 class MyExercise(ExerciseFields):
-    """One of the person's own exercises: custom when it has a primary muscle, linked when
-    `exercise_id` names a library exercise, otherwise unrecognized."""
+    """One of the person's custom exercises; linked when `linked_library_exercise_id` names a
+    library exercise, which it then counts as."""
 
     id: str
     name: str
-    exercise_id: Optional[str]
+    linked_library_exercise_id: Optional[str]
     equipment: Optional[str]
     equipment_other: Optional[str]
 
@@ -528,11 +550,11 @@ class ExercisesOut(BaseModel):
 
 
 class MyExerciseIn(ExerciseFields):
-    """Adds or changes one of the person's own exercises. `exercise_id` links it to a library
-    exercise; without a link it needs a primary muscle."""
+    """Adds or changes one of the person's custom exercises. `linked_library_exercise_id` links it
+    to a library exercise; without a link it needs a primary muscle."""
 
     name: str = Field(min_length=1, max_length=80)
-    exercise_id: Optional[str] = None
+    linked_library_exercise_id: Optional[str] = None
     equipment: Optional[str] = None
     equipment_other: Optional[str] = Field(default=None, max_length=80)
 
@@ -541,7 +563,7 @@ class MyExerciseIn(ExerciseFields):
         self.name = self.name.strip()
         if not self.name:
             raise ValueError("an exercise needs a name")
-        if self.exercise_id is None and not self.primary_muscles:
+        if self.linked_library_exercise_id is None and not self.primary_muscles:
             raise ValueError("choose a primary muscle")
         if self.equipment != "other":
             self.equipment_other = None

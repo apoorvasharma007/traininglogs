@@ -15,17 +15,20 @@ from psycopg2.extensions import connection as Connection
 
 from traininglogs.agent.schemas import TrainingLogLLMExtract
 from traininglogs.db.fetch import get_input_by_client_id
-from traininglogs.db.insert import insert_input, insert_session
+from traininglogs.db.insert import exercise_names, insert_input, insert_session
 from traininglogs.ingest.confirm import AlreadySaved, build_session_from_extract
 
 
-def to_extract(session: dict[str, Any]) -> TrainingLogLLMExtract:
-    """The request, in the shape every other session is written from."""
+def to_extract(session: dict[str, Any], names: list[str]) -> TrainingLogLLMExtract:
+    """The request, in the shape every other session is written from; `names` are its exercises'
+    names, in order."""
     exercises = []
-    for n, ex in enumerate(session["exercises"], start=1):
+    for n, (ex, name) in enumerate(zip(session["exercises"], names), start=1):
         exercises.append({
             "number": n,
-            "name": ex["name"],
+            "name": name,
+            "library_exercise_id": ex.get("library_exercise_id"),
+            "custom_exercise_id": ex.get("custom_exercise_id"),
             "notes": ex.get("notes") or None,
             "warmup_sets": [
                 {"number": i, "weight_kg": w["weight_kg"], "rep_count": w.get("reps"), "notes": w.get("notes") or None}
@@ -74,7 +77,9 @@ def _session_for(conn: Connection, user_id: str, input_id: str) -> str | None:
 
 def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any]) -> tuple[str, bool]:
     """Saves the session for `user_id`; returns its id and whether it was new (False for a repeated
-    send)."""
+    send). Raises UnknownExercise, before anything is saved, for an exercise that isn't theirs."""
+    with conn.cursor() as cur:
+        names = exercise_names(cur, user_id, session["exercises"])
     known = get_input_by_client_id(conn, user_id, session["client_id"])
     if known is None:
         content = json.dumps(session, sort_keys=True, default=str)
@@ -89,7 +94,7 @@ def save_manual_session(conn: Connection, user_id: str, session: dict[str, Any])
         return saved, False
     input_id, content = known["id"], known["content"]
 
-    workout = build_session_from_extract(to_extract(session), content)
+    workout = build_session_from_extract(to_extract(session, names), content)
     session_id = insert_session(
         conn, user_id, workout, input_id, program_workout_id=session.get("program_workout_id"),
         started_at=session.get("started_at"), ended_at=session.get("ended_at"),

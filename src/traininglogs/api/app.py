@@ -19,6 +19,7 @@ from psycopg2.pool import ThreadedConnectionPool
 
 from traininglogs.api.auth import bearer, user_for, verify
 from traininglogs.db.fetch import get_exercise_history, get_session, get_sessions
+from traininglogs.db.insert import UnknownExercise
 from traininglogs.api.schemas import (
     AiUsage,
     CaptureIn,
@@ -175,6 +176,12 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(UnknownExercise)
+def unknown_exercise(request, error: UnknownExercise):
+    """Any save that names an exercise by an id that isn't the library's or the person's."""
+    return JSONResponse(status_code=422, content={"detail": str(error)})
+
+
 @app.get("/config")
 def public_config():
     """What the app needs before anyone signs in: this environment's Supabase project, its
@@ -253,22 +260,22 @@ def my_exercise_add(body: MyExerciseIn, conn=Depends(_db), user: str = Depends(_
     return _save_my_exercise(conn, user, body)
 
 
-@app.put("/exercises/{user_exercise_id}", response_model=MyExercise)
-def my_exercise_change(user_exercise_id: str, body: MyExerciseIn, conn=Depends(_db), user: str = Depends(_user)):
+@app.put("/exercises/{custom_exercise_id}", response_model=MyExercise)
+def my_exercise_change(custom_exercise_id: str, body: MyExerciseIn, conn=Depends(_db), user: str = Depends(_user)):
     """Changes one of the person's own exercises: its name, what it records, or its link."""
-    saved = _save_my_exercise(conn, user, body, user_exercise_id) if _is_id(user_exercise_id) else None
+    saved = _save_my_exercise(conn, user, body, custom_exercise_id) if _is_id(custom_exercise_id) else None
     if saved is None:
         raise HTTPException(status_code=404, detail="No exercise with that id.")
     return saved
 
 
-def _save_my_exercise(conn, user: str, body: MyExerciseIn, user_exercise_id: str | None = None) -> dict | None:
+def _save_my_exercise(conn, user: str, body: MyExerciseIn, custom_exercise_id: str | None = None) -> dict | None:
     from traininglogs.db.insert import NameTaken, save_my_exercise
 
-    if body.exercise_id is not None and not _is_id(body.exercise_id):
+    if body.linked_library_exercise_id is not None and not _is_id(body.linked_library_exercise_id):
         raise HTTPException(status_code=422, detail=NO_LIBRARY_EXERCISE)
     try:
-        return save_my_exercise(conn, user, body.model_dump(), user_exercise_id)
+        return save_my_exercise(conn, user, body.model_dump(), custom_exercise_id)
     except NameTaken as e:
         raise HTTPException(status_code=409, detail=str(e))
     except psycopg2.errors.CheckViolation:
@@ -606,11 +613,11 @@ def programs_create(body: ProgramIn, conn=Depends(_db), user: str = Depends(_use
 
 
 @app.get("/templates", response_model=list[ProgramTemplate])
-def templates_list(user: str = Depends(_user)):
+def templates_list(conn=Depends(_db), user: str = Depends(_user)):
     """Ready-made programs to copy from."""
-    from traininglogs.program_templates import TEMPLATES
+    from traininglogs.program_templates import templates
 
-    return TEMPLATES
+    return templates(conn)
 
 
 @app.post("/templates/{template_id}/copy", response_model=ProgramOut, status_code=201)
@@ -619,10 +626,10 @@ def templates_copy(template_id: str, conn=Depends(_db), user: str = Depends(_use
     from traininglogs.db.programs import create_program
     from traininglogs.program_templates import get_template
 
-    template = get_template(template_id)
+    template = get_template(conn, template_id)
     if template is None:
         raise HTTPException(status_code=404, detail="Couldn't find this template.")
-    workouts = [w.model_dump() for w in template.workouts]
+    workouts = [w.model_dump(mode="json") for w in template.workouts]
     return _program_or_404(conn, user, create_program(conn, user, template.name, workouts))
 
 
@@ -700,7 +707,7 @@ def workouts_set_exercises(workout_id: str, body: WorkoutExercisesIn, conn=Depen
     from traininglogs.db.programs import set_workout_exercises
 
     program_id = _workout_program_or_404(conn, user, workout_id)
-    set_workout_exercises(conn, user, workout_id, [e.model_dump() for e in body.exercises])
+    set_workout_exercises(conn, user, workout_id, [e.model_dump(mode="json") for e in body.exercises])
     return _program_or_404(conn, user, program_id)
 
 

@@ -4,6 +4,7 @@ import re
 import datetime
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -389,6 +390,9 @@ class SessionCooldown(BaseModel):
 class Exercise(BaseModel):
     number: int
     name: str
+    # Which exercise it is, exactly one, once the person has picked it; the AI reads only a name.
+    library_exercise_id: Optional[UUID] = None
+    custom_exercise_id: Optional[UUID] = None
     sets: Optional[List[WorkingSet]] = None
     current_goal: Optional[Goal] = None
     warmup_sets: Optional[List[WarmupSet]] = None
