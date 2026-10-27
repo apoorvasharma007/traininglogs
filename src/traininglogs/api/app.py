@@ -330,7 +330,7 @@ def put_key_lifts(body: KeyLiftsIn, conn=Depends(_db), user: str = Depends(_user
     from traininglogs.db.insert import set_key_lifts
     from traininglogs.db.programs import utc_today
 
-    set_key_lifts(conn, user, [str(lift.library_exercise_id or lift.custom_exercise_id) for lift in body.lifts])
+    set_key_lifts(conn, user, [lift.model_dump(mode="json") for lift in body.lifts])
     return lift_summaries(get_working_set_rows(conn, user), utc_today(), get_key_lifts(conn, user))
 
 

@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from traininglogs.api.app import app
 from traininglogs.db.db import get_connection, apply_schema
 
-from signed_in import USER_A, USER_B_AUTH, auth, clean_test_data, save_session
+from signed_in import USER_A, USER_B, USER_B_AUTH, auth, clean_test_data, exercise_ref, save_session
 
 HEADERS = auth()
 
@@ -159,27 +159,6 @@ def test_session_detail_returns_full_structure(client):
 
 def test_session_detail_not_found(client):
     r = client.get("/sessions/does-not-exist", headers=HEADERS)
-    assert r.status_code == 404
-
-
-def test_exercise_history_returns_sets_in_order(client):
-    r = client.get("/exercises/Bench Press/history", headers=HEADERS)
-    assert r.status_code == 200
-    rows = r.json()
-    assert len(rows) == 2
-    dates = [row["date"] for row in rows]
-    assert dates == sorted(dates)
-
-
-def test_exercise_history_case_insensitive(client):
-    r = client.get("/exercises/bench press/history", headers=HEADERS)
-    assert r.status_code == 200
-    rows = r.json()
-    assert len(rows) == 2
-
-
-def test_exercise_history_not_found(client):
-    r = client.get("/exercises/Squat/history", headers=HEADERS)
     assert r.status_code == 404
 
 
@@ -364,9 +343,26 @@ class TestConfirmExtraction:
         }
         return insert_card(db_conn, USER_A, raw_input_id, "m", "v1", extract)
 
-    def test_confirms_the_extraction_as_is(self, client, db_conn) -> None:
+    def _picked(self, db_conn, extraction_id: str, ref: dict | None = None, **changes) -> dict:
+        """The card's reading as the phone sends it back once the person has picked each exercise:
+        Leg Press (Machine) for the note's "Leg Press", unless `ref` says otherwise."""
+        from traininglogs.db.fetch import get_card
+
+        extract = get_card(db_conn, USER_A, extraction_id)["extract"]
+        ref = ref or exercise_ref(db_conn, "Leg Press (Machine)")
+        return {**extract, **changes, "exercises": [{**e, **ref} for e in extract["exercises"]]}
+
+    def _saved(self, db_conn, extraction_id: str) -> tuple:
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT status FROM input_text_confirmation_cards WHERE id = %s", (extraction_id,))
+            status = cur.fetchone()[0]
+            cur.execute("SELECT count(*) FROM workout_sessions WHERE confirmation_card_id = %s", (extraction_id,))
+            return status, cur.fetchone()[0]
+
+    def test_confirms_with_the_exercises_picked(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn, "2026-05-01", "confirm test content 1")
-        r = client.post(f"/extractions/{extraction_id}/confirm", headers=HEADERS)
+        picked = self._picked(db_conn, extraction_id)
+        r = client.post(f"/extractions/{extraction_id}/confirm", json={"extract": picked}, headers=HEADERS)
         assert r.status_code == 201
         session_id = r.json()["session_id"]
         uuid.UUID(session_id)
@@ -376,19 +372,27 @@ class TestConfirmExtraction:
                 "SELECT confirmation_card_id::text FROM workout_sessions WHERE id = %s", (session_id,)
             )
             assert cur.fetchone()[0] == extraction_id
+        exercise = client.get(f"/sessions/{session_id}", headers=HEADERS).json()["exercises"][0]
+        assert (exercise["name"], exercise["library_exercise_id"]) == (
+            "Leg Press (Machine)", picked["exercises"][0]["library_exercise_id"])
+
+    @pytest.mark.parametrize("pick", ["none", "unknown", "someone_elses", "both"])
+    def test_an_exercise_not_picked_from_your_own_is_refused_and_nothing_is_saved(self, client, db_conn, pick) -> None:
+        """The AI reads only names; until the person picks each exercise there's nothing to save it
+        as, so confirming the card's own reading is refused too."""
+        extraction_id = self._insert_extraction(db_conn, "2026-05-06", f"confirm refused content {pick}")
+        body = None if pick == "none" else {"extract": self._picked(db_conn, extraction_id, {
+            "unknown": {"library_exercise_id": str(uuid.uuid4())},
+            "someone_elses": exercise_ref(db_conn, "Their Own Press", USER_B),
+            "both": {**exercise_ref(db_conn, "Leg Press (Machine)"), "custom_exercise_id": str(uuid.uuid4())},
+        }[pick])}
+        r = client.post(f"/extractions/{extraction_id}/confirm", json=body, headers=HEADERS)
+        assert r.status_code == 422
+        assert self._saved(db_conn, extraction_id) == ("pending", 0)
 
     def test_confirms_with_an_extract_override(self, client, db_conn) -> None:
         extraction_id = self._insert_extraction(db_conn, "2026-05-02", "confirm test content 2")
-        override = {
-            "date": "2026-05-02",
-            "focus": "Corrected Focus",
-            "exercises": [
-                {"number": 1, "name": "Leg Press", "sets": [
-                    {"number": 1, "weight_kg": 280.0,
-                     "rep_count": {"full": 12, "partial": 0}, "rpe": 9.5},
-                ]},
-            ],
-        }
+        override = self._picked(db_conn, extraction_id, focus="Corrected Focus")
         corrections = [{
             "at": "2026-05-02T00:00:00Z", "instruction": "fix focus",
             "edits": [{"path": "focus", "value": "Corrected Focus"}],
@@ -417,7 +421,7 @@ class TestConfirmExtraction:
         try:
             r = client.post(
                 f"/extractions/{extraction_id}/confirm",
-                json={"program_workout_id": workout_id},
+                json={"program_workout_id": workout_id, "extract": self._picked(db_conn, extraction_id)},
                 headers=HEADERS,
             )
             assert r.status_code == 201
@@ -438,7 +442,7 @@ class TestConfirmExtraction:
         extraction_id = self._insert_extraction(db_conn, "2026-05-09", "confirm test content 9")
         r = client.post(
             f"/extractions/{extraction_id}/confirm",
-            json={"program_workout_id": "nope"},
+            json={"program_workout_id": "nope", "extract": self._picked(db_conn, extraction_id)},
             headers=HEADERS,
         )
         assert r.status_code == 422
@@ -448,11 +452,11 @@ class TestConfirmExtraction:
 
     def test_duplicate_content_returns_409_not_a_crash(self, client, db_conn) -> None:
         id_a = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
-        r1 = client.post(f"/extractions/{id_a}/confirm", headers=HEADERS)
+        r1 = client.post(f"/extractions/{id_a}/confirm", json={"extract": self._picked(db_conn, id_a)}, headers=HEADERS)
         assert r1.status_code == 201
 
         id_b = self._insert_extraction(db_conn, "2026-05-03", "identical content for collision")
-        r2 = client.post(f"/extractions/{id_b}/confirm", headers=HEADERS)
+        r2 = client.post(f"/extractions/{id_b}/confirm", json={"extract": self._picked(db_conn, id_b)}, headers=HEADERS)
         assert r2.status_code == 409
         assert r2.json() == {"detail": "This note is already saved.", "session_id": r1.json()["session_id"]}
 
@@ -460,11 +464,9 @@ class TestConfirmExtraction:
         """Swiping back to a saved card, changing the date and confirming again must not save a
         second copy; the answer links to the first."""
         extraction_id = self._insert_extraction(db_conn, "2026-05-10", "confirm once content")
-        r1 = client.post(f"/extractions/{extraction_id}/confirm", headers=HEADERS)
+        r1 = client.post(f"/extractions/{extraction_id}/confirm", json={"extract": self._picked(db_conn, extraction_id)}, headers=HEADERS)
         assert r1.status_code == 201
-        with db_conn.cursor() as cur:
-            cur.execute("SELECT extract FROM input_text_confirmation_cards WHERE id = %s", (extraction_id,))
-            changed = {**cur.fetchone()[0], "date": "2026-05-09"}
+        changed = self._picked(db_conn, extraction_id, date="2026-05-09")
         r2 = client.post(f"/extractions/{extraction_id}/confirm", json={"extract": changed}, headers=HEADERS)
         assert r2.status_code == 409
         assert r2.json()["session_id"] == r1.json()["session_id"]

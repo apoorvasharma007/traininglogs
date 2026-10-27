@@ -70,11 +70,15 @@ def confirm(
     # other. A card confirms once: a second Confirm (a retry after a lost answer, or after changing
     # the date) finds the session already saved instead of saving another.
     saved_id = None
-    if confirm_card(conn, user_id, card_id, corrections):
-        saved_id = insert_session(
-            conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id,
-            commit=False,
-        )
+    try:
+        if confirm_card(conn, user_id, card_id, corrections):
+            saved_id = insert_session(
+                conn, user_id, session, card["input_id"], card_id=card_id, program_workout_id=program_workout_id,
+                commit=False,
+            )
+    except Exception:
+        conn.rollback()
+        raise
     if saved_id is None:
         conn.rollback()
         raise AlreadySaved(_saved_session(conn, user_id, card_id, session.session_id))
