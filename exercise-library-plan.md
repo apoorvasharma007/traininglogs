@@ -437,7 +437,8 @@ name is what the app shows, never what it matches on.
     gets exercises the library doesn't know.
   - `KEY_LIFTS` (`analytics/key_lifts.py`, lists of Apoorva's spellings) becomes a default list
     of library exercises. `users.key_lifts` and plan `alternatives` store ids, not names.
-  - The AI review card (`screens/review/Review.tsx`) resolves each name with the picker before
+  - Out of Release A (2026-10-28, Apoorva): the AI note path. See "AI parked" below. Was: the AI
+    review card (`screens/review/Review.tsx`) resolves each name with the picker before
     saving.
   - Rename `LiftSummary.measure` to `metric` (server and app), so it can't be confused with the
     library's `measures` (agreed 2026-10-12).
@@ -470,6 +471,13 @@ name is what the app shows, never what it matches on.
   then every History and Progress response compared before and after; only differences listed in
   advance are allowed. Then prod with a same-session yes.
 - Left out of A: the library kept on the phone, and the time and distance boxes in the set row.
+- **AI parked (2026-10-28, Apoorva).** AI is out of Release A and of the release plans for now: it
+  is the least used feature, since every note costs real money. It comes back as app-wide voice
+  logging mid-workout (hold to speak a set and the app logs it, as in the Liftly app), with its own
+  design. Starting point: `ai-layer-design.md` (measured 2026-10-27: a note is 2 + N Haiku 4.5
+  calls, about $0.02; plain name matching gets 42 of 50 AI-read exercises; MCP doesn't fit
+  matching). Until then an AI note can't be saved under F1 (confirm returns 422); how the app
+  shows that in Release A waits on Apoorva.
 
 **Release B, Progress.** The Muscle Volume, Strength, Skills and Not Trained tiles, Profile with
 bodyweight entries, and the library kept on the phone with offline search.
@@ -863,7 +871,7 @@ app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the s
   `confirm()` left the card confirmed in the open transaction (now rolls back), and
   `clean_test_data` kept pins between tests. Note: until F1.4 the AI review card sends no ids,
   so confirming a note returns 422.
-- [ ] F1.4 App: picks send ids, prefill by id, the AI review card resolves names with the picker,
+- [ ] F1.4 App: picks send ids, prefill by id, (AI review card out, see below),
   `metric`.
 - [ ] F1.5 Docs (glossary, architecture, design.html), changelog, suite and app checks.
 - Then M1 (repoints rows, moves `alternatives` names into the table, key lift names to ids), then
