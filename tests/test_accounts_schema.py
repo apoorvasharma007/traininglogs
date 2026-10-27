@@ -59,6 +59,51 @@ def _session(cur, user: str, input_id: str, **links) -> str:
     return session
 
 
+def _custom_exercise(cur, user: str, name: str = "My Curl") -> str:
+    exercise = new_id()
+    cur.execute("INSERT INTO custom_exercises (id, user_id, name) VALUES (%s, %s, %s)", (exercise, user, name))
+    return exercise
+
+
+def _library_exercise(cur) -> str:
+    cur.execute("SELECT id::text FROM library_exercises WHERE name = 'Squat (Barbell)'")
+    return cur.fetchone()[0]
+
+
+def _session_exercise(cur, user: str, session: str, library: str | None, custom: str | None) -> None:
+    cur.execute(
+        "INSERT INTO workout_session_exercises (id, user_id, session_id, position, name, library_exercise_id,"
+        " custom_exercise_id) VALUES (%s, %s, %s, 1, 'x', %s, %s)",
+        (new_id(), user, session, library, custom),
+    )
+
+
+def _plan_exercise(cur, user: str, workout: str, library: str | None, custom: str | None) -> str:
+    plan_exercise = new_id()
+    cur.execute(
+        "INSERT INTO program_workout_exercises (id, user_id, workout_id, position, name, library_exercise_id,"
+        " custom_exercise_id) VALUES (%s, %s, %s, 1, 'x', %s, %s)",
+        (plan_exercise, user, workout, library, custom),
+    )
+    return plan_exercise
+
+
+def _alternative(cur, user: str, plan_exercise: str, library: str | None, custom: str | None) -> None:
+    cur.execute(
+        "INSERT INTO program_workout_exercise_alternatives (id, user_id, program_workout_exercise_id, position,"
+        " library_exercise_id, custom_exercise_id) VALUES (%s, %s, %s, 1, %s, %s)",
+        (new_id(), user, plan_exercise, library, custom),
+    )
+
+
+def _refused(cur, error: type[Exception], insert, *args) -> None:
+    """`insert(cur, *args)` raises `error`; the rows made before it stay."""
+    cur.execute("SAVEPOINT refused")
+    with pytest.raises(error):
+        insert(cur, *args)
+    cur.execute("ROLLBACK TO SAVEPOINT refused")
+
+
 def test_an_owner_must_be_a_real_user(cur) -> None:
     with pytest.raises(psycopg2.errors.ForeignKeyViolation):
         _program(cur, new_id())
@@ -106,10 +151,37 @@ def test_a_phones_session_id_is_unique_per_person_only(cur) -> None:
 
 def test_an_exercise_name_is_one_exercise_ignoring_case_and_spaces(cur) -> None:
     a, b = _user(cur), _user(cur)
-    cur.execute("INSERT INTO user_exercises (id, user_id, name) VALUES (%s, %s, 'Bench Press')", (new_id(), a))
-    cur.execute("INSERT INTO user_exercises (id, user_id, name) VALUES (%s, %s, 'bench press')", (new_id(), b))
+    _custom_exercise(cur, a, "Bench Press")
+    _custom_exercise(cur, b, "bench press")
     with pytest.raises(psycopg2.errors.UniqueViolation):
-        cur.execute("INSERT INTO user_exercises (id, user_id, name) VALUES (%s, %s, '  bench   PRESS ')", (new_id(), a))
+        _custom_exercise(cur, a, "  bench   PRESS ")
+
+
+def test_sessions_and_plans_cant_point_at_someone_elses_custom_exercise(cur) -> None:
+    a, b = _user(cur), _user(cur)
+    theirs, mine = _custom_exercise(cur, a), _custom_exercise(cur, b)
+    session = _session(cur, b, _input(cur, b))
+    workout = _workout(cur, b, _program(cur, b))
+    plan_exercise = _plan_exercise(cur, b, workout, None, mine)
+    _refused(cur, psycopg2.errors.ForeignKeyViolation, _session_exercise, b, session, None, theirs)
+    _refused(cur, psycopg2.errors.ForeignKeyViolation, _plan_exercise, b, workout, None, theirs)
+    _refused(cur, psycopg2.errors.ForeignKeyViolation, _alternative, b, plan_exercise, None, theirs)
+    _session_exercise(cur, b, session, None, mine)
+    _alternative(cur, b, plan_exercise, None, mine)
+
+
+def test_sessions_and_plans_point_at_exactly_one_exercise(cur) -> None:
+    user = _user(cur)
+    library, custom = _library_exercise(cur), _custom_exercise(cur, user)
+    session = _session(cur, user, _input(cur, user))
+    workout = _workout(cur, user, _program(cur, user))
+    plan_exercise = _plan_exercise(cur, user, workout, library, None)
+    for neither_or_both in ((None, None), (library, custom)):
+        _refused(cur, psycopg2.errors.CheckViolation, _session_exercise, user, session, *neither_or_both)
+        _refused(cur, psycopg2.errors.CheckViolation, _plan_exercise, user, workout, *neither_or_both)
+        _refused(cur, psycopg2.errors.CheckViolation, _alternative, user, plan_exercise, *neither_or_both)
+    _session_exercise(cur, user, session, library, None)
+    _alternative(cur, user, plan_exercise, None, custom)
 
 
 def test_each_person_follows_at_most_one_program(cur) -> None:
@@ -134,12 +206,13 @@ def test_every_table_but_the_shared_ones_has_a_required_owner(cur) -> None:
         FROM information_schema.tables t
         LEFT JOIN information_schema.columns c
           ON c.table_name = t.table_name AND c.column_name = 'user_id' AND c.table_schema = 'public'
-        WHERE t.table_schema = 'public' AND t.table_name NOT IN ('users', 'exercises', 'free_exercise_db', 'schema_migrations')
+        WHERE t.table_schema = 'public' AND t.table_name NOT IN ('users', 'library_exercises', 'free_exercise_db', 'schema_migrations')
         """
     )
     assert {t: nullable for t, nullable in cur.fetchall()} == {t: "NO" for t in (
-        "profiles", "user_exercises", "input_text", "input_text_confirmation_cards", "ai_call_logs", "feedback",
-        "programs", "program_workouts", "program_workout_exercises", "workout_sessions",
+        "profiles", "custom_exercises", "input_text", "input_text_confirmation_cards", "ai_call_logs", "feedback",
+        "programs", "program_workouts", "program_workout_exercises", "program_workout_exercise_alternatives",
+        "workout_sessions",
         "workout_session_warmups", "workout_session_cooldowns", "workout_session_exercises",
         "workout_session_sets",
     )}

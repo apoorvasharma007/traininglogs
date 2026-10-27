@@ -93,8 +93,9 @@ def save_session(conn, session: dict, user: str = USER_A, text: str | None = Non
 
 def clean_test_data(conn) -> None:
     """Empty every table of people's data (the test database holds nothing else). Users A and B
-    and the shared exercise list stay."""
+    and the shared exercise list stay, with no key lifts pinned."""
     with conn.cursor() as cur:
+        cur.execute("UPDATE users SET key_lifts = NULL WHERE key_lifts IS NOT NULL")
         cur.execute(
             "TRUNCATE input_text, input_text_confirmation_cards, ai_call_logs, workout_sessions,"
             " workout_session_warmups, workout_session_cooldowns, workout_session_exercises,"
