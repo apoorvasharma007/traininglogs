@@ -719,6 +719,11 @@ Context for the next session:
 
 ## ▶ Resume here
 
+**Now (2026-10-28):** branch `exercises/library-f1-foundation`, worktree
+`~/Projects/traininglogs-wave`, nothing pushed. F1 server side done and checked (suite 837
+passed, 0 failed, 0 skipped). **Next action: F1.4, the app** (steps at "F1 build started"
+below), about 3 hours. Then F1.5, M1, `0005`, F3, A4. AI is parked out of Release A.
+
 **2026-10-25.** Release split approved (Releases section). Done today: step 8 ticked (already on
 `dev`); steps 3 and 4 squashed into `exercises/library` as `2e02975` and `ac4c021`, suite 798
 passed, 0 failed, 0 skipped, private database, locally only (not pushed); that base merged into
@@ -871,25 +876,62 @@ app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the s
   `confirm()` left the card confirmed in the open transaction (now rolls back), and
   `clean_test_data` kept pins between tests. Note: until F1.4 the AI review card sends no ids,
   so confirming a note returns 422.
-- [ ] F1.4 App: picks send ids, prefill by id, (AI review card out, see below),
-  `metric`.
-- [ ] F1.5 Docs (glossary, architecture, design.html), changelog, suite and app checks.
-- Then M1 (repoints rows, moves `alternatives` names into the table, key lift names to ids), then
-  `0005` (drops `alternatives`, `key_lifts` to `UUID[]`).
+- [ ] F1.4 App (next, a few hours). Branch: keep working on `exercises/library-f1-foundation`.
+  - The picker sends ids: `ManualExercise` and plan exercises send `library_exercise_id` or
+    `custom_exercise_id`, no name (`lib/session.ts`, `lib/planChanges.ts`, `WorkoutPlan.tsx`,
+    `lib/programs.ts`, `lib/startSession.ts`, `lib/types.ts`). Alternatives are a list of refs.
+  - Prefill and last time by id: `GET /exercises/last?library_exercise_id=..&custom_exercise_id=..`.
+  - Progress: `metric` replaces `measure`; lift detail is `GET /progress/lift?<ref>`
+    (`screens/Lift.tsx`, its route takes the ref); Settings pins send `{"lifts": [ref, ...]}`.
+  - Custom exercises: field `linked_library_exercise_id` (`lib/exerciseSearch.ts:22`).
+  - Remove the "log from notes" card from Train (`screens/Train.tsx:153`); approved 2026-10-28
+    (Apoorva: "i liked having it, but ... lets take it down for now"). Keep `/log`,
+    `LogFromNotes.tsx` and `screens/review/` for voice logging later.
+  - No visual change otherwise (the look is locked). Gate: typecheck, lint, frontend tests,
+    build, then the local app at 390 px light and dark before Apoorva tries it.
+- [ ] F1.5 Docs and gate: glossary rows (library exercise, custom exercise, linked, counts as),
+  `docs/architecture.md` and `docs/design.html` (tables, API, AI parked), a `changelog.d/` file,
+  the full suite (0 failed, 0 skipped) and the frontend checks. Then squash F1 into
+  `exercises/library`.
+- [ ] M1 (`exercises/library-m1-migrate`): one-off script, dry run by default, one transaction,
+  counts compared. Repoints each session and plan exercise whose custom exercise is linked (by
+  Apoorva's reviewed mapping, section "Migration of existing logs") to the library exercise,
+  moves `alternatives` names into `program_workout_exercise_alternatives`, turns key lift names
+  into ids, and carries `STARTER_RENAMES`. Never changes a stored name or a set. Rehearse on a
+  fresh production copy (ask before copying). Still open before the mapping file: the four
+  names listed under "Still open" in that section.
+- [ ] `0005` (after M1): drop `program_workout_exercises.alternatives`, `users.key_lifts` to
+  `UUID[]`.
+- [ ] F3 My Exercises (link, unlink, add muscles); its wording and look approved before building.
+- [ ] A4 release: staging with a fresh production copy, M1 dry run, M1, History and Progress
+  compared before and after; then production with a same-session yes.
 
-Production gets, in order: backup, `0002`, the library load, the deploy of `main`, `0003`. No
-prod write without a yes in the session.
+AI is parked (Releases section, "AI parked"; design notes in `ai-layer-design.md`). Until it
+returns, an AI note can't be saved, and Release A removes its entry card.
+
+Production order for Release A (changed by `0004`, whose renames break the code before F1):
+backup to `backups/`; `scripts/migrate.py` dry run, then `--apply` for `0002`, `0003`, `0004`
+right before the deploy of `main` (the app breaks for those minutes; only Apoorva uses it); the
+library load; M1 (dry run, then apply); `0005`. Staging already has `0001` to `0003`; it gets
+`0004`, the deploy, the load, M1 and `0005` the same way. No prod write without a yes in the
+session.
 
 For Progress (Release B): the muscle-to-group list lives only in `frontend/src/lib/lists.ts`, and
 the muscle names are in it and in `0002`'s checks. When the server counts sets by group, both read
 one source (for example a `muscle_groups` table), not a third copy.
 
-Left to clean up, each with Apoorva's yes: the helper branches `exercises/library-f2-body` and
+Left to clean up, each with Apoorva's yes: the scratch test databases `traininglogs_f1_a`, `_b`,
+`_c`, `_va`, `_vb`, `_vc` (F1 test agents; keep `traininglogs_f1`); the helper branches `exercises/library-f2-body` and
 `exercises/library-f2-save` and their worktrees `~/Projects/tl-f2-body`, `~/Projects/tl-f2-save`
 (merged); the local production copies `traininglogs_prod_copy` and `traininglogs_prod_copy_0002`
 and the dumps in the session scratchpad; `db/schema-file-guard` (the guard test, to PR into `dev`).
 
 Notes:
+- Suite command (2026-10-28): `TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_f1
+  PYTHONPATH=src <venv>/bin/pytest -q`, with the venv at
+  `/private/tmp/claude-501/-Users-apoorvasharma-Projects/4d87ef15-19bf-42de-a37c-9e9d07c0030b/scratchpad/venv`
+  (macOS can clear `/private/tmp` on restart; rebuild it as below if it's gone).
+- Agents: Apoorva has no credits for the fable model; use opus for writers, sonnet for checkers.
 - Running the suite needs a built frontend (`cd frontend && npm ci && npm run build`) and a
   private database; the main checkout's venv lacks PyYAML, so use a venv from
   `requirements-dev.lock` (`python3.12 -m venv`, `pip install -r requirements-dev.lock`).
