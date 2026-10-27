@@ -16,6 +16,7 @@ from traininglogs.db.insert import insert_card, insert_input
 A = auth()
 B = auth(USER_B_AUTH)
 NO_WORKOUT = "That workout doesn't exist or was removed."
+NOT_YOURS = "That exercise isn't in the library or your custom exercises."
 
 
 @pytest.fixture()
@@ -163,7 +164,7 @@ def test_someone_elses_custom_exercise_cant_be_named_in_a_session_or_plan(client
             "client_id": uuid.uuid4().hex, "date": "3002-01-07", "duration_minutes": 10,
             "exercises": [{**e, "sets": [{"weight_kg": 10, "reps": 8}]} for e in exercises],
         })
-        assert r.status_code == 422, exercises
+        assert (r.status_code, r.json()["detail"]) == (422, NOT_YOURS), exercises
     assert client.get("/sessions", headers=B).json() == []
     with conn.cursor() as cur:
         cur.execute("SELECT count(*) FROM input_text WHERE user_id = %s", (USER_B,))
@@ -174,7 +175,7 @@ def test_someone_elses_custom_exercise_cant_be_named_in_a_session_or_plan(client
     workout_id = program["workouts"][0]["id"]
     for plan in ([theirs], [{**squat, "alternatives": [theirs]}]):
         r = client.put(f"/workouts/{workout_id}/exercises", json={"exercises": plan}, headers=B)
-        assert r.status_code == 422, plan
+        assert (r.status_code, r.json()["detail"]) == (422, NOT_YOURS), plan
     assert client.get(f"/programs/{program['id']}", headers=B).json()["workouts"][0]["exercises"] == []
     assert client.get("/exercises", headers=A).json()["mine"] == a["mine"]
 
@@ -182,11 +183,28 @@ def test_someone_elses_custom_exercise_cant_be_named_in_a_session_or_plan(client
 def test_someone_elses_custom_exercise_cant_be_a_key_lift(client, a) -> None:
     """B can't pin A's custom exercise: refused, B keeps the defaults, and A's pins stay A's."""
     r = client.put("/me/key-lifts", json={"lifts": [{"custom_exercise_id": a["custom_exercise_id"]}]}, headers=B)
-    assert r.status_code == 422
+    assert (r.status_code, r.json()["detail"]) == (422, NOT_YOURS)
     lifts = client.get("/progress/lifts", headers=B).json()
     assert [(l["name"], l["sessions"]) for l in lifts["key_lifts"]] == [(name, 0) for name in DEFAULT_KEY_LIFTS]
     mine = client.get("/progress/lifts", headers=A).json()["key_lifts"]
     assert [(l["name"], l["sessions"]) for l in mine] == [("Spider Curl", 1), ("Squat (Barbell)", 1)]
+
+
+def test_someone_elses_linked_custom_exercise_finds_nothing_of_yours(client, a) -> None:
+    """A's custom exercise linked to Squat (Barbell), asked about by B, who has squatted: B gets
+    nothing, not B's own squats under A's id, which would show B what A linked."""
+    linked = client.post("/exercises", headers=A, json={
+        "name": "Low-bar Squat", "linked_library_exercise_id": a["squat_id"],
+    }).json()
+    r = client.post("/sessions", headers=B, json={
+        "client_id": uuid.uuid4().hex, "date": "3002-01-08", "duration_minutes": 10,
+        "exercises": [{"library_exercise_id": a["squat_id"], "sets": [{"weight_kg": 60, "reps": 5}]}],
+    })
+    assert r.status_code == 201
+    asked = client.get("/exercises/last", params={"custom_exercise_id": linked["id"]}, headers=B)
+    assert (asked.status_code, asked.json()) == (200, [])
+    mine = client.get("/exercises/last", params={"library_exercise_id": a["squat_id"]}, headers=B).json()
+    assert [(e["name"], e["sets"][0]["weight_kg"]) for e in mine] == [("Squat (Barbell)", 60)]
 
 
 def test_a_phone_id_someone_else_used_is_just_a_new_session(client, a) -> None:

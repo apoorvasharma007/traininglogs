@@ -854,11 +854,15 @@ app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the s
   called it). Reads take and return `library_exercise_id` / `custom_exercise_id`; detail is
   `GET /progress/lift`; a lift at bodyweight (library equipment `bodyweight`) shows reps: History, last time, Progress, Key Lifts (ids in `users.key_lifts`,
   the six defaults), templates mapped, `LiftSummary.measure` → `metric`.
-- [ ] F1.3b Tests (in progress 2026-10-27). Helper `exercise_ref` in `tests/signed_in.py` turns a
-  test's name into an id. Green: test_sessions_api, test_programs_api, test_db, the two analytics
-  files. Left (last full run): test_exercise_library 12, test_exercises_api 7, test_api 7,
-  test_ingest 6, test_isolation 22, test_progress_api 3, test_accounts_schema 2. Run the suite with
-  `TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_f1`.
+- [x] F1.3b Tests (2026-10-27): suite 837 passed, 0 failed, 0 skipped on `traininglogs_f1`. Three
+  writer agents (opus) updated the remaining files; a checker (sonnet, own worktree and database)
+  reviewed each and broke the code on purpose. Checkers B and C approved; checker A found the
+  custom join in `get_last_exercises` unguarded (removing its owner filter passed every test),
+  now covered by `test_someone_elses_linked_custom_exercise_finds_nothing_of_yours`. Found and
+  fixed in `src/` on the way: `PUT /me/key-lifts` stored any id (now 422, like saves), a failed
+  `confirm()` left the card confirmed in the open transaction (now rolls back), and
+  `clean_test_data` kept pins between tests. Note: until F1.4 the AI review card sends no ids,
+  so confirming a note returns 422.
 - [ ] F1.4 App: picks send ids, prefill by id, the AI review card resolves names with the picker,
   `metric`.
 - [ ] F1.5 Docs (glossary, architecture, design.html), changelog, suite and app checks.
