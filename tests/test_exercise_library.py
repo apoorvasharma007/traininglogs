@@ -9,6 +9,7 @@ import psycopg2
 import pytest
 
 from signed_in import TEST_DB_URL
+from traininglogs import program_templates
 from traininglogs.db import library
 from traininglogs.db.db import get_connection
 from traininglogs.db.ids import new_id
@@ -55,13 +56,16 @@ class TestTheFile:
         b = _exercise(name="B", other_names=["leg curl"], free_exercise_db_id=None)
         assert not any("leg curl" in p for p in library.check_library([a, b]))
 
+    def test_every_template_exercise_is_a_library_exercise(self) -> None:
+        assert program_templates.template_names() - {e["name"] for e in LIBRARY} == set()
+
     def test_an_unknown_field(self) -> None:
         assert any("unknown field muscles" in p for p in library.check_library([_exercise(muscles=["Abs"])]))
 
 
 class TestLoaded:
     def test_every_exercise_in_the_file_is_in_the_database(self, cur) -> None:
-        cur.execute("SELECT name FROM exercises")
+        cur.execute("SELECT name FROM library_exercises")
         assert {r[0] for r in cur.fetchall()} == {e["name"] for e in LIBRARY}
 
     def test_free_exercise_db_matches_the_pinned_file(self, cur) -> None:
@@ -78,31 +82,31 @@ class TestLoaded:
         dropped = next(e for e in LIBRARY if e["name"] not in library.STARTER_RENAMES.values())
         report = library.load_library(cur, [e for e in LIBRARY if e is not dropped])
         assert report["not_in_file"] == [dropped["name"]]
-        cur.execute("SELECT count(*) FROM exercises WHERE name = %s", (dropped["name"],))
+        cur.execute("SELECT count(*) FROM library_exercises WHERE name = %s", (dropped["name"],))
         assert cur.fetchone()[0] == 1
 
 
 class TestStarterRows:
     def test_renamed_row_keeps_its_id_and_its_links(self, cur) -> None:
-        cur.execute("UPDATE exercises SET name = 'Leg Curl' WHERE name = 'Leg Curl (Machine, Lying)' RETURNING id")
+        cur.execute("UPDATE library_exercises SET name = 'Leg Curl' WHERE name = 'Leg Curl (Machine, Lying)' RETURNING id")
         row_id = cur.fetchone()[0]
         user = new_id()
         cur.execute("INSERT INTO users (id, auth_id) VALUES (%s, %s)", (user, new_id()))
         cur.execute(
-            "INSERT INTO user_exercises (id, user_id, name, exercise_id) VALUES (%s, %s, 'leg curls', %s)",
+            "INSERT INTO custom_exercises (id, user_id, name, linked_library_exercise_id) VALUES (%s, %s, 'leg curls', %s)",
             (new_id(), user, row_id),
         )
 
         report = library.load_library(cur, LIBRARY)
 
         assert report["renamed"] == ["Leg Curl -> Leg Curl (Machine, Lying)"]
-        cur.execute("SELECT id FROM exercises WHERE name = 'Leg Curl (Machine, Lying)'")
+        cur.execute("SELECT id FROM library_exercises WHERE name = 'Leg Curl (Machine, Lying)'")
         assert cur.fetchone()[0] == row_id
-        cur.execute("SELECT exercise_id FROM user_exercises WHERE user_id = %s", (user,))
+        cur.execute("SELECT linked_library_exercise_id FROM custom_exercises WHERE user_id = %s", (user,))
         assert cur.fetchone()[0] == row_id
 
     def test_refused_when_the_new_name_is_already_a_separate_row(self, cur) -> None:
-        cur.execute("INSERT INTO exercises (id, name, equipment) VALUES (%s, 'Plank', 'bodyweight')", (new_id(),))
+        cur.execute("INSERT INTO library_exercises (id, name, equipment) VALUES (%s, 'Plank', 'bodyweight')", (new_id(),))
         with pytest.raises(library.LibraryError, match="Plank"):
             library.load_library(cur, LIBRARY)
 
@@ -117,22 +121,22 @@ class TestTheDatabaseRefuses:
     ])
     def test_a_value_not_on_the_list(self, cur, column, value) -> None:
         with pytest.raises(psycopg2.errors.CheckViolation):
-            cur.execute(f"UPDATE exercises SET {column} = %s WHERE name = %s", (value, LIBRARY[0]["name"]))
+            cur.execute(f"UPDATE library_exercises SET {column} = %s WHERE name = %s", (value, LIBRARY[0]["name"]))
 
     def test_equipment_not_on_the_list(self, cur) -> None:
         with pytest.raises(psycopg2.errors.CheckViolation):
-            cur.execute("UPDATE exercises SET equipment = 'sandbag' WHERE name = %s", (LIBRARY[0]["name"],))
+            cur.execute("UPDATE library_exercises SET equipment = 'sandbag' WHERE name = %s", (LIBRARY[0]["name"],))
 
     def test_a_free_exercise_db_id_that_doesnt_exist(self, cur) -> None:
         with pytest.raises(psycopg2.errors.ForeignKeyViolation):
-            cur.execute("UPDATE exercises SET free_exercise_db_id = 'Nope' WHERE name = %s", (LIBRARY[0]["name"],))
+            cur.execute("UPDATE library_exercises SET free_exercise_db_id = 'Nope' WHERE name = %s", (LIBRARY[0]["name"],))
 
     def test_one_of_theirs_linked_to_two_of_ours(self, cur) -> None:
         taken = next(e for e in LIBRARY if e.get("free_exercise_db_id"))
         other = next(e for e in LIBRARY if not e.get("free_exercise_db_id"))
         with pytest.raises(psycopg2.errors.UniqueViolation):
             cur.execute(
-                "UPDATE exercises SET free_exercise_db_id = %s WHERE name = %s",
+                "UPDATE library_exercises SET free_exercise_db_id = %s WHERE name = %s",
                 (taken["free_exercise_db_id"], other["name"]),
             )
 
