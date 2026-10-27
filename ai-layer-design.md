@@ -1,6 +1,13 @@
 > Parked 2026-10-28 (Apoorva): AI is out of Release A and the release plans for now. It comes back
 > as app-wide voice logging during a workout (hold to speak a set, like Liftly), designed then.
 > This doc measured the AI layer as it was on 2026-10-27 and is the starting point.
+>
+> Matching under voice logging (agreed 2026-10-28): the AI never guesses an exercise. A set is
+> logged against the exercise on screen (from the plan or the picker); a spoken exercise name goes
+> into the picker's search and the person taps the match; swapping chooses among the plan's
+> alternatives. What still needs work: search that tolerates speech-to-text mishearings, and one
+> sentence carrying both an exercise and a set (fill in only on a single clear match, else show the
+> picker's top matches).
 
 # Matching AI-read exercises to the library
 
