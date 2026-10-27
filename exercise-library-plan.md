@@ -845,13 +845,20 @@ app type for a program workout is bare `Workout` (`lib/types.ts:140`), and the s
   before M1. Probed on the private database: neither and both refused, a cross-user custom
   exercise and a cross-user alternative refused, alternatives go with their plan exercise.
   Renames break pre-F1 code, so 0004 runs at the F1 deploy (brief break, only Apoorva uses it).
-- [ ] F1.2 Server save path: sessions, plans, alternatives and the AI confirm take ids;
+- [x] F1.2 Server save path (`1690112`): sessions, plans, alternatives and the AI confirm take ids;
   `user_exercise_ids` goes. API shape approved (2026-10-27): each session exercise, plan
   exercise and alternative sends `library_exercise_id` or `custom_exercise_id`, exactly one, and
   no name; the server copies the exercise's name onto the session row; an unknown or other
   person's id is refused.
-- [ ] F1.3 Server reads by id: History, last time, Progress, Key Lifts (ids in `users.key_lifts`,
+- [x] F1.3 Server reads by id (`89dbad4`); `GET /exercises/{name}/history` deleted (the app never
+  called it). Reads take and return `library_exercise_id` / `custom_exercise_id`; detail is
+  `GET /progress/lift`; a lift at bodyweight (library equipment `bodyweight`) shows reps: History, last time, Progress, Key Lifts (ids in `users.key_lifts`,
   the six defaults), templates mapped, `LiftSummary.measure` → `metric`.
+- [ ] F1.3b Tests (in progress 2026-10-27). Helper `exercise_ref` in `tests/signed_in.py` turns a
+  test's name into an id. Green: test_sessions_api, test_programs_api, test_db, the two analytics
+  files. Left (last full run): test_exercise_library 12, test_exercises_api 7, test_api 7,
+  test_ingest 6, test_isolation 22, test_progress_api 3, test_accounts_schema 2. Run the suite with
+  `TEST_DATABASE_URL=postgresql://traininglogs:traininglogs@localhost:5433/traininglogs_f1`.
 - [ ] F1.4 App: picks send ids, prefill by id, the AI review card resolves names with the picker,
   `metric`.
 - [ ] F1.5 Docs (glossary, architecture, design.html), changelog, suite and app checks.
